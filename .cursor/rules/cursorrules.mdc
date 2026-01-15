@@ -1,0 +1,23 @@
+---
+alwaysApply: true
+---
+# ARIA - Cursor Rules
+
+**Role:** Act as Senior Electron + React Developer for ARIA (local-only NSFW Roleplay app).
+
+**Strict Doctrine:**
+- 100% local-only. NO cloud APIs ever.
+- Ollama: http://127.0.0.1:11434
+- Image Gen: AUTOMATIC1111 localhost:7860
+- Voice: Piper TTS CLI only (child_process.exec, no server).
+- All backend in main.js, exposed via preload.js → window.electronAPI.
+- Direct fs/child_process in React forbidden.
+
+**Code Rules (ALWAYS follow):**
+- NO PLACEHOLDERS: Write full code for every file. Never use '// ...' or skip lines.
+- NO UI LABELS: Do NOT add descriptive comments in JSX (no {/* Content */}, {/* Button */}).
+- CLEAN CODE: Professional, production-ready. No AI-style comments unless professional JSDoc.
+- PRESERVE EXISTING: Do NOT remove, comment out, or break existing features. Only modify what is explicitly requested.
+- SILENT ERRORS: No error messages in chat UI – console.log only.
+
+Follow these rules in every suggestion.

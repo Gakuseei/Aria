@@ -1,0 +1,32 @@
+# Project Structure: Aria
+
+## 🏗 Directory Mapping
+- **Root:**
+  - `main.js`: Electron Main Process (IPC Handlers, CSP, API calls).
+  - `preload.js`: Context Bridge (`window.electronAPI`).
+  - `package.json`: Dependencies & Scripts.
+  - `vite.config.js`: Build configuration.
+- **src/ (Main Entry):** `App.jsx`, `main.jsx`, `index.css`.
+- **src/components/:**
+  - `ChatInterface.jsx`: Main UI with Passion & Gold Mode.
+  - `Settings.jsx`: API, Hardware & Theme configuration.
+  - `CharacterCreator.jsx`, `CharacterSelect.jsx`: Character management.
+  - `MainMenu.jsx`: Entry point with Supporter system.
+  - `SupporterModal.jsx`: PWYW donation & Gold Mode toggle.
+  - `tutorials/`: Setup guides (OllamaSetup.jsx, ImageGenSetup.jsx, VoiceSetup.jsx).
+  - `CreativeWriting.jsx` : 
+  - `CustomDropdown.jsx` : 
+  - `DebugConsole.jsx` : 
+  - `LoadGame.jsx` : 
+  - `TitleBar.jsx` : 
+  - `ModeSelection.jsx`
+- **src/lib/ (Logic):**
+  - `api.js`: Universal Roleplay Engine (4-Block Prompting).
+  - `PassionManager.js`: Passion tiers & vocabulary logic.
+  - `slowBurn.js`: Pacing & sensory engine.
+  - `translations.js`: i18n system (10 languages).
+  - `imageGen.js`
+  - `StoryEngine.js`
+  - `languageEngine.js`
+- **src/config/:** `characters.js` (Character profiles).
+- **src/context/:** `LanguageContext.jsx` (Global state).

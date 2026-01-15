@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm start)",
+      "Bash(npm run build:react:*)",
+      "Bash(curl:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(dir /b \"D:\\Projekte Fertig\\AriaApp\")",
+      "Bash(findstr:*)",
+      "Bash(npm run dev:*)",
+      "Bash(find:*)",
+      "Bash(netstat:*)",
+      "Bash(npm install:*)",
+      "Bash(dir /B)",
+      "Bash(dir /B \"D:\\Projekte Fertig\\AriaApp\\src\\components\")"
+    ]
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": false,
+    "feature-dev@claude-plugins-official": false,
+    "code-simplifier@claude-plugins-official": false
+  }
+}

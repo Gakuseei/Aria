@@ -36,6 +36,7 @@ characters/*.json
 .agent/
 .claude/
 .cursor/
+.github/workflows/
 AGENTS.md
 PROJECT_STRUCTURE.md
 gemini-rules.md

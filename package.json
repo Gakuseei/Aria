@@ -1,0 +1,53 @@
+{
+  "name": "aria-chatbot",
+  "productName": "Aria ChatBot",
+  "version": "1.0.0",
+  "description": "High-End Interactive Fiction & Storytelling Suite",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "clean": "rimraf dist node_modules/.vite",
+    "dev": "npm run clean && concurrently \"npm run dev:react\" \"wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .\"",
+    "dev:react": "vite",
+    "build:react": "npm run clean && vite build",
+    "build": "npm run build:react && electron-builder",
+    "pack": "npm run build:react && electron-builder --dir"
+  },
+  "author": "Gakuseei",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "lucide-react": "^0.562.0",
+    "openai": "^4.40.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.2",
+    "cross-env": "^10.1.0",
+    "electron": "^39.2.7",
+    "electron-builder": "^24.13.3",
+    "postcss": "^8.4.38",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rimraf": "^6.1.2",
+    "tailwindcss": "^3.4.3",
+    "vite": "^7.3.0",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.aria.chatbot",
+    "productName": "Aria",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "dist/**/*",
+      "node_modules/**/*"
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Aria Banner" width="100%">
+  <img src="assets/logo.png" alt="Aria Logo" width="120">
 </p>
 
 <h1 align="center">Aria</h1>
@@ -18,6 +18,12 @@
 <p align="center">
   <em>A premium, fully local AI chatbot application for immersive storytelling and character interactions.</em>
 </p>
+
+---
+
+## 🚀 Early Access / Beta
+
+> **Aria is in active development.** Features and UI may change. See the roadmap below for upcoming updates.
 
 ---
 
@@ -42,6 +48,10 @@ Full localization support including English, German, Spanish, French, Italian, P
 </td>
 <td width="50%">
 
+### 📚 **Easy Tutorials**
+
+Interactive, built-in tutorials for quick onboarding of all features – Voice, Image Generation, and Ollama setup included.
+
 ### 🎨 **Stunning UI**
 
 Rose-noir aesthetic with smooth animations, glassmorphism effects, and optional OLED dark mode. Gold mode available for supporters.
@@ -60,51 +70,51 @@ Context-aware response suggestions that adapt to the conversation flow and selec
 
 ---
 
-## 🖼️ Screenshots
+## 🚀 Getting Started
 
-> _Coming soon_
+Aria includes **built-in tutorials** for Voice, Image Generation, and Ollama setup. Simply start the app and follow the interactive guides – no manual configuration required.
+
+```bash
+npm install
+npm run dev
+```
 
 ---
 
-## 🚀 Getting Started
+## 🗺️ Roadmap
 
-### Prerequisites
+### ✅ Completed
 
-- **Node.js** 18+
-- **Ollama** - [Download here](https://ollama.ai)
-- A compatible AI model (recommended: `hermes3`, `nous-hermes2`, or any uncensored model)
+- [x] Voice System Repair / Settings Storage Fix
+- [x] Ko-Fi / Gold Mode Visuals / Premium Start Animation
+- [x] Language System (i18n with 13 languages, AI mirrors UI language)
 
-### Installation
+### 🔜 In Progress
 
-1. **Clone the repository**
+- [ ] Image Generation Polish / Context Cleaner Tuner
+- [ ] Tutorial Update / Model Recommendations
+  - Low-End: Amoral-Gemma 3B
+  - Mid-End: Nous Hermes 3 8B
+  - High-End: Qwen3-30B-A3B (Josefied)
+  - Quantization Guide (GGUF Q4_K_M for larger models)
 
-   ```bash
-   git clone https://github.com/Gakuseei/Aria.git
-   cd Aria
-   ```
+### 📋 Planned
 
-2. **Install dependencies**
-
-   ```bash
-   npm install
-   ```
-
-3. **Start Ollama** (in a separate terminal)
-
-   ```bash
-   ollama serve
-   ```
-
-4. **Pull a model** (if you haven't already)
-
-   ```bash
-   ollama pull hermes3
-   ```
-
-5. **Run Aria**
-   ```bash
-   npm run dev
-   ```
+- [ ] OLED Mode Button (Moon/Sun toggle)
+- [ ] ChatBot Improve (Story Personas / Auto Scroll / Edit Last Message)
+- [ ] Smart Suggestions Improve (Auto-Cut + Assemble for better flow)
+- [ ] Passion System 2.0 (Expanded tiers, vocabulary refinement, slowBurn optimization)
+- [ ] Auto Backup Chat (AutoSave after each message, locally)
+- [ ] Profile Pictures / Better Info Tab / Backgrounds
+- [ ] Sound Effects (Subtle Rose-Noir UI audio feedbacks)
+- [ ] Code Description Removal (Filter AI-slop / code snippets from dialogs)
+- [ ] Onboarding Tour (Interactive setup walkthrough)
+- [ ] Logo Update (Final logo + deeper rose palette)
+- [ ] Gold Mode Easter Eggs (Secret supporter reactions/UI surprises)
+- [ ] Group Chats / NPC-to-NPC (Characters interact via Passion System)
+- [ ] Multimodal Vision (Image uploads: User uploads image, AI reacts with local model like Qwen 2.5-VL)
+- [ ] Index TTS 2.0 (Improved local voice engine for emotional performance)
+- [ ] AI Girlfriend vs NSFW Roleplay Balance Toggle (Girlfriend = wholesome/emotional, NSFW = full explicit)
 
 ---
 
@@ -118,44 +128,6 @@ Context-aware response suggestions that adapt to the conversation flow and selec
 | **Tailwind CSS** | Styling                    |
 | **Ollama**       | Local AI inference         |
 | **Lucide React** | Icons                      |
-
----
-
-## 📁 Project Structure
-
-```
-Aria/
-├── src/
-│   ├── components/     # React components
-│   ├── lib/            # Core logic (API, TTS, image gen)
-│   ├── config/         # Character configurations
-│   └── context/        # React contexts (Language, etc.)
-├── main.js             # Electron main process
-├── preload.js          # Electron preload script
-└── index.html          # Entry point
-```
-
----
-
-## 🎮 Usage
-
-1. **Launch Aria** - The app will automatically detect Ollama
-2. **Create or select a character** - Customize their personality
-3. **Start chatting** - Enjoy immersive, private AI conversations
-4. **Save your sessions** - Continue conversations anytime
-
----
-
-## ⚙️ Configuration
-
-**Settings available in-app:**
-
-- 🎨 UI Scale adjustment
-- 🌙 OLED Dark Mode toggle
-- 🎬 Animation toggle
-- 🌍 Language selection
-- 🤖 AI Model selection
-- 🔥 Passion/Slow-burn settings
 
 ---
 

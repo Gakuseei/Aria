@@ -147,7 +147,7 @@ Contributions are welcome! Feel free to:
 
 ---
 
-## � Feedback
+## 💬 Feedback
 
 Have ideas, suggestions, or found a bug? Feel free to reach out!
 
@@ -161,7 +161,7 @@ Have ideas, suggestions, or found a bug? Feel free to reach out!
 
 ---
 
-## �💖 Support
+## 💖 Support
 
 If you enjoy Aria, consider supporting development:
 

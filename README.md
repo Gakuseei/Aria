@@ -45,6 +45,10 @@ Create unique AI companions with custom personalities, backgrounds, and traits. 
 
 Full localization support including English, German, Spanish, French, Italian, Portuguese, Russian, Japanese, Korean, Chinese, Arabic, Hindi, and Turkish.
 
+### 📦 **Easy Import & Export**
+
+Share your custom characters with the community or back them up. One-click import and export for seamless character management.
+
 </td>
 <td width="50%">
 

@@ -147,7 +147,21 @@ Contributions are welcome! Feel free to:
 
 ---
 
-## 💖 Support
+## � Feedback
+
+Have ideas, suggestions, or found a bug? Feel free to reach out!
+
+> **Before submitting feedback**, please check the [Roadmap](#%EF%B8%8F-roadmap) to see if your idea is already planned.
+
+<p align="center">
+  <a href="https://discord.com/users/gakuseei">
+    <img src="https://img.shields.io/badge/Discord-gakuseei-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord">
+  </a>
+</p>
+
+---
+
+## �💖 Support
 
 If you enjoy Aria, consider supporting development:
 

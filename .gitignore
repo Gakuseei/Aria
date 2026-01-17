@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+dist/
+dist-electron/
+*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+nul
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# User data
+userData/
+characters/*.json
+!characters/default.json
+
+# AI-related files (keep local only)
+.agent/
+.claude/
+.cursor/
+AGENTS.md
+PROJECT_STRUCTURE.md
+gemini-rules.md

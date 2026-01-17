@@ -32,11 +32,9 @@ userData/
 characters/*.json
 !characters/default.json
 
-# AI-related files (keep local only)
-.agent/
-.claude/
-.cursor/
-.github/workflows/
+# AI-related and hidden files (keep local only)
+/.*
+!/.gitignore
 AGENTS.md
 PROJECT_STRUCTURE.md
 gemini-rules.md

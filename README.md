@@ -62,7 +62,7 @@ Rose-noir aesthetic with smooth animations, glassmorphism effects, and optional 
 
 ### 🔥 **Passion System**
 
-Dynamic relationship progression with slow-burn storytelling mechanics for deeper, more meaningful interactions.
+A hidden relationship engine that evolves based on your choices. Unlock deeper emotional tiers, new dialogue styles, and... discover what lies beyond.
 
 ### 💡 **Smart Suggestions**
 
@@ -78,10 +78,23 @@ Context-aware response suggestions that adapt to the conversation flow and selec
 
 Aria includes **built-in tutorials** for Voice, Image Generation, and Ollama setup. Simply start the app and follow the interactive guides – no manual configuration required.
 
+### Prerequisites
+
+| Requirement | Details                              |
+| ----------- | ------------------------------------ |
+| **Node.js** | v18 or higher                        |
+| **Ollama**  | [Download here](https://ollama.ai)   |
+| **RAM**     | 8GB minimum (16GB recommended)       |
+| **GPU**     | Optional, but speeds up AI responses |
+
+### Quick Start
+
 ```bash
 npm install
 npm run dev
 ```
+
+> 💡 **Tip**: On first launch, Aria will guide you through pulling an AI model and setting everything up.
 
 ---
 
@@ -137,13 +150,25 @@ npm run dev
 
 ## 🤝 Contributing
 
-Contributions are welcome! Feel free to:
+Contributions are welcome! Here are some ways to get involved:
+
+**🐛 Bug Fixes** – Found something broken? PRs are always appreciated.
+
+**🌐 Translations** – Help bring Aria to more languages.
+
+**🎨 UI/UX Ideas** – Suggestions for the rose-noir aesthetic welcome.
+
+**📝 Documentation** – Improve guides, add examples, clarify features.
+
+### How to Contribute
 
 1. Fork the project
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+> 💡 **Tip**: Check the [Roadmap](#%EF%B8%8F-roadmap) for planned features – helping with those is a great way to contribute!
 
 ---
 

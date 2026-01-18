@@ -130,7 +130,6 @@ Aria includes **built-in tutorials** for Voice, Image Generation, and Ollama set
 - [ ] ChatBot Improve (Story Personas / Auto Scroll / Edit Last Message)
 - [ ] Smart Suggestions Improve (Auto-Cut + Assemble for better flow)
 - [ ] Passion System 2.0 (Expanded tiers, vocabulary refinement, slowBurn optimization)
-- [ ] .exe Alpha (Cross-platform installers for Windows, Linux, macOS v0.5)
 - [ ] Auto Backup Chat (AutoSave after each message, locally)
 - [ ] Profile Pictures / Better Info Tab / Backgrounds
 - [ ] Sound Effects (Subtle Rose-Noir UI audio feedbacks)
@@ -142,7 +141,13 @@ Aria includes **built-in tutorials** for Voice, Image Generation, and Ollama set
 - [ ] Multimodal Vision (Image uploads: AI reacts with local model like Qwen 2.5-VL)
 - [ ] Index TTS 2.0 (Improved local voice engine for emotional performance)
 - [ ] AI Girlfriend vs NSFW Roleplay Balance Toggle
-- [ ] Release v1.0 for Windows, Linux, macOS
+
+### 🎯 Major Milestones
+
+| Version         | Description                                              | Platforms             |
+| --------------- | -------------------------------------------------------- | --------------------- |
+| **v0.5 Alpha**  | First standalone installer release – no Node.js required | Windows, Linux, macOS |
+| **v1.0 Stable** | Full release with all core features polished             | Windows, Linux, macOS |
 
 ---
 

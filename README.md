@@ -89,10 +89,19 @@ Aria includes **built-in tutorials** for Voice, Image Generation, and Ollama set
 
 ### Quick Start
 
-```bash
-npm install
-npm run dev
-```
+1. **Download & Extract** the project (or clone via Git)
+2. **Open a terminal** in the project folder
+   - Windows: Right-click in folder → "Open in Terminal"
+   - macOS/Linux: Open Terminal and `cd` to the folder
+3. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+4. **Start Aria:**
+   ```bash
+   npm run dev
+   ```
+5. **Follow the in-app tutorials** to set up Ollama and your first AI model
 
 > 💡 **Tip**: On first launch, Aria will guide you through pulling an AI model and setting everything up.
 
@@ -121,6 +130,7 @@ npm run dev
 - [ ] ChatBot Improve (Story Personas / Auto Scroll / Edit Last Message)
 - [ ] Smart Suggestions Improve (Auto-Cut + Assemble for better flow)
 - [ ] Passion System 2.0 (Expanded tiers, vocabulary refinement, slowBurn optimization)
+- [ ] .exe Alpha (Cross-platform installers for Windows, Linux, macOS v0.5)
 - [ ] Auto Backup Chat (AutoSave after each message, locally)
 - [ ] Profile Pictures / Better Info Tab / Backgrounds
 - [ ] Sound Effects (Subtle Rose-Noir UI audio feedbacks)
@@ -129,9 +139,10 @@ npm run dev
 - [ ] Logo Update (Final logo + deeper rose palette)
 - [ ] Gold Mode Easter Eggs (Secret supporter reactions/UI surprises)
 - [ ] Group Chats / NPC-to-NPC (Characters interact via Passion System)
-- [ ] Multimodal Vision (Image uploads: User uploads image, AI reacts with local model like Qwen 2.5-VL)
+- [ ] Multimodal Vision (Image uploads: AI reacts with local model like Qwen 2.5-VL)
 - [ ] Index TTS 2.0 (Improved local voice engine for emotional performance)
-- [ ] AI Girlfriend vs NSFW Roleplay Balance Toggle (Girlfriend = wholesome/emotional, NSFW = full explicit)
+- [ ] AI Girlfriend vs NSFW Roleplay Balance Toggle
+- [ ] Release v1.0 for Windows, Linux, macOS
 
 ---
 

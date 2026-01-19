@@ -1,220 +1,335 @@
-<p align="center">
-  <img src="assets/logo.png" alt="Aria Logo" width="120">
-</p>
+<div align="center">
 
-<h1 align="center">Aria</h1>
+<img src="assets/logo.png" alt="Aria Logo" width="140"/>
 
-<p align="center">
-  <strong>🌹 High-End Interactive Fiction & AI Companion Suite</strong>
-</p>
+# 🌹 Aria
 
-<p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-rose?style=for-the-badge" alt="Version">
-  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-purple?style=for-the-badge" alt="Platform">
-  <img src="https://img.shields.io/badge/license-MIT-gold?style=for-the-badge" alt="License">
-  <img src="https://img.shields.io/badge/100%25-Offline-green?style=for-the-badge" alt="Offline">
-</p>
+### _High-End Interactive Fiction & AI Companion Suite_
 
-<p align="center">
-  <em>A premium, fully local AI chatbot application for immersive storytelling and character interactions.</em>
-</p>
+<br/>
+
+[![Version](https://img.shields.io/badge/version-1.0.0-E91E63?style=for-the-badge&labelColor=1a1a2e)](https://github.com/Gakuseei/Aria)
+[![Platform](https://img.shields.io/badge/Windows%20%7C%20macOS%20%7C%20Linux-8B5CF6?style=for-the-badge&labelColor=1a1a2e)](https://github.com/Gakuseei/Aria)
+[![License](https://img.shields.io/badge/MIT-FFD700?style=for-the-badge&labelColor=1a1a2e)](LICENSE.md)
+[![Offline](https://img.shields.io/badge/100%25%20Offline-10B981?style=for-the-badge&labelColor=1a1a2e)](https://github.com/Gakuseei/Aria)
+
+<br/>
+
+**A premium, fully local AI chatbot for immersive storytelling and character interactions.**
+
+_Your conversations. Your device. Your privacy._
+
+<br/>
+
+[![Discord](https://img.shields.io/badge/Join%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/h3gVtkw9ja)
+[![Ko-fi](https://img.shields.io/badge/Support%20on%20Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/gakuseei)
+
+</div>
 
 ---
 
-## 🚀 Early Access / Beta
+<br/>
 
-> **Aria is in active development.** Features and UI may change. See the roadmap below for upcoming updates.
+## 🚀 Early Access
+
+> [!NOTE]
+> **Aria is in active development.** Features and UI may change as we work towards v1.0.
+> Check the [Roadmap](#-roadmap) for upcoming updates or join our [Discord](https://discord.gg/h3gVtkw9ja) for the latest news!
+
+<br/>
 
 ---
+
+<br/>
 
 ## ✨ Features
 
 <table>
 <tr>
-<td width="50%">
+<td width="50%" valign="top">
 
-### 🔒 **100% Private & Offline**
+### � 100% Private & Offline
 
-Your conversations never leave your device. Aria runs entirely on your local machine using [Ollama](https://ollama.ai), ensuring complete privacy.
+Your conversations **never leave your device**. Aria runs entirely on your local machine using [Ollama](https://ollama.ai), ensuring complete privacy and zero data collection.
 
-### 🎭 **Custom Characters**
+<br/>
 
-Create unique AI companions with custom personalities, backgrounds, and traits. Save and manage multiple characters.
+### 🎭 Custom Characters
 
-### 🌍 **13 Languages**
+Create unique AI companions with custom personalities, backstories, and traits. Save, manage, and share multiple characters effortlessly.
 
-Full localization support including English, German, Spanish, French, Italian, Portuguese, Russian, Japanese, Korean, Chinese, Arabic, Hindi, and Turkish.
+<br/>
 
-### 📦 **Easy Import & Export**
+### 🌍 13 Languages
 
-Share your custom characters with the community or back them up. One-click import and export for seamless character management.
+Full localization including English, German, Spanish, French, Italian, Portuguese, Russian, Japanese, Korean, Chinese, Arabic, Hindi, and Turkish.
 
 </td>
-<td width="50%">
+<td width="50%" valign="top">
 
-### 📚 **Easy Tutorials**
+### 📚 Easy Tutorials
 
-Interactive, built-in tutorials for quick onboarding of all features – Voice, Image Generation, and Ollama setup included.
+Interactive, built-in tutorials for quick onboarding – Voice synthesis, Image Generation, and Ollama setup all included.
 
-### 🎨 **Stunning UI**
+<br/>
 
-Rose-noir aesthetic with smooth animations, glassmorphism effects, and optional OLED dark mode. Gold mode available for supporters.
+### 🎨 Stunning Rose-Noir UI
 
-### 🔥 **Passion System**
+Premium aesthetic with smooth animations, glassmorphism effects, and optional OLED dark mode. **Gold Mode** available for supporters.
 
-A hidden relationship engine that evolves based on your choices. Unlock deeper emotional tiers, new dialogue styles, and... discover what lies beyond.
+<br/>
 
-### 💡 **Smart Suggestions**
+### 🔥 Passion System
 
-Context-aware response suggestions that adapt to the conversation flow and selected language.
+A hidden relationship engine that evolves based on your choices. Unlock deeper emotional tiers, new dialogue styles... and discover what lies beyond.
 
 </td>
 </tr>
 </table>
 
----
+<div align="center">
 
-## 🚀 Getting Started
+### 💡 Smart Suggestions • 📦 Easy Import/Export • 🎙️ Voice Synthesis
 
-Aria includes **built-in tutorials** for Voice, Image Generation, and Ollama setup. Simply start the app and follow the interactive guides – no manual configuration required.
+</div>
 
-### Prerequisites
-
-| Requirement | Details                              |
-| ----------- | ------------------------------------ |
-| **Node.js** | v18 or higher                        |
-| **Ollama**  | [Download here](https://ollama.ai)   |
-| **RAM**     | 8GB minimum (16GB recommended)       |
-| **GPU**     | Optional, but speeds up AI responses |
-
-### Quick Start
-
-1. **Download & Extract** the project (or clone via Git)
-2. **Open a terminal** in the project folder
-   - Windows: Right-click in folder → "Open in Terminal"
-   - macOS/Linux: Open Terminal and `cd` to the folder
-3. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-4. **Start Aria:**
-   ```bash
-   npm run dev
-   ```
-5. **Follow the in-app tutorials** to set up Ollama and your first AI model
-
-> 💡 **Tip**: On first launch, Aria will guide you through pulling an AI model and setting everything up.
+<br/>
 
 ---
+
+<br/>
+
+## 🚀 Quick Start
+
+<div align="center">
+
+Aria includes **built-in tutorials** – just launch and follow the interactive guides!
+
+</div>
+
+<br/>
+
+### 📋 Prerequisites
+
+| Requirement | Details                            |
+| :---------: | :--------------------------------- |
+| **Node.js** | v18 or higher                      |
+| **Ollama**  | [Download here](https://ollama.ai) |
+|   **RAM**   | 8GB minimum _(16GB recommended)_   |
+|   **GPU**   | Optional – speeds up AI responses  |
+
+<br/>
+
+### ⚡ Installation
+
+```bash
+# 1. Clone or download the project
+git clone https://github.com/Gakuseei/Aria.git
+
+# 2. Navigate to the folder
+cd Aria
+
+# 3. Install dependencies
+npm install
+
+# 4. Launch Aria
+npm run dev
+```
+
+> [!TIP]
+> On first launch, Aria will guide you through pulling an AI model and setting everything up automatically!
+
+<br/>
+
+---
+
+<br/>
 
 ## 🗺️ Roadmap
 
-### ✅ Completed
+<div align="center">
 
-- [x] Voice System Repair / Settings Storage Fix
-- [x] Ko-Fi / Gold Mode Visuals / Premium Start Animation
-- [x] Language System (i18n with 13 languages, AI mirrors UI language)
+_Building the ultimate AI companion experience, one feature at a time._
 
-### 🔜 In Progress
+</div>
 
-- [ ] Image Generation Polish / Context Cleaner Tuner
-- [ ] Tutorial Update / Model Recommendations
-  - Low-End: Amoral-Gemma 3B
-  - Mid-End: Nous Hermes 3 8B
-  - High-End: Qwen3-30B-A3B (Josefied)
-  - Quantization Guide (GGUF Q4_K_M for larger models)
+<br/>
 
-### 📋 Planned
+<details>
+<summary><strong>✅ Completed</strong></summary>
 
-- [ ] OLED Mode Button (Moon/Sun toggle)
-- [ ] ChatBot Improve (Story Personas / Auto Scroll / Edit Last Message)
-- [ ] Smart Suggestions Improve (Auto-Cut + Assemble for better flow)
-- [ ] Passion System 2.0 (Expanded tiers, vocabulary refinement, slowBurn optimization)
-- [ ] 🎯 **v0.5 Alpha** – First standalone .exe installer (Windows, Linux, macOS)
-- [ ] Auto Backup Chat (AutoSave after each message, locally)
-- [ ] Profile Pictures / Better Info Tab / Backgrounds
-- [ ] Sound Effects (Subtle Rose-Noir UI audio feedbacks)
-- [ ] Code Description Removal (Filter AI-slop / code snippets from dialogs)
-- [ ] Onboarding Tour (Interactive setup walkthrough)
-- [ ] Logo Update (Final logo + deeper rose palette)
-- [ ] Gold Mode Easter Eggs (Secret supporter reactions/UI surprises)
-- [ ] Group Chats / NPC-to-NPC (Characters interact via Passion System)
-- [ ] Multimodal Vision (Image uploads: AI reacts with local model like Qwen 2.5-VL)
-- [ ] Index TTS 2.0 (Improved local voice engine for emotional performance)
-- [ ] AI Girlfriend vs NSFW Roleplay Balance Toggle
-- [ ] 🎯 **v1.0 Stable** – Full release with all core features (Windows, Linux, macOS)
+<br/>
+
+- [x] Voice System Repair & Settings Storage Fix
+- [x] Ko-Fi Integration & Gold Mode Visuals
+- [x] Language System _(i18n with 13 languages)_
+- [x] Premium Start Animation
+
+</details>
+
+<details open>
+<summary><strong>� In Progress</strong></summary>
+
+<br/>
+
+- [ ] Image Generation Polish & Context Cleaner
+- [ ] Tutorial Update with Model Recommendations
+  - 🟢 **Low-End:** Amoral-Gemma 3B
+  - 🟡 **Mid-End:** Nous Hermes 3 8B
+  - 🔴 **High-End:** Qwen3-30B-A3B (Josefied)
+
+</details>
+
+<details>
+<summary><strong>📋 Planned</strong></summary>
+
+<br/>
+
+| Feature                  | Description                                    |
+| :----------------------- | :--------------------------------------------- |
+| 🌙 OLED Mode Toggle      | Moon/Sun button for quick theme switching      |
+| 💬 ChatBot Improvements  | Story Personas, Auto Scroll, Edit Last Message |
+| 🧠 Smart Suggestions 2.0 | Auto-Cut + Assemble for better flow            |
+| ❤️ Passion System 2.0    | Expanded tiers, vocabulary refinement          |
+| 📦 **v0.5 Alpha**        | First standalone installers (Win/Mac/Linux)    |
+| 💾 Auto Backup           | Auto-save after each message                   |
+| 🖼️ Profile Pictures      | Backgrounds & better Info Tab                  |
+| 🔊 Sound Effects         | Subtle Rose-Noir audio feedback                |
+| 🎓 Onboarding Tour       | Interactive setup walkthrough                  |
+| 👁️ Multimodal Vision     | Image uploads with local models                |
+| 🎤 Index TTS 2.0         | Enhanced emotional voice engine                |
+| 👥 Group Chats           | NPC-to-NPC interactions                        |
+| 🎯 **v1.0 Stable**       | Full release with all core features            |
+
+</details>
+
+<br/>
 
 ---
+
+<br/>
 
 ## 🛠️ Tech Stack
 
-| Technology       | Purpose                    |
-| ---------------- | -------------------------- |
-| **Electron**     | Cross-platform desktop app |
-| **React 18**     | UI components              |
-| **Vite**         | Build tooling              |
-| **Tailwind CSS** | Styling                    |
-| **Ollama**       | Local AI inference         |
-| **Lucide React** | Icons                      |
+<div align="center">
+
+|     | Technology       | Purpose                    |
+| :-: | :--------------- | :------------------------- |
+| ⚡  | **Electron**     | Cross-platform desktop app |
+| ⚛️  | **React 18**     | UI components              |
+| 🚀  | **Vite**         | Build tooling              |
+| 🎨  | **Tailwind CSS** | Styling                    |
+| 🤖  | **Ollama**       | Local AI inference         |
+| ✨  | **Lucide React** | Icons                      |
+
+</div>
+
+<br/>
 
 ---
+
+<br/>
 
 ## 🤝 Contributing
 
-Contributions are welcome! Here are some ways to get involved:
+<div align="center">
 
-**🐛 Bug Fixes** – Found something broken? PRs are always appreciated.
+_We welcome contributions from the community!_
 
-**🌐 Translations** – Help bring Aria to more languages.
+</div>
 
-**🎨 UI/UX Ideas** – Suggestions for the rose-noir aesthetic welcome.
+<br/>
 
-**📝 Documentation** – Improve guides, add examples, clarify features.
+| Type                 | Description                                        |
+| :------------------- | :------------------------------------------------- |
+| 🐛 **Bug Fixes**     | Found something broken? PRs are always appreciated |
+| 🌐 **Translations**  | Help bring Aria to more languages                  |
+| 🎨 **UI/UX Ideas**   | Suggestions for the rose-noir aesthetic            |
+| 📝 **Documentation** | Improve guides, add examples                       |
 
-### How to Contribute
+<br/>
 
-1. Fork the project
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+```bash
+# 1. Fork the project
+# 2. Create your feature branch
+git checkout -b feature/amazing-feature
 
-> 💡 **Tip**: Check the [Roadmap](#%EF%B8%8F-roadmap) for planned features – helping with those is a great way to contribute!
+# 3. Commit your changes
+git commit -m 'Add amazing feature'
+
+# 4. Push to the branch
+git push origin feature/amazing-feature
+
+# 5. Open a Pull Request
+```
+
+> [!TIP]
+> Check the [Roadmap](#-roadmap) for planned features – helping with those is a great way to contribute!
+
+<br/>
+
+---
+
+<br/>
+
+## 💬 Community & Feedback
+
+<div align="center">
+
+Have ideas, suggestions, or found a bug? **Join our Discord!**
+
+<br/>
+
+[![Discord Server](https://img.shields.io/badge/Join%20the%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/h3gVtkw9ja)
+
+<br/>
+
+_Get updates, share creations, report bugs, and connect with other Aria users._
+
+</div>
+
+<br/>
 
 ---
 
-## 💬 Feedback
+<br/>
 
-Have ideas, suggestions, or found a bug? Feel free to reach out!
+## 💖 Support Development
 
-> **Before submitting feedback**, please check the [Roadmap](#%EF%B8%8F-roadmap) to see if your idea is already planned.
+<div align="center">
 
-<p align="center">
-  <a href="https://discord.com/users/gakuseei">
-    <img src="https://img.shields.io/badge/Discord-gakuseei-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord">
-  </a>
-</p>
+If you enjoy Aria, consider supporting its development!
 
----
+<br/>
 
-## 💖 Support
+[![Ko-fi](https://img.shields.io/badge/☕%20Buy%20me%20a%20Coffee-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/gakuseei)
 
-If you enjoy Aria, consider supporting development:
+<br/>
 
-<p align="center">
-  <a href="https://ko-fi.com/gakuseei">
-    <img src="https://img.shields.io/badge/Ko--fi-Support%20Development-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-fi">
-  </a>
-</p>
+_Supporters unlock **Gold Mode** – exclusive premium visuals and features!_
+
+</div>
+
+<br/>
 
 ---
+
+<br/>
 
 ## 📜 License
 
-This project is licensed under the **MIT License** - see the [LICENSE.md](LICENSE.md) file for details.
+<div align="center">
+
+This project is licensed under the **MIT License** – see [LICENSE.md](LICENSE.md) for details.
+
+<br/>
 
 ---
 
-<p align="center">
-  Made with 🌹 by <a href="https://github.com/Gakuseei">Gakuseei</a>
-</p>
+<br/>
+
+Made with 🌹 by the Aria Community
+
+[![Discord](https://img.shields.io/badge/Discord-Join%20Us-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/h3gVtkw9ja)
+
+</div>

@@ -8,7 +8,7 @@
 
 <br/>
 
-[![Version](https://img.shields.io/badge/version-1.0.0-E91E63?style=for-the-badge&labelColor=1a1a2e)](https://github.com/Gakuseei/Aria)
+[![Version](https://img.shields.io/badge/version-0.2.5-E91E63?style=for-the-badge&labelColor=1a1a2e)](https://github.com/Gakuseei/Aria)
 [![Platform](https://img.shields.io/badge/Windows%20%7C%20macOS%20%7C%20Linux-8B5CF6?style=for-the-badge&labelColor=1a1a2e)](https://github.com/Gakuseei/Aria)
 [![License](https://img.shields.io/badge/MIT-FFD700?style=for-the-badge&labelColor=1a1a2e)](LICENSE.md)
 [![Offline](https://img.shields.io/badge/100%25%20Offline-10B981?style=for-the-badge&labelColor=1a1a2e)](https://github.com/Gakuseei/Aria)
@@ -48,7 +48,7 @@ _Your conversations. Your device. Your privacy._
 <tr>
 <td width="50%" valign="top">
 
-### � 100% Private & Offline
+### 🔐 100% Private & Offline
 
 Your conversations **never leave your device**. Aria runs entirely on your local machine using [Ollama](https://ollama.ai), ensuring complete privacy and zero data collection.
 
@@ -168,7 +168,7 @@ _Building the ultimate AI companion experience, one feature at a time._
 </details>
 
 <details open>
-<summary><strong>� In Progress</strong></summary>
+<summary><strong>🔄 In Progress</strong></summary>
 
 <br/>
 

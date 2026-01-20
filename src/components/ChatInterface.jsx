@@ -667,7 +667,7 @@ export default function ChatInterface({ character, onBack }) {
       console.log('[BLOCK 8.1 Image Gen] Generating:', imagePrompt);
 
       // Generate image using AUTOMATIC1111 API
-      const base64Image = await generateImage(imagePrompt, settings.imageGenUrl);
+      const base64Image = await generateImage(imagePrompt, settings.imageGenUrl, settings.imageGenTier || 'standard');
 
       // Add image to chat history
       const imageMessage = {
@@ -812,7 +812,8 @@ export default function ChatInterface({ character, onBack }) {
       const result = await window.electronAPI.generateSpeech({
         text: text.replace(/\*/g, '').replace(/"/g, ''),
         piperPath: settings.piperPath,
-        modelPath: settings.modelPath
+        modelPath: settings.modelPath,
+        voiceTier: settings.voiceTier || 'standard'
       });
 
       if (result?.success && result?.audioData) {

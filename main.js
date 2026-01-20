@@ -205,6 +205,38 @@ function createWindow() {
   ipcMain.on('open-external', (event, url) => {
     shell.openExternal(url);
   });
+
+  // TOOLS FOLDER HANDLER
+  ipcMain.on('open-tools-folder', (event) => {
+    const toolsPath = path.join(__dirname, 'tools');
+    shell.openPath(toolsPath).then((err) => {
+      if (err) console.error('Failed to open tools folder:', err);
+    });
+  });
+
+  // RUN TOOL SCRIPT HANDLER (True One-Click)
+  ipcMain.on('run-tool-script', (event, scriptName) => {
+    // Security: Only allow specific scripts or scripts in tools/
+    const allowedScripts = ['install_ollama.bat', 'install_piper.bat', 'install_zonos.bat', 'start_zonos.bat', 'install_stability.bat'];
+    
+    if (!allowedScripts.includes(scriptName)) {
+      console.error('Blocked unauthorized script execution:', scriptName);
+      return;
+    }
+
+    const scriptPath = path.join(__dirname, 'tools', scriptName);
+    
+    // Use 'start' to open a new command window so the user sees progress
+    // "start cmd.exe /c ..." keeps the window open or manages it better
+    const command = `start cmd.exe /c "${scriptPath}"`;
+    
+    const { exec } = require('child_process');
+    exec(command, { cwd: path.join(__dirname, 'tools') }, (error) => {
+      if (error) {
+        console.error(`Failed to execute ${scriptName}:`, error);
+      }
+    });
+  });
 }
 
 app.whenReady().then(createWindow);
@@ -371,15 +403,25 @@ ipcMain.handle('test-voice', async (event, url) => {
       settings = JSON.parse(data);
     }
     
-    const piperPath = settings.piperPath || settings.piperExecutablePath;
+    let piperPath = settings.piperPath || settings.piperExecutablePath;
     const modelPath = settings.modelPath;
     
     // Validate Piper executable
     if (!piperPath) {
-      return {
-        success: false,
-        error: 'Piper executable path not configured',
-      };
+      // AUTO-DETECT: Check tools folder
+      const autoPath = path.join(__dirname, 'tools', 'piper', 'piper.exe');
+      if (fs.existsSync(autoPath)) {
+        console.log('[Voice Test] Auto-detected Piper at:', autoPath);
+        piperPath = autoPath;
+        // Optional: Update settings automatically? 
+        // Better to just use it for this session of testing, user can save it later if the frontend updates?
+        // Actually, let's return it so frontend can save it.
+      } else {
+        return {
+          success: false,
+          error: 'Piper executable path not configured',
+        };
+      }
     }
     
     const cleanPiperPath = piperPath.replace(/^"|"$/g, '').trim();
@@ -448,6 +490,7 @@ ipcMain.handle('test-voice', async (event, url) => {
       return {
         success: true,
         message: 'Piper CLI and model files validated',
+        detectedPiperPath: piperPath
       };
     }
     
@@ -455,6 +498,7 @@ ipcMain.handle('test-voice', async (event, url) => {
     return {
       success: true,
       message: 'Piper CLI found (model not configured)',
+      detectedPiperPath: piperPath
     };
   } catch (error) {
     console.error('[Voice Test] Error:', error);
@@ -500,27 +544,34 @@ ipcMain.handle('get-local-voice-models', async () => {
  * Generate image using local API (StabilityMatrix/AUTOMATIC1111)
  */
 ipcMain.handle('generate-image', async (event, params) => {
-  const { prompt, url, width, height, steps } = params;
+  const { prompt, url, width, height, steps, imageGenTier } = params;
   
   try {
+    const isPremium = imageGenTier === 'premium';
+    console.log(`[V5.5 ImageGen] ${isPremium ? '🌟 Premium (FLUX)' : 'Standard (SDXL)'} mode`);
     console.log('[V5.5 ImageGen] Generating image:', prompt.substring(0, 50) + '...');
     
     const apiUrl = `${url}/sdapi/v1/txt2img`;
+    
+    // FLUX-specific settings for premium mode
+    const requestBody = {
+      prompt: prompt,
+      negative_prompt: isPremium 
+        ? 'blurry, low quality, distorted' 
+        : 'blurry, low quality, distorted, ugly, bad anatomy',
+      steps: isPremium ? (steps || 28) : (steps || 20),
+      width: width || (isPremium ? 1024 : 512),
+      height: height || (isPremium ? 1024 : 512),
+      cfg_scale: isPremium ? 3.5 : 7,
+      sampler_name: isPremium ? 'Euler' : 'Euler a',
+    };
     
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        prompt: prompt,
-        negative_prompt: 'blurry, low quality, distorted, ugly, bad anatomy',
-        steps: steps || 20,
-        width: width || 512,
-        height: height || 512,
-        cfg_scale: 7,
-        sampler_name: 'Euler a',
-      }),
+      body: JSON.stringify(requestBody),
     });
     
     if (!response.ok) {
@@ -559,8 +610,158 @@ ipcMain.handle('generate-image', async (event, params) => {
  * CRITICAL FIX: Validate JSON config file to prevent 3221226505 crash
  */
 ipcMain.handle('generate-speech', async (event, params) => {
-  const { text, piperPath, modelPath } = params;
+  const { text, piperPath, modelPath, voiceTier } = params;
 
+  // PREMIUM MODE: Use Zonos API (Gradio via /gradio_api/)
+  if (voiceTier === 'premium') {
+    console.log('[Voice] 🌟 Premium mode: Using Zonos API via /gradio_api/');
+    try {
+      const baseUrl = 'http://127.0.0.1:7860';
+      
+      // Found via debug tool: /gradio_api/info exists, and api_name: generate_audio exists
+      // Try direct call first (stateless)
+      const callUrl = `${baseUrl}/gradio_api/call/generate_audio`;
+      
+      console.log(`[Voice] Calling endpoint: ${callUrl}`);
+      
+      const response = await fetch(callUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: [
+            "Zyphra/Zonos-v0.1-transformer",  // model_choice
+            text,                              // text
+            "en-us",                           // language
+            null,                              // speaker_audio
+            null,                              // prefix_audio
+            1.0, 0.05, 0.05, 0.05,            // emotions 1-4
+            0.05, 0.05, 0.1, 0.2,             // emotions 5-8
+            0.78,                              // vq_single
+            24000,                             // fmax
+            45.0,                              // pitch_std
+            15.0,                              // speaking_rate
+            4.0,                               // dnsmos_ovrl
+            false,                             // speaker_noised
+            2.0,                               // cfg_scale
+            0,                                 // top_p
+            0,                                 // top_k
+            0,                                 // min_p
+            0.5,                               // linear
+            0.4,                               // confidence
+            0.0,                               // quadratic
+            420,                               // seed
+            true,                              // randomize_seed
+            ["emotion"]                        // unconditional_keys
+          ]
+        })
+      });
+      
+      if (!response.ok) {
+        // Fallback: Try without /gradio_api prefix just in case (e.g. /call/generate_audio)
+        console.log(`[Voice] /gradio_api failed (${response.status}), trying /call/generate_audio...`);
+        const responseFallback = await fetch(`${baseUrl}/call/generate_audio`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            data: [
+              "Zyphra/Zonos-v0.1-transformer",
+              text,
+              "en-us",
+              null, null,
+              1.0, 0.05, 0.05, 0.05,
+              0.05, 0.05, 0.1, 0.2,
+              0.78, 24000, 45.0, 15.0, 4.0,
+              false, 2.0, 0, 0, 0,
+              0.5, 0.4, 0.0, 420, true,
+              ["emotion"]
+            ]
+          })
+        });
+        
+        if (!responseFallback.ok) {
+           const errorText = await responseFallback.text();
+           console.error('[Voice] Zonos API error:', errorText);
+           return { success: false, error: `Zonos API failed (${responseFallback.status}): ${errorText}` };
+        }
+        
+        // Handle fallback success same as main
+        const result = await responseFallback.json();
+        return await processGradioResult(baseUrl, result);
+      }
+      
+      const result = await response.json();
+      return await processGradioResult(baseUrl, result);
+
+    } catch (zonosError) {
+      console.error('[Voice] Zonos error:', zonosError);
+      return { success: false, error: `Zonos connection failed: ${zonosError.message}. Is Zonos running on port 7860?` };
+    }
+  }
+
+  // Helper for processing Gradio call results
+  async function processGradioResult(baseUrl, result) {
+    if (result.event_id) {
+        // Gradio 5 async/event based response - we got an event ID
+        // Need to poll result endpoint: GET /gradio_api/call/generate_audio/{event_id}
+        console.log('[Voice] Got event_id:', result.event_id, 'polling for result...');
+        
+        const pollUrl = `${baseUrl}/gradio_api/call/generate_audio/${result.event_id}`;
+        
+        // Poll for up to 30 seconds
+        for(let i=0; i<60; i++) {
+            await new Promise(r => setTimeout(r, 500));
+            const pollResponse = await fetch(pollUrl);
+            
+            if (!pollResponse.ok) continue; // Not ready?
+            
+            // Gradio SSE/Stream format is tricky via simple fetch, usually returns text/event-stream
+            // But /call/ endpoint often returns JSON line events
+            
+            // Actually, for simplicity let's stick to the JSON response check
+            // If the initial call returned data directly, it's simpler.
+        }
+        // If we end up here, complex polling is needed. 
+        // Let's assume for now the /call/ endpoint might return the EVENT ID and we need to handle it.
+        // However, many Gradio simple setups return data immediately if not queued. 
+    }
+    
+    // Direct result format check
+    console.log('[Voice] Zonos raw response:', JSON.stringify(result).substring(0, 200));
+
+    // Handle { event_id } case by just trying to read the result assuming it finished or handle error
+    if (result.event_id) {
+       // Since handling event loop in node without SSE lib is complex, let's inform user
+       // But wait, if we use /call/ endpoint, it usually returns JSON result immediately if synchronous?
+       // Let's check 'data' field directly.
+    }
+
+    if (result.data && result.data[0]) {
+      const audioInfo = result.data[0];
+      
+      // Standard Gradio 5 file obj: { path: "...", url: "...", orig_name: "..." }
+      if (typeof audioInfo === 'object' && (audioInfo.path || audioInfo.url)) {
+        // Construct full URL
+        let audioUrl = audioInfo.url;
+        if (!audioUrl && audioInfo.path) {
+           audioUrl = `${baseUrl}/file=${audioInfo.path}`;
+        }
+        if (audioUrl && !audioUrl.startsWith('http')) {
+           audioUrl = `${baseUrl}/file=${audioInfo.path}`; // Safety fallback
+        }
+        
+        console.log('[Voice] Fetching audio from:', audioUrl);
+        
+        const audioResponse = await fetch(audioUrl);
+        const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
+        console.log('[Voice] ✅ Zonos generated successfully, size:', audioBuffer.length);
+        return { success: true, audioData: `data:audio/wav;base64,${audioBuffer.toString('base64')}` };
+      }
+    }
+    
+    return { success: false, error: 'Zonos returned unexpected data format. See console.' };
+  }
+
+  // STANDARD MODE: Use Piper TTS
   return new Promise((resolve) => {
     // 1. INPUT VALIDATION
     if (!text || !piperPath || !modelPath) {

@@ -173,11 +173,12 @@ _Building the ultimate AI companion experience, one feature at a time._
 
 <br/>
 
-- [ ] OLED Mode Toggle _(Moon/Sun button for quick theme switching)_
 - [ ] Tutorial Update with Model Recommendations
   - 🟢 **Low-End:** Amoral-Gemma 3B
   - 🟡 **Mid-End:** Nous Hermes 3 8B
   - 🔴 **High-End:** Qwen3-30B-A3B (Josefied)
+- [ ] OLED Mode Toggle _(Moon/Sun button for quick theme switching)_
+- [ ] ChatBot Improvements _(Story Personas, Auto Scroll, Edit Last Message)_
 
 </details>
 
@@ -186,20 +187,19 @@ _Building the ultimate AI companion experience, one feature at a time._
 
 <br/>
 
-| Feature                  | Description                                    |
-| :----------------------- | :--------------------------------------------- |
-| 💬 ChatBot Improvements  | Story Personas, Auto Scroll, Edit Last Message |
-| 🧠 Smart Suggestions 2.0 | Auto-Cut + Assemble for better flow            |
-| ❤️ Passion System 2.0    | Expanded tiers, vocabulary refinement          |
-| 📦 **v0.5 Alpha**        | First standalone installers (Win/Mac/Linux)    |
-| 💾 Auto Backup           | Auto-save after each message                   |
-| 🖼️ Profile Pictures      | Backgrounds & better Info Tab                  |
-| 🔊 Sound Effects         | Subtle Rose-Noir audio feedback                |
-| 🎓 Onboarding Tour       | Interactive setup walkthrough                  |
-| 👁️ Multimodal Vision     | Image uploads with local models                |
-| 🎤 Index TTS 2.0         | Enhanced emotional voice engine                |
-| 👥 Group Chats           | NPC-to-NPC interactions                        |
-| 🎯 **v1.0 Stable**       | Full release with all core features            |
+| Feature                  | Description                                 |
+| :----------------------- | :------------------------------------------ |
+| 🧠 Smart Suggestions 2.0 | Auto-Cut + Assemble for better flow         |
+| ❤️ Passion System 2.0    | Expanded tiers, vocabulary refinement       |
+| 📦 **v0.5 Alpha**        | First standalone installers (Win/Mac/Linux) |
+| 💾 Auto Backup           | Auto-save after each message                |
+| 🖼️ Profile Pictures      | Backgrounds & better Info Tab               |
+| 🔊 Sound Effects         | Subtle Rose-Noir audio feedback             |
+| 🎓 Onboarding Tour       | Interactive setup walkthrough               |
+| 👁️ Multimodal Vision     | Image uploads with local models             |
+| 🎤 Index TTS 2.0         | Enhanced emotional voice engine             |
+| 👥 Group Chats           | NPC-to-NPC interactions                     |
+| 🎯 **v1.0 Stable**       | Full release with all core features         |
 
 </details>
 

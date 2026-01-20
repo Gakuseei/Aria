@@ -12,6 +12,7 @@ import DebugConsole from './components/DebugConsole'; // VERSION 9.3
 import CustomDropdown from './components/CustomDropdown';
 import { useLanguage } from './context/LanguageContext';
 import { loadSettings, testOllamaConnection, autoDetectAndSetModel, fetchOllamaModels } from './lib/api';
+import OllamaSetup from './components/tutorials/OllamaSetup';
 
 // App views
 const VIEWS = {
@@ -31,307 +32,7 @@ export const GAME_MODES = {
   CHARACTER_CHAT: 'character_chat',
 };
 
-// VERSION 8.1: IDIOT-PROOF ONBOARDING MODAL
-function OnboardingModal({ isOpen, onRetry }) {
-  const { language, setLanguage, t } = useLanguage();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState(null);
-
-  const steps = [
-    {
-      number: 1,
-      title: t.tutorials.ollamaStep1Title,
-      description: t.tutorials.ollamaStep1Desc,
-      action: t.tutorials.ollamaStep1Button,
-      link: "https://ollama.com/download"
-    },
-    {
-      number: 2,
-      title: t.tutorials.ollamaStep2Title,
-      description: t.tutorials.ollamaStep2Desc,
-      action: null
-    },
-    {
-      number: 3,
-      title: t.tutorials.ollamaStep3Title,
-      description: t.tutorials.ollamaStep3Desc,
-      action: null
-    },
-    {
-      number: 4,
-      title: t.tutorials.ollamaStep4Title,
-      description: t.tutorials.ollamaStep4Desc,
-      command: "ollama pull hermes3",
-      action: null,
-      warning: t.tutorials.ollamaStep3Note
-    },
-    {
-      number: 5,
-      title: t.tutorials.ollamaStep4Title,
-      description: t.tutorials.ollamaStep4Desc,
-      action: "test"
-    }
-  ];
-
-  const handleOpenLink = () => {
-    if (window.electronAPI?.openExternal) {
-      window.electronAPI.openExternal('https://ollama.com/download');
-    }
-  };
-
-  const handleCopyCommand = () => {
-    navigator.clipboard.writeText('ollama pull hermes3');
-  };
-
-  const handleTest = async () => {
-    setTesting(true);
-    setTestResult(null);
-
-    try {
-      const result = await testOllamaConnection();
-
-      if (result.success) {
-        // HERMES 3 VERIFICATION: Check if hermes3 is installed
-        const models = await fetchOllamaModels();
-        const hasHermes3 = models.some(model =>
-          model.includes('hermes3') || model.includes('hermes-3')
-        );
-
-        if (hasHermes3) {
-          setTestResult({ success: true, message: t.tutorials.ollamaConnected });
-          setTimeout(() => {
-            onRetry();
-          }, 2000);
-        } else {
-          setTestResult({
-            success: false,
-            message: `${t.tutorials.ollamaError}\n\n${t.tutorials.ollamaStep3Desc}\n\n${t.common.loading}: ${models.length > 0 ? models.join(', ') : t.common.error}`
-          });
-        }
-      } else {
-        setTestResult({
-          success: false,
-          message: `${t.tutorials.ollamaDisconnected}\n\n${result.error}\n\n${t.tutorials.ollamaStep2Desc}`
-        });
-      }
-    } catch (error) {
-      setTestResult({
-        success: false,
-        message: `❌ ${t.common.error}: ${error.message}\n\n${t.tutorials.ollamaError}`
-      });
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-sm">
-      <div className="bg-zinc-900 border-2 border-red-500/50 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="p-6 border-b border-zinc-800 bg-gradient-to-r from-red-950/50 to-rose-950/50">
-          <div className="flex items-center justify-between mb-2">
-            {/* Left: Icon + Title */}
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-red-600/20 flex items-center justify-center">
-                <span className="text-3xl">🚀</span>
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white">{t.tutorials.setupGuide}</h2>
-                <p className="text-sm text-zinc-400">{t.mainMenu.footer}</p>
-              </div>
-            </div>
-            
-            {/* Right: Language Switcher */}
-            <div className="w-48">
-              <CustomDropdown
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                options={[
-                  { value: 'en', label: '🇺🇸 English' },
-                  { value: 'de', label: '🇩🇪 Deutsch' },
-                  { value: 'es', label: '🇪🇸 Español' },
-                  { value: 'cn', label: '🇨🇳 中文' },
-                  { value: 'fr', label: '🇫🇷 Français' },
-                  { value: 'it', label: '🇮🇹 Italiano' },
-                  { value: 'pt', label: '🇵🇹 Português' },
-                  { value: 'ru', label: '🇷🇺 Русский' },
-                  { value: 'ja', label: '🇯🇵 日本語' },
-                  { value: 'ko', label: '🇰🇷 한국어' },
-                  { value: 'ar', label: '🇸🇦 العربية' },
-                  { value: 'hi', label: '🇮🇳 हिंदी' },
-                  { value: 'tr', label: '🇹🇷 Türkçe' }
-                ]}
-                className="border-2 border-transparent hover:border-rose-500/50 focus:border-rose-500"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="px-6 pt-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-zinc-500 uppercase tracking-wider">{t.tutorials.progress}</span>
-            <span className="text-xs text-zinc-400">{currentStep} / {steps.length}</span>
-          </div>
-          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-red-600 to-rose-600 transition-all duration-500"
-              style={{ width: `${(currentStep / steps.length) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
-          <div className="space-y-6">
-            {steps.map((step, index) => (
-              <div 
-                key={step.number}
-                className={`transition-all duration-300 ${
-                  currentStep === step.number 
-                    ? 'opacity-100 scale-100' 
-                    : currentStep > step.number
-                    ? 'opacity-50 scale-95'
-                    : 'opacity-30 scale-95'
-                }`}
-              >
-                <div className={`p-5 rounded-xl border-2 ${
-                  currentStep === step.number
-                    ? 'bg-red-900/20 border-red-500/50'
-                    : currentStep > step.number
-                    ? 'bg-green-900/20 border-green-500/30'
-                    : 'bg-zinc-800/30 border-zinc-700/30'
-                }`}>
-                  <div className="flex items-start gap-4">
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                      currentStep === step.number
-                        ? 'bg-red-600 text-white'
-                        : currentStep > step.number
-                        ? 'bg-green-600 text-white'
-                        : 'bg-zinc-700 text-zinc-400'
-                    }`}>
-                      {currentStep > step.number ? '✓' : step.number}
-                    </div>
-
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-white mb-2">{step.title}</h3>
-                      <p className="text-sm text-zinc-300 leading-relaxed mb-3 whitespace-pre-line">
-                        {step.description}
-                      </p>
-
-                      {step.command && (
-                        <div className="bg-zinc-950/50 border border-zinc-700/50 rounded-lg p-3 mb-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-zinc-500 uppercase tracking-wider">{t.tutorials.download}:</span>
-                            <button
-                              onClick={handleCopyCommand}
-                              className="px-3 py-1 rounded bg-zinc-700 text-white text-xs hover:bg-zinc-600 transition-colors"
-                            >
-                              📋 {t.chat.copy}
-                            </button>
-                          </div>
-                          <code className="text-green-400 font-mono text-sm block">
-                            {step.command}
-                          </code>
-                        </div>
-                      )}
-
-                      {step.warning && (
-                        <div className="bg-amber-900/20 border border-amber-700/30 rounded-lg p-3 mb-3">
-                          <p className="text-xs text-amber-200">
-                            {step.warning}
-                          </p>
-                        </div>
-                      )}
-
-                      {step.action && step.action === 'test' && (
-                        <button
-                          onClick={handleTest}
-                          disabled={testing}
-                          className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-semibold hover:from-red-500 hover:to-rose-500 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                          {testing ? (
-                            <>
-                              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                              <span>{t.tutorials.ollamaTesting}</span>
-                            </>
-                          ) : (
-                            <>
-                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                              </svg>
-                              <span>{t.tutorials.testConnection}</span>
-                            </>
-                          )}
-                        </button>
-                      )}
-
-                      {step.action && step.link && (
-                        <button
-                          onClick={handleOpenLink}
-                          className="w-full py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 transition-all flex items-center justify-center gap-2"
-                        >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                          <span>{step.action}</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {currentStep === step.number && index < steps.length - 1 && (
-                  <div className="flex justify-end mt-4">
-                    <button
-                      onClick={() => setCurrentStep(currentStep + 1)}
-                      className="px-6 py-2 rounded-lg bg-zinc-700 text-white hover:bg-zinc-600 transition-all flex items-center gap-2"
-                    >
-                      <span>{t.tutorials.next}</span>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Test Result */}
-          {testResult && (
-            <div className={`mt-6 p-4 rounded-xl border-2 ${
-              testResult.success
-                ? 'bg-green-900/20 border-green-500/50'
-                : 'bg-red-900/20 border-red-500/50'
-            }`}>
-              <p className={`text-sm whitespace-pre-line ${
-                testResult.success ? 'text-green-200' : 'text-red-200'
-              }`}>
-                {testResult.message}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-6 border-t border-zinc-800 bg-zinc-900/50">
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p>
-              {t.tutorials.helpFooter || 'Problems? Make sure to follow each step exactly. For questions: github.com/ollama/ollama'}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+// VERSION 8.1: Onboarding Modal removed - Replaced by OllamaSetup.jsx
 
 function App() {
   const [currentView, setCurrentView] = useState(VIEWS.MAIN_MENU);
@@ -371,8 +72,10 @@ function App() {
     userGender: 'male',
     imageGenEnabled: false,
     imageGenUrl: 'http://127.0.0.1:7860',
+    imageGenTier: 'standard', // 'standard' (SDXL) or 'premium' (FLUX)
     voiceEnabled: false,
     voiceUrl: 'http://127.0.0.1:5000',
+    voiceTier: 'standard', // 'standard' (Piper) or 'premium' (Zonos)
     passionSystemEnabled: true,
     fontSize: 'medium',
     autoSave: true,
@@ -410,8 +113,10 @@ function App() {
             userGender: loadedSettings.userGender || 'male',
             imageGenEnabled: loadedSettings.imageGenEnabled || false,
             imageGenUrl: loadedSettings.imageGenUrl || 'http://127.0.0.1:7860',
+            imageGenTier: loadedSettings.imageGenTier || 'standard',
             voiceEnabled: loadedSettings.voiceEnabled || false,
             voiceUrl: loadedSettings.voiceUrl || 'http://127.0.0.1:5000',
+            voiceTier: loadedSettings.voiceTier || 'standard',
             passionSystemEnabled: loadedSettings.passionSystemEnabled !== false,
             fontSize: loadedSettings.fontSize || 'medium',
             autoSave: loadedSettings.autoSave !== false,
@@ -823,11 +528,13 @@ function App() {
 
   return (
     <div className="app-container h-screen w-screen overflow-hidden bg-zinc-950 text-white">
-      {/* VERSION 8.1: Onboarding Modal (blocks app until Ollama is ready) */}
-      <OnboardingModal 
-        isOpen={showOnboarding} 
-        onRetry={handleRetryOllama}
-      />
+      {/* VERSION 8.1: Onboarding Modal - Replaced by Premium OllamaSetup */}
+      {showOnboarding && (
+         <OllamaSetup 
+            isOnboarding={true}
+            onComplete={handleRetryOllama}
+         />
+      )}
 
       {/* Custom Title Bar */}
       <TitleBar />

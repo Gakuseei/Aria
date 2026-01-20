@@ -6,21 +6,26 @@
  * @param {string} apiUrl - The API URL (default: http://127.0.0.1:7860)
  * @returns {Promise<string>} Base64 encoded image
  */
-export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860') {
+export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', imageGenTier = 'standard') {
   try {
+    const isPremium = imageGenTier === 'premium';
+    console.log(`[Image Gen] ${isPremium ? '🌟 Premium (FLUX)' : 'Standard (SDXL)'} mode`);
+
     const payload = {
       prompt: prompt,
-      negative_prompt: "ugly, low quality, deformed, text, watermark, bad anatomy, mutation, blurry, pixelated",
-      steps: 20,              // Match User WebUI (Fast)
-      sampler_name: "Euler a", // Match User WebUI (Reliable)
-      cfg_scale: 7,           // Standard adherence
-      width: 512,
-      height: 768,            // Portrait Mode
-      batch_size: 1,          // Critical for speed
-      n_iter: 1,              // One image only
-      restore_faces: false,   // Disable to save time
-      save_images: true,      // Save on server side
-      do_not_save_grid: true, // Don't generate grids
+      negative_prompt: isPremium 
+        ? "blurry, low quality, distorted, text, watermark"
+        : "ugly, low quality, deformed, text, watermark, bad anatomy, mutation, blurry, pixelated",
+      steps: isPremium ? 28 : 20,
+      sampler_name: isPremium ? "Euler" : "Euler a",
+      cfg_scale: isPremium ? 3.5 : 7,
+      width: isPremium ? 1024 : 512,
+      height: isPremium ? 1024 : 768,
+      batch_size: 1,
+      n_iter: 1,
+      restore_faces: false,
+      save_images: true,
+      do_not_save_grid: true,
       do_not_save_samples: false
     };
 

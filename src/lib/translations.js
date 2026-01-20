@@ -166,20 +166,47 @@ export const translations = {
         step1: "Download Ollama from ollama.com",
         step2: "Install and launch Ollama",
         step3: "Run: ollama pull hermes3",
-        status: "Connection Status"
+        status: "Connection Status",
+        models: {
+          chooseModel: "Choose Your AI Model",
+          chooseModelDesc: "Select based on your hardware capabilities",
+          copyCommand: "Copy Command",
+          copied: "Copied!",
+          lowEnd: {
+            name: "Gemma 3B Uncensored",
+            tier: "💚 Budget",
+            vram: "~3 GB VRAM",
+            desc: "For older hardware or limited VRAM. Good NSFW handling.",
+            command: "ollama pull gemma-3b"
+          },
+          midEnd: {
+            name: "Nous Hermes 3 8B",
+            tier: "💙 Recommended",
+            vram: "~5.5 GB VRAM",
+            desc: "Best balance for roleplay & storytelling. 128k context window.",
+            command: "ollama pull hermes3"
+          },
+          highEnd: {
+            name: "Qwen3 30B A3B",
+            tier: "💛 Premium",
+            vram: "~18 GB VRAM",
+            desc: "State-of-the-art MOE architecture. For RTX 4080+ users.",
+            command: "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
+          }
+        }
       },
-      ollamaStep1Title: "📥 Download Ollama",
-      ollamaStep1Desc: "Visit ollama.com and download Ollama for your operating system.",
-      ollamaStep1Button: "Open Ollama Download Page",
-      ollamaStep2Title: "💾 Install",
-      ollamaStep2Desc: "Run the downloaded file and follow the installation wizard. Ollama will be set up automatically as a system service.",
-      ollamaStep3Title: "🤖 Download Model",
-      ollamaStep3Desc: "Open a terminal and run this command:",
-      ollamaStep3Note: "The model is about 4GB. Download takes 3-5 minutes.",
+      ollamaStep1Title: "🚀 Run Easy Installer",
+      ollamaStep1Desc: "We have created an automated installer for you. Open the 'tools' folder and run it.",
+      ollamaStep1Button: "📂 Open Tools Folder",
+      ollamaStep2Title: "⚙️ Run Script",
+      ollamaStep2Desc: "Double-click 'install_ollama.bat'. It will download and install Ollama automatically.",
+      ollamaStep3Title: "🧠 Auto-Model Setup",
+      ollamaStep3Desc: "The installer will prompt you to install a model. If needed, you can still run:",
+      ollamaStep3Note: "Wait for the installation window to close.",
       ollamaStep4Title: "✅ Test Connection",
-      ollamaStep4Desc: "Check if Ollama is running and reachable.",
+      ollamaStep4Desc: "Click below to verify Ollama is running.",
       ollamaStep4Button: "Test Connection",
-      ollamaTesting: "Testing...",
+      ollamaTesting: "Connecting...",
       ollamaConnected: "Connected",
       ollamaError: "Error",
       ollamaDisconnected: "Disconnected",
@@ -188,9 +215,9 @@ export const translations = {
         subtitle: "Piper TTS - Local Voice Generation",
         preview: "Preview Voices",
         downloadModel: "Download Model",
-        step1: "Download Piper TTS",
-        step1Title: "📥 Download Piper TTS",
-        step1Desc: "Visit github.com/rhasspy/piper/releases and download the latest version for your OS.",
+        step1: "One-Click Install",
+        step1Title: "🚀 Run Piper Installer",
+        step1Desc: "Open 'tools' folder and run 'install_piper.bat'. It downloads/extracts Piper automatically.",
         step2: "Download .onnx AND .json files",
         step2Title: "💾 Download Voice Model",
         step2Desc: "Download both the .onnx model file and its .json config file from HuggingFace.",
@@ -199,13 +226,31 @@ export const translations = {
         step3Title: "🚀 Configure Paths",
         step3Desc: "In Settings, set the path to piper.exe and select your .onnx model file.",
         step4Title: "✅ Test Voice",
-        step4Desc: "Click 'Test Piper Configuration' to verify everything works."
+        step4Desc: "Click 'Test Piper Configuration' to verify everything works.",
+        tierStandard: "⚡ Standard (Piper)",
+        tierPremium: "✨ Premium (Zonos)",
+        emotionLabel: "Emotion",
+        emotionProfessional: "Professional",
+        emotionHappy: "Happy",
+        emotionCalm: "Calm",
+        emotionSad: "Sad",
+        emotionAngry: "Angry",
+        zonosUnavailable: "⚠️ Zonos unavailable - using Piper",
+        zonosConnected: "Zonos Connected",
+        zonosStep1: "📂 Open Tools Folder",
+        zonosStep1Desc: "Navigate to the 'tools' folder inside your Aria application directory.",
+        zonosStep1Action: "Open 'tools' folder manually",
+        zonosStep2: "🚀 Run Installer",
+        zonosStep2Desc: "Double click 'install_zonos.bat' and wait for it to finish.",
+        zonosStep3: "▶️ Start Engine",
+        zonosStep3Desc: "Double click 'start_zonos.bat'. Keep the window open!",
+        zonosNote: "Note: First run will download ~4GB models."
       },
       imageGen: {
         title: "Image Generation Setup",
         subtitle: "Stability Matrix + AUTOMATIC1111 - 10 Minutes",
-        step1_title: "📦 Download Stability Matrix",
-        step1_desc: "Stability Matrix is a Package Manager for Stable Diffusion. Visit lykos.ai and download the appropriate version.",
+        step1_title: "🚀 Stability Installer",
+        step1_desc: "Open 'tools' folder and run 'install_stability.bat'. It sets up Stability Matrix.",
         step2_title: "💾 Install Stability Matrix",
         step2_desc: "Extract the ZIP file and start StabilityMatrix.exe. Choose a folder with approx. 10 GB free space.",
         step2_warning: "💡 IMPORTANT: Wait until the first load is complete (2-3 minutes)!",
@@ -221,7 +266,18 @@ export const translations = {
         step5_desc: "Make sure the WebUI is running, then click 'Test Connection'.",
         step1Next: "Next",
         step2Important: "💡 IMPORTANT: Wait for the first load to finish (2-3 minutes)!",
-        step5Test: "Test Connection"
+        step5Test: "Test Connection",
+        tierStandard: "⚡ Standard (SDXL)",
+        tierPremium: "✨ Premium (FLUX)",
+        fluxBenefits: "Best text rendering in images",
+        fluxUnavailable: "⚠️ FLUX model not found - using SDXL",
+        fluxBenefits: "Best text rendering in images",
+        fluxUnavailable: "FLUX model not found - using SDXL",
+        fluxConnected: "FLUX Model Ready",
+        fluxStep3Title: "🤖 Install WebUI Forge",
+        fluxStep3Desc: "In Stability Matrix:\n1. Click 'Add Package'\n2. Select **Stable Diffusion WebUI Forge**\n3. Click 'Install'",
+        fluxStep4Title: "🚀 Download Flux & Launch",
+        fluxStep4Desc: "1. Model Browser -> Search 'flux1-dev-bnb-nf4' -> Download.\n2. Launch Forge -> Wait for browser."
       },
       setupGuide: "Setup Guide",
       status: "Status",
@@ -229,6 +285,10 @@ export const translations = {
       connected: "Connected",
       disconnected: "Disconnected",
       testConnection: "Testing",
+      storage: "Storage",
+      vram: "VRAM",
+      installScript: "Run Installer",
+      openFolder: "Open Tools Folder",
       helpFooter: "Problems? Make sure to follow each step exactly. For questions: github.com/ollama/ollama"
     },
     gender: {
@@ -642,18 +702,45 @@ export const translations = {
         step1: "Ollama von ollama.com herunterladen",
         step2: "Ollama installieren und starten",
         step3: "Ausführen: ollama pull hermes3",
-        status: "Verbindungsstatus"
+        status: "Verbindungsstatus",
+        models: {
+          chooseModel: "Wähle dein KI-Modell",
+          chooseModelDesc: "Basierend auf deiner Hardware auswählen",
+          copyCommand: "Befehl kopieren",
+          copied: "Kopiert!",
+          lowEnd: {
+            name: "Gemma 3B Uncensored",
+            tier: "💚 Budget",
+            vram: "~3 GB VRAM",
+            desc: "Für ältere Hardware oder begrenztes VRAM. Gutes NSFW-Handling.",
+            command: "ollama pull gemma-3b"
+          },
+          midEnd: {
+            name: "Nous Hermes 3 8B",
+            tier: "💙 Empfohlen",
+            vram: "~5.5 GB VRAM",
+            desc: "Beste Balance für Roleplay & Storytelling. 128k Kontextfenster.",
+            command: "ollama pull hermes3"
+          },
+          highEnd: {
+            name: "Qwen3 30B A3B",
+            tier: "💛 Premium",
+            vram: "~18 GB VRAM",
+            desc: "State-of-the-Art MOE-Architektur. Für RTX 4080+ Nutzer.",
+            command: "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
+          }
+        }
       },
-      ollamaStep1Title: "📥 Ollama herunterladen",
-      ollamaStep1Desc: "Besuche ollama.com und lade Ollama für dein Betriebssystem herunter.",
-      ollamaStep1Button: "Ollama Download-Seite öffnen",
-      ollamaStep2Title: "💾 Installieren",
-      ollamaStep2Desc: "Führe die heruntergeladene Datei aus und folge dem Installationsassistenten. Ollama wird automatisch als Systemdienst eingerichtet.",
-      ollamaStep3Title: "🤖 Modell herunterladen",
-      ollamaStep3Desc: "Öffne ein Terminal und führe diesen Befehl aus:",
-      ollamaStep3Note: "Das Modell ist ca. 4GB groß. Download dauert 3-5 Minuten.",
+      ollamaStep1Title: "🚀 Installer starten",
+      ollamaStep1Desc: "Wir haben einen automatischen Installer erstellt. Öffne den 'tools'-Ordner und starte ihn.",
+      ollamaStep1Button: "📂 Tools-Ordner öffnen",
+      ollamaStep2Title: "⚙️ Skript ausführen",
+      ollamaStep2Desc: "Doppelklick auf 'install_ollama.bat'. Es lädt und installiert Ollama automatisch.",
+      ollamaStep3Title: "🧠 Auto-Modell Setup",
+      ollamaStep3Desc: "Der Installer fragt nach der Modell-Installation. Falls nötig, nutze diesen Befehl:",
+      ollamaStep3Note: "Warte bis das Installationsfenster schließt.",
       ollamaStep4Title: "✅ Verbindung testen",
-      ollamaStep4Desc: "Prüfe, ob Ollama läuft und erreichbar ist.",
+      ollamaStep4Desc: "Prüfe, ob Ollama läuft.",
       ollamaStep4Button: "Verbindung testen",
       ollamaTesting: "Teste...",
       ollamaConnected: "Verbunden",
@@ -664,9 +751,9 @@ export const translations = {
         subtitle: "Piper TTS - Lokale Sprachgenerierung",
         preview: "Stimmen anhören",
         downloadModel: "Modell herunterladen",
-        step1: "Piper TTS herunterladen",
-        step1Title: "📥 Piper TTS herunterladen",
-        step1Desc: "Besuche github.com/rhasspy/piper/releases und lade die neueste Version für dein Betriebssystem herunter.",
+        step1: "One-Click Installation",
+        step1Title: "🚀 Piper Installer starten",
+        step1Desc: "Öffne den Tools-Ordner und starte 'install_piper.bat'.",
         step2: ".onnx UND .json Dateien herunterladen",
         step2Title: "💾 Sprachmodell herunterladen",
         step2Desc: "Lade sowohl die .onnx Modell-Datei als auch die .json Konfigurationsdatei von HuggingFace herunter.",
@@ -675,13 +762,31 @@ export const translations = {
         step3Title: "🚀 Pfade konfigurieren",
         step3Desc: "In den Einstellungen, setze den Pfad zu piper.exe und wähle deine .onnx Modell-Datei aus.",
         step4Title: "✅ Stimme testen",
-        step4Desc: "Klicke auf 'Piper-Konfiguration testen', um zu überprüfen, dass alles funktioniert."
+        step4Desc: "Klicke auf 'Piper-Konfiguration testen', um zu überprüfen, dass alles funktioniert.",
+        tierStandard: "⚡ Standard (Piper)",
+        tierPremium: "✨ Premium (Zonos)",
+        emotionLabel: "Emotion",
+        emotionProfessional: "Professionell",
+        emotionHappy: "Fröhlich",
+        emotionCalm: "Ruhig",
+        emotionSad: "Traurig",
+        emotionAngry: "Wütend",
+        zonosUnavailable: "⚠️ Zonos nicht verfügbar - nutze Piper",
+        zonosConnected: "Zonos verbunden",
+        zonosStep1: "📂 Tools-Ordner öffnen",
+        zonosStep1Desc: "Navigiere zum 'tools'-Ordner in deinem Aria-Verzeichnis.",
+        zonosStep1Action: "'tools'-Ordner manuell öffnen",
+        zonosStep2: "🚀 Installer starten",
+        zonosStep2Desc: "Doppelklick auf 'install_zonos.bat' und warten.",
+        zonosStep3: "▶️ Engine starten",
+        zonosStep3Desc: "Doppelklick auf 'start_zonos.bat'. Fenster offen lassen!",
+        zonosNote: "Info: Erster Start lädt ~4GB Modelle."
       },
       imageGen: {
         title: "Bildgenerierung Einrichtung",
         subtitle: "Stability Matrix + AUTOMATIC1111 - 10 Minuten",
-        step1_title: "📦 Stability Matrix herunterladen",
-        step1_desc: "Stability Matrix ist ein Package Manager für Stable Diffusion. Besuche lykos.ai und lade die passende Version herunter.",
+        step1_title: "🚀 Stability Installer starten",
+        step1_desc: "Öffne den Tools-Ordner und starte 'install_stability.bat'.",
         step2_title: "💾 Stability Matrix installieren",
         step2_desc: "Entpacke die ZIP-Datei und starte StabilityMatrix.exe. Wähle einen Ordner mit ca. 10 GB freiem Speicher.",
         step2_warning: "💡 WICHTIG: Warte bis der erste Ladevorgang fertig ist (2-3 Minuten)!",
@@ -697,7 +802,16 @@ export const translations = {
         step5_desc: "Stelle sicher, dass die WebUI läuft und klicke dann auf 'Verbindung testen'.",
         step1Next: "Weiter",
         step2Important: "💡 WICHTIG: Warte bis der erste Ladevorgang fertig ist (2-3 Minuten)!",
-        step5Test: "Verbindung testen"
+        step5Test: "Verbindung testen",
+        tierStandard: "⚡ Standard (SDXL)",
+        tierPremium: "✨ Premium (FLUX)",
+        fluxBenefits: "Beste Textwiedergabe in Bildern",
+        fluxUnavailable: "⚠️ FLUX-Modell nicht gefunden - nutze SDXL",
+        fluxConnected: "FLUX-Modell bereit",
+        fluxStep3Title: "🤖 WebUI Forge installieren",
+        fluxStep3Desc: "In Stability Matrix:\n1. Klicke 'Add Package'\n2. Wähle **Stable Diffusion WebUI Forge**\n3. Klicke 'Install'",
+        fluxStep4Title: "🚀 Flux laden & Starten",
+        fluxStep4Desc: "1. Model Browser -> Suche 'flux1-dev-bnb-nf4' -> Download.\n2. Forge starten -> Warte auf Browser."
       },
       setupGuide: "Setup-Anleitung",
       status: "Status",
@@ -705,6 +819,10 @@ export const translations = {
       connected: "Verbunden",
       disconnected: "Getrennt",
       testConnection: "Teste",
+      storage: "Speicher",
+      vram: "VRAM",
+      installScript: "Installer starten",
+      openFolder: "Tools-Ordner öffnen",
       helpFooter: "Probleme? Stelle sicher, dass du jeden Schritt genau befolgst. Bei Fragen: github.com/ollama/ollama"
     },
     gender: {
@@ -1118,7 +1236,34 @@ export const translations = {
         step1: "Descargar Ollama desde ollama.com",
         step2: "Instalar e iniciar Ollama",
         step3: "Ejecutar: ollama pull hermes3",
-        status: "Estado de Conexión"
+        status: "Estado de Conexión",
+        models: {
+          chooseModel: "Elige tu Modelo de IA",
+          chooseModelDesc: "Selecciona según tu hardware",
+          copyCommand: "Copiar Comando",
+          copied: "¡Copiado!",
+          lowEnd: {
+            name: "Gemma 3B Uncensored",
+            tier: "💚 Económico",
+            vram: "~3 GB VRAM",
+            desc: "Para hardware antiguo o VRAM limitada. Buen manejo NSFW.",
+            command: "ollama pull gemma-3b"
+          },
+          midEnd: {
+            name: "Nous Hermes 3 8B",
+            tier: "💙 Recomendado",
+            vram: "~5.5 GB VRAM",
+            desc: "Mejor balance para roleplay y narrativa. Contexto de 128k.",
+            command: "ollama pull hermes3"
+          },
+          highEnd: {
+            name: "Qwen3 30B A3B",
+            tier: "💛 Premium",
+            vram: "~18 GB VRAM",
+            desc: "Arquitectura MOE de última generación. Para RTX 4080+.",
+            command: "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
+          }
+        }
       },
       ollamaStep1Title: "📥 Descargar Ollama",
       ollamaStep1Desc: "Visita ollama.com y descarga Ollama para tu sistema operativo.",
@@ -1151,7 +1296,17 @@ export const translations = {
         step3Title: "🚀 Configurar Rutas",
         step3Desc: "En Configuración, establece la ruta a piper.exe y selecciona tu archivo de modelo .onnx.",
         step4Title: "✅ Probar Voz",
-        step4Desc: "Haz clic en 'Probar Configuración de Piper' para verificar que todo funcione."
+        step4Desc: "Haz clic en 'Probar Configuración de Piper' para verificar que todo funcione.",
+        tierStandard: "⚡ Estándar (Piper)",
+        tierPremium: "✨ Premium (Zonos)",
+        emotionLabel: "Emoción",
+        emotionProfessional: "Profesional",
+        emotionHappy: "Feliz",
+        emotionCalm: "Tranquilo",
+        emotionSad: "Triste",
+        emotionAngry: "Enojado",
+        zonosUnavailable: "⚠️ Zonos no disponible - usando Piper",
+        zonosConnected: "Zonos Conectado"
       },
       imageGen: {
         title: "Configuración de Generación de Imágenes",
@@ -1173,7 +1328,12 @@ export const translations = {
         step5_desc: "Asegúrate de que la WebUI esté ejecutándose, luego haz clic en 'Probar Conexión'.",
         step1Next: "Siguiente",
         step2Important: "💡 IMPORTANTE: ¡Espera hasta que la primera carga se complete (2-3 minutos)!",
-        step5Test: "Probar Conexión"
+        step5Test: "Probar Conexión",
+        tierStandard: "⚡ Estándar (SDXL)",
+        tierPremium: "✨ Premium (FLUX)",
+        fluxBenefits: "Mejor renderizado de texto en imágenes",
+        fluxUnavailable: "⚠️ Modelo FLUX no encontrado - usando SDXL",
+        fluxConnected: "Modelo FLUX Listo"
       },
       setupGuide: "Guía de Configuración",
       status: "Estado",
@@ -1594,7 +1754,34 @@ export const translations = {
         step1: "下载Ollama",
         step2: "安装并启动",
         step3: "运行: ollama pull hermes3",
-        status: "连接状态"
+        status: "连接状态",
+        models: {
+          chooseModel: "选择您的AI模型",
+          chooseModelDesc: "根据您的硬件选择",
+          copyCommand: "复制命令",
+          copied: "已复制！",
+          lowEnd: {
+            name: "Gemma 3B Uncensored",
+            tier: "💚 经济型",
+            vram: "~3 GB VRAM",
+            desc: "适用于旧硬件或有限VRAM。良好的NSFW处理。",
+            command: "ollama pull gemma-3b"
+          },
+          midEnd: {
+            name: "Nous Hermes 3 8B",
+            tier: "💙 推荐",
+            vram: "~5.5 GB VRAM",
+            desc: "角色扮演和故事叙述的最佳平衡。128k上下文窗口。",
+            command: "ollama pull hermes3"
+          },
+          highEnd: {
+            name: "Qwen3 30B A3B",
+            tier: "💛 高端",
+            vram: "~18 GB VRAM",
+            desc: "最先进的MOE架构。适用于RTX 4080+用户。",
+            command: "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
+          }
+        }
       },
       ollamaStep1Title: "📥 下载 Ollama",
       ollamaStep1Desc: "访问 ollama.com 并下载适合你操作系统的 Ollama。",
@@ -1627,7 +1814,17 @@ export const translations = {
         step3Title: "🚀 配置路径",
         step3Desc: "在设置中，设置 piper.exe 的路径并选择您的 .onnx 模型文件。",
         step4Title: "✅ 测试语音",
-        step4Desc: "点击'测试 Piper 配置'以验证一切是否正常工作。"
+        step4Desc: "点击'测试 Piper 配置'以验证一切是否正常工作。",
+        tierStandard: "⚡ 标准 (Piper)",
+        tierPremium: "✨ 高级 (Zonos)",
+        emotionLabel: "情绪",
+        emotionProfessional: "专业",
+        emotionHappy: "快乐",
+        emotionCalm: "平静",
+        emotionSad: "悲伤",
+        emotionAngry: "生气",
+        zonosUnavailable: "⚠️ Zonos 不可用 - 使用 Piper",
+        zonosConnected: "Zonos 已连接"
       },
       imageGen: {
         title: "图像设置",
@@ -1649,7 +1846,12 @@ export const translations = {
         step5_desc: "点击测试连接。",
         step1Next: "下一步",
         step2Important: "💡 重要：等待首次加载完成（2-3分钟）！",
-        step5Test: "测试连接"
+        step5Test: "测试连接",
+        tierStandard: "⚡ 标准 (SDXL)",
+        tierPremium: "✨ 高级 (FLUX)",
+        fluxBenefits: "最佳图像文字渲染",
+        fluxUnavailable: "⚠️ 未找到 FLUX 模型 - 使用 SDXL",
+        fluxConnected: "FLUX 模型就绪"
       },
       setupGuide: "设置指南",
       status: "状态",
@@ -2069,7 +2271,34 @@ export const translations = {
         step1: "Téléchargez Ollama sur ollama.com",
         step2: "Installez et lancez Ollama",
         step3: "Exécutez : ollama pull hermes3",
-        status: "État de la connexion"
+        status: "État de la connexion",
+        models: {
+          chooseModel: "Choisissez votre modèle IA",
+          chooseModelDesc: "Sélectionnez selon votre matériel",
+          copyCommand: "Copier la commande",
+          copied: "Copié !",
+          lowEnd: {
+            name: "Gemma 3B Uncensored",
+            tier: "💚 Économique",
+            vram: "~3 Go VRAM",
+            desc: "Pour matériel ancien ou VRAM limité. Bon traitement NSFW.",
+            command: "ollama pull gemma-3b"
+          },
+          midEnd: {
+            name: "Nous Hermes 3 8B",
+            tier: "💙 Recommandé",
+            vram: "~5.5 Go VRAM",
+            desc: "Meilleur équilibre pour roleplay et narration. Contexte 128k.",
+            command: "ollama pull hermes3"
+          },
+          highEnd: {
+            name: "Qwen3 30B A3B",
+            tier: "💛 Premium",
+            vram: "~18 Go VRAM",
+            desc: "Architecture MOE de pointe. Pour utilisateurs RTX 4080+.",
+            command: "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
+          }
+        }
       },
       voice: {
         title: "Installation Voix/TTS",
@@ -2087,7 +2316,17 @@ export const translations = {
         step3Title: "🚀 Configurer Chemins",
         step3Desc: "Dans Paramètres, définissez le chemin vers piper.exe et sélectionnez votre fichier modèle .onnx.",
         step4Title: "✅ Tester Voix",
-        step4Desc: "Cliquez sur 'Tester Configuration Piper' pour vérifier que tout fonctionne."
+        step4Desc: "Cliquez sur 'Tester Configuration Piper' pour vérifier que tout fonctionne.",
+        tierStandard: "⚡ Standard (Piper)",
+        tierPremium: "✨ Premium (Zonos)",
+        emotionLabel: "Émotion",
+        emotionProfessional: "Professionnel",
+        emotionHappy: "Joyeux",
+        emotionCalm: "Calme",
+        emotionSad: "Triste",
+        emotionAngry: "En colère",
+        zonosUnavailable: "⚠️ Zonos indisponible - utilisation de Piper",
+        zonosConnected: "Zonos Connecté"
       },
       imageGen: {
         title: "Installation Génération d'Images",
@@ -2109,7 +2348,12 @@ export const translations = {
         step5_desc: "Vérifiez que WebUI tourne et cliquez sur Tester.",
         step1Next: "Suivant",
         step2Important: "💡 IMPORTANT: Attendez la fin du premier chargement (2-3 minutes)!",
-        step5Test: "Tester la connexion"
+        step5Test: "Tester la connexion",
+        tierStandard: "⚡ Standard (SDXL)",
+        tierPremium: "✨ Premium (FLUX)",
+        fluxBenefits: "Meilleur rendu de texte dans les images",
+        fluxUnavailable: "⚠️ Modèle FLUX introuvable - utilisation de SDXL",
+        fluxConnected: "Modèle FLUX Prêt"
       },
       setupGuide: "Guide de Configuration",
       status: "Statut",
@@ -2544,7 +2788,34 @@ export const translations = {
         step1: "Scarica Ollama da ollama.com",
         step2: "Installa e avvia",
         step3: "Esegui: ollama pull hermes3",
-        status: "Stato Connessione"
+        status: "Stato Connessione",
+        models: {
+          chooseModel: "Scegli il tuo modello IA",
+          chooseModelDesc: "Seleziona in base al tuo hardware",
+          copyCommand: "Copia comando",
+          copied: "Copiato!",
+          lowEnd: {
+            name: "Gemma 3B Uncensored",
+            tier: "💚 Economico",
+            vram: "~3 GB VRAM",
+            desc: "Per hardware datato o VRAM limitata. Buona gestione NSFW.",
+            command: "ollama pull gemma-3b"
+          },
+          midEnd: {
+            name: "Nous Hermes 3 8B",
+            tier: "💙 Consigliato",
+            vram: "~5.5 GB VRAM",
+            desc: "Miglior equilibrio per roleplay e storytelling. Contesto 128k.",
+            command: "ollama pull hermes3"
+          },
+          highEnd: {
+            name: "Qwen3 30B A3B",
+            tier: "💛 Premium",
+            vram: "~18 GB VRAM",
+            desc: "Architettura MOE all'avanguardia. Per utenti RTX 4080+.",
+            command: "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
+          }
+        }
       },
       ollamaStep1Title: "📥 Scarica Ollama",
       ollamaStep1Desc: "Visita ollama.com e scarica Ollama per il tuo sistema operativo.",
@@ -2577,7 +2848,17 @@ export const translations = {
         step3Title: "🚀 Configura Percorsi",
         step3Desc: "In Impostazioni, imposta il percorso a piper.exe e seleziona il tuo file modello .onnx.",
         step4Title: "✅ Testa Voce",
-        step4Desc: "Clicca 'Testa Configurazione Piper' per verificare che tutto funzioni."
+        step4Desc: "Clicca 'Testa Configurazione Piper' per verificare che tutto funzioni.",
+        tierStandard: "⚡ Standard (Piper)",
+        tierPremium: "✨ Premium (Zonos)",
+        emotionLabel: "Emozione",
+        emotionProfessional: "Professionale",
+        emotionHappy: "Felice",
+        emotionCalm: "Calmo",
+        emotionSad: "Triste",
+        emotionAngry: "Arrabbiato",
+        zonosUnavailable: "⚠️ Zonos non disponibile - uso Piper",
+        zonosConnected: "Zonos Connesso"
       },
       imageGen: {
         title: "Setup Immagini",
@@ -2599,7 +2880,12 @@ export const translations = {
         step5_desc: "Clicca Test Connessione.",
         step1Next: "Avanti",
         step2Important: "💡 IMPORTANTE: Attendi il primo avvio (2-3 minuti)!",
-        step5Test: "Test Connessione"
+        step5Test: "Test Connessione",
+        tierStandard: "⚡ Standard (SDXL)",
+        tierPremium: "✨ Premium (FLUX)",
+        fluxBenefits: "Miglior rendering del testo nelle immagini",
+        fluxUnavailable: "⚠️ Modello FLUX non trovato - uso SDXL",
+        fluxConnected: "Modello FLUX Pronto"
       },
       setupGuide: "Guida alla Configurazione",
       status: "Stato",
@@ -3013,7 +3299,34 @@ export const translations = {
         step1: "Baixar Ollama",
         step2: "Instalar e iniciar",
         step3: "Executar: ollama pull hermes3",
-        status: "Status"
+        status: "Status",
+        models: {
+          chooseModel: "Escolha seu modelo de IA",
+          chooseModelDesc: "Selecione com base no seu hardware",
+          copyCommand: "Copiar comando",
+          copied: "Copiado!",
+          lowEnd: {
+            name: "Gemma 3B Uncensored",
+            tier: "💚 Econômico",
+            vram: "~3 GB VRAM",
+            desc: "Para hardware antigo ou VRAM limitada. Bom manuseio NSFW.",
+            command: "ollama pull gemma-3b"
+          },
+          midEnd: {
+            name: "Nous Hermes 3 8B",
+            tier: "💙 Recomendado",
+            vram: "~5.5 GB VRAM",
+            desc: "Melhor equilíbrio para roleplay e storytelling. Contexto 128k.",
+            command: "ollama pull hermes3"
+          },
+          highEnd: {
+            name: "Qwen3 30B A3B",
+            tier: "💛 Premium",
+            vram: "~18 GB VRAM",
+            desc: "Arquitetura MOE de ponta. Para usuários RTX 4080+.",
+            command: "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
+          }
+        }
       },
       ollamaStep1Title: "📥 Baixar Ollama",
       ollamaStep1Desc: "Visite ollama.com e baixe o Ollama para o seu sistema operacional.",
@@ -3046,7 +3359,17 @@ export const translations = {
         step3Title: "🚀 Configurar Caminhos",
         step3Desc: "Em Configurações, defina o caminho para piper.exe e selecione seu arquivo modelo .onnx.",
         step4Title: "✅ Testar Voz",
-        step4Desc: "Clique em 'Testar Configuração Piper' para verificar se tudo funciona."
+        step4Desc: "Clique em 'Testar Configuração Piper' para verificar se tudo funciona.",
+        tierStandard: "⚡ Padrão (Piper)",
+        tierPremium: "✨ Premium (Zonos)",
+        emotionLabel: "Emoção",
+        emotionProfessional: "Profissional",
+        emotionHappy: "Feliz",
+        emotionCalm: "Calmo",
+        emotionSad: "Triste",
+        emotionAngry: "Com raiva",
+        zonosUnavailable: "⚠️ Zonos indisponível - usando Piper",
+        zonosConnected: "Zonos Conectado"
       },
       imageGen: {
         title: "Setup Imagens",
@@ -3068,7 +3391,12 @@ export const translations = {
         step5_desc: "Teste a conexão.",
         step1Next: "Próximo",
         step2Important: "💡 IMPORTANTE: Aguarde o primeiro carregamento (2-3 minutos)!",
-        step5Test: "Testar Conexão"
+        step5Test: "Testar Conexão",
+        tierStandard: "⚡ Padrão (SDXL)",
+        tierPremium: "✨ Premium (FLUX)",
+        fluxBenefits: "Melhor renderização de texto em imagens",
+        fluxUnavailable: "⚠️ Modelo FLUX não encontrado - usando SDXL",
+        fluxConnected: "Modelo FLUX Pronto"
       },
       setupGuide: "Guia de Configuração",
       status: "Status",
@@ -3488,7 +3816,34 @@ export const translations = {
         step1: "Скачать Ollama",
         step2: "Установить и запустить",
         step3: "Выполнить: ollama pull hermes3",
-        status: "Статус"
+        status: "Статус",
+        models: {
+          chooseModel: "Выберите модель ИИ",
+          chooseModelDesc: "Выберите на основе вашего оборудования",
+          copyCommand: "Копировать команду",
+          copied: "Скопировано!",
+          lowEnd: {
+            name: "Gemma 3B Uncensored",
+            tier: "💚 Бюджет",
+            vram: "~3 ГБ VRAM",
+            desc: "Для старого оборудования или ограниченной VRAM. Хорошая обработка NSFW.",
+            command: "ollama pull gemma-3b"
+          },
+          midEnd: {
+            name: "Nous Hermes 3 8B",
+            tier: "💙 Рекомендуем",
+            vram: "~5.5 ГБ VRAM",
+            desc: "Лучший баланс для ролевых игр и сторителлинга. Контекст 128k.",
+            command: "ollama pull hermes3"
+          },
+          highEnd: {
+            name: "Qwen3 30B A3B",
+            tier: "💛 Премиум",
+            vram: "~18 ГБ VRAM",
+            desc: "Современная архитектура MOE. Для пользователей RTX 4080+.",
+            command: "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
+          }
+        }
       },
       ollamaStep1Title: "📥 Скачать Ollama",
       ollamaStep1Desc: "Посетите ollama.com и скачайте Ollama для вашей операционной системы.",
@@ -3521,7 +3876,17 @@ export const translations = {
         step3Title: "🚀 Настроить Пути",
         step3Desc: "В Настройках установите путь к piper.exe и выберите файл модели .onnx.",
         step4Title: "✅ Тест Голоса",
-        step4Desc: "Нажмите 'Тест Конфигурации Piper', чтобы проверить, что всё работает."
+        step4Desc: "Нажмите 'Тест Конфигурации Piper', чтобы проверить, что всё работает.",
+        tierStandard: "⚡ Стандарт (Piper)",
+        tierPremium: "✨ Премиум (Zonos)",
+        emotionLabel: "Эмоция",
+        emotionProfessional: "Профессиональный",
+        emotionHappy: "Счастливый",
+        emotionCalm: "Спокойный",
+        emotionSad: "Грустный",
+        emotionAngry: "Злой",
+        zonosUnavailable: "⚠️ Zonos недоступен - используется Piper",
+        zonosConnected: "Zonos Подключён"
       },
       imageGen: {
         title: "Настройка Генерации",
@@ -3543,7 +3908,12 @@ export const translations = {
         step5_desc: "Проверить соединение.",
         step1Next: "Далее",
         step2Important: "💡 ВАЖНО: Ждите загрузки (2-3 минуты)!",
-        step5Test: "Проверить соединение"
+        step5Test: "Проверить соединение",
+        tierStandard: "⚡ Стандарт (SDXL)",
+        tierPremium: "✨ Премиум (FLUX)",
+        fluxBenefits: "Лучшая отрисовка текста в изображениях",
+        fluxUnavailable: "⚠️ Модель FLUX не найдена - используется SDXL",
+        fluxConnected: "Модель FLUX Готова"
       },
       setupGuide: "Руководство по настройке",
       status: "Статус",
@@ -3963,7 +4333,34 @@ export const translations = {
         step1: "OllamaをDL",
         step2: "インストールして起動",
         step3: "実行: ollama pull hermes3",
-        status: "状態"
+        status: "状態",
+        models: {
+          chooseModel: "AIモデルを選択",
+          chooseModelDesc: "ハードウェアに基づいて選択",
+          copyCommand: "コマンドをコピー",
+          copied: "コピーしました！",
+          lowEnd: {
+            name: "Gemma 3B Uncensored",
+            tier: "💚 エコノミー",
+            vram: "~3 GB VRAM",
+            desc: "古いハードウェアや限られたVRAM向け。良好なNSFW処理。",
+            command: "ollama pull gemma-3b"
+          },
+          midEnd: {
+            name: "Nous Hermes 3 8B",
+            tier: "💙 おすすめ",
+            vram: "~5.5 GB VRAM",
+            desc: "ロールプレイとストーリーテリングに最適。128kコンテキスト。",
+            command: "ollama pull hermes3"
+          },
+          highEnd: {
+            name: "Qwen3 30B A3B",
+            tier: "💛 プレミアム",
+            vram: "~18 GB VRAM",
+            desc: "最先端のMOEアーキテクチャ。RTX 4080+ユーザー向け。",
+            command: "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
+          }
+        }
       },
       ollamaStep1Title: "📥 Ollamaをダウンロード",
       ollamaStep1Desc: "ollama.comにアкセスして、お使いのOS用のOllamaをダウンロードしてください。",
@@ -3996,7 +4393,17 @@ export const translations = {
         step3Title: "🚀 パスを設定",
         step3Desc: "設定で、piper.exeへのパスを設定し、.onnxモデルファイルを選択。",
         step4Title: "✅ 音声をテスト",
-        step4Desc: "'Piper設定をテスト'をクリックして、すべてが機能することを確認。"
+        step4Desc: "'Piper設定をテスト'をクリックして、すべてが機能することを確認。",
+        tierStandard: "⚡ 標準 (Piper)",
+        tierPremium: "✨ プレミアム (Zonos)",
+        emotionLabel: "感情",
+        emotionProfessional: "プロ",
+        emotionHappy: "嬉しい",
+        emotionCalm: "穏やか",
+        emotionSad: "悲しい",
+        emotionAngry: "怒り",
+        zonosUnavailable: "⚠️ Zonos利用不可 - Piper使用",
+        zonosConnected: "Zonos 接続済"
       },
       imageGen: {
         title: "画像設定",
@@ -4018,7 +4425,12 @@ export const translations = {
         step5_desc: "接続テスト",
         step1Next: "次へ",
         step2Important: "💡 重要：初回ロード待機（2-3分）！",
-        step5Test: "接続テスト"
+        step5Test: "接続テスト",
+        tierStandard: "⚡ 標準 (SDXL)",
+        tierPremium: "✨ プレミアム (FLUX)",
+        fluxBenefits: "最高のテキストレンダリング",
+        fluxUnavailable: "⚠️ FLUXモデル未検出 - SDXL使用",
+        fluxConnected: "FLUXモデル準備完了"
       },
       setupGuide: "セットアップガイド",
       status: "ステータス",
@@ -4438,7 +4850,34 @@ export const translations = {
         step1: "Ollama 다운로드",
         step2: "설치 및 실행",
         step3: "실행: ollama pull hermes3",
-        status: "상태"
+        status: "상태",
+        models: {
+          chooseModel: "AI 모델 선택",
+          chooseModelDesc: "하드웨어에 맞게 선택하세요",
+          copyCommand: "명령어 복사",
+          copied: "복사됨!",
+          lowEnd: {
+            name: "Gemma 3B Uncensored",
+            tier: "💚 경제형",
+            vram: "~3 GB VRAM",
+            desc: "오래된 하드웨어나 제한된 VRAM용. 좋은 NSFW 처리.",
+            command: "ollama pull gemma-3b"
+          },
+          midEnd: {
+            name: "Nous Hermes 3 8B",
+            tier: "💙 추천",
+            vram: "~5.5 GB VRAM",
+            desc: "롤플레이와 스토리텔링의 최적 균형. 128k 컨텍스트.",
+            command: "ollama pull hermes3"
+          },
+          highEnd: {
+            name: "Qwen3 30B A3B",
+            tier: "💛 프리미엄",
+            vram: "~18 GB VRAM",
+            desc: "최첨단 MOE 아키텍처. RTX 4080+ 사용자용.",
+            command: "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
+          }
+        }
       },
       ollamaStep1Title: "📥 Ollama 다운로드",
       ollamaStep1Desc: "ollama.com을 방문하여 운영 체제에 맞는 Ollama를 다운로드하세요.",
@@ -4471,7 +4910,17 @@ export const translations = {
         step3Title: "🚀 경로 설정",
         step3Desc: "설정에서 piper.exe 경로를 설정하고 .onnx 모델 파일을 선택하세요.",
         step4Title: "✅ 음성 테스트",
-        step4Desc: "'Piper 설정 테스트'를 클릭하여 모든 것이 작동하는지 확인하세요."
+        step4Desc: "'Piper 설정 테스트'를 클릭하여 모든 것이 작동하는지 확인하세요.",
+        tierStandard: "⚡ 표준 (Piper)",
+        tierPremium: "✨ 프리미엄 (Zonos)",
+        emotionLabel: "감정",
+        emotionProfessional: "전문적",
+        emotionHappy: "행복함",
+        emotionCalm: "차분함",
+        emotionSad: "슬픔",
+        emotionAngry: "화남",
+        zonosUnavailable: "⚠️ Zonos 이용 불가 - Piper 사용",
+        zonosConnected: "Zonos 연결됨"
       },
       imageGen: {
         title: "이미지 설정",
@@ -4493,7 +4942,12 @@ export const translations = {
         step5_desc: "연결 테스트.",
         step1Next: "다음",
         step2Important: "💡 중요: 첫 로딩 대기 (2-3분)!",
-        step5Test: "연결 테스트"
+        step5Test: "연결 테스트",
+        tierStandard: "⚡ 표준 (SDXL)",
+        tierPremium: "✨ 프리미엄 (FLUX)",
+        fluxBenefits: "최고의 텍스트 렌더링",
+        fluxUnavailable: "⚠️ FLUX 모델 없음 - SDXL 사용",
+        fluxConnected: "FLUX 모델 준비 완료"
       },
       setupGuide: "설정 가이드",
       status: "상태",
@@ -4908,7 +5362,34 @@ export const translations = {
         step1: "تحميل Ollama من ollama.com",
         step2: "تثبيت وتشغيل Ollama",
         step3: "تشغيل: ollama pull hermes3",
-        status: "حالة الاتصال"
+        status: "حالة الاتصال",
+        models: {
+          chooseModel: "اختر نموذج الذكاء الاصطناعي",
+          chooseModelDesc: "اختر بناءً على جهازك",
+          copyCommand: "نسخ الأمر",
+          copied: "تم النسخ!",
+          lowEnd: {
+            name: "Gemma 3B Uncensored",
+            tier: "💚 اقتصادي",
+            vram: "~3 جيجابايت VRAM",
+            desc: "للأجهزة القديمة أو VRAM المحدود. معالجة NSFW جيدة.",
+            command: "ollama pull gemma-3b"
+          },
+          midEnd: {
+            name: "Nous Hermes 3 8B",
+            tier: "💙 موصى به",
+            vram: "~5.5 جيجابايت VRAM",
+            desc: "أفضل توازن للعب الأدوار. سياق 128k.",
+            command: "ollama pull hermes3"
+          },
+          highEnd: {
+            name: "Qwen3 30B A3B",
+            tier: "💛 متميز",
+            vram: "~18 جيجابايت VRAM",
+            desc: "بنية MOE المتطورة. لمستخدمي RTX 4080+.",
+            command: "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
+          }
+        }
       },
       ollamaStep1Title: "📥 تحميل Ollama",
       ollamaStep1Desc: "قم بزيارة ollama.com وتحميل Ollama لنظام التشغيل الخاص بك.",
@@ -4941,7 +5422,17 @@ export const translations = {
         step3Title: "🚀 تكوين المسارات",
         step3Desc: "في الإعدادات، اضبط مسار piper.exe واختر ملف النموذج .onnx الخاص بك.",
         step4Title: "✅ اختبار الصوت",
-        step4Desc: "انقر على 'اختبار تكوين Piper' للتحقق من أن كل شيء يعمل."
+        step4Desc: "انقر على 'اختبار تكوين Piper' للتحقق من أن كل شيء يعمل.",
+        tierStandard: "⚡ قياسي (Piper)",
+        tierPremium: "✨ ممتاز (Zonos)",
+        emotionLabel: "العاطفة",
+        emotionProfessional: "مهني",
+        emotionHappy: "سعيد",
+        emotionCalm: "هادئ",
+        emotionSad: "حزين",
+        emotionAngry: "غاضب",
+        zonosUnavailable: "⚠️ Zonos غير متاح - استخدام Piper",
+        zonosConnected: "Zonos متصل"
       },
       imageGen: {
         title: "إعداد توليد الصور",
@@ -4963,7 +5454,12 @@ export const translations = {
         step5_desc: "تأكد من تشغيل WebUI، ثم انقر 'اختبار الاتصال'.",
         step1Next: "التالي",
         step2Important: "💡 مهم: انتظر حتى ينتهي التحميل الأول (2-3 دقائق)!",
-        step5Test: "اختبار الاتصال"
+        step5Test: "اختبار الاتصال",
+        tierStandard: "⚡ قياسي (SDXL)",
+        tierPremium: "✨ ممتاز (FLUX)",
+        fluxBenefits: "أفضل عرض للنص في الصور",
+        fluxUnavailable: "⚠️ نموذج FLUX غير موجود - استخدام SDXL",
+        fluxConnected: "نموذج FLUX جاهز"
       },
       setupGuide: "دليل الإعداد",
       status: "الحالة",
@@ -5384,7 +5880,34 @@ export const translations = {
         step1: "ollama.com से Ollama डाउनलोड करें",
         step2: "Ollama इंस्टॉल और लॉन्च करें",
         step3: "चलाएं: ollama pull hermes3",
-        status: "कनेक्शन स्थिति"
+        status: "कनेक्शन स्थिति",
+        models: {
+          chooseModel: "अपना AI मॉडल चुनें",
+          chooseModelDesc: "अपने हार्डवेयर के अनुसार चुनें",
+          copyCommand: "कमांड कॉपी करें",
+          copied: "कॉपी किया!",
+          lowEnd: {
+            name: "Gemma 3B Uncensored",
+            tier: "💚 बजट",
+            vram: "~3 GB VRAM",
+            desc: "पुराने हार्डवेयर या सीमित VRAM के लिए। अच्छी NSFW हैंडलिंग।",
+            command: "ollama pull gemma-3b"
+          },
+          midEnd: {
+            name: "Nous Hermes 3 8B",
+            tier: "💙 अनुशंसित",
+            vram: "~5.5 GB VRAM",
+            desc: "रोलप्ले और स्टोरीटेलिंग के लिए सर्वश्रेष्ठ। 128k कॉन्टेक्स्ट।",
+            command: "ollama pull hermes3"
+          },
+          highEnd: {
+            name: "Qwen3 30B A3B",
+            tier: "💛 प्रीमियम",
+            vram: "~18 GB VRAM",
+            desc: "अत्याधुनिक MOE आर्किटेक्चर। RTX 4080+ उपयोगकर्ताओं के लिए।",
+            command: "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
+          }
+        }
       },
       ollamaStep1Title: "📥 Ollama डाउनलोड करें",
       ollamaStep1Desc: "ollama.com पर जाएं और अपने ऑपरेटिंग सिस्टम के लिए Ollama डाउनलोड करें।",
@@ -5417,7 +5940,17 @@ export const translations = {
         step3Title: "🚀 पथ कॉन्फ़िगर करें",
         step3Desc: "सेटिंग्स में, piper.exe का पथ सेट करें और अपनी .onnx मॉडल फ़ाइल चुनें।",
         step4Title: "✅ आवाज़ जांचें",
-        step4Desc: "यह सत्यापित करने के लिए 'Piper कॉन्फ़िगरेशन जांचें' पर क्लिक करें कि सब कुछ काम करता है।"
+        step4Desc: "यह सत्यापित करने के लिए 'Piper कॉन्फ़िगरेशन जांचें' पर क्लिक करें कि सब कुछ काम करता है।",
+        tierStandard: "⚡ स्टैंडर्ड (Piper)",
+        tierPremium: "✨ प्रीमियम (Zonos)",
+        emotionLabel: "भावना",
+        emotionProfessional: "पेशेवर",
+        emotionHappy: "खुश",
+        emotionCalm: "शांत",
+        emotionSad: "दुखी",
+        emotionAngry: "गुस्सा",
+        zonosUnavailable: "⚠️ Zonos उपलब्ध नहीं - Piper उपयोग",
+        zonosConnected: "Zonos कनेक्टेड"
       },
       imageGen: {
         title: "छवि निर्माण सेटअप",
@@ -5439,7 +5972,12 @@ export const translations = {
         step5_desc: "सुनिश्चित करें कि WebUI चल रहा है, फिर 'कनेक्शन जांचें' पर क्लिक करें।",
         step1Next: "अगला",
         step2Important: "💡 महत्वपूर्ण: पहली लोडिंग समाप्त होने तक प्रतीक्षा करें (2-3 मिनट)!",
-        step5Test: "कनेक्शन जांचें"
+        step5Test: "कनेक्शन जांचें",
+        tierStandard: "⚡ स्टैंडर्ड (SDXL)",
+        tierPremium: "✨ प्रीमियम (FLUX)",
+        fluxBenefits: "छवियों में सर्वश्रेष्ठ टेक्स्ट रेंडरिंग",
+        fluxUnavailable: "⚠️ FLUX मॉडल नहीं मिला - SDXL उपयोग",
+        fluxConnected: "FLUX मॉडल तैयार"
       },
       setupGuide: "सेटअप गाइड",
       status: "स्थिति",
@@ -5860,7 +6398,34 @@ export const translations = {
         step1: "ollama.com'dan Ollama'yı indirin",
         step2: "Ollama'yı kurun ve başlatın",
         step3: "Çalıştır: ollama pull hermes3",
-        status: "Bağlantı Durumu"
+        status: "Bağlantı Durumu",
+        models: {
+          chooseModel: "AI Modelinizi Seçin",
+          chooseModelDesc: "Donanımınıza göre seçin",
+          copyCommand: "Komutu Kopyala",
+          copied: "Kopyalandı!",
+          lowEnd: {
+            name: "Gemma 3B Uncensored",
+            tier: "💚 Ekonomik",
+            vram: "~3 GB VRAM",
+            desc: "Eski donanım veya sınırlı VRAM için. İyi NSFW işleme.",
+            command: "ollama pull gemma-3b"
+          },
+          midEnd: {
+            name: "Nous Hermes 3 8B",
+            tier: "💙 Önerilen",
+            vram: "~5.5 GB VRAM",
+            desc: "Rol yapma ve hikaye anlatımı için en iyi denge. 128k bağlam.",
+            command: "ollama pull hermes3"
+          },
+          highEnd: {
+            name: "Qwen3 30B A3B",
+            tier: "💛 Premium",
+            vram: "~18 GB VRAM",
+            desc: "En son teknoloji MOE mimarisi. RTX 4080+ kullanıcıları için.",
+            command: "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
+          }
+        }
       },
       ollamaStep1Title: "📥 Ollama'yı İndir",
       ollamaStep1Desc: "ollama.com'u ziyaret edin ve işletim sisteminiz için Ollama'yı indirin.",
@@ -5893,7 +6458,17 @@ export const translations = {
         step3Title: "🚀 Yolları Yapılandır",
         step3Desc: "Ayarlar'da, piper.exe yolunu ayarlayın ve .onnx model dosyanızı seçin.",
         step4Title: "✅ Sesi Test Et",
-        step4Desc: "Her şeyin çalıştığını doğrulamak için 'Piper Yapılandırmasını Test Et'e tıklayın."
+        step4Desc: "Her şeyin çalıştığını doğrulamak için 'Piper Yapılandırmasını Test Et'e tıklayın.",
+        tierStandard: "⚡ Standart (Piper)",
+        tierPremium: "✨ Premium (Zonos)",
+        emotionLabel: "Duygu",
+        emotionProfessional: "Profesyonel",
+        emotionHappy: "Mutlu",
+        emotionCalm: "Sakin",
+        emotionSad: "Üzgün",
+        emotionAngry: "Kızgın",
+        zonosUnavailable: "⚠️ Zonos kullanılamıyor - Piper kullanılıyor",
+        zonosConnected: "Zonos Bağlı"
       },
       imageGen: {
         title: "Görüntü Oluşturma Kurulumu",
@@ -5915,7 +6490,12 @@ export const translations = {
         step5_desc: "WebUI'nin çalıştığından emin olun, ardından 'Bağlantıyı Test Et'e tıklayın.",
         step1Next: "İleri",
         step2Important: "💡 ÖNEMLİ: İlk yüklemenin bitmesini bekleyin (2-3 dakika)!",
-        step5Test: "Bağlantıyı Test Et"
+        step5Test: "Bağlantıyı Test Et",
+        tierStandard: "⚡ Standart (SDXL)",
+        tierPremium: "✨ Premium (FLUX)",
+        fluxBenefits: "Görüntülerde en iyi metin işleme",
+        fluxUnavailable: "⚠️ FLUX modeli bulunamadı - SDXL kullanılıyor",
+        fluxConnected: "FLUX Modeli Hazır"
       },
       setupGuide: "Kurulum Kılavuzu",
       status: "Durum",

@@ -11,6 +11,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Open external URL
   openExternal: (url) => ipcRenderer.send('open-external', url),
   
+  // Open Tools Folder
+  openToolsFolder: () => ipcRenderer.send('open-tools-folder'),
+  
+  // Run Tool Script (True One-Click)
+  runToolScript: (scriptName) => ipcRenderer.send('run-tool-script', scriptName),
+  
   // AI Communication
   aiChat: (params) => ipcRenderer.invoke('ai-chat', params),
   aiCreativeWrite: (params) => ipcRenderer.invoke('ai-creative-write', params),

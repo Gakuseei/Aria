@@ -1592,7 +1592,7 @@ export default function ChatInterface({ character, onBack }) {
 
                   <button
                     onClick={() => {
-                      const cleanedContext = extractConversationContext(messages, character.name);
+                      const cleanedContext = extractConversationContext(messages, character);
                       setImagePrompt(cleanedContext);
                     }}
                     className="w-full px-4 py-2 bg-zinc-700/30 hover:bg-zinc-700/50 rounded-lg text-zinc-300 text-sm transition-all"

@@ -164,6 +164,7 @@ _Building the ultimate AI companion experience, one feature at a time._
 - [x] Ko-Fi Integration & Gold Mode Visuals
 - [x] Language System _(i18n with 13 languages)_
 - [x] Premium Start Animation
+- [x] Image Generation Polish & Context Cleaner
 
 </details>
 
@@ -172,7 +173,7 @@ _Building the ultimate AI companion experience, one feature at a time._
 
 <br/>
 
-- [ ] Image Generation Polish & Context Cleaner
+- [ ] OLED Mode Toggle _(Moon/Sun button for quick theme switching)_
 - [ ] Tutorial Update with Model Recommendations
   - 🟢 **Low-End:** Amoral-Gemma 3B
   - 🟡 **Mid-End:** Nous Hermes 3 8B
@@ -187,7 +188,6 @@ _Building the ultimate AI companion experience, one feature at a time._
 
 | Feature                  | Description                                    |
 | :----------------------- | :--------------------------------------------- |
-| 🌙 OLED Mode Toggle      | Moon/Sun button for quick theme switching      |
 | 💬 ChatBot Improvements  | Story Personas, Auto Scroll, Edit Last Message |
 | 🧠 Smart Suggestions 2.0 | Auto-Cut + Assemble for better flow            |
 | ❤️ Passion System 2.0    | Expanded tiers, vocabulary refinement          |

@@ -452,6 +452,40 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                 </button>
               </div>
 
+              {/* Tier Selection: Standard (SDXL) vs Premium (FLUX) */}
+              {settings.imageGenEnabled && (
+                <div className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg">
+                  <div>
+                    <span className="text-sm text-zinc-300">Quality Tier</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">
+                      {settings.imageGenTier === 'premium' ? 'FLUX.1 (12GB+ VRAM)' : 'SDXL (4-8GB VRAM)'}
+                    </p>
+                  </div>
+                  <div className="flex bg-zinc-900/50 p-1 rounded-lg border border-white/10">
+                    <button
+                      onClick={() => onSettingChange('imageGenTier', 'standard')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                        settings.imageGenTier !== 'premium'
+                          ? 'bg-pink-500 text-white shadow-lg'
+                          : 'text-zinc-500 hover:text-zinc-300'
+                      }`}
+                    >
+                      Standard
+                    </button>
+                    <button
+                      onClick={() => onSettingChange('imageGenTier', 'premium')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                        settings.imageGenTier === 'premium'
+                          ? 'bg-purple-600 text-white shadow-lg'
+                          : 'text-zinc-500 hover:text-zinc-300'
+                      }`}
+                    >
+                      Premium
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Tutorial Link - Always visible */}
               <button
                 onClick={() => setShowTutorial('imageGen')}
@@ -534,9 +568,43 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   <HelpCircle size={16} />
                   <span>{t.settings.openSetupTutorial}</span>
                 </button>
+
+                {/* Tier Selection: Standard (Piper) vs Premium (Zonos) */}
+                {settings.voiceEnabled && (
+                  <div className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg">
+                    <div>
+                      <span className="text-sm text-zinc-300">Voice Engine</span>
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        {settings.voiceTier === 'premium' ? 'Zonos (4GB+ VRAM)' : 'Piper TTS (CPU)'}
+                      </p>
+                    </div>
+                    <div className="flex bg-zinc-900/50 p-1 rounded-lg border border-white/10">
+                      <button
+                        onClick={() => onSettingChange('voiceTier', 'standard')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                          settings.voiceTier !== 'premium'
+                            ? 'bg-cyan-500 text-white shadow-lg'
+                            : 'text-zinc-500 hover:text-zinc-300'
+                        }`}
+                      >
+                        Standard
+                      </button>
+                      <button
+                        onClick={() => onSettingChange('voiceTier', 'premium')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                          settings.voiceTier === 'premium'
+                            ? 'bg-amber-500 text-white shadow-lg'
+                            : 'text-zinc-500 hover:text-zinc-300'
+                        }`}
+                      >
+                        Premium
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {settings.voiceEnabled && (
+              {settings.voiceEnabled && settings.voiceTier !== 'premium' && (
                 <div className="mt-4 space-y-4 p-4 bg-zinc-900/50 rounded-lg border border-white/5">
                   <div>
                     <label className="block text-xs text-zinc-400 mb-1">
@@ -649,6 +717,44 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                     className="w-full px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-sm text-blue-300 transition-all"
                   >
                     {t.settings.testPiperConfig}
+                  </button>
+                </div>
+              )}
+
+              {settings.voiceEnabled && settings.voiceTier === 'premium' && (
+                <div className="mt-4 space-y-4 p-4 bg-gradient-to-br from-amber-500/10 to-orange-500/5 rounded-lg border border-amber-500/30">
+                  <div className="flex items-center gap-2 text-amber-300 font-bold">
+                    <span>✨</span>
+                    <span>{t.tutorials?.voice?.tierPremium || 'Premium (Zonos)'}</span>
+                  </div>
+                  <div className="text-xs text-zinc-400 space-y-1">
+                    <p>{t.tutorials?.voice?.zonosStep3Desc || 'Make sure Zonos is running on localhost:7860'}</p>
+                    <p className="text-amber-400/80">{t.tutorials?.voice?.zonosNote || 'Note: First run downloads ~4GB models.'}</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const result = await window.electronAPI.generateSpeech({
+                          text: 'Zonos voice engine test successful',
+                          voiceTier: 'premium'
+                        });
+
+                        if (result?.success && result?.audioData) {
+                          setVoiceVerified(true);
+                          const audio = new Audio(result.audioData);
+                          audio.volume = settings.voiceVolume ?? 1.0;
+                          await audio.play();
+                          alert('✅ Zonos test successful!');
+                        } else {
+                          alert('❌ Zonos test failed.\n\nError: ' + (result?.error || 'Unknown error') + '\n\nMake sure Zonos is running (start_zonos.bat)');
+                        }
+                      } catch (error) {
+                        alert('❌ Zonos test failed.\n\nError: ' + error.message);
+                      }
+                    }}
+                    className="w-full px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-sm text-amber-300 transition-all"
+                  >
+                    {t.tutorials?.voice?.testVoice || 'Test Zonos Configuration'}
                   </button>
                 </div>
               )}
@@ -823,20 +929,10 @@ export default function Settings({ settings, onSettingChange, onClose }) {
         {showTutorial === 'imageGen' && (
           <ImageGenSetup
             onClose={() => setShowTutorial(null)}
-            onTest={async (url) => {
-              try {
-                const result = await window.electronAPI?.testImageGen?.(url);
-                if (result?.success) {
-                  setImageGenVerified(true);
-                  onSettingChange('imageGenEnabled', true);
-                  setShowTutorial(null);
-                  alert('✅ Verbindung erfolgreich! Image Generation wurde aktiviert.');
-                } else {
-                  alert('❌ Verbindung fehlgeschlagen. Stelle sicher, dass die WebUI läuft!\n\nFehler: ' + (result?.error || 'Unbekannt'));
-                }
-              } catch (error) {
-                alert('❌ Fehler beim Testen der Verbindung: ' + error.message);
-              }
+            onVerified={() => {
+               setImageGenVerified(true);
+               onSettingChange('imageGenEnabled', true);
+               // Optional: Auto-close after delay or let user close
             }}
           />
         )}
@@ -844,20 +940,9 @@ export default function Settings({ settings, onSettingChange, onClose }) {
         {showTutorial === 'voice' && (
           <VoiceSetup
             onClose={() => setShowTutorial(null)}
-            onTest={async (url) => {
-              try {
-                const result = await window.electronAPI?.testVoice?.(url);
-                if (result?.success) {
-                  setVoiceVerified(true);
-                  onSettingChange('voiceEnabled', true);
-                  setShowTutorial(null);
-                  alert('✅ Verbindung erfolgreich! Voice wurde aktiviert.');
-                } else {
-                  alert('❌ Verbindung fehlgeschlagen. Stelle sicher, dass Piper läuft!\n\nFehler: ' + (result?.error || 'Unbekannt'));
-                }
-              } catch (error) {
-                alert('❌ Fehler beim Testen der Verbindung: ' + error.message);
-              }
+            onVerified={() => {
+               setVoiceVerified(true);
+               onSettingChange('voiceEnabled', true);
             }}
           />
         )}

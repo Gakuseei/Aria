@@ -17,6 +17,7 @@
   "license": "MIT",
   "dependencies": {
     "dotenv": "^16.4.5",
+    "framer-motion": "^12.27.5",
     "lucide-react": "^0.562.0",
     "openai": "^4.40.0"
   },

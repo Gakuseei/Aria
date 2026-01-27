@@ -502,7 +502,23 @@ export const translations = {
       temperature: "Temperature",
       language: "Language",
       imageGen: "Image Gen",
-      voiceTts: "Voice/TTS"
+      voiceTts: "Voice/TTS",
+      errors: "Errors",
+      error: "Error",
+      noErrors: "No errors detected",
+      copyError: "Copy Error",
+      copyAll: "Copy All",
+      clearAll: "Clear All",
+      severity: "Severity",
+      location: "Location",
+      stackTrace: "Stack Trace",
+      showStack: "▶ Show Stack Trace",
+      hideStack: "▼ Hide Stack Trace",
+      errorCopied: "Error copied to clipboard",
+      allErrorsCopied: "All errors copied to clipboard",
+      errorsCleared: "All errors cleared",
+      allStable: "All Stable",
+      noErrorsSinceStart: "No errors detected since app start"
     },
     characters: {
       alice_maid: {
@@ -1036,7 +1052,23 @@ export const translations = {
       temperature: "Temperatur",
       language: "Sprache",
       imageGen: "Bildgenerierung",
-      voiceTts: "Sprache/TTS"
+      voiceTts: "Sprache/TTS",
+      errors: "Fehler",
+      error: "Fehler",
+      noErrors: "Keine Fehler erkannt",
+      copyError: "Fehler kopieren",
+      copyAll: "Alle kopieren",
+      clearAll: "Alle löschen",
+      severity: "Schweregrad",
+      location: "Ort",
+      stackTrace: "Stack Trace",
+      showStack: "▶ Stack Trace anzeigen",
+      hideStack: "▼ Stack Trace verbergen",
+      errorCopied: "Fehler in Zwischenablage kopiert",
+      allErrorsCopied: "Alle Fehler in Zwischenablage kopiert",
+      errorsCleared: "Alle Fehler gelöscht",
+      allStable: "Alles stabil",
+      noErrorsSinceStart: "Keine Fehler seit App-Start erkannt"
     },
     characters: {
       alice_maid: {
@@ -1554,7 +1586,23 @@ export const translations = {
       temperature: "Temperatura",
       language: "Idioma",
       imageGen: "Generación de Imágenes",
-      voiceTts: "Voz/TTS"
+      voiceTts: "Voz/TTS",
+      errors: "Errores",
+      error: "Error",
+      noErrors: "No se detectaron errores",
+      copyError: "Copiar Error",
+      copyAll: "Copiar Todo",
+      clearAll: "Borrar Todo",
+      severity: "Gravedad",
+      location: "Ubicación",
+      stackTrace: "Stack Trace",
+      showStack: "▶ Mostrar Stack Trace",
+      hideStack: "▼ Ocultar Stack Trace",
+      errorCopied: "Error copiado al portapapeles",
+      allErrorsCopied: "Todos los errores copiados al portapapeles",
+      errorsCleared: "Todos los errores borrados",
+      allStable: "Todo Estable",
+      noErrorsSinceStart: "No se detectaron errores desde el inicio de la app"
     },
     characters: {
       alice_maid: {
@@ -2072,7 +2120,23 @@ export const translations = {
       temperature: "温度",
       language: "语言",
       imageGen: "图像生成",
-      voiceTts: "语音/TTS"
+      voiceTts: "语音/TTS",
+      errors: "错误",
+      error: "错误",
+      noErrors: "未检测到错误",
+      copyError: "复制错误",
+      copyAll: "全部复制",
+      clearAll: "全部清除",
+      severity: "严重程度",
+      location: "位置",
+      stackTrace: "堆栈跟踪",
+      showStack: "▶ 显示堆栈跟踪",
+      hideStack: "▼ 隐藏堆栈跟踪",
+      errorCopied: "错误已复制到剪贴板",
+      allErrorsCopied: "所有错误已复制到剪贴板",
+      errorsCleared: "所有错误已清除",
+      allStable: "一切稳定",
+      noErrorsSinceStart: "自应用启动以来未检测到错误"
     },
     characters: {
       alice_maid: {
@@ -2589,7 +2653,23 @@ export const translations = {
       temperature: "Température",
       language: "Langue",
       imageGen: "Génération d'Images",
-      voiceTts: "Voix/TTS"
+      voiceTts: "Voix/TTS",
+      errors: "Erreurs",
+      error: "Erreur",
+      noErrors: "Aucune erreur détectée",
+      copyError: "Copier l'Erreur",
+      copyAll: "Tout Copier",
+      clearAll: "Tout Effacer",
+      severity: "Gravité",
+      location: "Emplacement",
+      stackTrace: "Stack Trace",
+      showStack: "▶ Afficher Stack Trace",
+      hideStack: "▼ Masquer Stack Trace",
+      errorCopied: "Erreur copiée dans le presse-papiers",
+      allErrorsCopied: "Toutes les erreurs copiées dans le presse-papiers",
+      errorsCleared: "Toutes les erreurs effacées",
+      allStable: "Tout Stable",
+      noErrorsSinceStart: "Aucune erreur détectée depuis le démarrage de l'app"
     },
     characters: {
       alice_maid: {
@@ -3100,7 +3180,23 @@ export const translations = {
       temperature: "Temperatura",
       language: "Lingua",
       imageGen: "Generazione Immagini",
-      voiceTts: "Voce/TTS"
+      voiceTts: "Voce/TTS",
+      errors: "Errori",
+      error: "Errore",
+      noErrors: "Nessun errore rilevato",
+      copyError: "Copia Errore",
+      copyAll: "Copia Tutto",
+      clearAll: "Cancella Tutto",
+      severity: "Gravità",
+      location: "Posizione",
+      stackTrace: "Stack Trace",
+      showStack: "▶ Mostra Stack Trace",
+      hideStack: "▼ Nascondi Stack Trace",
+      errorCopied: "Errore copiato negli appunti",
+      allErrorsCopied: "Tutti gli errori copiati negli appunti",
+      errorsCleared: "Tutti gli errori cancellati",
+      allStable: "Tutto Stabile",
+      noErrorsSinceStart: "Nessun errore rilevato dall'avvio dell'app"
     },
     characters: {
       alice_maid: {
@@ -3617,7 +3713,23 @@ export const translations = {
       temperature: "Temperatura",
       language: "Idioma",
       imageGen: "Geração de Imagens",
-      voiceTts: "Voz/TTS"
+      voiceTts: "Voz/TTS",
+      errors: "Erros",
+      error: "Erro",
+      noErrors: "Nenhum erro detectado",
+      copyError: "Copiar Erro",
+      copyAll: "Copiar Tudo",
+      clearAll: "Limpar Tudo",
+      severity: "Gravidade",
+      location: "Localização",
+      stackTrace: "Stack Trace",
+      showStack: "▶ Mostrar Stack Trace",
+      hideStack: "▼ Ocultar Stack Trace",
+      errorCopied: "Erro copiado para a área de transferência",
+      allErrorsCopied: "Todos os erros copiados para a área de transferência",
+      errorsCleared: "Todos os erros limpos",
+      allStable: "Tudo Estável",
+      noErrorsSinceStart: "Nenhum erro detectado desde o início do app"
     },
     characters: {
       alice_maid: {
@@ -4134,7 +4246,23 @@ export const translations = {
       temperature: "Температура",
       language: "Язык",
       imageGen: "Генерация Изображений",
-      voiceTts: "Голос/TTS"
+      voiceTts: "Голос/TTS",
+      errors: "Ошибки",
+      error: "Ошибка",
+      noErrors: "Ошибок не обнаружено",
+      copyError: "Копировать Ошибку",
+      copyAll: "Копировать Все",
+      clearAll: "Очистить Все",
+      severity: "Серьезность",
+      location: "Местоположение",
+      stackTrace: "Stack Trace",
+      showStack: "▶ Показать Stack Trace",
+      hideStack: "▼ Скрыть Stack Trace",
+      errorCopied: "Ошибка скопирована в буфер обмена",
+      allErrorsCopied: "Все ошибки скопированы в буфер обмена",
+      errorsCleared: "Все ошибки очищены",
+      allStable: "Все Стабильно",
+      noErrorsSinceStart: "С момента запуска приложения ошибок не обнаружено"
     },
     characters: {
       alice_maid: {
@@ -4651,7 +4779,23 @@ export const translations = {
       temperature: "温度",
       language: "言語",
       imageGen: "画像生成",
-      voiceTts: "音声/TTS"
+      voiceTts: "音声/TTS",
+      errors: "エラー",
+      error: "エラー",
+      noErrors: "エラーは検出されませんでした",
+      copyError: "エラーをコピー",
+      copyAll: "すべてコピー",
+      clearAll: "すべてクリア",
+      severity: "重大度",
+      location: "場所",
+      stackTrace: "スタックトレース",
+      showStack: "▶ スタックトレースを表示",
+      hideStack: "▼ スタックトレースを非表示",
+      errorCopied: "エラーをクリップボードにコピーしました",
+      allErrorsCopied: "すべてのエラーをクリップボードにコピーしました",
+      errorsCleared: "すべてのエラーをクリアしました",
+      allStable: "すべて安定",
+      noErrorsSinceStart: "アプリ起動以降エラーは検出されていません"
     },
     characters: {
       alice_maid: {
@@ -5162,7 +5306,23 @@ export const translations = {
       temperature: "온도",
       language: "언어",
       imageGen: "이미지 생성",
-      voiceTts: "음성/TTS"
+      voiceTts: "음성/TTS",
+      errors: "오류",
+      error: "오류",
+      noErrors: "오류가 감지되지 않았습니다",
+      copyError: "오류 복사",
+      copyAll: "모두 복사",
+      clearAll: "모두 지우기",
+      severity: "심각도",
+      location: "위치",
+      stackTrace: "스택 추적",
+      showStack: "▶ 스택 추적 표시",
+      hideStack: "▼ 스택 추적 숨기기",
+      errorCopied: "오류가 클립보드에 복사되었습니다",
+      allErrorsCopied: "모든 오류가 클립보드에 복사되었습니다",
+      errorsCleared: "모든 오류가 지워졌습니다",
+      allStable: "모두 안정적",
+      noErrorsSinceStart: "앱 시작 이후 오류가 감지되지 않았습니다"
     },
     characters: {
       alice_maid: {
@@ -5680,7 +5840,23 @@ export const translations = {
       temperature: "درجة الحرارة",
       language: "اللغة",
       imageGen: "توليد الصور",
-      voiceTts: "الصوت/TTS"
+      voiceTts: "الصوت/TTS",
+      errors: "الأخطاء",
+      error: "خطأ",
+      noErrors: "لم يتم اكتشاف أي أخطاء",
+      copyError: "نسخ الخطأ",
+      copyAll: "نسخ الكل",
+      clearAll: "مسح الكل",
+      severity: "الخطورة",
+      location: "الموقع",
+      stackTrace: "تتبع المكدس",
+      showStack: "▶ إظهار تتبع المكدس",
+      hideStack: "▼ إخفاء تتبع المكدس",
+      errorCopied: "تم نسخ الخطأ إلى الحافظة",
+      allErrorsCopied: "تم نسخ جميع الأخطاء إلى الحافظة",
+      errorsCleared: "تم مسح جميع الأخطاء",
+      allStable: "كل شيء مستقر",
+      noErrorsSinceStart: "لم يتم اكتشاف أي أخطاء منذ بدء التطبيق"
     },
     characters: {
       alice_maid: {
@@ -6198,7 +6374,23 @@ export const translations = {
       temperature: "तापमान",
       language: "भाषा",
       imageGen: "छवि निर्माण",
-      voiceTts: "आवाज़/TTS"
+      voiceTts: "आवाज़/TTS",
+      errors: "त्रुटियाँ",
+      error: "त्रुटि",
+      noErrors: "कोई त्रुटि नहीं मिली",
+      copyError: "त्रुटि कॉपी करें",
+      copyAll: "सभी कॉपी करें",
+      clearAll: "सभी साफ़ करें",
+      severity: "गंभीरता",
+      location: "स्थान",
+      stackTrace: "स्टैक ट्रेस",
+      showStack: "▶ स्टैक ट्रेस दिखाएं",
+      hideStack: "▼ स्टैक ट्रेस छुपाएं",
+      errorCopied: "त्रुटि क्लिपबोर्ड पर कॉपी की गई",
+      allErrorsCopied: "सभी त्रुटियाँ क्लिपबोर्ड पर कॉपी की गईं",
+      errorsCleared: "सभी त्रुटियाँ साफ़ की गईं",
+      allStable: "सब स्थिर है",
+      noErrorsSinceStart: "ऐप शुरू होने के बाद से कोई त्रुटि नहीं मिली"
     },
     characters: {
       alice_maid: {
@@ -6716,7 +6908,23 @@ export const translations = {
       temperature: "Sıcaklık",
       language: "Dil",
       imageGen: "Görüntü Oluşturma",
-      voiceTts: "Ses/TTS"
+      voiceTts: "Ses/TTS",
+      errors: "Hatalar",
+      error: "Hata",
+      noErrors: "Hata tespit edilmedi",
+      copyError: "Hatayı Kopyala",
+      copyAll: "Tümünü Kopyala",
+      clearAll: "Tümünü Temizle",
+      severity: "Önem Derecesi",
+      location: "Konum",
+      stackTrace: "Yığın İzleme",
+      showStack: "▶ Yığın İzlemeyi Göster",
+      hideStack: "▼ Yığın İzlemeyi Gizle",
+      errorCopied: "Hata panoya kopyalandı",
+      allErrorsCopied: "Tüm hatalar panoya kopyalandı",
+      errorsCleared: "Tüm hatalar temizlendi",
+      allStable: "Her Şey Kararlı",
+      noErrorsSinceStart: "Uygulama başlangıcından beri hata tespit edilmedi"
     },
     characters: {
       alice_maid: {

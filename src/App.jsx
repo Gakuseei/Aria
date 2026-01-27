@@ -487,6 +487,7 @@ function App() {
             character={selectedCharacter}
             loadedSession={loadedSession}
             onBack={handleMainMenu}
+            settings={settings}
           />
         );
       
@@ -495,6 +496,7 @@ function App() {
           <CreativeWriting
             loadedSession={loadedSession}
             onBack={handleMainMenu}
+            settings={settings}
           />
         );
       

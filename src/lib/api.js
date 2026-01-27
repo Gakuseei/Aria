@@ -755,7 +755,8 @@ export const sendMessage = async (
   conversationHistory = [],
   sessionId = null,
   unchainedMode = false,
-  onApiStats = null  // v1.0: NEW - Callback for API Monitor stats
+  onApiStats = null,  // v1.0: NEW - Callback for API Monitor stats
+  settingsOverride = null  // v1.0: FIX - Accept settings directly to avoid race conditions
 ) => {
   const startTime = Date.now();  // v1.0: Track response time
   
@@ -781,7 +782,9 @@ export const sendMessage = async (
   }
 
   try {
-    const settings = await loadSettings();
+    // v1.0 FIX: Use provided settings to avoid localStorage race conditions
+    const settings = settingsOverride || await loadSettings();
+    console.log('[v1.0 API] 🔧 Using settings:', settingsOverride ? 'from props' : 'from loadSettings()');
 
     // v1.0 PERFORMANCE: Sliding Window (10-15 messages) for faster responses
     const CONTEXT_WINDOW = 12;

@@ -8,7 +8,7 @@ import { useLanguage } from '../context/LanguageContext';
 // ARIA v1.0 RELEASE - CreativeWriting
 // ============================================================================
 
-function CreativeWriting({ loadedSession, onBack }) {
+function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   const { t } = useLanguage();
   const [prompt, setPrompt] = useState('');
   const [generatedContent, setGeneratedContent] = useState('');
@@ -175,7 +175,9 @@ function CreativeWriting({ loadedSession, onBack }) {
     try {
       // v1.0: Get language from settings
       const selectedLanguage = localStorage.getItem('language') || 'en';
-      const response = await generateCreativeWriting(prompt.trim(), null, null, false, 0, selectedLanguage);
+      const ollamaUrl = parentSettings?.ollamaUrl || 'http://127.0.0.1:11434';
+      const model = parentSettings?.ollamaModel || 'hermes3';
+      const response = await generateCreativeWriting(prompt.trim(), ollamaUrl, model, false, 0, selectedLanguage);
 
       if (response.success) {
         const newContent = response.content;
@@ -218,7 +220,9 @@ function CreativeWriting({ loadedSession, onBack }) {
     try {
       // v1.0: Get language from settings
       const selectedLanguage = localStorage.getItem('language') || 'en';
-      const response = await continueStory(generatedContent, null, null, false, 0, selectedLanguage);
+      const ollamaUrl = parentSettings?.ollamaUrl || 'http://127.0.0.1:11434';
+      const model = parentSettings?.ollamaModel || 'hermes3';
+      const response = await continueStory(generatedContent, ollamaUrl, model, false, 0, selectedLanguage);
 
       if (response.success) {
         setGeneratedContent(prev => prev + '\n\n' + response.content);

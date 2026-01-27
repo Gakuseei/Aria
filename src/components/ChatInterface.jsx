@@ -251,7 +251,7 @@ function detectStateFromMessages(messages) {
 // MAIN CHAT INTERFACE - v8.1 RESTORED
 // ============================================================================
 
-export default function ChatInterface({ character, onBack }) {
+export default function ChatInterface({ character, onBack, settings: parentSettings }) {
   const { t } = useLanguage();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -274,8 +274,8 @@ export default function ChatInterface({ character, onBack }) {
   // STEP 2 FIX: Initialize voiceEnabled as null to distinguish "not loaded" from "false"
   const [voiceEnabled, setVoiceEnabled] = useState(null);
 
-  // BLOCK 8.2: Full settings object for API URLs
-  const [settings, setSettings] = useState({
+  // v1.0 FIX: Settings come from parent (App.jsx), merged with localStorage for backward compatibility
+  const [localSettings, setLocalSettings] = useState({
     imageGenUrl: 'http://127.0.0.1:7860',
     voiceUrl: 'http://127.0.0.1:5000',
     ollamaUrl: 'http://127.0.0.1:11434',
@@ -284,6 +284,9 @@ export default function ChatInterface({ character, onBack }) {
     voiceVolume: 1.0,
     oledMode: false
   });
+  
+  // Merge parent settings with local settings
+  const settings = { ...localSettings, ...parentSettings };
 
   // Voice Settings Popover State
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
@@ -403,7 +406,7 @@ export default function ChatInterface({ character, onBack }) {
           : JSON.parse(localStorage.getItem('settings') || '{}');
 
         // BLOCK 8.2: Store full settings object
-        setSettings({
+        setLocalSettings({
           imageGenUrl: loadedSettings.imageGenUrl || 'http://127.0.0.1:7860',
           voiceUrl: loadedSettings.voiceUrl || 'http://127.0.0.1:5000',
           ollamaUrl: loadedSettings.ollamaUrl || 'http://127.0.0.1:11434',
@@ -604,15 +607,32 @@ export default function ChatInterface({ character, onBack }) {
   };
 
   // ============================================================================
-  // SCROLLING - CRITICAL FIX
+  // SCROLLING - AUTO-SCROLL TO BOTTOM
   // ============================================================================
 
   useEffect(() => {
-    scrollToBottomInstant();
+    // Scroll immediately when messages change
+    scrollToBottom();
+    
+    // Additional delayed scroll to ensure DOM has fully rendered
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [messages]);
 
+  const scrollToBottom = () => {
+    if (messagesContainerRef.current) {
+      // Force scroll to absolute bottom of container
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  };
+
   const scrollToBottomInstant = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   // ============================================================================
@@ -726,7 +746,8 @@ export default function ChatInterface({ character, onBack }) {
         newMessages,
         sessionId,
         !passionGatekeepingEnabled,  // Pass Unchained Mode flag
-        handleApiStats  // v1.0: Pass stats callback
+        handleApiStats,  // v1.0: Pass stats callback
+        settings  // v1.0 FIX: Pass settings directly to avoid race conditions
       );
 
       if (!response.success) {
@@ -972,7 +993,9 @@ export default function ChatInterface({ character, onBack }) {
         '',
         messagesUpToLastUser,
         sessionId,
-        !passionGatekeepingEnabled  // Pass Unchained Mode flag
+        !passionGatekeepingEnabled,  // Pass Unchained Mode flag
+        null,  // No stats callback for regenerate
+        settings  // v1.0 FIX: Pass settings directly
       );
 
       if (!response.success) {

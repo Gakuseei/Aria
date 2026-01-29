@@ -69,4 +69,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Get local voice models
   getLocalVoiceModels: () => ipcRenderer.invoke('get-local-voice-models'),
+  
+  // ZONOS AUTO INSTALLER - True One-Click
+  zonosAutoInstall: () => ipcRenderer.invoke('zonos-auto-install'),
+  zonosCheckStatus: () => ipcRenderer.invoke('zonos-check-status'),
+  zonosIsInstalled: () => ipcRenderer.invoke('zonos-is-installed'),
+  zonosGetError: () => ipcRenderer.invoke('zonos-get-error'),
+  zonosCancelInstall: () => ipcRenderer.invoke('zonos-cancel-install'),
+  zonosGetProgress: () => ipcRenderer.invoke('zonos-get-progress'),
 });

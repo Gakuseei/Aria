@@ -5,7 +5,7 @@ echo   Aria Premium Voice Installer (Zonos)
 echo ===================================================
 echo.
 
-echo [1/4] Checking Python...
+echo [1/5] Checking Python...
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] Python not found! Please install Python 3.10+ from python.org.
@@ -16,7 +16,28 @@ if %errorlevel% neq 0 (
 echo [OK] Python found.
 echo.
 
-echo [2/4] Cloning Zonos Repository...
+echo [2/5] Checking espeak-ng...
+espeak-ng --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [WARNING] espeak-ng not found! Installing via winget...
+    winget install --id espeak.espeak -e --accept-package-agreements --accept-source-agreements
+    if %errorlevel% neq 0 (
+        echo [ERROR] Failed to install espeak-ng automatically.
+        echo Please install espeak-ng manually from: https://github.com/espeak-ng/espeak-ng/releases
+        pause
+    ) else (
+        echo [OK] espeak-ng installed.
+        echo [IMPORTANT] Please RESTART your computer after installation!
+        echo [IMPORTANT] Then run this installer again.
+        pause
+        exit /b
+    )
+) else (
+    echo [OK] espeak-ng found.
+)
+echo.
+
+echo [3/5] Cloning Zonos Repository...
 if not exist "Zonos" (
     git clone https://github.com/Zyphra/Zonos.git
     if %errorlevel% neq 0 (
@@ -29,7 +50,7 @@ if not exist "Zonos" (
 )
 echo.
 
-echo [3/4] Creating Virtual Environment...
+echo [4/5] Creating Virtual Environment...
 cd Zonos
 if not exist "venv" (
     python -m venv venv
@@ -39,16 +60,18 @@ if not exist "venv" (
 )
 echo.
 
-echo [4/4] Installing Dependencies (This may take a while)...
+echo [5/5] Installing Dependencies (This may take a while)...
 call venv\Scripts\activate
-echo [4.1/4] Upgrading pip and installing build tools...
+echo [5.1/5] Upgrading pip and installing build tools...
 pip install --upgrade pip wheel setuptools
-echo [4.2/4] Installing Torch (CUDA 12.1)...
+echo [5.2/5] Installing Torch (CUDA 12.1)...
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-echo [4.3/4] Installing Zonos package (editable mode)...
+echo [5.3/5] Installing Zonos package (editable mode)...
 pip install -e .
-echo [4.4/4] Installing Gradio for the web interface...
-pip install gradio
+echo [5.4/5] Installing espeak-ng Python package...
+pip install espeakng
+echo [5.5/5] Installing Flask for API server...
+pip install flask flask-cors
 echo.
 
 echo ===================================================

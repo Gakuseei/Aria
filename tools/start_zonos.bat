@@ -19,8 +19,16 @@ if not exist "venv" (
 )
 
 call venv\Scripts\activate
-echo [INFO] Running Server...
+echo [INFO] Checking for Flask...
+pip show flask >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Installing Flask...
+    pip install flask flask-cors
+)
+
+echo.
+echo [INFO] Starting Zonos API Server...
 echo [INFO] Please wait. The first run might download models (approx 4GB).
 echo.
-python gradio_interface.py
+python ..\zonos_api_server.py
 pause

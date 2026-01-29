@@ -39,4 +39,5 @@ AGENTS.md
 PROJECT_STRUCTURE.md
 gemini-rules.md
 Discord/
-Zonos/
+tools\Zonos
+testsprite_tests

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Moon, Sun } from 'lucide-react';
 import TitleBar from './components/TitleBar';
 import MainMenu from './components/MainMenu';
 import ModeSelection from './components/ModeSelection';
@@ -10,6 +11,7 @@ import Settings from './components/Settings';
 import CharacterCreator from './components/CharacterCreator';
 import DebugConsole from './components/DebugConsole'; // VERSION 9.3
 import CustomDropdown from './components/CustomDropdown';
+import OledToggleButton from './components/OledToggleButton';
 import { useLanguage } from './context/LanguageContext';
 import { loadSettings, testOllamaConnection, autoDetectAndSetModel, fetchOllamaModels } from './lib/api';
 import OllamaSetup from './components/tutorials/OllamaSetup';
@@ -573,12 +575,12 @@ function App() {
         </main>
       )}
       
-      {/* VERSION 8.1: OLED Mode Indicator (Debug - can be removed) */}
-      {oledModeActive && (
-        <div className="fixed bottom-4 right-4 px-3 py-1.5 rounded-lg bg-black border border-white/20 text-white text-xs font-mono z-50 pointer-events-none">
-          OLED Mode Active
-        </div>
-      )}
+      {/* VERSION 8.1: OLED Mode Toggle Button */}
+      <OledToggleButton
+        oledMode={oledModeActive}
+        onToggle={handleSettingChange}
+        currentView={currentView}
+      />
 
       {/* VERSION 9.5: Debug Console PRO (Ctrl+D) - Enhanced API Monitor */}
       <DebugConsole

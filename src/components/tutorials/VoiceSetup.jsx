@@ -1,6 +1,6 @@
 // ARIA v1.0 - Voice Setup Tutorial (Refactored Premium)
-import React, { useState, useEffect } from 'react';
-import { Download, Check, RefreshCw, Play, Volume2, FolderOpen, Zap, Star } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Download, Check, RefreshCw, Play, Volume2, FolderOpen, Zap, Star, Loader2, AlertCircle, Power, XCircle, FileText } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import TutorialLayout from './TutorialLayout';
 
@@ -24,6 +24,13 @@ export default function VoiceSetup({ onClose, onVerified }) {
   
   // Zonos State
   const [zonosStatus, setZonosStatus] = useState('disconnected');
+  const [zonosInstallStatus, setZonosInstallStatus] = useState('idle'); // idle, checking, installing, error, needs_restart
+  const [zonosError, setZonosError] = useState(null);
+  const [zonosInstalled, setZonosInstalled] = useState(false);
+  const [installProgress, setInstallProgress] = useState(null); // { step, total, message, detail }
+  const [showLog, setShowLog] = useState(false);
+  const [installLog, setInstallLog] = useState('');
+  const statusPollRef = useRef(null);
 
   // Test voice sample phrases per language
   const testPhrases = {
@@ -50,7 +57,48 @@ export default function VoiceSetup({ onClose, onVerified }) {
   useEffect(() => {
     testConnection();
     loadSettings();
+    checkZonosInstalled();
+    
+    return () => {
+      if (statusPollRef.current) {
+        clearInterval(statusPollRef.current);
+      }
+    };
   }, []);
+
+  // Poll progress when installing
+  useEffect(() => {
+    if (zonosInstallStatus === 'installing') {
+      statusPollRef.current = setInterval(async () => {
+        const result = await window.electronAPI?.zonosGetProgress?.();
+        if (result) {
+          setInstallProgress(result);
+          
+          if (result.error) {
+            setZonosInstallStatus('error');
+            setZonosError({
+              title: result.message,
+              message: result.detail,
+              needsRestart: result.needsRestart
+            });
+            if (result.log) setInstallLog(result.log);
+          } else if (result.running) {
+            setZonosStatus('connected');
+            setZonosInstallStatus('completed');
+            setConnectionStatus('connected');
+            if (onVerified) onVerified();
+          } else if (result.status === 'CANCELLED') {
+            setZonosInstallStatus('idle');
+            setInstallProgress(null);
+          }
+        }
+      }, 1000);
+    } else {
+      if (statusPollRef.current) {
+        clearInterval(statusPollRef.current);
+      }
+    }
+  }, [zonosInstallStatus]);
 
   const loadSettings = async () => {
     const loaded = JSON.parse(localStorage.getItem('settings') || '{}');
@@ -63,18 +111,20 @@ export default function VoiceSetup({ onClose, onVerified }) {
     }
   };
 
+  const checkZonosInstalled = async () => {
+    const result = await window.electronAPI?.zonosIsInstalled?.();
+    setZonosInstalled(result?.installed || false);
+  };
+
   const testConnection = async () => {
     setTesting(true);
     try {
       if (tierMode === 'premium') {
-         // Zonos connection check
          await testZonosConnection();
       } else {
-         // Piper connection check
          const result = await window.electronAPI?.testVoice?.();
          setConnectionStatus(result?.success ? 'connected' : 'disconnected');
          if (result?.success) {
-            // AUTO-FIX: Save detected path if returned
             if (result.detectedPiperPath && !piperPath) {
                 setPiperPath(result.detectedPiperPath);
                 saveSetting('piperPath', result.detectedPiperPath);
@@ -89,15 +139,13 @@ export default function VoiceSetup({ onClose, onVerified }) {
 
   const testZonosConnection = async () => {
       try {
-        const response = await fetch('http://localhost:7860/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: 'test' }),
+        const response = await fetch('http://localhost:7860/api/health', {
             signal: AbortSignal.timeout(2000)
         });
         if(response.ok) {
             setZonosStatus('connected');
             setConnectionStatus('connected');
+            setZonosInstallStatus('completed');
             if (onVerified) onVerified();
         } else {
             setZonosStatus('disconnected');
@@ -109,11 +157,40 @@ export default function VoiceSetup({ onClose, onVerified }) {
       }
   };
 
+  const handleAutoInstallZonos = async () => {
+    setZonosInstallStatus('installing');
+    setZonosError(null);
+    setInstallProgress({
+      step: 1,
+      total: 8,
+      message: 'Starting installation...',
+      detail: 'Initializing installer'
+    });
+    
+    const result = await window.electronAPI?.zonosAutoInstall?.();
+    
+    if (!result?.success) {
+      setZonosInstallStatus('error');
+      setZonosError({
+        title: 'Failed to Start Installer',
+        message: result?.error || 'Could not start the installation process.',
+        needsRestart: false
+      });
+    }
+  };
+
+  const handleCancelInstall = async () => {
+    await window.electronAPI?.zonosCancelInstall?.();
+    setZonosInstallStatus('idle');
+    setInstallProgress(null);
+  };
+
   // Switch Tier
   const handleTierChange = (mode) => {
     setTierMode(mode);
-    setConnectionStatus('disconnected'); // Reset status until tested
-    setTimeout(() => testConnection(), 500); // Auto-test after switch
+    setConnectionStatus('disconnected');
+    setZonosError(null);
+    setTimeout(() => testConnection(), 500);
   };
 
   // Download Handler
@@ -127,8 +204,7 @@ export default function VoiceSetup({ onClose, onVerified }) {
        });
        if (res?.success) {
           setDownloadedVoices(p => ({...p, [voice.id]: true}));
-          loadSettings(); // Refresh local models
-          // Auto-set as active
+          loadSettings();
           setModelPath(res.path);
           saveSetting('modelPath', res.path);
        }
@@ -145,6 +221,11 @@ export default function VoiceSetup({ onClose, onVerified }) {
      localStorage.setItem('settings', JSON.stringify(updated));
      window.electronAPI?.saveSettings?.(updated);
   };
+
+  // Calculate progress percentage
+  const progressPercent = installProgress 
+    ? Math.round((installProgress.step / installProgress.total) * 100)
+    : 0;
 
   return (
     <TutorialLayout
@@ -265,7 +346,6 @@ export default function VoiceSetup({ onClose, onVerified }) {
                         onClick={async () => {
                            const langCode = modelPath?.split('-')?.[0]?.replace('_','-') || 'en_US';
                            const phrase = testPhrases[langCode.replace('-','_')] || testPhrases['en_US'];
-                           // Pass all required params
                            const result = await window.electronAPI?.generateSpeech?.({ 
                               text: phrase, 
                               piperPath: piperPath, 
@@ -292,7 +372,7 @@ export default function VoiceSetup({ onClose, onVerified }) {
           </div>
        )}
 
-       {/* PREMIUM MODE STEPS */}
+       {/* PREMIUM MODE - TRUE ONE-CLICK INSTALLER */}
        {tierMode === 'premium' && (
           <div className="space-y-6">
              <div className="bg-gradient-to-br from-amber-500/10 to-transparent p-4 rounded-xl border border-amber-500/20 mb-6">
@@ -307,49 +387,193 @@ export default function VoiceSetup({ onClose, onVerified }) {
                 </div>
              </div>
              
-             {/* Step 1 Premium */}
-             <div className="flex items-center gap-4 p-4 bg-zinc-900/50 rounded-xl border border-white/5">
-                <div className="w-10 h-10 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center font-bold">1</div>
-                <div className="flex-1">
-                   <h4 className="font-bold text-white">Install Zonos</h4>
-                   <button 
-                      onClick={() => window.electronAPI?.runToolScript?.('install_zonos.bat')}
-                      className="mt-2 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm font-bold"
-                   >
-                      Run Premium Installer
-                   </button>
-                </div>
-             </div>
-             
-             {/* Step 2 Premium */}
-             <div className="flex items-center gap-4 p-4 bg-zinc-900/50 rounded-xl border border-white/5">
-                <div className="w-10 h-10 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center font-bold">2</div>
-                <div className="flex-1">
-                   <h4 className="font-bold text-white">Start Authenticator</h4>
-                   <p className="text-xs text-zinc-400 mb-2">Must be running in background ("start_zonos.bat")</p>
-                   <div className="flex gap-2 mb-2">
-                       <button 
-                          onClick={() => window.electronAPI?.runToolScript?.('start_zonos.bat')}
-                          className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-lg text-sm font-bold flex-1"
-                       >
-                          Start Zonos Engine 🚀
-                       </button>
-                       <button 
-                          onClick={testZonosConnection}
-                          className={`px-4 py-2 border rounded-lg text-sm font-medium transition-all ${
-                             zonosStatus === 'connected' 
-                             ? 'bg-green-500/10 border-green-500/30 text-green-300' 
-                             : 'bg-zinc-800 border-amber-500/30 text-amber-300 hover:bg-zinc-700'
-                          }`}
-                       >
-                           {zonosStatus === 'connected' ? 'Connected' : 'Check'} 🔄
-                       </button>
+             {/* One-Click Zonos Setup */}
+             <div className={`p-6 bg-zinc-900/50 rounded-xl border ${
+                zonosStatus === 'connected' 
+                  ? 'border-green-500/30 bg-green-500/5' 
+                  : zonosInstallStatus === 'error'
+                  ? 'border-red-500/30 bg-red-500/5'
+                  : 'border-amber-500/30'
+             }`}>
+                <div className="flex items-center gap-4 mb-4">
+                   <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      zonosStatus === 'connected' 
+                        ? 'bg-green-500/20 text-green-400' 
+                        : zonosInstallStatus === 'installing'
+                        ? 'bg-amber-500/20 text-amber-400'
+                        : 'bg-amber-500/20 text-amber-400'
+                   }`}>
+                      {zonosStatus === 'connected' ? (
+                        <Check size={24} />
+                      ) : zonosInstallStatus === 'installing' ? (
+                        <Loader2 size={24} className="animate-spin" />
+                      ) : (
+                        <Power size={24} />
+                      )}
                    </div>
-                   {zonosStatus === 'connected' && (
-                       <p className="text-xs text-green-400 mt-2">Ready to speak!</p>
+                   <div className="flex-1">
+                      <h4 className="font-bold text-white text-lg">
+                        {zonosStatus === 'connected' 
+                          ? 'Zonos is Running!' 
+                          : zonosInstallStatus === 'installing'
+                          ? (installProgress?.message || 'Installing...')
+                          : 'Zonos Voice Engine'}
+                      </h4>
+                      <p className={`text-sm ${
+                        zonosStatus === 'connected' 
+                          ? 'text-green-400' 
+                          : zonosInstallStatus === 'error'
+                          ? 'text-red-400'
+                          : 'text-zinc-400'
+                      }`}>
+                        {zonosStatus === 'connected' 
+                          ? '✅ Server running on http://localhost:7860'
+                          : zonosInstallStatus === 'installing'
+                          ? (installProgress?.detail || 'Please wait...')
+                          : zonosInstalled 
+                            ? 'Installed but not running'
+                            : 'Not installed'
+                        }
+                      </p>
+                   </div>
+                   {zonosInstallStatus === 'installing' && (
+                      <button
+                         onClick={handleCancelInstall}
+                         className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all flex items-center gap-2"
+                         title="Cancel Installation"
+                      >
+                         <XCircle size={18} />
+                         <span className="text-sm font-medium">Cancel</span>
+                      </button>
                    )}
                 </div>
+
+                {/* Progress bar for installation */}
+                {zonosInstallStatus === 'installing' && installProgress && (
+                   <div className="mb-4">
+                      <div className="flex justify-between text-xs text-zinc-400 mb-2">
+                         <span>Step {installProgress.step} of {installProgress.total}</span>
+                         <span>{progressPercent}%</span>
+                      </div>
+                      <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                         <div 
+                            className="h-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-500 ease-out"
+                            style={{ width: `${progressPercent}%` }}
+                         />
+                      </div>
+                      <div className="flex items-center justify-between mt-3">
+                         <p className="text-xs text-zinc-500">
+                            This may take 10-20 minutes on first run
+                         </p>
+                         <button
+                            onClick={() => setShowLog(!showLog)}
+                            className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                         >
+                            <FileText size={12} />
+                            {showLog ? 'Hide Log' : 'Show Log'}
+                         </button>
+                      </div>
+                      
+                      {/* Log display */}
+                      {showLog && (
+                         <div className="mt-3 p-3 bg-black/50 rounded-lg border border-white/5">
+                            <pre className="text-xs text-zinc-400 font-mono max-h-32 overflow-y-auto custom-scrollbar">
+                               {installLog || 'Waiting for log output...'}
+                            </pre>
+                         </div>
+                      )}
+                   </div>
+                )}
+
+                {/* Error display */}
+                {zonosError && (
+                   <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                      <div className="flex items-start gap-3">
+                         <AlertCircle className="text-red-400 shrink-0 mt-0.5" size={18} />
+                         <div className="flex-1">
+                            <h5 className="font-bold text-red-300">{zonosError.title}</h5>
+                            <p className="text-sm text-red-200/80 mt-1">{zonosError.message}</p>
+                            {zonosError.needsRestart && (
+                               <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded">
+                                  <p className="text-sm font-bold text-amber-300">⚠️ RESTART REQUIRED</p>
+                                  <p className="text-xs text-amber-200/70 mt-1">
+                                    Please restart your computer, then click "Install & Start" again.
+                                  </p>
+                               </div>
+                            )}
+                         </div>
+                      </div>
+                   </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex gap-3">
+                   {zonosStatus === 'connected' ? (
+                      <button 
+                         onClick={testZonosConnection}
+                         className="flex-1 px-4 py-3 bg-green-500/20 text-green-300 rounded-lg font-bold border border-green-500/30 hover:bg-green-500/30 transition-all"
+                      >
+                         ✅ Refresh Connection
+                      </button>
+                   ) : (
+                      <button 
+                         onClick={handleAutoInstallZonos}
+                         disabled={zonosInstallStatus === 'installing'}
+                         className={`flex-1 px-4 py-3 rounded-lg font-bold transition-all ${
+                            zonosInstallStatus === 'installing'
+                            ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-lg shadow-amber-500/20'
+                         }`}
+                      >
+                         {zonosInstallStatus === 'installing' ? (
+                            <span className="flex items-center justify-center gap-2">
+                               <Loader2 size={18} className="animate-spin" />
+                               Installing... {progressPercent}%
+                            </span>
+                         ) : zonosError?.needsRestart ? (
+                            '🔄 Retry After Restart'
+                         ) : zonosInstalled ? (
+                            '🚀 Start Zonos Server'
+                         ) : (
+                            '🚀 One-Click Install & Start'
+                         )}
+                      </button>
+                   )}
+                   
+                   <button 
+                      onClick={testZonosConnection}
+                      disabled={zonosInstallStatus === 'installing'}
+                      className="px-4 py-3 bg-zinc-800 text-zinc-300 rounded-lg font-medium border border-white/10 hover:bg-zinc-700 transition-all"
+                      title="Check Connection"
+                   >
+                      <RefreshCw size={18} />
+                   </button>
+                </div>
+
+                {/* Success state extras */}
+                {zonosStatus === 'connected' && (
+                   <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                      <p className="text-sm text-green-300">
+                        🎉 <strong>Zonos is ready!</strong> You can now generate ultra-realistic AI voices.
+                      </p>
+                      <p className="text-xs text-green-200/70 mt-1">
+                        The server is running at http://localhost:7860
+                      </p>
+                   </div>
+                )}
              </div>
+
+             {/* Manual fallback */}
+             {zonosInstallStatus === 'error' && !zonosError?.needsRestart && (
+                <div className="text-center">
+                   <button 
+                      onClick={() => window.electronAPI?.runToolScript?.('zonos_smart_installer.bat')}
+                      className="text-sm text-zinc-500 hover:text-zinc-300 underline"
+                   >
+                      Open Manual Installer (with terminal)
+                   </button>
+                </div>
+             )}
           </div>
        )}
 

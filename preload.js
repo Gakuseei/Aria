@@ -52,7 +52,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // API Key Check
   checkApiKey: () => ipcRenderer.invoke('check-api-key'),
   
-  // VERSION 5.4: Multimedia IPC handlers
+  // v0.2.5: Multimedia IPC handlers
   testImageGen: (params) => ipcRenderer.invoke('test-image-gen', params),
   testVoice: (params) => ipcRenderer.invoke('test-voice', params),
   generateImage: (params) => ipcRenderer.invoke('generate-image', params),

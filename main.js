@@ -1,4 +1,4 @@
-// Electron Main Process - VERSION 5.5 FINAL
+// Electron Main Process - v0.2.5
 // Deep Immersion with Passion Manager, Image Generation & Voice/TTS
 // AGGRESSIVE CSP: Only 'self', '127.0.0.1', 'localhost'
 
@@ -14,7 +14,7 @@ dotenv.config();
 
 let mainWindow;
 
-// VERSION 5.5: AGGRESSIVE Content Security Policy
+// v0.2.5: AGGRESSIVE Content Security Policy
 // CRITICAL: Only allow localhost/127.0.0.1 for Ollama + local services
 const CSP_DIRECTIVES = [
   "default-src 'self' file:",
@@ -155,7 +155,7 @@ function createWindow() {
     },
   });
 
-  // VERSION 5.5: AGGRESSIVE CSP ENFORCEMENT
+  // v0.2.5: AGGRESSIVE CSP ENFORCEMENT
   // This runs BEFORE any content loads - blocks ALL external requests
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     const responseHeaders = { ...details.responseHeaders };
@@ -443,7 +443,7 @@ app.on('activate', () => {
 });
 
 // ===========================================
-// VERSION 5.5: PASSION SENTIMENT ANALYSIS (moved to passionManager.js in frontend)
+// v0.2.5: PASSION SENTIMENT ANALYSIS (moved to passionManager.js in frontend)
 // ===========================================
 
 /**
@@ -523,7 +523,7 @@ ipcMain.handle('analyze-sentiment', async (event, params) => {
 });
 
 // ===========================================
-// VERSION 5.5: MULTIMEDIA IPC HANDLERS
+// v0.2.5: MULTIMEDIA IPC HANDLERS
 // ===========================================
 
 /**
@@ -1310,7 +1310,7 @@ ipcMain.handle('open-file-dialog', async (event, filters) => {
 });
 
 // ===========================================
-// VERSION 5.0 LOCAL: AI COMMUNICATION (OLLAMA ONLY)
+// v0.2.5 LOCAL: AI COMMUNICATION (OLLAMA ONLY)
 // ===========================================
 
 /**
@@ -1479,7 +1479,7 @@ Write VIVID, EXPLICIT, IMMERSIVE prose with minimal dialogue.`;
 });
 
 // ===========================================
-// VERSION 5.5: SYSTEM CHECK
+// v0.2.5: SYSTEM CHECK
 // ===========================================
 
 /**
@@ -1704,7 +1704,7 @@ ipcMain.handle('load-settings', async () => {
   }
 });
 
-// VERSION 5.0 LOCAL: No API key check needed (local only)
+// v0.2.5 LOCAL: No API key check needed (local only)
 ipcMain.handle('check-api-key', async () => {
   return { hasKey: true }; // Always true for local mode
 });

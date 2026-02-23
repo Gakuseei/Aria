@@ -17,13 +17,13 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
     loadCustomCharacters();
   }, []);
 
-  // v1.0 ROSE NOIR: Entrance animation
+  // v0.2.5 ROSE NOIR: Entrance animation
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
   }, []);
 
-  // v1.0: Check Gold Mode on mount and when theme changes
+  // v0.2.5: Check Gold Mode on mount and when theme changes
   useEffect(() => {
     const checkGoldMode = () => {
       const isSupporter = localStorage.getItem('isSupporter') === 'true';
@@ -101,7 +101,7 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
         avatarBase64: character.avatarBase64 || null,
         startingMessage: character.startingMessage,
         exportedAt: new Date().toISOString(),
-        version: '2.1',
+        version: '0.2.5',
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });

@@ -11,7 +11,7 @@ import { useLanguage } from '../context/LanguageContext';
 export default function Settings({ settings, onSettingChange, onClose }) {
   const { t, language, setLanguage } = useLanguage();
 
-  // VERSION 9.5: All settings now come from props, no local state
+  // v0.2.5: All settings now come from props, no local state
 
   // UI State
   const [availableModels, setAvailableModels] = useState([]);
@@ -22,17 +22,17 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const [availableVoiceModels, setAvailableVoiceModels] = useState([]);
   const [isGoldMode, setIsGoldMode] = useState(false);
 
-  // v1.0 FIX: Feature activation states (only activate after successful test)
+  // v0.2.5 FIX: Feature activation states (only activate after successful test)
   const [imageGenVerified, setImageGenVerified] = useState(false);
   const [voiceVerified, setVoiceVerified] = useState(false);
 
-  // v1.0: HARD SYNC FIX - Force localStorage update on EVERY setting change
+  // v0.2.5: HARD SYNC FIX - Force localStorage update on EVERY setting change
   useEffect(() => {
     console.log('[v1.0 Settings Hard Sync] Writing ALL settings to localStorage:', settings);
     localStorage.setItem('settings', JSON.stringify(settings));
   }, [settings]);
 
-  // v1.0: Check Gold Mode on mount and when theme changes
+  // v0.2.5: Check Gold Mode on mount and when theme changes
   useEffect(() => {
     const checkGoldMode = () => {
       const isSupporter = localStorage.getItem('isSupporter') === 'true';
@@ -110,7 +110,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
     loadVoiceModels();
   }, []);
 
-  // VERSION 9.5: Auto-detect Ollama models on mount
+  // v0.2.5: Auto-detect Ollama models on mount
   useEffect(() => {
     handleLoadModels();
   }, []);
@@ -127,7 +127,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
         setAvailableModels(models);
         console.log('[v9.5 Settings] ✅ Found', models.length, 'models');
 
-        // v9.5 FIX: Respect PREVIOUSLY SAVED model if it exists in the list
+        // v0.2.5 FIX: Respect PREVIOUSLY SAVED model if it exists in the list
         // Only auto-select if:
         // 1. No model currently selected
         // 2. Currently selected model is NOT in the available list
@@ -181,7 +181,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   };
 
   // ============================================================================
-  // v8.1 FIX: CLOSE BUTTON HANDLER
+  // v0.2.5 FIX: CLOSE BUTTON HANDLER
   // ============================================================================
 
   const handleClose = () => {
@@ -863,7 +863,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   </button>
                 </div>
 
-                {/* VERSION 9.5: AUFGABE 2 - Replaced "Sound Effects" with "Smart Suggestions" */}
+                {/* v0.2.5: AUFGABE 2 - Replaced "Sound Effects" with "Smart Suggestions" */}
                 <div className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg">
                   <div className="flex flex-col">
                     <span className="text-sm text-zinc-300">{t.settings.smartSuggestions}</span>

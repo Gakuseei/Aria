@@ -16,7 +16,7 @@ function LoadGame({ onLoad, onBack }) {
     loadSessions();
   }, []);
 
-  // v1.0 ROSE NOIR: Entrance animation
+  // v0.2.5 ROSE NOIR: Entrance animation
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);

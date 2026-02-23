@@ -110,7 +110,7 @@ const FALLBACK_SUGGESTIONS = {
 };
 
 // ============================================================================
-// VERSION 8.2: TRANSCRIPT ARTIFACT CLEANING
+// v0.2.5: TRANSCRIPT ARTIFACT CLEANING
 // ============================================================================
 
 /**
@@ -169,12 +169,12 @@ const DEFAULT_SETTINGS = {
   oledMode: false,
   passionSystemEnabled: true,
   preferredLanguage: 'en',
-  userName: 'User', // v8.1: RESTORED
-  userGender: 'male', // v9.1: NEW - User anatomical gender
-  imageGenEnabled: false, // v8.1: RESTORED
-  imageGenUrl: 'http://127.0.0.1:7860', // v8.1: RESTORED
-  voiceEnabled: false, // v8.1: RESTORED
-  voiceUrl: 'http://127.0.0.1:5000' // v8.1: RESTORED
+  userName: 'User', // v0.2.5: RESTORED
+  userGender: 'male', // v0.2.5: NEW - User anatomical gender
+  imageGenEnabled: false, // v0.2.5: RESTORED
+  imageGenUrl: 'http://127.0.0.1:7860', // v0.2.5: RESTORED
+  voiceEnabled: false, // v0.2.5: RESTORED
+  voiceUrl: 'http://127.0.0.1:5000' // v0.2.5: RESTORED
 };
 
 // ============================================================================
@@ -240,7 +240,7 @@ function detectState(messages) {
 }
 
 // ============================================================================
-// VERSION 9.0: UNIVERSAL ROLEPLAY ENGINE - DYNAMIC PROMPT GENERATOR
+// v0.2.5: UNIVERSAL ROLEPLAY ENGINE - DYNAMIC PROMPT GENERATOR
 // ============================================================================
 
 /**
@@ -259,8 +259,8 @@ function generateSystemPrompt({
   characterContext,
   messageCount,
   passionEnabled,
-  userGender = 'male', // v9.1 NEW
-  language = 'en' // v1.0: User-selected language from Settings
+  userGender = 'male', // v0.2.5 NEW
+  language = 'en' // v0.2.5: User-selected language from Settings
 }) {
   // ============================================================================
   // BLOCK 1: THE FOUNDATION (Global Physics - Universal Rules)
@@ -341,7 +341,7 @@ ${character.instructions}`;
   }
 
   // ============================================================================
-  // v9.1 NEW: USER GENDER & ANATOMY INFO
+  // v0.2.5 NEW: USER GENDER & ANATOMY INFO
   // ============================================================================
   const genderInfo = {
     male: {
@@ -577,7 +577,7 @@ Key sensations: ${sensoryGuidance.details.join(', ')}`;
   }
 
   // ============================================================================
-  // v1.0: LANGUAGE ENFORCEMENT BLOCK (HIGH PRIORITY)
+  // v0.2.5: LANGUAGE ENFORCEMENT BLOCK (HIGH PRIORITY)
   // ============================================================================
   const languageNames = {
     'en': 'English',
@@ -755,10 +755,10 @@ export const sendMessage = async (
   conversationHistory = [],
   sessionId = null,
   unchainedMode = false,
-  onApiStats = null,  // v1.0: NEW - Callback for API Monitor stats
-  settingsOverride = null  // v1.0: FIX - Accept settings directly to avoid race conditions
+  onApiStats = null,  // v0.2.5: NEW - Callback for API Monitor stats
+  settingsOverride = null  // v0.2.5: FIX - Accept settings directly to avoid race conditions
 ) => {
-  const startTime = Date.now();  // v1.0: Track response time
+  const startTime = Date.now();  // v0.2.5: Track response time
   
   console.log('[v9.2 API] 📤 Processing message...');
   console.log('[v9.2 API] Character:', character?.name || 'None');
@@ -782,11 +782,11 @@ export const sendMessage = async (
   }
 
   try {
-    // v1.0 FIX: Use provided settings to avoid localStorage race conditions
+    // v0.2.5 FIX: Use provided settings to avoid localStorage race conditions
     const settings = settingsOverride || await loadSettings();
     console.log('[v1.0 API] 🔧 Using settings:', settingsOverride ? 'from props' : 'from loadSettings()');
 
-    // v1.0 PERFORMANCE: Sliding Window (10-15 messages) for faster responses
+    // v0.2.5 PERFORMANCE: Sliding Window (10-15 messages) for faster responses
     const CONTEXT_WINDOW = 12;
     const historyToUse = Array.isArray(conversationHistory)
       ? conversationHistory.slice(-CONTEXT_WINDOW)
@@ -818,16 +818,16 @@ export const sendMessage = async (
 
     console.log('[v9.2 API] 🔥 Passion level:', currentPassionLevel);
 
-    // v9.1: USER GENDER INFO
+    // v0.2.5: USER GENDER INFO
     const userGender = settings.userGender || 'male';
     console.log('[v9.2 API] 👤 User Gender:', userGender);
 
-    // v1.0: USER-SELECTED LANGUAGE (from Settings)
+    // v0.2.5: USER-SELECTED LANGUAGE (from Settings)
     const selectedLanguage = settings.preferredLanguage || localStorage.getItem('language') || 'en';
     console.log('[v1.0 API] 🌍 Selected Language:', selectedLanguage);
 
     // ============================================================================
-    // VERSION 9.2: UNIVERSAL PROMPT GENERATOR + USER ANATOMY + POV FIX + LANGUAGE ENFORCEMENT
+    // v0.2.5: UNIVERSAL PROMPT GENERATOR + USER ANATOMY + POV FIX + LANGUAGE ENFORCEMENT
     // ============================================================================
     const finalSystemPrompt = generateSystemPrompt({
       character: character,
@@ -838,14 +838,14 @@ export const sendMessage = async (
       characterContext: characterContext,
       messageCount: updatedHistory.length,
       passionEnabled: settings.passionSystemEnabled,
-      userGender: userGender, // v9.1 NEW
-      language: selectedLanguage // v1.0: Language enforcement
+      userGender: userGender, // v0.2.5 NEW
+      language: selectedLanguage // v0.2.5: Language enforcement
     });
 
     console.log('[v9.2 API] 📋 Final system prompt length:', finalSystemPrompt.length);
 
     // ============================================================================
-    // VERSION 8.2: MINIAPPS STYLE - NO "User:" / "Assistant:" TRANSCRIPT
+    // v0.2.5: MINIAPPS STYLE - NO "User:" / "Assistant:" TRANSCRIPT
     // ============================================================================
     // CRITICAL: Use Ollama's /api/chat endpoint with proper message format
     // This prevents the AI from hallucinating "User:" and "Assistant:" labels
@@ -853,7 +853,7 @@ export const sendMessage = async (
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
     const model = settings.ollamaModel || 'llama3';
 
-    console.log('[v8.2 API] 🤖 Calling Ollama (Chat API):', ollamaUrl);
+    console.log(`[v8.2 API] 🤖 Calling Ollama: ${ollamaUrl} | Model: ${model}`);
 
     // Build messages array for /api/chat endpoint with system message
     const messages = [
@@ -874,7 +874,8 @@ export const sendMessage = async (
         options: {
           temperature: settings.temperature || 0.8,
           num_predict: 1024,
-          repeat_penalty: 1.2,  // PREVENT LOOPING
+          num_ctx: 4096,
+          repeat_penalty: 1.2,
           top_p: 0.9,
           top_k: 40
         },
@@ -897,7 +898,7 @@ export const sendMessage = async (
     let aiMessage = data.message.content.trim();
 
     // ============================================================================
-    // VERSION 8.2: CLEAN RESPONSE - Remove any transcript artifacts
+    // v0.2.5: CLEAN RESPONSE - Remove any transcript artifacts
     // ============================================================================
     aiMessage = cleanTranscriptArtifacts(aiMessage);
 
@@ -928,7 +929,7 @@ export const sendMessage = async (
 
     console.log('[v8.1 API] ✅ Message processed successfully');
 
-    // v1.0: CALCULATE API STATS FOR MONITOR
+    // v0.2.5: CALCULATE API STATS FOR MONITOR
     const endTime = Date.now();
     const responseTime = endTime - startTime;
     const wordCount = aiMessage.split(/\s+/).length;
@@ -937,7 +938,7 @@ export const sendMessage = async (
     // Estimate token count (rough approximation: 1.3 tokens per word)
     const estimatedTokens = Math.round(wordCount * 1.3);
 
-    // v1.0: Send stats to callback if provided
+    // v0.2.5: Send stats to callback if provided
     if (onApiStats && typeof onApiStats === 'function') {
       onApiStats({
         model: model,
@@ -955,7 +956,7 @@ export const sendMessage = async (
       message: aiMessage,
       conversationHistory: finalHistory,
       passionLevel: currentPassionLevel,
-      // v1.0: Return stats in response
+      // v0.2.5: Return stats in response
       stats: {
         responseTime,
         wordCount,
@@ -1179,7 +1180,7 @@ export const listSessions = async () => {
 };
 
 // ============================================================================
-// v8.1 RESTORED: OLLAMA HELPER FUNCTIONS
+// v0.2.5 RESTORED: OLLAMA HELPER FUNCTIONS
 // ============================================================================
 
 /**
@@ -1629,7 +1630,7 @@ export const generateSmartSuggestions = async (messages, character, language = '
     const characterMessage = lastAiMessage.content.substring(0, 400);
     const userMessage = lastUserMessage?.content.substring(0, 200) || '';
 
-    // v1.1: DETECT LANGUAGE FROM LAST AI MESSAGE (not UI settings)
+    // v0.2.5: DETECT LANGUAGE FROM LAST AI MESSAGE (not UI settings)
     // This ensures suggestions match the language the AI is currently speaking
     const detectedLangResult = detectLanguage(characterMessage);
     const detectedLang = detectedLangResult.language;

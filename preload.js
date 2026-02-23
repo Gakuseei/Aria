@@ -22,10 +22,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   aiCreativeWrite: (params) => ipcRenderer.invoke('ai-creative-write', params),
   
   // Session Management
-  saveSession: (params) => ipcRenderer.invoke('save-session', params),
-  loadSession: (params) => ipcRenderer.invoke('load-session', params),
+  saveSession: (sessionId, data) => ipcRenderer.invoke('save-session', { sessionId, data }),
+  loadSession: (sessionId) => ipcRenderer.invoke('load-session', { sessionId }),
   listSessions: () => ipcRenderer.invoke('list-sessions'),
-  deleteSession: (params) => ipcRenderer.invoke('delete-session', params),
+  deleteSession: (sessionId) => ipcRenderer.invoke('delete-session', { sessionId }),
   
   // Settings
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),

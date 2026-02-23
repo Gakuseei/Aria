@@ -27,8 +27,8 @@ function LoadGame({ onLoad, onBack }) {
     const result = await listSessions();
     if (result.success) {
       // Sort by date, newest first
-      const sorted = result.sessions.sort((a, b) => 
-        new Date(b.savedAt) - new Date(a.savedAt)
+      const sorted = result.sessions.sort((a, b) =>
+        new Date(b.lastUpdated || b.savedAt) - new Date(a.lastUpdated || a.savedAt)
       );
       setSessions(sorted);
     }
@@ -55,6 +55,7 @@ function LoadGame({ onLoad, onBack }) {
       onLoad({
         ...selectedSession,
         sessionId: selectedSession.id,
+        messages: selectedSession.conversationHistory || selectedSession.messages || [],
       });
     }
   };
@@ -190,13 +191,13 @@ function LoadGame({ onLoad, onBack }) {
                           }
                         </h3>
                         <span className="text-xs text-zinc-500">
-                          {formatDate(session.savedAt)}
+                          {formatDate(session.lastUpdated || session.savedAt)}
                         </span>
                       </div>
 
                       <p className="text-sm text-zinc-500 mb-3">
                         {session.mode === GAME_MODES.CHARACTER_CHAT
-                          ? `${session.messages?.length || 0} messages • Rapport: ${session.rapportLevel || 0}%`
+                          ? `${(session.conversationHistory || session.messages)?.length || 0} messages • Passion: ${session.passionLevel || 0}%`
                           : `${session.history?.length || 0} generations`
                         }
                       </p>
@@ -204,7 +205,7 @@ function LoadGame({ onLoad, onBack }) {
                       {/* Preview */}
                       <div className="text-xs text-zinc-600 line-clamp-2">
                         {session.mode === GAME_MODES.CHARACTER_CHAT
-                          ? session.messages?.[session.messages.length - 1]?.content?.substring(0, 100)
+                          ? (session.conversationHistory || session.messages)?.[(session.conversationHistory || session.messages)?.length - 1]?.content?.substring(0, 100)
                           : session.content?.substring(0, 100)
                         }
                         ...
@@ -256,7 +257,7 @@ function LoadGame({ onLoad, onBack }) {
                     }
                   </h3>
                   <p className="text-xs text-zinc-500">
-                    Saved {formatDate(selectedSession.savedAt)}
+                    Saved {formatDate(selectedSession.lastUpdated || selectedSession.savedAt)}
                   </p>
                 </div>
 
@@ -266,15 +267,11 @@ function LoadGame({ onLoad, onBack }) {
                     <>
                       <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50">
                         <span className="text-sm text-zinc-400">Messages</span>
-                        <span className="text-white font-medium">{selectedSession.messages?.length || 0}</span>
+                        <span className="text-white font-medium">{(selectedSession.conversationHistory || selectedSession.messages)?.length || 0}</span>
                       </div>
                       <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50">
-                        <span className="text-sm text-zinc-400">Rapport Level</span>
-                        <span className="text-white font-medium">{selectedSession.rapportLevel || 0}%</span>
-                      </div>
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50">
-                        <span className="text-sm text-zinc-400">Current Mood</span>
-                        <span className="text-white font-medium capitalize">{selectedSession.currentMood || 'default'}</span>
+                        <span className="text-sm text-zinc-400">Passion Level</span>
+                        <span className="text-white font-medium">{selectedSession.passionLevel || 0}%</span>
                       </div>
                     </>
                   ) : (

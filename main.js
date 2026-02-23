@@ -1596,13 +1596,29 @@ ipcMain.handle('list-sessions', async () => {
       return { success: true, sessions: [] };
     }
 
+    // Clean up ghost session from old preload.js bug
+    const ghostFile = path.join(sessionsDir, 'undefined.json');
+    if (fs.existsSync(ghostFile)) {
+      try {
+        fs.unlinkSync(ghostFile);
+        console.log('[Session Cleanup] Deleted ghost file: undefined.json');
+      } catch (e) {
+        console.warn('[Session Cleanup] Could not delete undefined.json:', e.message);
+      }
+    }
+
     const files = fs.readdirSync(sessionsDir)
       .filter(file => file.endsWith('.json'))
+      .filter(file => {
+        // Skip sessions with invalid IDs (leftover from bugs)
+        const id = file.replace('.json', '');
+        return id && id !== 'undefined' && id !== 'null';
+      })
       .map(file => {
         const sessionPath = path.join(sessionsDir, file);
         const data = JSON.parse(fs.readFileSync(sessionPath, 'utf-8'));
         const sessionId = file.replace('.json', '');
-        
+
         return {
           id: sessionId,
           ...data,

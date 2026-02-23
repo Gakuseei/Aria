@@ -480,7 +480,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       if (voiceEnabled !== newValue) {
         setVoiceEnabled(newValue);
         const updatedSettings = { ...settings, voiceEnabled: newValue };
-        setSettings(updatedSettings);
+        setLocalSettings(updatedSettings);
         localStorage.setItem('settings', JSON.stringify(updatedSettings));
       }
     });
@@ -500,13 +500,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         console.log('[ChatInterface] Image Generation synced:', newSettings.imageGenEnabled);
       }
       if (newSettings.imageGenUrl !== undefined) {
-        setSettings(prev => ({ ...prev, imageGenUrl: newSettings.imageGenUrl }));
+        setLocalSettings(prev => ({ ...prev, imageGenUrl: newSettings.imageGenUrl }));
       }
       if (newSettings.modelPath !== undefined && newSettings.modelPath !== settings.modelPath) {
-        setSettings(prev => ({ ...prev, modelPath: newSettings.modelPath }));
+        setLocalSettings(prev => ({ ...prev, modelPath: newSettings.modelPath }));
       }
       if (newSettings.piperPath !== undefined && newSettings.piperPath !== settings.piperPath) {
-        setSettings(prev => ({ ...prev, piperPath: newSettings.piperPath }));
+        setLocalSettings(prev => ({ ...prev, piperPath: newSettings.piperPath }));
       }
       localStorage.setItem('settings', JSON.stringify(newSettings));
     });
@@ -1262,7 +1262,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                         
                         // Optimistic update
                         setVoiceEnabled(newValue);
-                        setSettings(updatedSettings);
+                        setLocalSettings(updatedSettings);
                       }}
                       className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
                         voiceEnabled === true
@@ -1308,12 +1308,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                             ]);
                             if (path) {
                               const newSettings = { ...settings, modelPath: path };
-                              setSettings(newSettings);
+                              setLocalSettings(newSettings);
                               await window.electronAPI.saveSettings(newSettings);
                             }
                           } else {
                             const newSettings = { ...settings, modelPath: selectedPath };
-                            setSettings(newSettings);
+                            setLocalSettings(newSettings);
                             await window.electronAPI.saveSettings(newSettings);
                           }
                         }}
@@ -1346,7 +1346,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                         onChange={async (e) => {
                           const newVol = parseFloat(e.target.value);
                           const newSettings = { ...settings, voiceVolume: newVol };
-                          setSettings(newSettings);
+                          setLocalSettings(newSettings);
                           await window.electronAPI.saveSettings(newSettings);
                         }}
                         className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"

@@ -1074,7 +1074,7 @@ export const saveSession = async (sessionId, sessionData) => {
     if (!sessionData) throw new Error('Session data required');
 
     const completeSessionData = {
-      characterId: sessionData.characterId,
+      ...sessionData,
       characterName: sessionData.characterName || 'Unknown',
       conversationHistory: sessionData.conversationHistory || [],
       passionLevel: sessionData.passionLevel || 0,
@@ -1113,10 +1113,10 @@ export const loadSession = async (sessionId) => {
     if (isElectron()) {
       console.log('[v8.1 Session] 📖 Loading via IPC:', sessionId);
       const result = await window.electronAPI.loadSession(sessionId);
-      
-      if (result && result.success && result.session) {
+
+      if (result && result.success && (result.session || result.data)) {
         console.log('[v8.1 Session] ✅ Loaded successfully');
-        return { success: true, session: result.session };
+        return { success: true, session: result.session || result.data };
       } else {
         throw new Error(result?.error || 'Session not found');
       }
@@ -1181,7 +1181,7 @@ export const listSessions = async () => {
       console.log('[v8.1 Session] 📋 Listing from localStorage...');
       const sessions = JSON.parse(localStorage.getItem('sessions') || '{}');
       const sessionList = Object.keys(sessions).map(id => ({
-        sessionId: id,
+        id: id,
         ...sessions[id]
       }));
       

@@ -2,7 +2,7 @@
 // ARIA v1.0 RELEASE - ChatInterface
 // ============================================================================
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSmartSuggestions } from '../lib/api';
@@ -286,8 +286,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     oledMode: false
   });
   
-  // Merge parent settings with local settings
-  const settings = { ...localSettings, ...parentSettings };
+  // Merge parent settings with local settings (memoized to prevent useEffect churn)
+  const settings = useMemo(() => ({ ...localSettings, ...parentSettings }), [localSettings, parentSettings]);
 
   // Voice Settings Popover State
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);

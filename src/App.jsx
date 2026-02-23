@@ -171,11 +171,8 @@ function App() {
           if (autoDetectResult.success) {
             if (autoDetectResult.changed) {
               console.log(`[v8.2 Startup] 🎯 Model auto-configured: ${autoDetectResult.model}`);
-              // Reload settings to get the updated model
-              const updatedSettings = await loadSettings();
-              if (updatedSettings.success) {
-                setSettings(updatedSettings.settings);
-              }
+              // Update settings state directly with the auto-detected model
+              setSettings(prev => ({ ...prev, ollamaModel: autoDetectResult.model }));
             } else {
               console.log(`[v8.2 Startup] ✅ Model already configured: ${autoDetectResult.model}`);
             }

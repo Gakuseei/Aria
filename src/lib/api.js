@@ -1268,9 +1268,8 @@ export const autoDetectAndSetModel = async (ollamaUrl = 'http://127.0.0.1:11434'
       return { success: false, error: 'No models installed', models: [] };
     }
 
-    // Get current settings (using the proper loadSettings function)
-    const settingsResult = await loadSettings();
-    const settings = settingsResult.success ? settingsResult : { ...DEFAULT_SETTINGS };
+    // Get current settings (loadSettings returns the settings object directly)
+    const settings = await loadSettings();
 
     // Check if current model exists in available models
     const currentModel = settings.ollamaModel;

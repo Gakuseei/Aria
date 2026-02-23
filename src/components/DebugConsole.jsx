@@ -209,7 +209,7 @@ export default function DebugConsole({
 
   const copyError = (error) => {
     const errorText = `[${error.severity.toUpperCase()}] ${formatFullDate(error.timestamp)}
-App Version: 1.0.0
+App Version: 0.2.5
 Platform: ${getPlatformInfo()}
 Location: ${error.source}
 Message: ${error.message}
@@ -234,7 +234,7 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}`;
 
     const allErrorsText = `ARIA ERROR REPORT
 Generated: ${formatFullDate(Date.now())}
-App Version: 1.0.0
+App Version: 0.2.5
 Platform: ${getPlatformInfo()}
 Total Errors: ${errors.length}
 
@@ -296,7 +296,7 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}
 
     const logContent = `ARIA ERROR LOG
 Generated: ${formatFullDate(Date.now())}
-App Version: 1.0.0
+App Version: 0.2.5
 Platform: ${getPlatformInfo()}
 Total Errors: ${errors.length}
 

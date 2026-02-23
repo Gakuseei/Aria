@@ -9,7 +9,7 @@ import CreativeWriting from './components/CreativeWriting';
 import LoadGame from './components/LoadGame';
 import Settings from './components/Settings';
 import CharacterCreator from './components/CharacterCreator';
-import DebugConsole from './components/DebugConsole'; // VERSION 9.3
+import DebugConsole from './components/DebugConsole'; // v0.2.5
 import CustomDropdown from './components/CustomDropdown';
 import OledToggleButton from './components/OledToggleButton';
 import { useLanguage } from './context/LanguageContext';
@@ -34,7 +34,7 @@ export const GAME_MODES = {
   CHARACTER_CHAT: 'character_chat',
 };
 
-// VERSION 8.1: Onboarding Modal removed - Replaced by OllamaSetup.jsx
+// v0.2.5: Onboarding Modal removed - Replaced by OllamaSetup.jsx
 
 function App() {
   const [currentView, setCurrentView] = useState(VIEWS.MAIN_MENU);
@@ -42,30 +42,30 @@ function App() {
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [loadedSession, setLoadedSession] = useState(null);
 
-  // VERSION 8.1: Onboarding state
+  // v0.2.5: Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [ollamaReady, setOllamaReady] = useState(false);
 
-  // VERSION 8.1: OLED Mode state
+  // v0.2.5: OLED Mode state
   const [oledModeActive, setOledModeActive] = useState(false);
 
-  // VERSION 9.3: Animations state
+  // v0.2.5: Animations state
   const [animationsActive, setAnimationsActive] = useState(true);
 
-  // VERSION 9.3: Debug Console state
+  // v0.2.5: Debug Console state
   const [showDebugConsole, setShowDebugConsole] = useState(false);
 
-  // VERSION 9.4: Event Log & API Monitor state
+  // v0.2.5: Event Log & API Monitor state
   const [eventLog, setEventLog] = useState([]);
   const [lastApiResponseTime, setLastApiResponseTime] = useState(null);
 
-  // VERSION 9.5: AUFGABE 4 - Enhanced API Monitor state
+  // v0.2.5: AUFGABE 4 - Enhanced API Monitor state
   const [lastResponseWords, setLastResponseWords] = useState(null);
   const [lastResponseTokens, setLastResponseTokens] = useState(null);
   const [lastApiModel, setLastApiModel] = useState(null);
   const [lastApiWPS, setLastApiWPS] = useState(null);
 
-  // VERSION 9.5: CRITICAL FIX - Lifted Settings State (AUFGABE 1)
+  // v0.2.5: CRITICAL FIX - Lifted Settings State (AUFGABE 1)
   const [settings, setSettings] = useState({
     ollamaUrl: 'http://127.0.0.1:11434',
     ollamaModel: 'hermes3',
@@ -97,10 +97,10 @@ function App() {
     setEventLog(prev => [newEvent, ...prev].slice(0, 10));
   };
 
-  // VERSION 9.5: CRITICAL FIX - Load settings from localStorage on startup
+  // v0.2.5: CRITICAL FIX - Load settings from localStorage on startup
   useEffect(() => {
     async function initializeApp() {
-      // VERSION 9.5: Load settings from localStorage FIRST
+      // v0.2.5: Load settings from localStorage FIRST
       try {
         const stored = localStorage.getItem('settings');
         if (stored) {
@@ -154,7 +154,7 @@ function App() {
         console.error('[v9.5 App Init] ❌ Error loading settings:', error);
       }
 
-      // VERSION 8.1: Check Ollama connection (NO API KEY!)
+      // v0.2.5: Check Ollama connection (NO API KEY!)
       console.log('[v8.1 Startup] Checking Ollama connection...');
       try {
         const ollamaTest = await testOllamaConnection();
@@ -164,7 +164,7 @@ function App() {
           setOllamaReady(true);
           setShowOnboarding(false);
 
-          // VERSION 8.2: AUTO-DETECT AND SET MODEL
+          // v0.2.5: AUTO-DETECT AND SET MODEL
           console.log('[v8.2 Startup] 🔍 Auto-detecting Ollama model...');
           const autoDetectResult = await autoDetectAndSetModel();
 
@@ -194,7 +194,7 @@ function App() {
     initializeApp();
   }, []);
 
-  // VERSION 9.3: Keyboard shortcut for Debug Console (Ctrl+D)
+  // v0.2.5: Keyboard shortcut for Debug Console (Ctrl+D)
   useEffect(() => {
     const handleKeyPress = (e) => {
       // Ctrl+D (or Cmd+D on Mac)
@@ -212,7 +212,7 @@ function App() {
     };
   }, []);
 
-  // v1.0: API MONITOR - Listen for API stats from ChatInterface
+  // v0.2.5: API MONITOR - Listen for API stats from ChatInterface
   useEffect(() => {
     const handleApiStats = (event) => {
       const stats = event.detail;
@@ -234,7 +234,7 @@ function App() {
     };
   }, []);
 
-  // VERSION 9.5: CRITICAL FIX - Settings update handler (replaces event listener)
+  // v0.2.5: CRITICAL FIX - Settings update handler (replaces event listener)
   const handleSettingChange = (key, value) => {
     const newSettings = {
       ...settings,
@@ -252,7 +252,7 @@ function App() {
       window.electronAPI.saveSettings(newSettings);
     }
 
-    // v1.0 FIX: LOG EVERY SETTING CHANGE to Event Log
+    // v0.2.5 FIX: LOG EVERY SETTING CHANGE to Event Log
     addEventToLog('settings', `${key} → ${typeof value === 'boolean' ? (value ? 'ON' : 'OFF') : value}`);
 
     // Apply UI effects IMMEDIATELY
@@ -271,7 +271,7 @@ function App() {
     console.log(`[v9.5 App] ✅ Setting "${key}" updated to:`, value);
   };
 
-  // VERSION 9.4: Apply GLOBAL UI SCALING via REM-based font-size
+  // v0.2.5: Apply GLOBAL UI SCALING via REM-based font-size
   const applyUIScale = (scale) => {
     const root = document.documentElement;
 
@@ -292,7 +292,7 @@ function App() {
     console.log(`[v9.4 UI Scale] Applied REM-based scale: ${scale} (${fontSize})`);
   };
 
-  // VERSION 8.1: Apply OLED mode to body element
+  // v0.2.5: Apply OLED mode to body element
   const applyOledMode = (enabled) => {
     console.log('[v8.1 App] Applying OLED mode:', enabled);
 
@@ -305,7 +305,7 @@ function App() {
     }
   };
 
-  // VERSION 9.3: Apply/remove animations globally
+  // v0.2.5: Apply/remove animations globally
   const applyAnimations = (enabled) => {
     console.log('[v9.3 App] Applying animations:', enabled);
 
@@ -319,7 +319,7 @@ function App() {
   };
 
 
-  // VERSION 8.1: Retry Ollama connection
+  // v0.2.5: Retry Ollama connection
   const handleRetryOllama = async () => {
     console.log('[v8.1 Onboarding] Retrying Ollama connection...');
     const ollamaTest = await testOllamaConnection();
@@ -529,7 +529,7 @@ function App() {
 
   return (
     <div className="app-container h-screen w-screen overflow-hidden bg-zinc-950 text-white">
-      {/* VERSION 8.1: Onboarding Modal - Replaced by Premium OllamaSetup */}
+      {/* v0.2.5: Onboarding Modal - Replaced by Premium OllamaSetup */}
       {showOnboarding && (
          <OllamaSetup 
             isOnboarding={true}
@@ -572,14 +572,14 @@ function App() {
         </main>
       )}
       
-      {/* VERSION 8.1: OLED Mode Toggle Button */}
+      {/* v0.2.5: OLED Mode Toggle Button */}
       <OledToggleButton
         oledMode={oledModeActive}
         onToggle={handleSettingChange}
         currentView={currentView}
       />
 
-      {/* VERSION 9.5: Debug Console PRO (Ctrl+D) - Enhanced API Monitor */}
+      {/* v0.2.5: Debug Console PRO (Ctrl+D) - Enhanced API Monitor */}
       <DebugConsole
         isVisible={showDebugConsole}
         onClose={() => setShowDebugConsole(false)}

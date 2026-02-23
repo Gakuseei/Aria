@@ -82,7 +82,7 @@ function CharacterCreator({ onSave, onBack }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  // VERSION 4.3 BULLETPROOF: Fixed duplicate prevention
+  // v0.2.5 BULLETPROOF: Fixed duplicate prevention
   const handleSave = () => {
     if (!validate()) return;
 

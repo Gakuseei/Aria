@@ -76,7 +76,7 @@ function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, 
   // BLOCK 7.0: Gold Mode - Check supporter status for amber name
   const isSupporter = localStorage.getItem('isSupporter') === 'true';
 
-  // v1.0 ROSE NOIR: Avatar styling
+  // v0.2.5 ROSE NOIR: Avatar styling
   const avatarLetter = isUser ? (userName?.[0] || 'U') : (character?.name?.[0] || 'A');
 
   return (
@@ -266,16 +266,16 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // BLOCK 6.9: Entrance Animation
   const [isVisible, setIsVisible] = useState(false);
   
-  // v1.0: Gold Mode State
+  // v0.2.5: Gold Mode State
   const [isGoldMode, setIsGoldMode] = useState(false);
   
-  // v8.1 RESTORED: Feature states from localStorage
+  // v0.2.5 RESTORED: Feature states from localStorage
   const [userName, setUserName] = useState('User');
   const [imageGenEnabled, setImageGenEnabled] = useState(false);
   // STEP 2 FIX: Initialize voiceEnabled as null to distinguish "not loaded" from "false"
   const [voiceEnabled, setVoiceEnabled] = useState(null);
 
-  // v1.0 FIX: Settings come from parent (App.jsx), merged with localStorage for backward compatibility
+  // v0.2.5 FIX: Settings come from parent (App.jsx), merged with localStorage for backward compatibility
   const [localSettings, setLocalSettings] = useState({
     imageGenUrl: 'http://127.0.0.1:7860',
     voiceUrl: 'http://127.0.0.1:5000',
@@ -302,33 +302,33 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     localStorage.setItem('autoReadEnabled', JSON.stringify(autoReadEnabled));
   }, [autoReadEnabled]);
   
-  // v8.1 RESTORED: UI panels
+  // v0.2.5 RESTORED: UI panels
   const [showImagePanel, setShowImagePanel] = useState(false);
 
   // Text Zoom State
   const [fontSize, setFontSize] = useState('base');
 
-  // v1.0: Character Bio Modal
+  // v0.2.5: Character Bio Modal
   const [showBioModal, setShowBioModal] = useState(false);
 
-  // v1.0: Passion System Toggle (OFF = Unchained Mode, ON = Gatekeeping)
+  // v0.2.5: Passion System Toggle (OFF = Unchained Mode, ON = Gatekeeping)
   const [passionGatekeepingEnabled, setPassionGatekeepingEnabled] = useState(() => {
     const saved = localStorage.getItem('passionGatekeepingEnabled');
     return saved !== null ? JSON.parse(saved) : true;  // Default: Gatekeeping ON
   });
 
-  // v1.0: Smart Suggestions
+  // v0.2.5: Smart Suggestions
   const [smartSuggestions, setSmartSuggestions] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [smartSuggestionsEnabled, setSmartSuggestionsEnabled] = useState(true);
 
-  // v1.0: Image Generation Modal
+  // v0.2.5: Image Generation Modal
   const [showImageModal, setShowImageModal] = useState(false);
   const [imagePrompt, setImagePrompt] = useState('');
   const [generatingImage, setGeneratingImage] = useState(false);
   const [lastImageGenMessage, setLastImageGenMessage] = useState(0);
 
-  // v1.0: Tutorial Modal
+  // v0.2.5: Tutorial Modal
   const [showTutorial, setShowTutorial] = useState(null);
 
   const messagesEndRef = useRef(null);
@@ -343,7 +343,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     return () => clearTimeout(timer);
   }, []);
 
-  // v1.0: Check Gold Mode on mount and when localStorage changes
+  // v0.2.5: Check Gold Mode on mount and when localStorage changes
   useEffect(() => {
     const checkGoldMode = () => {
       const isSupporter = localStorage.getItem('isSupporter') === 'true';
@@ -391,7 +391,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   }, [showChatOptions, showVoiceSettings]);
 
   // ============================================================================
-  // v8.1 RESTORED: LOAD SETTINGS FROM LOCALSTORAGE + IPC
+  // v0.2.5 RESTORED: LOAD SETTINGS FROM LOCALSTORAGE + IPC
   // ============================================================================
 
   useEffect(() => {
@@ -432,7 +432,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
         console.log('[v8.1 ChatInterface] ✅ Settings loaded:', { userName, imageGenEnabled, voiceEnabled, fontSize: savedFontSize });
 
-        // VERSION 8.2: AUTO-DETECT MODEL WHEN OPENING CHAT
+        // v0.2.5: AUTO-DETECT MODEL WHEN OPENING CHAT
         console.log('[v8.2 ChatInterface] 🔍 Auto-detecting Ollama model...');
         const autoDetectResult = await autoDetectAndSetModel();
 
@@ -446,7 +446,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           console.warn('[v8.2 ChatInterface] ⚠️ No models found. User needs to install a model.');
         }
 
-        // v1.0: Generate initial suggestions (chat starters)
+        // v0.2.5: Generate initial suggestions (chat starters)
         if (settings.smartSuggestionsEnabled !== false) {
           generateSuggestions([]);
         }
@@ -523,7 +523,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   }, [fontSize]);
 
   // ============================================================================
-  // v1.0: PERSIST PASSION GATEKEEPING TOGGLE & APPLY LOGIC
+  // v0.2.5: PERSIST PASSION GATEKEEPING TOGGLE & APPLY LOGIC
   // ============================================================================
 
   useEffect(() => {
@@ -559,7 +559,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       return;
     }
 
-    // v9.2 FIX: Generate UNIQUE session ID for each new chat (not per character)
+    // v0.2.5 FIX: Generate UNIQUE session ID for each new chat (not per character)
     // This ensures Passion Level resets to 0 for new chats
     const newSessionId = generateSessionId();
     setSessionId(newSessionId);
@@ -651,7 +651,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   };
 
   // ============================================================================
-  // v1.0: SMART SUGGESTIONS GENERATOR
+  // v0.2.5: SMART SUGGESTIONS GENERATOR
   // ============================================================================
 
   const generateSuggestions = async (currentMessages) => {
@@ -675,7 +675,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   };
 
   // ============================================================================
-  // v1.0: IMAGE GENERATION (AUTO & MANUAL)
+  // v0.2.5: IMAGE GENERATION (AUTO & MANUAL)
   // ============================================================================
 
   const handleAutoImageGen = async () => {
@@ -743,13 +743,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     setInput('');
     setIsLoading(true);
 
-    // v1.0: PASSION SYSTEM 2.0 - Force 100% in Unchained Mode
+    // v0.2.5: PASSION SYSTEM 2.0 - Force 100% in Unchained Mode
     if (!passionGatekeepingEnabled) {
       setPassionLevel(100);
     }
 
     try {
-      // v1.0: API MONITOR - Send stats to parent via window event
+      // v0.2.5: API MONITOR - Send stats to parent via window event
       const handleApiStats = (stats) => {
         window.dispatchEvent(new CustomEvent('aria-api-stats', { detail: stats }));
       };
@@ -761,8 +761,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         newMessages,
         sessionId,
         !passionGatekeepingEnabled,  // Pass Unchained Mode flag
-        handleApiStats,  // v1.0: Pass stats callback
-        settings  // v1.0 FIX: Pass settings directly to avoid race conditions
+        handleApiStats,  // v0.2.5: Pass stats callback
+        settings  // v0.2.5 FIX: Pass settings directly to avoid race conditions
       );
 
       if (!response.success) {
@@ -783,12 +783,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         setPassionLevel(response.passionLevel);
       }
 
-      // v1.0: Generate new suggestions after AI response
+      // v0.2.5: Generate new suggestions after AI response
       if (smartSuggestionsEnabled) {
         generateSuggestions(updatedMessages);
       }
 
-      // v1.0: AUTO Image Generation check
+      // v0.2.5: AUTO Image Generation check
       if (imageGenEnabled && passionLevel > 60) {
         handleAutoImageGen();
       }
@@ -866,7 +866,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   const handleResetPassion = () => {
     if (confirm(t.chat.resetPassionConfirm)) {
-      // v9.2 FIX: Reset passion for SESSION, not character name
+      // v0.2.5 FIX: Reset passion for SESSION, not character name
       if (sessionId) {
         passionManager.resetPassion(sessionId);
       }
@@ -889,7 +889,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         console.error('[v9.2 ChatInterface] ❌ Error during hard reset:', error);
       }
 
-      // v9.2 FIX: Reset passion for SESSION, not character name
+      // v0.2.5 FIX: Reset passion for SESSION, not character name
       if (sessionId) {
         passionManager.resetPassion(sessionId);
       }
@@ -911,7 +911,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         passionLevel: passionLevel,
         sessionId: sessionId,
         exportedAt: new Date().toISOString(),
-        version: '9.2'
+        version: '0.2.5'
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -998,7 +998,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     setMessages(messagesUpToLastUser);
     setIsLoading(true);
 
-    // v1.0: PASSION SYSTEM 2.0 - Force 100% in Unchained Mode
+    // v0.2.5: PASSION SYSTEM 2.0 - Force 100% in Unchained Mode
     if (!passionGatekeepingEnabled) {
       setPassionLevel(100);
     }
@@ -1012,7 +1012,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         sessionId,
         !passionGatekeepingEnabled,  // Pass Unchained Mode flag
         null,  // No stats callback for regenerate
-        settings  // v1.0 FIX: Pass settings directly
+        settings  // v0.2.5 FIX: Pass settings directly
       );
 
       if (!response.success) {
@@ -1048,7 +1048,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     });
   };
 
-  // v8.1 RESTORED: Image Generation Handler
+  // v0.2.5 RESTORED: Image Generation Handler
   const handleImageGen = () => {
     if (!imageGenEnabled) {
       alert('Image Generation is disabled. Enable it in Settings.');
@@ -1063,7 +1063,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     setShowVoiceSettings(!showVoiceSettings);
   };
 
-  // v1.0: Tutorial Test Handlers
+  // v0.2.5: Tutorial Test Handlers
   const handleTestImageGen = async (url) => {
     try {
       const result = await window.electronAPI?.testImageGen?.(url);

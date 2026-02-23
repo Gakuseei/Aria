@@ -32,7 +32,7 @@ export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', im
     console.log("[Image Gen] Sending Payload:", JSON.stringify(payload, null, 2));
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 600000); // v1.0.2 FIX: 600s (10m) timeout for CPU generation
+    const timeoutId = setTimeout(() => controller.abort(), 600000); // v0.2.5 FIX: 600s (10m) timeout for CPU generation
 
     const response = await fetch(`${apiUrl}/sdapi/v1/txt2img`, {
       method: 'POST',
@@ -577,7 +577,7 @@ export function extractConversationContext(messages, character = '') {
     return cleanContextForImage(lastMessage?.content || '', character);
   }
 
-  // v1.3: LAST MESSAGE = PRIORITY #1, then older for context
+  // v0.2.5: LAST MESSAGE = PRIORITY #1, then older for context
   // The VERY LAST AI message is the current scene (absolute priority)
   const lastAiMessage = allAiMessages[allAiMessages.length - 1];
   const secondLastAi = allAiMessages.length > 1 ? allAiMessages[allAiMessages.length - 2] : null;
@@ -618,12 +618,12 @@ function cleanContextForImageWithPriority(recentText, olderText, character = '')
     ? recentActions.map(m => m.replace(/\*/g, '').trim()).join(' ') 
     : '';
 
-  // v1.8: MULTILINGUAL PREPROCESSING - Translate all foreign terms to English first
+  // v0.2.5: MULTILINGUAL PREPROCESSING - Translate all foreign terms to English first
   const recentFull = translateToEnglish((recentActionContent + ' ' + recentText).toLowerCase());
   const olderFull = translateToEnglish(olderText.toLowerCase());
 
   // ========== PRIORITY EXTRACTION (RECENT FIRST) ==========
-  // v1.5: COMPREHENSIVE NSFW PATTERN LIBRARY
+  // v0.2.5: COMPREHENSIVE NSFW PATTERN LIBRARY
   // All actions translated to VISUAL STATES for single-person SD images
 
   // 1. INTIMATE/EXPLICIT STATES - What the CHARACTER looks like
@@ -1484,7 +1484,7 @@ function cleanContextForImageWithPriority(recentText, olderText, character = '')
   for (const { pattern, tag } of intimatePatterns) {
     if (pattern.test(recentFull) && !intimateTags.includes(tag)) {
       intimateTags.push(tag);
-      if (intimateTags.length >= 5) break; // v1.5: Allow 5 tags for complex scenes
+      if (intimateTags.length >= 5) break; // v0.2.5: Allow 5 tags for complex scenes
     }
   }
 

@@ -100,7 +100,7 @@ export async function generateCreativeWriting(prompt, ollamaUrl = null, model = 
     console.log('[StoryEngine] Calling Ollama:', url);
     console.log('[StoryEngine] Model:', modelName);
 
-    // VERSION 9.5: AUFGABE 3 - Dynamic system prompt based on Passion System
+    // v0.2.5: AUFGABE 3 - Dynamic system prompt based on Passion System
     let systemPrompt = STORY_SYSTEM_PROMPT;
 
     if (passionSystemEnabled) {
@@ -171,7 +171,7 @@ FORMATTING:
     }
     // If Passion System is OFF, use default uncensored prompt (no gatekeeping)
 
-    // v1.0: LANGUAGE ENFORCEMENT
+    // v0.2.5: LANGUAGE ENFORCEMENT
     const languageNames = {
       'en': 'English',
       'de': 'German',

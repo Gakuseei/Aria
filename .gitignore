@@ -5,6 +5,7 @@ package-lock.json
 # Build outputs
 dist/
 dist-electron/
+release/
 *.local
 
 # OS files
@@ -26,6 +27,7 @@ nul
 logs/
 *.log
 npm-debug.log*
+Aria Roadmap.md
 
 # User data
 userData/

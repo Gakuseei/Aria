@@ -1273,11 +1273,17 @@ export const autoDetectAndSetModel = async (ollamaUrl = 'http://127.0.0.1:11434'
 
     // Check if current model exists in available models
     const currentModel = settings.ollamaModel;
-    const modelExists = models.includes(currentModel);
+    if (currentModel) {
+      const exactMatch = models.includes(currentModel);
+      // Fuzzy: only when no tag specified (e.g. 'dolphin3' matches 'dolphin3:latest')
+      // Do NOT match across different tags ('gemma3:27b' vs 'gemma3:7b' are different models)
+      const fuzzyMatch = !exactMatch && !currentModel.includes(':') &&
+        models.find(m => m.split(':')[0] === currentModel);
 
-    if (modelExists) {
-      console.log('[v8.2 Auto-Detect] ✅ Current model is valid:', currentModel);
-      return { success: true, model: currentModel, models: models, changed: false };
+      if (exactMatch || fuzzyMatch) {
+        console.log('[v8.2 Auto-Detect] ✅ Current model is valid:', currentModel);
+        return { success: true, model: currentModel, models: models, changed: false };
+      }
     }
 
     // Auto-select first available model
@@ -1291,15 +1297,16 @@ export const autoDetectAndSetModel = async (ollamaUrl = 'http://127.0.0.1:11434'
       ollamaUrl: ollamaUrl
     };
 
+    // Save to both IPC AND localStorage to keep them in sync
+    localStorage.setItem('settings', JSON.stringify(updatedSettings));
     if (isElectron()) {
-      console.log('[v8.2 Auto-Detect] 💾 Saving via IPC...');
+      console.log('[v8.2 Auto-Detect] 💾 Saving via IPC + localStorage...');
       const saveResult = await window.electronAPI.saveSettings(updatedSettings);
       if (!saveResult || !saveResult.success) {
         console.error('[v8.2 Auto-Detect] ❌ Failed to save via IPC');
       }
     } else {
       console.log('[v8.2 Auto-Detect] 💾 Saving to localStorage...');
-      localStorage.setItem('settings', JSON.stringify(updatedSettings));
     }
 
     console.log('[v8.2 Auto-Detect] ✅ Model auto-configured successfully!');

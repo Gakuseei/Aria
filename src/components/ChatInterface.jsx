@@ -406,11 +406,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           ? backendSettings 
           : JSON.parse(localStorage.getItem('settings') || '{}');
 
-        // BLOCK 8.2: Store full settings object
+        // BLOCK 8.2: Store full settings object (including ollamaModel)
         setLocalSettings({
           imageGenUrl: loadedSettings.imageGenUrl || 'http://127.0.0.1:7860',
           voiceUrl: loadedSettings.voiceUrl || 'http://127.0.0.1:5000',
           ollamaUrl: loadedSettings.ollamaUrl || 'http://127.0.0.1:11434',
+          ollamaModel: loadedSettings.ollamaModel || 'hermes3',
           piperPath: loadedSettings.piperPath || '',
           modelPath: loadedSettings.modelPath || '',
           voiceVolume: loadedSettings.voiceVolume ?? 1.0,

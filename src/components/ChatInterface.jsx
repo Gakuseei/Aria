@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSmartSuggestions } from '../lib/api';
 import { passionManager } from '../lib/PassionManager';
 import { generateImage, cleanContextForImage, extractConversationContext } from '../lib/imageGen';
@@ -251,7 +252,7 @@ function detectStateFromMessages(messages) {
 // MAIN CHAT INTERFACE - v8.1 RESTORED
 // ============================================================================
 
-export default function ChatInterface({ character, onBack, settings: parentSettings }) {
+export default function ChatInterface({ character, loadedSession, onBack, settings: parentSettings }) {
   const { t } = useLanguage();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -544,6 +545,19 @@ export default function ChatInterface({ character, onBack, settings: parentSetti
   }, [character]);
 
   const initializeChat = async () => {
+    // Check if we're restoring a saved session
+    if (loadedSession && loadedSession.messages && loadedSession.messages.length > 0) {
+      const restoredSessionId = loadedSession.sessionId || generateSessionId();
+      setSessionId(restoredSessionId);
+      setMessages(loadedSession.messages);
+      setPassionLevel(loadedSession.passionLevel || 0);
+
+      console.log('[v1.0 ChatInterface] 📂 Restored saved session:', restoredSessionId);
+      console.log('[v1.0 ChatInterface] 💬 Messages:', loadedSession.messages.length);
+      console.log('[v1.0 ChatInterface] 🔥 Passion Level:', loadedSession.passionLevel || 0);
+      return;
+    }
+
     // v9.2 FIX: Generate UNIQUE session ID for each new chat (not per character)
     // This ensures Passion Level resets to 0 for new chats
     const newSessionId = generateSessionId();
@@ -928,7 +942,7 @@ export default function ChatInterface({ character, onBack, settings: parentSetti
 
       // Validate required fields
       if (!importData.messages || !Array.isArray(importData.messages)) {
-        alert('Invalid chat file: missing messages');
+        toast.error('Invalid chat file: missing messages');
         return;
       }
 
@@ -941,10 +955,12 @@ export default function ChatInterface({ character, onBack, settings: parentSetti
         setSessionId(importData.sessionId);
       }
 
-      alert('Chat imported successfully!');
+      toast.success('Chat imported successfully!');
+      // Restore focus to input after import
+      setTimeout(() => inputRef.current?.focus(), 100);
     } catch (error) {
       console.error('Import error:', error);
-      alert('Failed to import chat. Please check the file format.');
+      toast.error('Failed to import chat. Please check the file format.');
     } finally {
       e.target.value = '';
     }

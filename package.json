@@ -1,7 +1,7 @@
 {
   "name": "aria-chatbot",
   "productName": "Aria ChatBot",
-  "version": "1.0.0",
+  "version": "0.2.5",
   "description": "High-End Interactive Fiction & Storytelling Suite",
   "main": "main.js",
   "scripts": {
@@ -48,8 +48,17 @@
     "files": [
       "main.js",
       "preload.js",
-      "dist/**/*",
-      "node_modules/**/*"
-    ]
+      "dist/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false,
+      "shortcutName": "Aria"
+    }
   }
 }

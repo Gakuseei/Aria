@@ -14,8 +14,8 @@
 
 <br/>
 
-[![Version](https://img.shields.io/badge/v0.2.5-E91E63?style=for-the-badge&labelColor=0d1117&logo=github)](https://github.com/Gakuseei/Aria/releases)
-[![Platform](https://img.shields.io/badge/Windows%20%7C%20macOS%20%7C%20Linux-8B5CF6?style=for-the-badge&labelColor=0d1117&logo=windowsterminal)](https://github.com/Gakuseei/Aria)
+[![Version](https://img.shields.io/badge/v0.2.5%20Alpha-E91E63?style=for-the-badge&labelColor=0d1117&logo=github)](https://github.com/Gakuseei/Aria/releases)
+[![Platform](https://img.shields.io/badge/Windows-8B5CF6?style=for-the-badge&labelColor=0d1117&logo=windows)](https://github.com/Gakuseei/Aria)
 [![License](https://img.shields.io/badge/MIT-FFD700?style=for-the-badge&labelColor=0d1117)](LICENSE.md)
 [![Offline](https://img.shields.io/badge/🔒%20100%25%20Private%20%26%20Offline-10B981?style=for-the-badge&labelColor=0d1117)](https://github.com/Gakuseei/Aria)
 
@@ -52,13 +52,12 @@
 
 <br/>
 
-> [!IMPORTANT]
-> ### 🚀 Early Access Now Available
-> 
-> Aria is in active development with frequent updates. Be among the **first users** to shape the future of private AI roleplay.
-> 
-> 📅 **v0.5 Alpha** — February 13, 2026  
-> 📅 **v1.0 Stable** — March 1, 2026
+> [!CAUTION]
+> ### ⚠️ ALPHA SOFTWARE
+>
+> **This is an early ALPHA release.** Expect bugs — potentially many. Features may be incomplete, unstable, or change without notice. Your feedback helps shape the future of Aria.
+>
+> **Use at your own risk.** Report issues on [Discord](https://discord.gg/h3gVtkw9ja) or [GitHub Issues](https://github.com/Gakuseei/Aria/issues).
 
 <br/>
 
@@ -168,11 +167,6 @@ Full localization
 <th>Recommended</th>
 </tr>
 <tr>
-<td align="center"><strong>Node.js</strong></td>
-<td align="center">v18+</td>
-<td align="center">v20+</td>
-</tr>
-<tr>
 <td align="center"><strong>Ollama</strong></td>
 <td align="center" colspan="2"><a href="https://ollama.ai">Download Latest</a></td>
 </tr>
@@ -190,26 +184,33 @@ Full localization
 
 <br/>
 
-### Installation
+### Download & Install
 
-```bash
-# Clone the repository
-git clone https://github.com/Gakuseei/Aria.git
+1. Download **`Aria Setup 0.2.5.exe`** from [Releases](https://github.com/Gakuseei/Aria/releases)
+2. Run the installer — Aria installs automatically
+3. Make sure [Ollama](https://ollama.ai) is running with at least one model pulled
+4. Launch Aria and start chatting
 
-# Enter directory
-cd Aria
-
-# Install dependencies
-npm install
-
-# Launch development mode
-npm run dev
-```
+> [!TIP]
+> **No terminal needed.** Just download, install, and go. Aria includes built-in tutorials to guide you through model setup, voice synthesis, and character creation.
 
 <br/>
 
-> [!TIP]
-> **First time user?** Aria includes interactive tutorials to guide you through model setup, voice synthesis, and character creation.
+<details>
+<summary><strong>Developer Setup (from source)</strong></summary>
+
+<br/>
+
+Requires **Node.js v18+** (v20+ recommended).
+
+```bash
+git clone https://github.com/Gakuseei/Aria.git
+cd Aria
+npm install
+npm run dev
+```
+
+</details>
 
 <br/>
 
@@ -231,22 +232,22 @@ npm run dev
 <tr>
 <th>Version</th>
 <th>Status</th>
-<th>Release</th>
 </tr>
 <tr>
-<td align="center"><strong>v0.2.5</strong></td>
+<td align="center"><strong>v0.2.5 Alpha</strong></td>
 <td align="center">✅ Current</td>
-<td align="center">Now</td>
 </tr>
 <tr>
 <td align="center"><strong>v0.5 Alpha</strong></td>
 <td align="center">🚧 In Development</td>
-<td align="center"><strong>Feb 13, 2026</strong></td>
 </tr>
 <tr>
-<td align="center"><strong>v1.0 Stable</strong></td>
+<td align="center"><strong>v1.0 Beta</strong></td>
 <td align="center">📋 Planned</td>
-<td align="center"><strong>Mar 1, 2026</strong></td>
+</tr>
+<tr>
+<td align="center"><strong>v2.0 Stable</strong></td>
+<td align="center">📋 Planned</td>
 </tr>
 </table>
 
@@ -264,28 +265,29 @@ npm run dev
 - [x] **Image Generation** — Stable Diffusion integration
 - [x] **Context Cleaner** — Smart memory management
 - [x] **Ko-fi Integration** — Direct supporter benefits
+- [x] **Windows Installer** — One-click setup, no terminal needed
+- [x] **OLED Toggle** — Quick-switch Moon/Sun button
 
 </details>
 
 <details open>
-<summary><strong>🚧 v0.5 Alpha (Feb 13)</strong></summary>
+<summary><strong>🚧 v0.5 Alpha — Next Up</strong></summary>
 
 <br/>
 
 | Feature | Description |
 |:--------|:------------|
 | 📚 **Tutorial 2.0** | Model recommendations by hardware tier |
-| 🌙 **OLED Toggle** | Quick-switch Moon/Sun button |
 | 💬 **Enhanced Chat** | Personas, auto-scroll, edit messages |
 | ❤️ **Passion 2.0** | Expanded relationship tiers |
-| 💾 **Auto Backup** | Saves after each message |
+| 💾 **Auto Backup** | Automatic saves after each message |
 | 🖼️ **Profile Pictures** | Character backgrounds & info tab |
 | 🔊 **Sound Effects** | Rose-Noir audio feedback |
 
 </details>
 
 <details>
-<summary><strong>📋 v1.0 Stable (Mar 1)</strong></summary>
+<summary><strong>📋 v1.0 Beta</strong></summary>
 
 <br/>
 
@@ -293,12 +295,24 @@ npm run dev
 |:--------|:------------|
 | 🎓 **Onboarding Tour** | First-time setup walkthrough |
 | 🎨 **Brand Refresh** | Refined visual identity |
-| 🥚 **Gold Easter Eggs** | Hidden surprises for supporters |
 | 👥 **Group Chats** | Multi-character conversations |
 | 👁️ **Vision** | Image understanding (local) |
 | 🎤 **TTS 2.0** | Enhanced emotional voice |
-| ⚖️ **Content Toggle** | Customizable preferences |
-| 📦 **Installers** | One-click Win/Mac/Linux setup |
+| ⚖️ **Content Toggle** | Customizable content preferences |
+
+</details>
+
+<details>
+<summary><strong>📋 v2.0 Stable</strong></summary>
+
+<br/>
+
+| Feature | Description |
+|:--------|:------------|
+| 🖥️ **Cross-Platform** | macOS & Linux installers |
+| 🥚 **Gold Easter Eggs** | Hidden surprises for supporters |
+| 🔌 **Plugin System** | Community extensions |
+| 📊 **Analytics** | Local usage insights & stats |
 
 </details>
 

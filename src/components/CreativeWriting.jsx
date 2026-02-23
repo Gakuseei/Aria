@@ -43,7 +43,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     localStorage.setItem('storyFontSize', fontSize);
   }, [fontSize]);
 
-  // v1.0 ROSE NOIR: Entrance animation
+  // v0.2.5 ROSE NOIR: Entrance animation
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
@@ -173,7 +173,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     setError(null);
 
     try {
-      // v1.0: Get language from settings
+      // v0.2.5: Get language from settings
       const selectedLanguage = localStorage.getItem('language') || 'en';
       const ollamaUrl = parentSettings?.ollamaUrl || 'http://127.0.0.1:11434';
       const model = parentSettings?.ollamaModel || 'hermes3';
@@ -218,7 +218,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     setError(null);
 
     try {
-      // v1.0: Get language from settings
+      // v0.2.5: Get language from settings
       const selectedLanguage = localStorage.getItem('language') || 'en';
       const ollamaUrl = parentSettings?.ollamaUrl || 'http://127.0.0.1:11434';
       const model = parentSettings?.ollamaModel || 'hermes3';
@@ -280,7 +280,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
         wordCount: wordCount,
         charCount: charCount,
         exportedAt: new Date().toISOString(),
-        version: '9.2'
+        version: '0.2.5'
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });

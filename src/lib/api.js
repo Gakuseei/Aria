@@ -926,22 +926,6 @@ export const sendMessage = async (
       currentPassionLevel = newPassionLevel;
     }
 
-    // AUTO-SAVE
-    if (settings.autoSave && sessionId) {
-      try {
-        await saveSession(sessionId, {
-          characterId: character.id,
-          characterName: character.name,
-          conversationHistory: finalHistory,
-          passionLevel: currentPassionLevel,
-          lastUpdated: new Date().toISOString()
-        });
-        console.log('[v8.1 API] 💾 Session auto-saved');
-      } catch (error) {
-        console.error('[v8.1 API] ⚠️ Auto-save error:', error);
-      }
-    }
-
     console.log('[v8.1 API] ✅ Message processed successfully');
 
     // v1.0: CALCULATE API STATS FOR MONITOR

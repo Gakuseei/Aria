@@ -188,11 +188,10 @@ Full localization
 
 1. Download **`Aria Setup 0.2.5.exe`** from [Releases](https://github.com/Gakuseei/Aria/releases)
 2. Run the installer — Aria installs automatically
-3. Make sure [Ollama](https://ollama.ai) is running with at least one model pulled
-4. Launch Aria and start chatting
+3. Launch Aria and go — the app guides you through everything else
 
 > [!TIP]
-> **No terminal needed.** Just download, install, and go. Aria includes built-in tutorials to guide you through model setup, voice synthesis, and character creation.
+> **No terminal needed.** Just download, install, and open. Aria walks you through Ollama setup, model selection, voice synthesis, and character creation.
 
 <br/>
 

@@ -129,6 +129,30 @@ class PassionManager {
   }
 
   /**
+   * Get current romantic streak count for a session
+   * @param {string} sessionId - Session identifier
+   * @returns {number} Consecutive romantic message count
+   */
+  getStreak(sessionId) {
+    return this.passionData[`${sessionId}_streak`] || 0;
+  }
+
+  /**
+   * Get and clear a pending tier transition for a session
+   * @param {string} sessionId - Session identifier
+   * @returns {string|null} Tier key ('innocent'|'warm'|'passionate'|'primal') or null
+   */
+  getAndClearTransition(sessionId) {
+    const key = `${sessionId}_transition`;
+    const transition = this.passionData[key];
+    if (transition) {
+      delete this.passionData[key];
+      this.savePassionData();
+    }
+    return transition || null;
+  }
+
+  /**
    * Update passion level based on conversation content
    * @param {string} sessionId - Session identifier
    * @param {string} userMessage - User message text
@@ -141,10 +165,12 @@ class PassionManager {
     const basePoints = this.calculatePassionPoints(userMessage, aiResponse);
 
     const cooldownKey = `${sessionId}_cooldown`;
+    const streakKey = `${sessionId}_streak`;
     let finalPoints;
 
     if (basePoints < 3) {
       this.passionData[cooldownKey] = (this.passionData[cooldownKey] || 0) + 1;
+      this.passionData[streakKey] = 0;
       if (this.passionData[cooldownKey] >= 3) {
         finalPoints = -1;
       } else {
@@ -152,10 +178,22 @@ class PassionManager {
       }
     } else {
       this.passionData[cooldownKey] = 0;
-      finalPoints = basePoints * Math.max(0.1, Math.min(10, speedMultiplier));
+      this.passionData[streakKey] = (this.passionData[streakKey] || 0) + 1;
+      let totalPoints = basePoints * Math.max(0.1, Math.min(10, speedMultiplier));
+      const streak = this.passionData[streakKey];
+      if (streak >= 3) {
+        totalPoints *= 1.0 + Math.min((streak - 2) * 0.1, 0.5);
+      }
+      finalPoints = totalPoints;
     }
 
     const newLevel = Math.round(Math.max(0, Math.min(100, currentLevel + finalPoints)));
+
+    const oldTier = getTierKey(currentLevel);
+    const newTier = getTierKey(newLevel);
+    if (oldTier !== newTier) {
+      this.passionData[`${sessionId}_transition`] = newTier;
+    }
 
     this.passionData[sessionId] = newLevel;
     this.trackHistory(sessionId, newLevel);
@@ -293,6 +331,8 @@ class PassionManager {
   resetPassion(sessionId) {
     this.passionData[sessionId] = 0;
     delete this.passionData[`${sessionId}_cooldown`];
+    delete this.passionData[`${sessionId}_streak`];
+    delete this.passionData[`${sessionId}_transition`];
     this.trackHistory(sessionId, 0);
     this.savePassionData();
     return 0;
@@ -305,7 +345,7 @@ class PassionManager {
   getAllPassionLevels() {
     const levels = {};
     Object.keys(this.passionData).forEach(key => {
-      if (key.endsWith('_cooldown') || key.endsWith('_history')) return;
+      if (key.endsWith('_cooldown') || key.endsWith('_history') || key.endsWith('_streak') || key.endsWith('_transition')) return;
       const val = this.passionData[key];
       if (typeof val !== 'number' || isNaN(val)) return;
       levels[key] = Math.round(val);
@@ -321,6 +361,8 @@ class PassionManager {
     delete this.passionData[sessionId];
     delete this.passionData[`${sessionId}_cooldown`];
     delete this.passionData[`${sessionId}_history`];
+    delete this.passionData[`${sessionId}_streak`];
+    delete this.passionData[`${sessionId}_transition`];
     this.savePassionData();
   }
 
@@ -333,7 +375,7 @@ class PassionManager {
     const keysToDelete = [];
 
     Object.keys(this.passionData).forEach(key => {
-      const baseKey = key.replace(/_cooldown$/, '').replace(/_history$/, '');
+      const baseKey = key.replace(/_cooldown$/, '').replace(/_history$/, '').replace(/_streak$/, '').replace(/_transition$/, '');
       if (!activeSet.has(baseKey)) {
         keysToDelete.push(key);
       }

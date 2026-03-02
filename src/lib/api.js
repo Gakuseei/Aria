@@ -261,7 +261,8 @@ function generateSystemPrompt({
   messageCount,
   passionEnabled,
   userGender = 'male', // v0.2.5 NEW
-  language = 'en' // v0.2.5: User-selected language from Settings
+  language = 'en', // v0.2.5: User-selected language from Settings
+  sessionId = null
 }) {
   // ============================================================================
   // BLOCK 1: THE FOUNDATION (Global Physics - Universal Rules)
@@ -597,6 +598,19 @@ Key sensations: ${sensoryGuidance.details.join(', ')}`;
 - Sounds: ${vocab.sound.join(', ')}
 - Desire: ${vocab.desire.join(', ')}`;
     }
+
+    if (sessionId) {
+      const tierTransition = passionManager.getAndClearTransition(sessionId);
+      if (tierTransition) {
+        const transitionLabels = {
+          innocent: 'INNOCENT — shy and reserved',
+          warm: 'WARM — cautious but interested',
+          passionate: 'PASSIONATE — eager and willing',
+          primal: 'PRIMAL — fully unleashed'
+        };
+        enhancements += `\n\n⚡ EMOTIONAL SHIFT: The tension just escalated to ${transitionLabels[tierTransition] || tierTransition}. React to this shift naturally — acknowledge the change in body language, breathing, tone, or desire. Do NOT state the tier name. Show it through actions and reactions.`;
+      }
+    }
   }
 
   // Additional character context (freeform)
@@ -872,7 +886,8 @@ export const sendMessage = async (
       messageCount: updatedHistory.length,
       passionEnabled: settings.passionSystemEnabled,
       userGender: userGender, // v0.2.5 NEW
-      language: selectedLanguage // v0.2.5: Language enforcement
+      language: selectedLanguage, // v0.2.5: Language enforcement
+      sessionId: sessionId
     });
 
     console.log('[v9.2 API] 📋 Final system prompt length:', finalSystemPrompt.length);
@@ -1768,11 +1783,18 @@ OUTPUT RULES:
 Format: 4 lines of pure text.`;
     } else {
       const tierKey = getTierKey(passionLevel);
+      const tierGuidance = {
+        innocent: 'Suggestions should be conversational, curious, slightly teasing. No explicit or sexual content. Focus on getting to know the character.',
+        warm: 'Include one flirty option, one that escalates physical closeness (touching, proximity), and two conversational options.',
+        passionate: 'Include at least two explicitly intimate options. Be direct about physical desire. One option should escalate the situation.',
+        primal: 'All suggestions should be raw, physical, and sexually charged. No small talk. Pure desire and intensity.'
+      };
       suggestionPrompt = `Character said: "${characterMessage.substring(0, 150)}"
 Passion level: ${passionLevel}/100 (${PASSION_TIERS[tierKey].label}).
 
+${tierGuidance[tierKey] || tierGuidance.innocent}
+
 Generate 4 short user responses (max 5 words each).
-${passionLevel > 50 ? 'Include flirty/intimate options matching the passion level.' : 'Match the conversational tone.'}
 
 OUTPUT RULES:
 - NO hashtags (#)

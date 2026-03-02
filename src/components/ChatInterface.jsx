@@ -1285,6 +1285,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                       {passionLevel}% {t.chat[`passion${getTierKey(passionLevel).charAt(0).toUpperCase() + getTierKey(passionLevel).slice(1)}`]}
                     </span>
                     <PassionSparkline sessionId={sessionId} color={getTierColor(passionLevel)} />
+                    {passionManager.getStreak(sessionId) >= 3 && !isUnchainedMode && (
+                      <span className="text-[10px] text-orange-400 font-bold animate-pulse">
+                        x{passionManager.getStreak(sessionId)}
+                      </span>
+                    )}
                     {getTierKey(passionLevel) === 'primal' && (
                       <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                     )}

@@ -748,7 +748,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     try {
       const currentLanguage = settings.preferredLanguage || localStorage.getItem('language') || 'en';
       const level = currentPassion !== undefined ? currentPassion : passionLevel;
-      const suggestions = await generateSmartSuggestions(currentMessages, character, currentLanguage, level);
+      const suggestions = await generateSmartSuggestions(currentMessages, character, currentLanguage, level, sessionId);
       setSmartSuggestions(suggestions);
     } catch (error) {
       console.error('[v1.0 Suggestions] Error:', error);

@@ -623,6 +623,12 @@ Key sensations: ${sensoryGuidance.details.join(', ')}`;
         };
         enhancements += `\n\n❄️ COOLING DOWN: The intensity just dropped to ${downLabels[downTransition] || downTransition}. React naturally — the urgency fades, composure returns, breathing steadies.`;
       }
+
+      const momentum = passionManager.getMomentum(sessionId);
+      const history = passionManager.getHistory(sessionId);
+      if (Math.abs(momentum) <= 0.5 && passionLevel >= 25 && passionLevel <= 75 && history.length >= 8) {
+        enhancements += `\n\n⚡ TENSION STAGNANT: The energy has plateaued. Introduce a subtle shift — a meaningful glance, an accidental touch, a loaded silence, a whispered confession — to move the dynamic forward.`;
+      }
     }
   }
 
@@ -1683,7 +1689,7 @@ const secondaryFallbackSuggestions = {
  * @param {Object} character - Character object
  * @returns {Promise<Array<string>>} - 4 suggestion strings (max 6 words each)
  */
-export const generateSmartSuggestions = async (messages, character, language = 'en', passionLevel = 0) => {
+export const generateSmartSuggestions = async (messages, character, language = 'en', passionLevel = 0, sessionId = null) => {
   try {
     if (!messages || messages.length === 0) {
       const lang = language || 'en';
@@ -1810,10 +1816,18 @@ Format: 4 lines of pure text.`;
         passionate: 'Include at least two explicitly intimate options. Be direct about physical desire. One option should escalate the situation.',
         primal: 'All suggestions should be raw, physical, and sexually charged. No small talk. Pure desire and intensity.'
       };
+      let plateauHint = '';
+      if (sessionId) {
+        const momentum = passionManager.getMomentum(sessionId);
+        const history = passionManager.getHistory(sessionId);
+        if (Math.abs(momentum) <= 0.5 && passionLevel >= 25 && passionLevel <= 75 && history.length >= 8) {
+          plateauHint = '\nThe conversation has stagnated. At least one suggestion should be a physical escalation or bold move to break the plateau.';
+        }
+      }
       suggestionPrompt = `Character said: "${characterMessage.substring(0, 150)}"
 Passion level: ${passionLevel}/100 (${PASSION_TIERS[tierKey].label}).
 
-${tierGuidance[tierKey] || tierGuidance.innocent}
+${tierGuidance[tierKey] || tierGuidance.innocent}${plateauHint}
 
 Generate 4 short user responses (max 5 words each).
 

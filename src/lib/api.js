@@ -977,10 +977,10 @@ export const sendMessage = async (
           const scoringData = await scoringResponse.json();
           const rawScore = parseInt(scoringData.message?.content?.trim());
           if (!isNaN(rawScore) && rawScore >= 0 && rawScore <= 10) {
-            const llmPoints = rawScore * 1.5;
+            const llmLevel = rawScore * 10;
             const currentKw = passionManager.getPassionLevel(sessionId);
-            const blended = Math.round((currentKw + llmPoints) / 2 + currentKw / 2);
-            passionManager.setPassion(sessionId, Math.min(100, blended));
+            const blended = Math.round(currentKw * 0.7 + llmLevel * 0.3);
+            passionManager.setPassion(sessionId, Math.max(0, Math.min(100, blended)));
             currentPassionLevel = passionManager.getPassionLevel(sessionId);
           }
         }
@@ -1766,9 +1766,9 @@ OUTPUT RULES:
 
 Format: 4 lines of pure text.`;
     } else {
-      const tierLabel = getTierKey(passionLevel);
+      const tierKey = getTierKey(passionLevel);
       suggestionPrompt = `Character said: "${characterMessage.substring(0, 150)}"
-Passion level: ${passionLevel}/100 (${tierLabel}).
+Passion level: ${passionLevel}/100 (${PASSION_TIERS[tierKey].label}).
 
 Generate 4 short user responses (max 5 words each).
 ${passionLevel > 50 ? 'Include flirty/intimate options matching the passion level.' : 'Match the conversational tone.'}

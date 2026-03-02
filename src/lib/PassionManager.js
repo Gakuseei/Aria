@@ -73,6 +73,9 @@ const PASSION_VOCABULARY = {
 /** Regex cache for word-boundary keyword matching */
 const keywordRegexCache = new Map();
 
+/** CJK Unicode range test — \b word boundaries fail for these scripts */
+const CJK_RANGE = /[\u3000-\u9fff\uac00-\ud7af\uff00-\uffef]/;
+
 /**
  * Escapes regex metacharacters in a string
  * @param {string} str - Raw string to escape
@@ -83,12 +86,17 @@ function escapeRegex(str) {
 }
 
 /**
- * Tests whether text contains keyword as a whole word (word-boundary match)
+ * Tests whether text contains keyword as a whole word.
+ * Uses word-boundary regex for Latin/Cyrillic scripts,
+ * falls back to plain includes() for CJK scripts where \b fails.
  * @param {string} text - Text to search in
  * @param {string} keyword - Keyword to match
  * @returns {boolean}
  */
 function matchesKeyword(text, keyword) {
+  if (CJK_RANGE.test(keyword)) {
+    return text.includes(keyword.toLowerCase());
+  }
   if (!keywordRegexCache.has(keyword)) {
     keywordRegexCache.set(keyword, new RegExp(`\\b${escapeRegex(keyword)}\\b`, 'i'));
   }
@@ -209,7 +217,7 @@ class PassionManager {
 
     const newLevel = Math.round(Math.max(0, Math.min(100, decayedLevel + finalPoints)));
 
-    const oldTier = getTierKey(currentLevel);
+    const oldTier = getTierKey(decayedLevel);
     const newTier = getTierKey(newLevel);
     const tierOrder = ['innocent', 'warm', 'passionate', 'primal'];
     if (oldTier !== newTier && tierOrder.indexOf(newTier) > tierOrder.indexOf(oldTier)) {
@@ -244,7 +252,7 @@ class PassionManager {
       'amour', 'baiser', 'embrasser', 'toucher', 'belle', 'désir',
       'любовь', 'поцелуй', 'обнять', 'красивая', 'желание',
       '愛', 'キス', '抱きしめ', '触れ', '美しい', '欲しい',
-      'amor', 'beijo', 'abraço', 'tocar', 'bonita', 'desejo',
+      'beijo', 'abraço', 'bonita', 'desejo',
       'amore', 'bacio', 'abbraccio', 'toccare', 'bella', 'desiderio',
       '사랑', '키스', '포옹', '만지', '예쁜', '원해'
     ];
@@ -257,21 +265,21 @@ class PassionManager {
       'lit', 'nu', 'corps', 'peau', 'gémir', 'frissonner',
       'кровать', 'голый', 'тело', 'кожа', 'стон', 'дрожь',
       'ベッド', '裸', '体', '肌', '喘ぐ', '震え',
-      'cama', 'nu', 'corpo', 'pele', 'gemer', 'tremer',
-      'letto', 'nudo', 'corpo', 'pelle', 'gemere', 'tremare',
+      'corpo', 'pele', 'gemer', 'tremer',
+      'letto', 'nudo', 'pelle', 'gemere', 'tremare',
       '침대', '벗', '몸', '피부', '신음', '떨림'
     ];
 
     const explicitKeywords = [
       'fuck', 'sex', 'cock', 'dick', 'pussy', 'breast', 'tits', 'ass',
       'cum', 'orgasm', 'climax', 'pleasure', 'lust',
-      'ficken', 'orgasmus', 'lust', 'verlangen',
+      'ficken', 'orgasmus', 'verlangen',
       'follar', 'sexo', 'polla', 'coño', 'orgasmo', 'placer',
       'baiser', 'sexe', 'bite', 'chatte', 'orgasme', 'plaisir',
       'секс', 'оргазм', 'удовольствие', 'похоть',
       'セックス', 'オーガズム', '快感', '欲望',
-      'foder', 'sexo', 'pau', 'buceta', 'orgasmo', 'prazer',
-      'scopare', 'sesso', 'cazzo', 'orgasmo', 'piacere',
+      'foder', 'pau', 'buceta', 'prazer',
+      'scopare', 'sesso', 'cazzo', 'piacere',
       '섹스', '오르가즘', '쾌감', '욕망'
     ];
 

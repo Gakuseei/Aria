@@ -854,8 +854,8 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                     <span className="text-sm text-zinc-300">{t.settings.passionSpeed}</span>
                     <span className="text-xs text-zinc-500">
                       {(settings.passionSpeedMultiplier || 1.0) === 1.0 ? '1.0x' :
-                       (settings.passionSpeedMultiplier || 1.0) < 1.0 ? `Slow (${settings.passionSpeedMultiplier}x)` :
-                       `Fast (${settings.passionSpeedMultiplier}x)`}
+                       (settings.passionSpeedMultiplier || 1.0) < 1.0 ? `${t.settings.passionSpeedSlow} (${settings.passionSpeedMultiplier}x)` :
+                       `${t.settings.passionSpeedFast} (${settings.passionSpeedMultiplier}x)`}
                     </span>
                   </div>
                   <input

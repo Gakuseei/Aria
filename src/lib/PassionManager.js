@@ -191,7 +191,8 @@ class PassionManager {
 
     const oldTier = getTierKey(currentLevel);
     const newTier = getTierKey(newLevel);
-    if (oldTier !== newTier) {
+    const tierOrder = ['innocent', 'warm', 'passionate', 'primal'];
+    if (oldTier !== newTier && tierOrder.indexOf(newTier) > tierOrder.indexOf(oldTier)) {
       this.passionData[`${sessionId}_transition`] = newTier;
     }
 
@@ -292,6 +293,8 @@ class PassionManager {
   setPassion(sessionId, level) {
     const clamped = Math.round(Math.max(0, Math.min(100, level)));
     this.passionData[sessionId] = clamped;
+    delete this.passionData[`${sessionId}_streak`];
+    delete this.passionData[`${sessionId}_cooldown`];
     this.trackHistory(sessionId, clamped);
     this.savePassionData();
     return clamped;

@@ -443,6 +443,22 @@ class PassionManager {
   }
 
   /**
+   * Restore passion history from an imported array
+   * @param {string} sessionId - Session identifier
+   * @param {number[]} historyArray - Array of passion levels to restore
+   */
+  restoreHistory(sessionId, historyArray) {
+    if (!Array.isArray(historyArray)) return;
+    const validated = historyArray
+      .filter(v => typeof v === 'number' && v >= 0 && v <= 100)
+      .slice(-HISTORY_LIMIT);
+    if (validated.length > 0) {
+      this.passionData[`${sessionId}_history`] = validated;
+      this.savePassionData();
+    }
+  }
+
+  /**
    * Reset passion level for a session (clears cooldown and records reset in history)
    * @param {string} sessionId - Session identifier
    * @returns {number} 0
@@ -523,13 +539,15 @@ class PassionManager {
    * Save passion memory for a character across sessions
    * @param {string} characterId - Character identifier
    * @param {number} level - Passion level to remember (0-100)
+   * @param {number[]} [history=[]] - Recent passion history to store (last 10 entries kept)
    */
-  saveCharacterMemory(characterId, level) {
+  saveCharacterMemory(characterId, level, history = []) {
     try {
       const stored = localStorage.getItem(PASSION_MEMORY_KEY);
       const memory = stored ? JSON.parse(stored) : {};
       memory[characterId] = {
         lastLevel: Math.round(Math.max(0, Math.min(100, level))),
+        lastHistory: Array.isArray(history) ? history.slice(-10) : [],
         timestamp: new Date().toISOString()
       };
       localStorage.setItem(PASSION_MEMORY_KEY, JSON.stringify(memory));

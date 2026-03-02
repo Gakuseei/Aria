@@ -701,7 +701,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       await saveSession(sessionId, sessionData);
 
       if (character?.id && passionLevel > 0) {
-        passionManager.saveCharacterMemory(character.id, passionLevel);
+        passionManager.saveCharacterMemory(character.id, passionLevel, passionManager.getHistory(sessionId));
       }
     } catch (error) {
       console.error('[v8.1 ChatInterface] Auto-save error:', error);
@@ -995,6 +995,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         character: character,
         messages: messages,
         passionLevel: passionLevel,
+        passionHistory: passionManager.getHistory(sessionId),
         sessionId: sessionId,
         exportedAt: new Date().toISOString(),
         version: '0.2.5'
@@ -1042,6 +1043,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         setSessionId(importData.sessionId);
         if (importData.passionLevel !== undefined) {
           passionManager.setPassion(importData.sessionId, importData.passionLevel);
+        }
+        if (importData.passionHistory) {
+          passionManager.restoreHistory(importData.sessionId, importData.passionHistory);
         }
       }
 
@@ -1947,6 +1951,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 onClick={() => {
                   if (sessionId) {
                     passionManager.setPassion(sessionId, passionResumeData.lastLevel);
+                    if (passionResumeData.lastHistory) {
+                      passionManager.restoreHistory(sessionId, passionResumeData.lastHistory);
+                    }
                   }
                   setPassionLevel(passionResumeData.lastLevel);
                   setShowPassionResumeModal(false);

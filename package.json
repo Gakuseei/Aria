@@ -13,7 +13,7 @@
     "build": "npm run build:react && electron-builder",
     "pack": "npm run build:react && electron-builder --dir"
   },
-  "author": "Gakuseei",
+  "author": "Gakuseeii",
   "license": "MIT",
   "dependencies": {
     "dotenv": "^16.4.5",
@@ -48,7 +48,9 @@
     "files": [
       "main.js",
       "preload.js",
-      "dist/**/*"
+      "dist/**/*",
+      "tools/**/*",
+      "!tools/Zonos/**/*"
     ],
     "win": {
       "target": "nsis",

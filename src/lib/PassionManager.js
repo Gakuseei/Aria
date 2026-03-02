@@ -1,47 +1,61 @@
 /**
- * PassionManager.js - Passion Level & Vocabulary Tier Management (v7.7 RESTORED)
- * 
+ * PassionManager.js - Passion Level & Vocabulary Tier Management (v8.0 Overhaul)
+ *
  * Manages:
- * - Passion level tracking per character (0-100)
- * - Vocabulary tier mapping (Innocent -> Primal)
- * - Automatic progression based on conversation content
+ * - Passion level tracking per session (0-100)
+ * - Unified tier system (Innocent / Warm / Passionate / Primal)
+ * - Word-boundary keyword matching with regex cache
+ * - Cooldown-based decay for idle conversations
+ * - Passion history tracking (last 50 values per session)
  * - localStorage persistence
  */
 
 const PASSION_STORAGE_KEY = 'aria_passion_data';
 
-// Vocabulary tiers mapped to passion levels
-const VOCABULARY_TIERS = {
-  innocent: { min: 0, max: 20, label: 'Innocent' },
-  warm: { min: 21, max: 50, label: 'Warm' },
-  passionate: { min: 51, max: 80, label: 'Passionate' },
-  primal: { min: 81, max: 100, label: 'Primal' }
+/** Unified passion tier definitions */
+export const PASSION_TIERS = {
+  innocent:    { min: 0,  max: 20,  label: 'Innocent' },
+  warm:        { min: 21, max: 50,  label: 'Warm' },
+  passionate:  { min: 51, max: 80,  label: 'Passionate' },
+  primal:      { min: 81, max: 100, label: 'Primal' }
 };
 
-// Word choice by passion level
+/**
+ * Returns the tier key for a given passion level
+ * @param {number} passionLevel - Current passion level (0-100)
+ * @returns {'innocent'|'warm'|'passionate'|'primal'}
+ */
+export function getTierKey(passionLevel) {
+  if (passionLevel <= PASSION_TIERS.innocent.max) return 'innocent';
+  if (passionLevel <= PASSION_TIERS.warm.max) return 'warm';
+  if (passionLevel <= PASSION_TIERS.passionate.max) return 'passionate';
+  return 'primal';
+}
+
+/** Word choice mapped to tier keys */
 const PASSION_VOCABULARY = {
-  low: {
+  innocent: {
     touch: ['gentle touch', 'soft brush', 'light caress', 'tender stroke'],
     reaction: ['blushes', 'heart flutters', 'breath catches', 'cheeks warm'],
     sound: ['soft gasp', 'quiet sigh', 'gentle hum', 'tiny whimper'],
     desire: ['curiosity', 'interest', 'attraction', 'fascination']
   },
-  
-  medium: {
+
+  warm: {
     touch: ['warm hand', 'lingering touch', 'exploring fingers', 'firm grip'],
     reaction: ['heart races', 'skin tingles', 'pulse quickens', 'body responds'],
     sound: ['breathy moan', 'sharp inhale', 'soft whimper', 'throaty hum'],
     desire: ['longing', 'craving', 'need', 'hunger']
   },
-  
-  high: {
+
+  passionate: {
     touch: ['desperate grip', 'clawing fingers', 'bruising hold', 'possessive grasp'],
     reaction: ['trembles violently', 'back arches', 'hips buck', 'muscles clench'],
     sound: ['loud moan', 'broken cry', 'desperate whine', 'guttural groan'],
     desire: ['desperation', 'aching need', 'burning hunger', 'overwhelming want']
   },
-  
-  extreme: {
+
+  primal: {
     touch: ['rough handling', 'forceful thrust', 'savage grip', 'merciless pressure'],
     reaction: ['convulses', 'writhes uncontrollably', 'screams', 'shatters'],
     sound: ['animalistic cry', 'raw scream', 'incoherent babbling', 'sobbing moans'],
@@ -49,11 +63,31 @@ const PASSION_VOCABULARY = {
   }
 };
 
+/** Regex cache for word-boundary keyword matching */
+const keywordRegexCache = new Map();
+
+/**
+ * Tests whether text contains keyword as a whole word (word-boundary match)
+ * @param {string} text - Text to search in
+ * @param {string} keyword - Keyword to match
+ * @returns {boolean}
+ */
+function matchesKeyword(text, keyword) {
+  if (!keywordRegexCache.has(keyword)) {
+    keywordRegexCache.set(keyword, new RegExp(`\\b${keyword}\\b`, 'i'));
+  }
+  return keywordRegexCache.get(keyword).test(text);
+}
+
 class PassionManager {
   constructor() {
     this.passionData = this.loadPassionData();
   }
 
+  /**
+   * Load passion data from localStorage
+   * @returns {Object}
+   */
   loadPassionData() {
     try {
       const stored = localStorage.getItem(PASSION_STORAGE_KEY);
@@ -64,6 +98,9 @@ class PassionManager {
     }
   }
 
+  /**
+   * Persist passion data to localStorage
+   */
   savePassionData() {
     try {
       localStorage.setItem(PASSION_STORAGE_KEY, JSON.stringify(this.passionData));
@@ -73,149 +110,232 @@ class PassionManager {
   }
 
   /**
-   * Get current passion level for a character
+   * Get current passion level for a session
+   * @param {string} sessionId - Session identifier
+   * @returns {number} Clamped 0-100 integer
    */
-  getPassionLevel(characterName) {
-    const rawLevel = this.passionData[characterName] || 0;
+  getPassionLevel(sessionId) {
+    const rawLevel = this.passionData[sessionId] || 0;
     return Math.round(Math.max(0, Math.min(100, rawLevel)));
   }
 
   /**
    * Update passion level based on conversation content
+   * @param {string} sessionId - Session identifier
+   * @param {string} userMessage - User message text
+   * @param {string} aiResponse - AI response text
+   * @param {number} [speedMultiplier=1.0] - Passion gain multiplier
+   * @returns {number} New passion level (rounded integer)
    */
-  updatePassion(characterName, userMessage, aiResponse, speedMultiplier = 1.0) {
-    const currentLevel = this.passionData[characterName] || 0;
-    
+  updatePassion(sessionId, userMessage, aiResponse, speedMultiplier = 1.0) {
+    const currentLevel = this.passionData[sessionId] || 0;
     const basePoints = this.calculatePassionPoints(userMessage, aiResponse);
-    const finalPoints = basePoints * Math.max(0.1, Math.min(10, speedMultiplier));
-    
+
+    const cooldownKey = `${sessionId}_cooldown`;
+    let finalPoints;
+
+    if (basePoints < 3) {
+      this.passionData[cooldownKey] = (this.passionData[cooldownKey] || 0) + 1;
+      if (this.passionData[cooldownKey] >= 3) {
+        finalPoints = -1;
+      } else {
+        finalPoints = basePoints * Math.max(0.1, Math.min(10, speedMultiplier));
+      }
+    } else {
+      this.passionData[cooldownKey] = 0;
+      finalPoints = basePoints * Math.max(0.1, Math.min(10, speedMultiplier));
+    }
+
     const newLevel = Math.max(0, Math.min(100, currentLevel + finalPoints));
-    
-    this.passionData[characterName] = newLevel;
+
+    this.passionData[sessionId] = newLevel;
+    this.trackHistory(sessionId, newLevel);
     this.savePassionData();
-    
-    console.log(`[PassionManager] ${characterName}: ${currentLevel} -> ${Math.round(newLevel)} (+${finalPoints.toFixed(1)})`);
-    
+
     return Math.round(newLevel);
   }
 
   /**
-   * Calculate passion points based on message content
+   * Calculate passion points based on message content using word-boundary matching
+   * @param {string} userMessage - User message text
+   * @param {string} aiResponse - AI response text
+   * @returns {number} Calculated points (minimum 0)
    */
   calculatePassionPoints(userMessage, aiResponse) {
-    let points = 2.0;
-    
+    let points = 0;
+
     const message = userMessage.toLowerCase();
     const response = aiResponse.toLowerCase();
-    
-    // Keyword categories with weighted scoring
+
     const romanticKeywords = [
       'love', 'kiss', 'hug', 'touch', 'hold', 'embrace', 'caress', 'stroke',
       'beautiful', 'gorgeous', 'sexy', 'hot', 'attractive', 'cute', 'adorable',
       'liebe', 'küss', 'umarm', 'berühr', 'halt', 'streichel', 'schön', 'heiß',
       'affection', 'desire', 'want', 'need', 'crave', 'yearn'
     ];
-    
+
     const intimateKeywords = [
       'bed', 'bedroom', 'naked', 'undress', 'clothes', 'body', 'skin',
       'bett', 'schlafzimmer', 'nackt', 'ausziehen', 'körper', 'haut',
       'moan', 'gasp', 'shiver', 'tremble', 'breathe', 'pant'
     ];
-    
+
     const explicitKeywords = [
       'fuck', 'sex', 'cock', 'dick', 'pussy', 'breast', 'tits', 'ass',
       'cum', 'orgasm', 'climax', 'pleasure', 'lust',
       'ficken', 'orgasmus', 'lust', 'verlangen'
     ];
-    
-    // Score romantic keywords
+
     romanticKeywords.forEach(keyword => {
-      if (message.includes(keyword)) points += 1.5;
-      if (response.includes(keyword)) points += 0.5;
+      if (matchesKeyword(message, keyword)) points += 1.5;
+      if (matchesKeyword(response, keyword)) points += 0.5;
     });
-    
-    // Score intimate keywords
+
     intimateKeywords.forEach(keyword => {
-      if (message.includes(keyword)) points += 2.5;
-      if (response.includes(keyword)) points += 1.0;
+      if (matchesKeyword(message, keyword)) points += 2.5;
+      if (matchesKeyword(response, keyword)) points += 1.0;
     });
-    
-    // Score explicit keywords
+
     explicitKeywords.forEach(keyword => {
-      if (message.includes(keyword)) points += 3.5;
-      if (response.includes(keyword)) points += 1.5;
+      if (matchesKeyword(message, keyword)) points += 3.5;
+      if (matchesKeyword(response, keyword)) points += 1.5;
     });
-    
-    // Bonus for asterisk actions (roleplay intensity)
+
     const asteriskCount = (response.match(/\*/g) || []).length;
     if (asteriskCount > 4) points += 1.0;
     if (asteriskCount > 10) points += 2.0;
-    
-    // Bonus for emotional words
+
     const emotionalWords = ['mmm', 'ahh', 'ohh', 'yes', 'god', 'please', 'more', 'ja', 'bitte', 'mehr'];
     emotionalWords.forEach(word => {
-      if (response.includes(word)) points += 1.0;
+      if (matchesKeyword(response, word)) points += 1.0;
     });
-    
-    // Bonus for length (engagement)
+
     if (message.length > 100) points += 1.5;
     if (response.length > 200) points += 1.0;
-    
-    return Math.max(0.5, points);
+
+    return Math.max(0, points);
   }
 
   /**
-   * Get vocabulary tier for current passion level
+   * Get vocabulary tier label for a passion level
+   * @param {number} passionLevel - Current passion level (0-100)
+   * @returns {string} Tier label
    */
   getVocabularyTier(passionLevel) {
-    if (passionLevel <= VOCABULARY_TIERS.innocent.max) return VOCABULARY_TIERS.innocent.label;
-    if (passionLevel <= VOCABULARY_TIERS.warm.max) return VOCABULARY_TIERS.warm.label;
-    if (passionLevel <= VOCABULARY_TIERS.passionate.max) return VOCABULARY_TIERS.passionate.label;
-    return VOCABULARY_TIERS.primal.label;
+    const key = getTierKey(passionLevel);
+    return PASSION_TIERS[key].label;
   }
 
   /**
-   * Get vocabulary suggestions for current level
+   * Get vocabulary word sets for a passion level
+   * @param {number} passionLevel - Current passion level (0-100)
+   * @returns {Object} Vocabulary object with touch, reaction, sound, desire arrays
    */
   getVocabulary(passionLevel) {
-    if (passionLevel <= 20) return PASSION_VOCABULARY.low;
-    if (passionLevel <= 50) return PASSION_VOCABULARY.medium;
-    if (passionLevel <= 80) return PASSION_VOCABULARY.high;
-    return PASSION_VOCABULARY.extreme;
+    const key = getTierKey(passionLevel);
+    return PASSION_VOCABULARY[key];
   }
 
   /**
-   * Reset passion level for a character
+   * Directly set passion level for a session
+   * @param {string} sessionId - Session identifier
+   * @param {number} level - Target passion level (0-100)
+   * @returns {number} Clamped level that was set
    */
-  resetPassion(characterName) {
-    this.passionData[characterName] = 0;
+  setPassion(sessionId, level) {
+    const clamped = Math.max(0, Math.min(100, level));
+    this.passionData[sessionId] = clamped;
+    this.trackHistory(sessionId, clamped);
     this.savePassionData();
-    console.log(`[PassionManager] Reset ${characterName} to 0`);
+    return Math.round(clamped);
+  }
+
+  /**
+   * Track passion history for a session (last 50 values)
+   * @param {string} sessionId - Session identifier
+   * @param {number} level - Passion level to record
+   */
+  trackHistory(sessionId, level) {
+    const historyKey = `${sessionId}_history`;
+    if (!Array.isArray(this.passionData[historyKey])) {
+      this.passionData[historyKey] = [];
+    }
+    this.passionData[historyKey].push(Math.round(level));
+    if (this.passionData[historyKey].length > 50) {
+      this.passionData[historyKey] = this.passionData[historyKey].slice(-50);
+    }
+  }
+
+  /**
+   * Get passion history for a session
+   * @param {string} sessionId - Session identifier
+   * @returns {number[]} Array of past passion levels
+   */
+  getHistory(sessionId) {
+    const historyKey = `${sessionId}_history`;
+    return Array.isArray(this.passionData[historyKey]) ? this.passionData[historyKey] : [];
+  }
+
+  /**
+   * Reset passion level for a session
+   * @param {string} sessionId - Session identifier
+   * @returns {number} 0
+   */
+  resetPassion(sessionId) {
+    this.passionData[sessionId] = 0;
+    this.savePassionData();
     return 0;
   }
 
   /**
-   * Get all passion levels
+   * Get all passion levels (excludes internal keys like cooldown/history)
+   * @returns {Object} Map of sessionId to passion level
    */
   getAllPassionLevels() {
     const levels = {};
-    Object.keys(this.passionData).forEach(char => {
-      levels[char] = Math.round(this.passionData[char] || 0);
+    Object.keys(this.passionData).forEach(key => {
+      if (key.endsWith('_cooldown') || key.endsWith('_history')) return;
+      levels[key] = Math.round(this.passionData[key] || 0);
     });
     return levels;
   }
 
   /**
-   * Delete passion data for a character (hard reset)
+   * Delete all passion data for a session (hard reset)
+   * @param {string} sessionId - Session identifier
    */
-  deleteCharacterPassion(characterName) {
-    delete this.passionData[characterName];
+  deleteCharacterPassion(sessionId) {
+    delete this.passionData[sessionId];
+    delete this.passionData[`${sessionId}_cooldown`];
+    delete this.passionData[`${sessionId}_history`];
     this.savePassionData();
-    console.log(`[PassionManager] Deleted passion data for ${characterName}`);
+  }
+
+  /**
+   * Remove passion data for sessions that are no longer active
+   * @param {string[]} activeSessionIds - Array of currently active session IDs
+   */
+  cleanupStaleSessions(activeSessionIds) {
+    const activeSet = new Set(activeSessionIds);
+    const keysToDelete = [];
+
+    Object.keys(this.passionData).forEach(key => {
+      const baseKey = key.replace(/_cooldown$/, '').replace(/_history$/, '');
+      if (!activeSet.has(baseKey)) {
+        keysToDelete.push(key);
+      }
+    });
+
+    keysToDelete.forEach(key => {
+      delete this.passionData[key];
+    });
+
+    if (keysToDelete.length > 0) {
+      this.savePassionData();
+    }
   }
 }
 
-// Export singleton instance
 export const passionManager = new PassionManager();
 
 export default passionManager;

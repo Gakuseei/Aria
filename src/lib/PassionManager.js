@@ -11,6 +11,13 @@
  */
 
 const PASSION_STORAGE_KEY = 'aria_passion_data';
+const PASSION_MEMORY_KEY = 'aria_passion_memory';
+const COOLDOWN_THRESHOLD = 3;
+const HISTORY_LIMIT = 50;
+const DECAY_INTERVAL_MS = 5 * 60 * 1000;
+const DECAY_POINTS_PER_INTERVAL = 2;
+const DECAY_MAX_POINTS = 10;
+const KNOWN_SUFFIXES = ['_cooldown', '_history', '_streak', '_transition', '_lastUpdate'];
 
 /** Unified passion tier definitions */
 export const PASSION_TIERS = {
@@ -162,16 +169,29 @@ class PassionManager {
    */
   updatePassion(sessionId, userMessage, aiResponse, speedMultiplier = 1.0) {
     const currentLevel = this.passionData[sessionId] || 0;
+
+    const lastUpdateKey = `${sessionId}_lastUpdate`;
+    const now = Date.now();
+    const lastUpdate = this.passionData[lastUpdateKey] || now;
+    const elapsed = now - lastUpdate;
+    let decayPoints = 0;
+    if (elapsed > DECAY_INTERVAL_MS) {
+      const intervals = Math.floor(elapsed / DECAY_INTERVAL_MS);
+      decayPoints = Math.min(intervals * DECAY_POINTS_PER_INTERVAL, DECAY_MAX_POINTS);
+    }
+    this.passionData[lastUpdateKey] = now;
+    const decayedLevel = Math.max(0, currentLevel - decayPoints);
+
     const basePoints = this.calculatePassionPoints(userMessage, aiResponse);
 
     const cooldownKey = `${sessionId}_cooldown`;
     const streakKey = `${sessionId}_streak`;
     let finalPoints;
 
-    if (basePoints < 3) {
+    if (basePoints < COOLDOWN_THRESHOLD) {
       this.passionData[cooldownKey] = (this.passionData[cooldownKey] || 0) + 1;
       this.passionData[streakKey] = 0;
-      if (this.passionData[cooldownKey] >= 3) {
+      if (this.passionData[cooldownKey] >= COOLDOWN_THRESHOLD) {
         finalPoints = -1;
       } else {
         finalPoints = basePoints * Math.max(0.1, Math.min(10, speedMultiplier));
@@ -187,7 +207,7 @@ class PassionManager {
       finalPoints = totalPoints;
     }
 
-    const newLevel = Math.round(Math.max(0, Math.min(100, currentLevel + finalPoints)));
+    const newLevel = Math.round(Math.max(0, Math.min(100, decayedLevel + finalPoints)));
 
     const oldTier = getTierKey(currentLevel);
     const newTier = getTierKey(newLevel);
@@ -219,19 +239,40 @@ class PassionManager {
       'love', 'kiss', 'hug', 'touch', 'hold', 'embrace', 'caress', 'stroke',
       'beautiful', 'gorgeous', 'sexy', 'hot', 'attractive', 'cute', 'adorable',
       'liebe', 'küss', 'umarm', 'berühr', 'halt', 'streichel', 'schön', 'heiß',
-      'affection', 'desire', 'want', 'need', 'crave', 'yearn'
+      'affection', 'desire', 'want', 'need', 'crave', 'yearn',
+      'amor', 'beso', 'abrazo', 'tocar', 'hermosa', 'deseo', 'querer',
+      'amour', 'baiser', 'embrasser', 'toucher', 'belle', 'désir',
+      'любовь', 'поцелуй', 'обнять', 'красивая', 'желание',
+      '愛', 'キス', '抱きしめ', '触れ', '美しい', '欲しい',
+      'amor', 'beijo', 'abraço', 'tocar', 'bonita', 'desejo',
+      'amore', 'bacio', 'abbraccio', 'toccare', 'bella', 'desiderio',
+      '사랑', '키스', '포옹', '만지', '예쁜', '원해'
     ];
 
     const intimateKeywords = [
       'bed', 'bedroom', 'naked', 'undress', 'clothes', 'body', 'skin',
       'bett', 'schlafzimmer', 'nackt', 'ausziehen', 'körper', 'haut',
-      'moan', 'gasp', 'shiver', 'tremble', 'breathe', 'pant'
+      'moan', 'gasp', 'shiver', 'tremble', 'breathe', 'pant',
+      'cama', 'desnudo', 'cuerpo', 'piel', 'gemir', 'temblar',
+      'lit', 'nu', 'corps', 'peau', 'gémir', 'frissonner',
+      'кровать', 'голый', 'тело', 'кожа', 'стон', 'дрожь',
+      'ベッド', '裸', '体', '肌', '喘ぐ', '震え',
+      'cama', 'nu', 'corpo', 'pele', 'gemer', 'tremer',
+      'letto', 'nudo', 'corpo', 'pelle', 'gemere', 'tremare',
+      '침대', '벗', '몸', '피부', '신음', '떨림'
     ];
 
     const explicitKeywords = [
       'fuck', 'sex', 'cock', 'dick', 'pussy', 'breast', 'tits', 'ass',
       'cum', 'orgasm', 'climax', 'pleasure', 'lust',
-      'ficken', 'orgasmus', 'lust', 'verlangen'
+      'ficken', 'orgasmus', 'lust', 'verlangen',
+      'follar', 'sexo', 'polla', 'coño', 'orgasmo', 'placer',
+      'baiser', 'sexe', 'bite', 'chatte', 'orgasme', 'plaisir',
+      'секс', 'оргазм', 'удовольствие', 'похоть',
+      'セックス', 'オーガズム', '快感', '欲望',
+      'foder', 'sexo', 'pau', 'buceta', 'orgasmo', 'prazer',
+      'scopare', 'sesso', 'cazzo', 'orgasmo', 'piacere',
+      '섹스', '오르가즘', '쾌감', '욕망'
     ];
 
     romanticKeywords.forEach(keyword => {
@@ -291,10 +332,38 @@ class PassionManager {
    * @returns {number} Clamped level that was set
    */
   setPassion(sessionId, level) {
+    const oldLevel = this.passionData[sessionId] || 0;
     const clamped = Math.round(Math.max(0, Math.min(100, level)));
+    const oldTier = getTierKey(oldLevel);
+    const newTier = getTierKey(clamped);
+    const tierOrder = ['innocent', 'warm', 'passionate', 'primal'];
+    if (oldTier !== newTier && tierOrder.indexOf(newTier) > tierOrder.indexOf(oldTier)) {
+      this.passionData[`${sessionId}_transition`] = newTier;
+    }
     this.passionData[sessionId] = clamped;
     delete this.passionData[`${sessionId}_streak`];
     delete this.passionData[`${sessionId}_cooldown`];
+    this.trackHistory(sessionId, clamped);
+    this.savePassionData();
+    return clamped;
+  }
+
+  /**
+   * Adjust passion level with tier transition detection (no streak/cooldown reset)
+   * @param {string} sessionId - Session identifier
+   * @param {number} level - Target passion level (0-100)
+   * @returns {number} Clamped level that was set
+   */
+  adjustPassion(sessionId, level) {
+    const oldLevel = this.passionData[sessionId] || 0;
+    const clamped = Math.round(Math.max(0, Math.min(100, level)));
+    const oldTier = getTierKey(oldLevel);
+    const newTier = getTierKey(clamped);
+    const tierOrder = ['innocent', 'warm', 'passionate', 'primal'];
+    if (oldTier !== newTier && tierOrder.indexOf(newTier) > tierOrder.indexOf(oldTier)) {
+      this.passionData[`${sessionId}_transition`] = newTier;
+    }
+    this.passionData[sessionId] = clamped;
     this.trackHistory(sessionId, clamped);
     this.savePassionData();
     return clamped;
@@ -311,8 +380,8 @@ class PassionManager {
       this.passionData[historyKey] = [];
     }
     this.passionData[historyKey].push(Math.round(level));
-    if (this.passionData[historyKey].length > 50) {
-      this.passionData[historyKey] = this.passionData[historyKey].slice(-50);
+    if (this.passionData[historyKey].length > HISTORY_LIMIT) {
+      this.passionData[historyKey] = this.passionData[historyKey].slice(-HISTORY_LIMIT);
     }
   }
 
@@ -336,6 +405,7 @@ class PassionManager {
     delete this.passionData[`${sessionId}_cooldown`];
     delete this.passionData[`${sessionId}_streak`];
     delete this.passionData[`${sessionId}_transition`];
+    delete this.passionData[`${sessionId}_lastUpdate`];
     this.trackHistory(sessionId, 0);
     this.savePassionData();
     return 0;
@@ -348,7 +418,7 @@ class PassionManager {
   getAllPassionLevels() {
     const levels = {};
     Object.keys(this.passionData).forEach(key => {
-      if (key.endsWith('_cooldown') || key.endsWith('_history') || key.endsWith('_streak') || key.endsWith('_transition')) return;
+      if (key.endsWith('_cooldown') || key.endsWith('_history') || key.endsWith('_streak') || key.endsWith('_transition') || key.endsWith('_lastUpdate')) return;
       const val = this.passionData[key];
       if (typeof val !== 'number' || isNaN(val)) return;
       levels[key] = Math.round(val);
@@ -366,6 +436,7 @@ class PassionManager {
     delete this.passionData[`${sessionId}_history`];
     delete this.passionData[`${sessionId}_streak`];
     delete this.passionData[`${sessionId}_transition`];
+    delete this.passionData[`${sessionId}_lastUpdate`];
     this.savePassionData();
   }
 
@@ -378,7 +449,13 @@ class PassionManager {
     const keysToDelete = [];
 
     Object.keys(this.passionData).forEach(key => {
-      const baseKey = key.replace(/_cooldown$/, '').replace(/_history$/, '').replace(/_streak$/, '').replace(/_transition$/, '');
+      let baseKey = key;
+      for (const suffix of KNOWN_SUFFIXES) {
+        if (key.endsWith(suffix)) {
+          baseKey = key.slice(0, -suffix.length);
+          break;
+        }
+      }
       if (!activeSet.has(baseKey)) {
         keysToDelete.push(key);
       }
@@ -391,6 +468,62 @@ class PassionManager {
     if (keysToDelete.length > 0) {
       this.savePassionData();
     }
+  }
+
+  /**
+   * Save passion memory for a character across sessions
+   * @param {string} characterId - Character identifier
+   * @param {number} level - Passion level to remember (0-100)
+   */
+  saveCharacterMemory(characterId, level) {
+    try {
+      const stored = localStorage.getItem(PASSION_MEMORY_KEY);
+      const memory = stored ? JSON.parse(stored) : {};
+      memory[characterId] = {
+        lastLevel: Math.round(Math.max(0, Math.min(100, level))),
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem(PASSION_MEMORY_KEY, JSON.stringify(memory));
+    } catch (error) {
+      console.error('[PassionManager] Error saving character memory:', error);
+    }
+  }
+
+  /**
+   * Retrieve passion memory for a character
+   * @param {string} characterId - Character identifier
+   * @returns {Object|null} Memory object with lastLevel and timestamp, or null
+   */
+  getCharacterMemory(characterId) {
+    try {
+      const stored = localStorage.getItem(PASSION_MEMORY_KEY);
+      if (!stored) return null;
+      const memory = JSON.parse(stored);
+      return memory[characterId] || null;
+    } catch (error) {
+      console.error('[PassionManager] Error loading character memory:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Calculate momentum (slope) from last 5 history entries via linear regression
+   * @param {string} sessionId - Session identifier
+   * @returns {number} Slope value (positive = rising, negative = falling, 0 = insufficient data)
+   */
+  getMomentum(sessionId) {
+    const history = this.getHistory(sessionId);
+    if (history.length < 5) return 0;
+    const recent = history.slice(-5);
+    const n = recent.length;
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+    for (let i = 0; i < n; i++) {
+      sumX += i;
+      sumY += recent[i];
+      sumXY += i * recent[i];
+      sumX2 += i * i;
+    }
+    return (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
   }
 }
 

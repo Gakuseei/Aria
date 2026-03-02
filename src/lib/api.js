@@ -1189,10 +1189,14 @@ export const listSessions = async () => {
  */
 export const testOllamaConnection = async (url = 'http://127.0.0.1:11434') => {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
     const response = await fetch(`${url}/api/tags`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal
     });
+    clearTimeout(timeout);
 
     if (response.ok) {
       const data = await response.json();

@@ -144,6 +144,7 @@ function createWindow() {
     minWidth: 1000,
     minHeight: 700,
     frame: false,
+    show: false,
     backgroundColor: '#09090b',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -153,6 +154,10 @@ function createWindow() {
       webSecurity: true,
       allowRunningInsecureContent: false,
     },
+  });
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
   });
 
   // v0.2.5: AGGRESSIVE CSP ENFORCEMENT

@@ -741,13 +741,14 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // v0.2.5: SMART SUGGESTIONS GENERATOR
   // ============================================================================
 
-  const generateSuggestions = async (currentMessages) => {
+  const generateSuggestions = async (currentMessages, currentPassion) => {
     if (!smartSuggestionsEnabled) return;
-    
+
     setLoadingSuggestions(true);
     try {
       const currentLanguage = settings.preferredLanguage || localStorage.getItem('language') || 'en';
-      const suggestions = await generateSmartSuggestions(currentMessages, character, currentLanguage, passionLevel);
+      const level = currentPassion !== undefined ? currentPassion : passionLevel;
+      const suggestions = await generateSmartSuggestions(currentMessages, character, currentLanguage, level);
       setSmartSuggestions(suggestions);
     } catch (error) {
       console.error('[v1.0 Suggestions] Error:', error);
@@ -861,17 +862,16 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const updatedMessages = [...newMessages, assistantMessage];
       setMessages(updatedMessages);
 
+      const freshPassion = response.passionLevel !== undefined ? response.passionLevel : passionLevel;
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
       }
 
-      // v0.2.5: Generate new suggestions after AI response
       if (smartSuggestionsEnabled) {
-        generateSuggestions(updatedMessages);
+        generateSuggestions(updatedMessages, freshPassion);
       }
 
-      // v0.2.5: AUTO Image Generation check
-      if (imageGenEnabled && passionLevel > 60) {
+      if (imageGenEnabled && freshPassion > 60) {
         handleAutoImageGen();
       }
       
@@ -948,9 +948,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   const handleResetPassion = () => {
     if (confirm(t.chat.resetPassionConfirm)) {
-      // v0.2.5 FIX: Reset passion for SESSION, not character name
       if (sessionId) {
         passionManager.resetPassion(sessionId);
+      }
+      if (character?.id) {
+        passionManager.clearCharacterMemory(character.id);
       }
       setPassionLevel(0);
     }
@@ -971,9 +973,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         console.error('[v9.2 ChatInterface] ❌ Error during hard reset:', error);
       }
 
-      // v0.2.5 FIX: Reset passion for SESSION, not character name
       if (sessionId) {
         passionManager.resetPassion(sessionId);
+      }
+      if (character?.id) {
+        passionManager.clearCharacterMemory(character.id);
       }
       setPassionLevel(0);
     }

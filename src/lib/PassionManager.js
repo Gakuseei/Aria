@@ -498,6 +498,22 @@ class PassionManager {
   }
 
   /**
+   * Clear passion memory for a character
+   * @param {string} characterId - Character identifier
+   */
+  clearCharacterMemory(characterId) {
+    try {
+      const stored = localStorage.getItem(PASSION_MEMORY_KEY);
+      if (!stored) return;
+      const memory = JSON.parse(stored);
+      delete memory[characterId];
+      localStorage.setItem(PASSION_MEMORY_KEY, JSON.stringify(memory));
+    } catch (error) {
+      console.error('[PassionManager] Error clearing character memory:', error);
+    }
+  }
+
+  /**
    * Retrieve passion memory for a character
    * @param {string} characterId - Character identifier
    * @returns {Object|null} Memory object with lastLevel and timestamp, or null

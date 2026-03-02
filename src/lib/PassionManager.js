@@ -106,6 +106,7 @@ function matchesKeyword(text, keyword) {
 class PassionManager {
   constructor() {
     this.passionData = this.loadPassionData();
+    this._lastBreakdown = null;
   }
 
   /**
@@ -301,32 +302,44 @@ class PassionManager {
       '섹스', '오르가즘', '쾌감', '욕망'
     ];
 
+    let romanticPoints = 0, intimatePoints = 0, explicitPoints = 0, asteriskPoints = 0, emotionalPoints = 0, lengthPoints = 0;
+
     romanticKeywords.forEach(keyword => {
-      if (matchesKeyword(message, keyword)) points += 1.5;
-      if (matchesKeyword(response, keyword)) points += 0.5;
+      if (matchesKeyword(message, keyword)) { points += 1.5; romanticPoints += 1.5; }
+      if (matchesKeyword(response, keyword)) { points += 0.5; romanticPoints += 0.5; }
     });
 
     intimateKeywords.forEach(keyword => {
-      if (matchesKeyword(message, keyword)) points += 2.5;
-      if (matchesKeyword(response, keyword)) points += 1.0;
+      if (matchesKeyword(message, keyword)) { points += 2.5; intimatePoints += 2.5; }
+      if (matchesKeyword(response, keyword)) { points += 1.0; intimatePoints += 1.0; }
     });
 
     explicitKeywords.forEach(keyword => {
-      if (matchesKeyword(message, keyword)) points += 3.5;
-      if (matchesKeyword(response, keyword)) points += 1.5;
+      if (matchesKeyword(message, keyword)) { points += 3.5; explicitPoints += 3.5; }
+      if (matchesKeyword(response, keyword)) { points += 1.5; explicitPoints += 1.5; }
     });
 
     const asteriskCount = (response.match(/\*/g) || []).length;
-    if (asteriskCount > 4) points += 1.0;
-    if (asteriskCount > 10) points += 2.0;
+    if (asteriskCount > 4) { points += 1.0; asteriskPoints += 1.0; }
+    if (asteriskCount > 10) { points += 2.0; asteriskPoints += 2.0; }
 
     const emotionalWords = ['mmm', 'ahh', 'ohh', 'yes', 'god', 'please', 'more', 'ja', 'bitte', 'mehr'];
     emotionalWords.forEach(word => {
-      if (matchesKeyword(response, word)) points += 1.0;
+      if (matchesKeyword(response, word)) { points += 1.0; emotionalPoints += 1.0; }
     });
 
-    if (message.length > 100) points += 1.5;
-    if (response.length > 200) points += 1.0;
+    if (message.length > 100) { points += 1.5; lengthPoints += 1.5; }
+    if (response.length > 200) { points += 1.0; lengthPoints += 1.0; }
+
+    this._lastBreakdown = {
+      romantic: romanticPoints,
+      intimate: intimatePoints,
+      explicit: explicitPoints,
+      asterisk: asteriskPoints,
+      emotional: emotionalPoints,
+      length: lengthPoints,
+      total: Math.max(0, points)
+    };
 
     return Math.max(0, points);
   }
@@ -349,6 +362,14 @@ class PassionManager {
   getVocabulary(passionLevel) {
     const key = getTierKey(passionLevel);
     return PASSION_VOCABULARY[key];
+  }
+
+  /**
+   * Get the breakdown from the last calculatePassionPoints call
+   * @returns {Object|null} Breakdown with romantic, intimate, explicit, asterisk, emotional, length, total
+   */
+  getLastBreakdown() {
+    return this._lastBreakdown || null;
   }
 
   /**

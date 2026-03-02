@@ -982,6 +982,10 @@ export const sendMessage = async (
       );
 
       console.log('[v9.2 API] 🔥 Passion update:', currentPassionLevel, '→', newPassionLevel);
+      const breakdown = passionManager.getLastBreakdown();
+      if (breakdown) {
+        console.log('[PassionDebug] Score breakdown:', JSON.stringify(breakdown));
+      }
       currentPassionLevel = newPassionLevel;
     }
 

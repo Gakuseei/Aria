@@ -613,6 +613,16 @@ Key sensations: ${sensoryGuidance.details.join(', ')}`;
         };
         enhancements += `\n\n⚡ EMOTIONAL SHIFT: The tension just escalated to ${transitionLabels[tierTransition] || tierTransition}. React to this shift naturally — acknowledge the change in body language, breathing, tone, or desire. Do NOT state the tier name. Show it through actions and reactions.`;
       }
+
+      const downTransition = passionManager.getAndClearDownTransition(sessionId);
+      if (downTransition) {
+        const downLabels = {
+          innocent: 'INNOCENT — shy and reserved again',
+          warm: 'WARM — pulling back slightly',
+          passionate: 'PASSIONATE — intensity fading'
+        };
+        enhancements += `\n\n❄️ COOLING DOWN: The intensity just dropped to ${downLabels[downTransition] || downTransition}. React naturally — the urgency fades, composure returns, breathing steadies.`;
+      }
     }
   }
 

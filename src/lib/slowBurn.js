@@ -7,6 +7,8 @@
  * - 5-senses immersion (sounds, textures, temperatures, tremors, fluids)
  */
 
+import { PASSION_TIERS } from './PassionManager.js';
+
 export const slowBurnConfig = {
   minParagraphs: 3,
   minSentencesPerParagraph: 2,
@@ -192,7 +194,7 @@ export function validateResponseQuality(responseText) {
  * Injects sensory detail suggestions based on current passion level
  */
 export function getSensoryGuidance(passionLevel) {
-  if (passionLevel < 20) {
+  if (passionLevel <= PASSION_TIERS.innocent.max) {
     return {
       focus: 'Initial tension and awareness',
       details: [
@@ -203,7 +205,7 @@ export function getSensoryGuidance(passionLevel) {
         'Heartbeat quickening with anticipation'
       ]
     };
-  } else if (passionLevel < 40) {
+  } else if (passionLevel <= PASSION_TIERS.warm.max) {
     return {
       focus: 'Growing desire and light physical contact',
       details: [
@@ -214,25 +216,14 @@ export function getSensoryGuidance(passionLevel) {
         'Increased awareness of every sensation'
       ]
     };
-  } else if (passionLevel < 60) {
+  } else if (passionLevel <= PASSION_TIERS.passionate.max) {
     return {
-      focus: 'Escalating intimacy and eager responsiveness',
+      focus: 'Deep arousal and intimate exploration',
       details: [
         'Trembling with anticipation and need',
         'Skin tingling and burning where touched',
         'Soft gasps and quiet moans escaping',
-        'Pressing closer instinctively, craving more',
-        'Complete surrender to desire - no hesitation'
-      ]
-    };
-  } else if (passionLevel < 80) {
-    return {
-      focus: 'Deep arousal and intimate exploration',
-      details: [
         'Body responding instinctively to touch',
-        'Breathing becoming ragged or desperate',
-        'Wetness, heat, and physical signs of arousal',
-        'Coherent thought becoming difficult',
         'Overwhelming sensations and need'
       ]
     };
@@ -257,19 +248,15 @@ export function getPacingReminder(messageCount, passionLevel) {
   if (messageCount < 5) {
     return `\n⏱️ EARLY STAGE: Focus on building chemistry and tension. NO rushing to physical intimacy.`;
   }
-  
-  if (passionLevel < 30) {
+  if (passionLevel <= PASSION_TIERS.innocent.max) {
     return `\n⏱️ BUILDING TENSION: Continue slow burn. Emphasize emotional reactions and subtle physical awareness.`;
   }
-  
-  if (passionLevel < 60) {
+  if (passionLevel <= PASSION_TIERS.warm.max) {
     return `\n⏱️ ESCALATING: Allow gradual physical progression. Maintain rich sensory descriptions.`;
   }
-  
-  if (passionLevel < 85) {
+  if (passionLevel <= PASSION_TIERS.passionate.max) {
     return `\n⏱️ HIGH INTENSITY: Savor the peak moments. Multiple paragraphs of visceral detail for each micro-action.`;
   }
-  
   return `\n⏱️ CLIMACTIC: Describe the release in vivid detail, then allow for emotional aftermath and tenderness.`;
 }
 

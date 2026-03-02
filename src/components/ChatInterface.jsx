@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSmartSuggestions } from '../lib/api';
-import { passionManager } from '../lib/PassionManager';
+import { passionManager, PASSION_TIERS, getTierKey } from '../lib/PassionManager';
 import { generateImage, cleanContextForImage, extractConversationContext } from '../lib/imageGen';
 import TutorialModal from './tutorials/TutorialModal';
 import { useLanguage } from '../context/LanguageContext';
@@ -258,6 +258,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [passionLevel, setPassionLevel] = useState(0);
+  const [previousTier, setPreviousTier] = useState('innocent');
+  const [tierTransitioning, setTierTransitioning] = useState(false);
+  const [showPassionPresets, setShowPassionPresets] = useState(false);
+  const longPressTimer = useRef(null);
+  const passionRingRef = useRef(null);
   const [currentEnvironment, setCurrentEnvironment] = useState(null);
   const [currentState, setCurrentState] = useState(null);
   const [sessionId, setSessionId] = useState(null);
@@ -312,9 +317,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [showBioModal, setShowBioModal] = useState(false);
 
   // v0.2.5: Passion System Toggle (OFF = Unchained Mode, ON = Gatekeeping)
-  const [passionGatekeepingEnabled, setPassionGatekeepingEnabled] = useState(() => {
+  const [isUnchainedMode, setIsUnchainedMode] = useState(() => {
     const saved = localStorage.getItem('passionGatekeepingEnabled');
-    return saved !== null ? JSON.parse(saved) : true;  // Default: Gatekeeping ON
+    return saved !== null ? !JSON.parse(saved) : false;
   });
 
   // v0.2.5: Smart Suggestions
@@ -527,15 +532,33 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // ============================================================================
 
   useEffect(() => {
-    localStorage.setItem('passionGatekeepingEnabled', JSON.stringify(passionGatekeepingEnabled));
-
-    // In Unchained Mode: Disable passion system in settings temporarily
+    localStorage.setItem('passionGatekeepingEnabled', JSON.stringify(!isUnchainedMode));
     const settings = JSON.parse(localStorage.getItem('settings') || '{}');
-    settings.passionSystemEnabled = passionGatekeepingEnabled;  // Inverted logic: Gatekeeping = ON means passion system enabled
+    settings.passionSystemEnabled = !isUnchainedMode;
     localStorage.setItem('settings', JSON.stringify(settings));
+  }, [isUnchainedMode]);
 
-    console.log('[v1.0 Passion] Gatekeeping:', passionGatekeepingEnabled ? 'ON (0-100)' : 'OFF (Unchained 100%)');
-  }, [passionGatekeepingEnabled]);
+  useEffect(() => {
+    const currentTier = getTierKey(passionLevel);
+    if (currentTier !== previousTier && previousTier) {
+      setTierTransitioning(true);
+      const timer = setTimeout(() => setTierTransitioning(false), 600);
+      setPreviousTier(currentTier);
+      return () => clearTimeout(timer);
+    }
+    setPreviousTier(currentTier);
+  }, [passionLevel]);
+
+  useEffect(() => {
+    if (!showPassionPresets) return;
+    const handleClickOutside = (e) => {
+      if (passionRingRef.current && !passionRingRef.current.contains(e.target)) {
+        setShowPassionPresets(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showPassionPresets]);
 
   // ============================================================================
   // INITIALIZATION
@@ -552,6 +575,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       setSessionId(restoredSessionId);
       setMessages(loadedSession.messages);
       setPassionLevel(loadedSession.passionLevel || 0);
+      if (restoredSessionId) {
+        passionManager.setPassion(restoredSessionId, loadedSession.passionLevel || 0);
+      }
 
       console.log('[v1.0 ChatInterface] 📂 Restored saved session:', restoredSessionId);
       console.log('[v1.0 ChatInterface] 💬 Messages:', loadedSession.messages.length);
@@ -743,13 +769,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     setInput('');
     setIsLoading(true);
 
-    // v0.2.5: PASSION SYSTEM 2.0 - Force 100% in Unchained Mode
-    if (!passionGatekeepingEnabled) {
-      setPassionLevel(100);
-    }
-
     try {
-      // v0.2.5: API MONITOR - Send stats to parent via window event
       const handleApiStats = (stats) => {
         window.dispatchEvent(new CustomEvent('aria-api-stats', { detail: stats }));
       };
@@ -760,9 +780,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         '',
         newMessages,
         sessionId,
-        !passionGatekeepingEnabled,  // Pass Unchained Mode flag
-        handleApiStats,  // v0.2.5: Pass stats callback
-        settings  // v0.2.5 FIX: Pass settings directly to avoid race conditions
+        isUnchainedMode,
+        handleApiStats,
+        settings,
+        false
       );
 
       if (!response.success) {
@@ -998,11 +1019,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     setMessages(messagesUpToLastUser);
     setIsLoading(true);
 
-    // v0.2.5: PASSION SYSTEM 2.0 - Force 100% in Unchained Mode
-    if (!passionGatekeepingEnabled) {
-      setPassionLevel(100);
-    }
-
     try {
       const response = await sendMessage(
         lastUserMessage,
@@ -1010,9 +1026,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         '',
         messagesUpToLastUser,
         sessionId,
-        !passionGatekeepingEnabled,  // Pass Unchained Mode flag
-        null,  // No stats callback for regenerate
-        settings  // v0.2.5 FIX: Pass settings directly
+        isUnchainedMode,
+        null,
+        settings,
+        true
       );
 
       if (!response.success) {
@@ -1117,6 +1134,61 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     return 'Primal';
   };
 
+  const getTierColor = (level) => {
+    const tier = getTierKey(level);
+    switch (tier) {
+      case 'innocent': return '#06b6d4';
+      case 'warm': return '#f472b6';
+      case 'passionate': return '#f43f5e';
+      case 'primal': return '#dc2626';
+      default: return '#06b6d4';
+    }
+  };
+
+  const handlePassionRingMouseDown = () => {
+    longPressTimer.current = setTimeout(() => {
+      setShowPassionPresets(true);
+    }, 500);
+  };
+
+  const handlePassionRingMouseUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handlePresetSelect = (level) => {
+    if (sessionId) {
+      passionManager.setPassion(sessionId, level);
+    }
+    setPassionLevel(level);
+    setShowPassionPresets(false);
+  };
+
+  const PassionSparkline = ({ sessionId: sid, color }) => {
+    const history = passionManager.getHistory(sid);
+    if (!history || history.length < 5) return null;
+
+    const points = history.slice(-25);
+    const width = 40;
+    const height = 16;
+
+    const pathData = points
+      .map((val, i) => {
+        const x = (i / (points.length - 1)) * width;
+        const y = height - (val / 100) * height;
+        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(' ');
+
+    return (
+      <svg width={width} height={height} className="opacity-60">
+        <path d={pathData} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  };
+
   // ============================================================================
   // RENDER
   // ============================================================================
@@ -1174,21 +1246,27 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 <Info size={18} strokeWidth={1.5} />
               </button>
             </div>
-            {/* Passion Mini Progress Ring */}
-            <div className="flex items-center gap-2 mt-1.5">
+            <div
+              ref={passionRingRef}
+              className="flex items-center gap-2 mt-1.5 relative cursor-pointer select-none"
+              onMouseDown={handlePassionRingMouseDown}
+              onMouseUp={handlePassionRingMouseUp}
+              onMouseLeave={handlePassionRingMouseUp}
+              onTouchStart={handlePassionRingMouseDown}
+              onTouchEnd={handlePassionRingMouseUp}
+            >
               <div className={`text-xs font-medium px-3 py-1.5 rounded-full inline-flex items-center gap-2 ${
-                !passionGatekeepingEnabled
+                isUnchainedMode
                   ? 'bg-rose-500/20 text-rose-300 animate-pulse'
                   : 'bg-zinc-800/80 text-zinc-400'
               }`}>
-                {!passionGatekeepingEnabled ? (
+                {isUnchainedMode ? (
                   <>
                     <span className="w-2 h-2 rounded-full bg-rose-400" />
                     {t.chat.unchained}
                   </>
                 ) : (
                   <>
-                    {/* Mini circular progress indicator */}
                     <svg className="w-5 h-5" viewBox="0 0 20 20">
                       <circle
                         cx="10" cy="10" r="8"
@@ -1200,17 +1278,47 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                       <circle
                         cx="10" cy="10" r="8"
                         fill="none"
-                        stroke={passionLevel < 40 ? '#06b6d4' : passionLevel < 70 ? '#f472b6' : '#f43f5e'}
+                        stroke={getTierColor(passionLevel)}
                         strokeWidth="2"
-                        strokeDasharray={`${passionLevel * 0.5} 50`}
+                        strokeDasharray={`${passionLevel * 0.5027} 50.27`}
                         strokeLinecap="round"
                         transform="rotate(-90 10 10)"
+                        style={{ transition: 'stroke 300ms ease, stroke-dasharray 300ms ease' }}
                       />
                     </svg>
-                    <span>{passionLevel}%</span>
+                    <span
+                      style={{ transition: 'opacity 200ms ease' }}
+                      className={tierTransitioning ? 'opacity-50' : 'opacity-100'}
+                      title={t.chat.passionTooltip}
+                    >
+                      {passionLevel}% {t.chat[`passion${getTierKey(passionLevel).charAt(0).toUpperCase() + getTierKey(passionLevel).slice(1)}`]}
+                    </span>
+                    <PassionSparkline sessionId={sessionId} color={getTierColor(passionLevel)} />
+                    {getTierKey(passionLevel) === 'primal' && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                    )}
                   </>
                 )}
               </div>
+              {showPassionPresets && !isUnchainedMode && (
+                <div className="absolute top-full left-0 mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-50 min-w-[160px] py-1">
+                  {[
+                    { label: t.chat.presetFresh, level: 0 },
+                    { label: t.chat.presetWarm, level: 30 },
+                    { label: t.chat.presetPassionate, level: 65 },
+                    { label: t.chat.presetMax, level: 100 },
+                  ].map(({ label, level }) => (
+                    <button
+                      key={level}
+                      onClick={() => handlePresetSelect(level)}
+                      className="w-full px-3 py-2 text-left text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors flex items-center gap-2"
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getTierColor(level) }} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1359,15 +1467,14 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             )}
           </div>
 
-          {/* Passion Mode Toggle with Rose Glow */}
           <button
-            onClick={() => setPassionGatekeepingEnabled(!passionGatekeepingEnabled)}
+            onClick={() => setIsUnchainedMode(!isUnchainedMode)}
             className={`p-3 rounded-xl transition-all duration-200 active:scale-95 ${
-              !passionGatekeepingEnabled
+              isUnchainedMode
                 ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 shadow-lg shadow-rose-500/20'
                 : 'hover:bg-white/10 text-cyan-400 hover:text-cyan-300'
             }`}
-            title={passionGatekeepingEnabled ? t.chat.enableUnchained : t.chat.unchainedActive}
+            title={!isUnchainedMode ? t.chat.enableUnchained : t.chat.unchainedActive}
           >
             <Sparkles size={22} strokeWidth={1.5} />
           </button>

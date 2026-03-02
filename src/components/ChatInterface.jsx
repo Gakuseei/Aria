@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSmartSuggestions } from '../lib/api';
-import { passionManager, PASSION_TIERS, getTierKey } from '../lib/PassionManager';
+import { passionManager, getTierKey } from '../lib/PassionManager';
 import { generateImage, cleanContextForImage, extractConversationContext } from '../lib/imageGen';
 import TutorialModal from './tutorials/TutorialModal';
 import { useLanguage } from '../context/LanguageContext';
@@ -249,6 +249,33 @@ function detectStateFromMessages(messages) {
 }
 
 // ============================================================================
+// PASSION SPARKLINE
+// ============================================================================
+
+function PassionSparkline({ sessionId: sid, color }) {
+  const history = passionManager.getHistory(sid);
+  if (!history || history.length < 5) return null;
+
+  const points = history.slice(-25);
+  const width = 40;
+  const height = 16;
+
+  const pathData = points
+    .map((val, i) => {
+      const x = (i / (points.length - 1)) * width;
+      const y = height - (val / 100) * height;
+      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+
+  return (
+    <svg width={width} height={height} className="opacity-60">
+      <path d={pathData} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// ============================================================================
 // MAIN CHAT INTERFACE - v8.1 RESTORED
 // ============================================================================
 
@@ -258,7 +285,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [passionLevel, setPassionLevel] = useState(0);
-  const [previousTier, setPreviousTier] = useState('innocent');
+  const previousTierRef = useRef('innocent');
   const [tierTransitioning, setTierTransitioning] = useState(false);
   const [showPassionPresets, setShowPassionPresets] = useState(false);
   const longPressTimer = useRef(null);
@@ -533,20 +560,20 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   useEffect(() => {
     localStorage.setItem('passionGatekeepingEnabled', JSON.stringify(!isUnchainedMode));
-    const settings = JSON.parse(localStorage.getItem('settings') || '{}');
-    settings.passionSystemEnabled = !isUnchainedMode;
-    localStorage.setItem('settings', JSON.stringify(settings));
+    const stored = JSON.parse(localStorage.getItem('settings') || '{}');
+    stored.passionSystemEnabled = !isUnchainedMode;
+    localStorage.setItem('settings', JSON.stringify(stored));
+    setLocalSettings(prev => ({ ...prev, passionSystemEnabled: !isUnchainedMode }));
   }, [isUnchainedMode]);
 
   useEffect(() => {
     const currentTier = getTierKey(passionLevel);
-    if (currentTier !== previousTier && previousTier) {
+    if (currentTier !== previousTierRef.current) {
       setTierTransitioning(true);
       const timer = setTimeout(() => setTierTransitioning(false), 600);
-      setPreviousTier(currentTier);
+      previousTierRef.current = currentTier;
       return () => clearTimeout(timer);
     }
-    setPreviousTier(currentTier);
   }, [passionLevel]);
 
   useEffect(() => {
@@ -559,6 +586,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showPassionPresets]);
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    };
+  }, []);
 
   // ============================================================================
   // INITIALIZATION
@@ -686,7 +719,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     setLoadingSuggestions(true);
     try {
       const currentLanguage = settings.preferredLanguage || localStorage.getItem('language') || 'en';
-      const suggestions = await generateSmartSuggestions(currentMessages, character, currentLanguage);
+      const suggestions = await generateSmartSuggestions(currentMessages, character, currentLanguage, passionLevel);
       setSmartSuggestions(suggestions);
     } catch (error) {
       console.error('[v1.0 Suggestions] Error:', error);
@@ -975,6 +1008,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       }
       if (importData.sessionId) {
         setSessionId(importData.sessionId);
+        if (importData.passionLevel !== undefined) {
+          passionManager.setPassion(importData.sessionId, importData.passionLevel);
+        }
       }
 
       toast.success('Chat imported successfully!');
@@ -1111,29 +1147,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // PASSION HELPERS
   // ============================================================================
 
-  const getPassionColor = (level) => {
-    if (level < 20) return 'from-blue-500 to-cyan-500';
-    if (level < 40) return 'from-purple-500 to-pink-500';
-    if (level < 60) return 'from-pink-500 to-rose-500';
-    if (level < 80) return 'from-rose-600 to-pink-600';
-    return 'from-rose-700 to-pink-700';
-  };
-
-  const getPassionLabel = (level) => {
-    if (level < 20) return 'Friendly';
-    if (level < 40) return 'Flirty';
-    if (level < 60) return 'Romantic';
-    if (level < 80) return 'Passionate';
-    return 'Intimate';
-  };
-
-  const getVocabularyTier = (level) => {
-    if (level <= 20) return 'Innocent';
-    if (level <= 50) return 'Warm';
-    if (level <= 80) return 'Passionate';
-    return 'Primal';
-  };
-
   const getTierColor = (level) => {
     const tier = getTierKey(level);
     switch (tier) {
@@ -1166,28 +1179,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     setShowPassionPresets(false);
   };
 
-  const PassionSparkline = ({ sessionId: sid, color }) => {
-    const history = passionManager.getHistory(sid);
-    if (!history || history.length < 5) return null;
-
-    const points = history.slice(-25);
-    const width = 40;
-    const height = 16;
-
-    const pathData = points
-      .map((val, i) => {
-        const x = (i / (points.length - 1)) * width;
-        const y = height - (val / 100) * height;
-        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-      })
-      .join(' ');
-
-    return (
-      <svg width={width} height={height} className="opacity-60">
-        <path d={pathData} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  };
 
   // ============================================================================
   // RENDER

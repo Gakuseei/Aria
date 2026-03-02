@@ -811,9 +811,10 @@ export const sendMessage = async (
   }
 
   try {
-    // v0.2.5 FIX: Use provided settings to avoid localStorage race conditions
     const settings = settingsOverride || await loadSettings();
-    console.log('[v1.0 API] 🔧 Using settings:', settingsOverride ? 'from props' : 'from loadSettings()');
+    if (unchainedMode) {
+      settings.passionSystemEnabled = false;
+    }
 
     // v0.2.5 PERFORMANCE: Sliding Window (10-15 messages) for faster responses
     const CONTEXT_WINDOW = 12;

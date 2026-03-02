@@ -6,7 +6,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "clean": "rimraf dist node_modules/.vite",
+    "clean": "rimraf dist",
     "dev": "concurrently \"npm run dev:react\" \"wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .\"",
     "dev:react": "vite",
     "build:react": "npm run clean && vite build",

@@ -8,8 +8,7 @@
 // - THE JAILBREAK: Universal uncensored NSFW mode with energy mirroring
 // ============================================================================
 
-import { 
-  enhanceSystemPromptWithPacing,
+import {
   getPacingReminder,
   getSensoryGuidance,
   validateResponseQuality
@@ -175,8 +174,12 @@ const DEFAULT_SETTINGS = {
   imageGenEnabled: false, // v0.2.5: RESTORED
   imageGenUrl: 'http://127.0.0.1:7860', // v0.2.5: RESTORED
   voiceEnabled: false, // v0.2.5: RESTORED
-  voiceUrl: 'http://127.0.0.1:5000' // v0.2.5: RESTORED
+  voiceUrl: 'http://127.0.0.1:5000', // v0.2.5: RESTORED
+  passionSpeedMultiplier: 1.0
 };
+
+const LLM_BLEND_RATIO = { keyword: 0.7, llm: 0.3 };
+const LLM_SCORING_TIMEOUT_MS = 10000;
 
 // ============================================================================
 // HELPER: CHECK IF RUNNING IN ELECTRON
@@ -825,7 +828,7 @@ export const sendMessage = async (
   }
 
   try {
-    const settings = settingsOverride || await loadSettings();
+    const settings = { ...(settingsOverride || await loadSettings()) };
     if (unchainedMode) {
       settings.passionSystemEnabled = false;
     }
@@ -854,13 +857,9 @@ export const sendMessage = async (
     console.log('[v9.2 API] 🎬 Environment:', currentEnvironment || 'unspecified');
     console.log('[v9.2 API] 👕 State:', currentState || 'unspecified');
 
-    // PASSION TRACKING (v9.2 FIX: Track per SESSION, not per character name)
     let currentPassionLevel = 0;
     if (settings.passionSystemEnabled && sessionId) {
       currentPassionLevel = passionManager.getPassionLevel(sessionId);
-      const projectedPoints = passionManager.calculatePassionPoints(userMessage, '');
-      const projectedLevel = Math.round(Math.max(0, Math.min(100, currentPassionLevel + projectedPoints)));
-      currentPassionLevel = projectedLevel;
     }
 
     console.log('[v9.2 API] 🔥 Passion level:', currentPassionLevel);
@@ -964,7 +963,7 @@ export const sendMessage = async (
 
     // PASSION UPDATE (v9.2 FIX: Update per SESSION, not per character name)
     if (settings.passionSystemEnabled && sessionId && !skipPassionUpdate) {
-      const speedMultiplier = character?.passionProfile || 1.0;
+      const speedMultiplier = (character?.passionProfile || 1.0) * (settings.passionSpeedMultiplier || 1.0);
       const newPassionLevel = passionManager.updatePassion(
         sessionId,
         userMessage,
@@ -976,12 +975,14 @@ export const sendMessage = async (
       currentPassionLevel = newPassionLevel;
     }
 
-    // LLM-ASSISTED PASSION SCORING (optional)
     if (settings.aiPassionScoringEnabled && settings.passionSystemEnabled && sessionId && !skipPassionUpdate) {
+      const scoringAbort = new AbortController();
+      const scoringTimer = setTimeout(() => scoringAbort.abort(), LLM_SCORING_TIMEOUT_MS);
       try {
         const scoringResponse = await fetch(`${settings.ollamaUrl || 'http://127.0.0.1:11434'}/api/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: scoringAbort.signal,
           body: JSON.stringify({
             model: settings.ollamaModel || 'hermes3',
             messages: [{ role: 'user', content: `Rate the intimacy/sexual intensity of this exchange on a scale of 0-10. 0=casual, 5=flirting, 10=explicit. User: "${userMessage.substring(0, 200)}" AI: "${aiMessage.substring(0, 200)}". Reply with ONLY a number 0-10.` }],
@@ -991,16 +992,17 @@ export const sendMessage = async (
         });
         if (scoringResponse.ok) {
           const scoringData = await scoringResponse.json();
-          const rawScore = parseInt(scoringData.message?.content?.trim());
+          const rawScore = parseInt(scoringData.message?.content?.trim(), 10);
           if (!isNaN(rawScore) && rawScore >= 0 && rawScore <= 10) {
             const llmLevel = rawScore * 10;
             const currentKw = passionManager.getPassionLevel(sessionId);
-            const blended = Math.round(currentKw * 0.7 + llmLevel * 0.3);
-            passionManager.setPassion(sessionId, Math.max(0, Math.min(100, blended)));
+            const blended = Math.round(currentKw * LLM_BLEND_RATIO.keyword + llmLevel * LLM_BLEND_RATIO.llm);
+            passionManager.adjustPassion(sessionId, Math.max(0, Math.min(100, blended)));
             currentPassionLevel = passionManager.getPassionLevel(sessionId);
           }
         }
-      } catch (e) { /* LLM scoring failed silently */ }
+      } catch (e) { /* LLM scoring failed or timed out */ }
+      finally { clearTimeout(scoringTimer); }
     }
 
     console.log('[v8.1 API] ✅ Message processed successfully');

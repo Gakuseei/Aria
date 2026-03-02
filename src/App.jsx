@@ -100,7 +100,8 @@ function App() {
   // v0.2.5: CRITICAL FIX - Load settings from localStorage on startup
   useEffect(() => {
     async function initializeApp() {
-      // v0.2.5: Load settings from localStorage FIRST
+      console.time('[Startup] Total init');
+      console.time('[Startup] Settings load');
       try {
         const stored = localStorage.getItem('settings');
         if (stored) {
@@ -153,8 +154,10 @@ function App() {
       } catch (error) {
         console.error('[v9.5 App Init] ❌ Error loading settings:', error);
       }
+      console.timeEnd('[Startup] Settings load');
 
       // v0.2.5: Check Ollama connection (NO API KEY!)
+      console.time('[Startup] Ollama check');
       console.log('[v8.1 Startup] Checking Ollama connection...');
       try {
         const ollamaTest = await testOllamaConnection();
@@ -189,6 +192,8 @@ function App() {
         setOllamaReady(false);
         setShowOnboarding(true);
       }
+      console.timeEnd('[Startup] Ollama check');
+      console.timeEnd('[Startup] Total init');
     }
 
     initializeApp();

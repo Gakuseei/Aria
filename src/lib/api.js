@@ -1323,10 +1323,14 @@ export const testOllamaConnection = async (url = 'http://127.0.0.1:11434') => {
  */
 export const fetchOllamaModels = async (ollamaUrl = 'http://127.0.0.1:11434') => {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
     const response = await fetch(`${ollamaUrl}/api/tags`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal
     });
+    clearTimeout(timeout);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch models: ${response.status}`);

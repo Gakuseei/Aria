@@ -67,6 +67,15 @@ const PASSION_VOCABULARY = {
 const keywordRegexCache = new Map();
 
 /**
+ * Escapes regex metacharacters in a string
+ * @param {string} str - Raw string to escape
+ * @returns {string} Regex-safe string
+ */
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
  * Tests whether text contains keyword as a whole word (word-boundary match)
  * @param {string} text - Text to search in
  * @param {string} keyword - Keyword to match
@@ -74,7 +83,7 @@ const keywordRegexCache = new Map();
  */
 function matchesKeyword(text, keyword) {
   if (!keywordRegexCache.has(keyword)) {
-    keywordRegexCache.set(keyword, new RegExp(`\\b${keyword}\\b`, 'i'));
+    keywordRegexCache.set(keyword, new RegExp(`\\b${escapeRegex(keyword)}\\b`, 'i'));
   }
   return keywordRegexCache.get(keyword).test(text);
 }
@@ -146,13 +155,13 @@ class PassionManager {
       finalPoints = basePoints * Math.max(0.1, Math.min(10, speedMultiplier));
     }
 
-    const newLevel = Math.max(0, Math.min(100, currentLevel + finalPoints));
+    const newLevel = Math.round(Math.max(0, Math.min(100, currentLevel + finalPoints)));
 
     this.passionData[sessionId] = newLevel;
     this.trackHistory(sessionId, newLevel);
     this.savePassionData();
 
-    return Math.round(newLevel);
+    return newLevel;
   }
 
   /**
@@ -243,11 +252,11 @@ class PassionManager {
    * @returns {number} Clamped level that was set
    */
   setPassion(sessionId, level) {
-    const clamped = Math.max(0, Math.min(100, level));
+    const clamped = Math.round(Math.max(0, Math.min(100, level)));
     this.passionData[sessionId] = clamped;
     this.trackHistory(sessionId, clamped);
     this.savePassionData();
-    return Math.round(clamped);
+    return clamped;
   }
 
   /**
@@ -277,12 +286,14 @@ class PassionManager {
   }
 
   /**
-   * Reset passion level for a session
+   * Reset passion level for a session (clears cooldown and records reset in history)
    * @param {string} sessionId - Session identifier
    * @returns {number} 0
    */
   resetPassion(sessionId) {
     this.passionData[sessionId] = 0;
+    delete this.passionData[`${sessionId}_cooldown`];
+    this.trackHistory(sessionId, 0);
     this.savePassionData();
     return 0;
   }
@@ -295,7 +306,9 @@ class PassionManager {
     const levels = {};
     Object.keys(this.passionData).forEach(key => {
       if (key.endsWith('_cooldown') || key.endsWith('_history')) return;
-      levels[key] = Math.round(this.passionData[key] || 0);
+      const val = this.passionData[key];
+      if (typeof val !== 'number' || isNaN(val)) return;
+      levels[key] = Math.round(val);
     });
     return levels;
   }

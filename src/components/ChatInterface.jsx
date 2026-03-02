@@ -285,6 +285,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [isLoading, setIsLoading] = useState(false);
   const [passionLevel, setPassionLevel] = useState(0);
   const previousTierRef = useRef('innocent');
+  const [tierTransitioning, setTierTransitioning] = useState(false);
+  const [showPassionPresets, setShowPassionPresets] = useState(false);
+  const longPressTimer = useRef(null);
+  const passionRingRef = useRef(null);
+  const [currentEnvironment, setCurrentEnvironment] = useState(null);
+  const [currentState, setCurrentState] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
 
   const passionHistory = useMemo(() => {
     if (!sessionId) return [];
@@ -300,14 +307,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     if (!sessionId) return 0;
     return passionManager.getStreak(sessionId);
   }, [sessionId, passionLevel]);
-
-  const [tierTransitioning, setTierTransitioning] = useState(false);
-  const [showPassionPresets, setShowPassionPresets] = useState(false);
-  const longPressTimer = useRef(null);
-  const passionRingRef = useRef(null);
-  const [currentEnvironment, setCurrentEnvironment] = useState(null);
-  const [currentState, setCurrentState] = useState(null);
-  const [sessionId, setSessionId] = useState(null);
   const [showChatOptions, setShowChatOptions] = useState(false);
 
   // BLOCK 6.9: Entrance Animation

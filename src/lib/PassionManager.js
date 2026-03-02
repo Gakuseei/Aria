@@ -387,6 +387,9 @@ class PassionManager {
     if (oldTier !== newTier && tierOrder.indexOf(newTier) > tierOrder.indexOf(oldTier)) {
       this.passionData[`${sessionId}_transition`] = newTier;
     }
+    if (oldTier !== newTier && tierOrder.indexOf(newTier) < tierOrder.indexOf(oldTier)) {
+      this.passionData[`${sessionId}_transition_down`] = newTier;
+    }
     this.passionData[sessionId] = clamped;
     delete this.passionData[`${sessionId}_streak`];
     delete this.passionData[`${sessionId}_cooldown`];
@@ -409,6 +412,9 @@ class PassionManager {
     const tierOrder = ['innocent', 'warm', 'passionate', 'primal'];
     if (oldTier !== newTier && tierOrder.indexOf(newTier) > tierOrder.indexOf(oldTier)) {
       this.passionData[`${sessionId}_transition`] = newTier;
+    }
+    if (oldTier !== newTier && tierOrder.indexOf(newTier) < tierOrder.indexOf(oldTier)) {
+      this.passionData[`${sessionId}_transition_down`] = newTier;
     }
     this.passionData[sessionId] = clamped;
     this.trackHistory(sessionId, clamped);

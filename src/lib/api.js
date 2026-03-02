@@ -997,12 +997,17 @@ export const sendMessage = async (
             const llmLevel = rawScore * 10;
             const currentKw = passionManager.getPassionLevel(sessionId);
             const blended = Math.round(currentKw * LLM_BLEND_RATIO.keyword + llmLevel * LLM_BLEND_RATIO.llm);
-            passionManager.adjustPassion(sessionId, Math.max(0, Math.min(100, blended)));
+            const beforeBlend = currentKw;
+            passionManager.adjustPassion(sessionId, blended);
             currentPassionLevel = passionManager.getPassionLevel(sessionId);
+            console.log(`[v9.2 API] 🧪 LLM scoring: raw=${rawScore}, kw=${beforeBlend}, llm=${llmLevel}, blended=${currentPassionLevel}`);
           }
         }
-      } catch (e) { /* LLM scoring failed or timed out */ }
-      finally { clearTimeout(scoringTimer); }
+      } catch (e) {
+        if (e.name !== 'AbortError') {
+          console.warn('[v9.2 API] ⚠️ LLM passion scoring error:', e.message);
+        }
+      } finally { clearTimeout(scoringTimer); }
     }
 
     console.log('[v8.1 API] ✅ Message processed successfully');

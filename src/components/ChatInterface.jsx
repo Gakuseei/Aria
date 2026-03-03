@@ -286,8 +286,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [passionLevel, setPassionLevel] = useState(0);
   const previousTierRef = useRef('innocent');
   const [tierTransitioning, setTierTransitioning] = useState(false);
+  const [tierToast, setTierToast] = useState(null);
   const [showPassionPresets, setShowPassionPresets] = useState(false);
-  const longPressTimer = useRef(null);
   const passionRingRef = useRef(null);
   const [currentEnvironment, setCurrentEnvironment] = useState(null);
   const [currentState, setCurrentState] = useState(null);
@@ -589,6 +589,16 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     if (currentTier !== previousTierRef.current) {
       setTierTransitioning(true);
       const timer = setTimeout(() => setTierTransitioning(false), 600);
+      const tierOrder = ['innocent', 'warm', 'passionate', 'primal'];
+      const oldIdx = tierOrder.indexOf(previousTierRef.current);
+      const newIdx = tierOrder.indexOf(currentTier);
+      const fromLabel = t.chat[`passion${previousTierRef.current.charAt(0).toUpperCase() + previousTierRef.current.slice(1)}`] || previousTierRef.current;
+      const toLabel = t.chat[`passion${currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}`] || currentTier;
+      const template = newIdx > oldIdx ? t.chat.tierUp : t.chat.tierDown;
+      if (template) {
+        setTierToast(template.replace('{from}', fromLabel).replace('{to}', toLabel));
+        setTimeout(() => setTierToast(null), 3000);
+      }
       previousTierRef.current = currentTier;
       return () => clearTimeout(timer);
     }
@@ -604,12 +614,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showPassionPresets]);
-
-  useEffect(() => {
-    return () => {
-      if (longPressTimer.current) clearTimeout(longPressTimer.current);
-    };
-  }, []);
 
   // ============================================================================
   // INITIALIZATION
@@ -1208,17 +1212,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     }
   };
 
-  const handlePassionRingMouseDown = () => {
-    longPressTimer.current = setTimeout(() => {
-      setShowPassionPresets(true);
-    }, 500);
-  };
-
-  const handlePassionRingMouseUp = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
+  const handleTogglePresets = () => {
+    setShowPassionPresets(prev => !prev);
   };
 
   const handlePresetSelect = (level) => {
@@ -1236,6 +1231,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   return (
     <div className="relative flex flex-col h-screen overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-900 to-black text-white">
+      {tierToast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[300] px-4 py-2 bg-zinc-900/95 border border-zinc-700 rounded-full text-sm text-zinc-200 shadow-xl backdrop-blur-sm animate-pulse">
+          {tierToast}
+        </div>
+      )}
       {/* Hidden file input for import */}
       <input
         ref={importFileRef}
@@ -1290,11 +1290,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             <div
               ref={passionRingRef}
               className="flex items-center gap-2 mt-1.5 relative cursor-pointer select-none"
-              onMouseDown={handlePassionRingMouseDown}
-              onMouseUp={handlePassionRingMouseUp}
-              onMouseLeave={handlePassionRingMouseUp}
-              onTouchStart={handlePassionRingMouseDown}
-              onTouchEnd={handlePassionRingMouseUp}
+              onClick={!isUnchainedMode ? handleTogglePresets : undefined}
             >
               <div className={`text-xs font-medium px-3 py-1.5 rounded-full inline-flex items-center gap-2 ${
                 isUnchainedMode
@@ -1336,22 +1332,23 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                     </span>
                     <PassionSparkline history={passionHistory} color={getTierColor(passionLevel)} />
                     {passionMomentum > 1 && (
-                      <span className="text-[10px] text-emerald-400 font-bold">↑</span>
+                      <span className="text-[10px] text-emerald-400 font-bold" title={t.chat.passionRising}>↑</span>
                     )}
                     {passionMomentum < -1 && (
-                      <span className="text-[10px] text-red-400 font-bold">↓</span>
+                      <span className="text-[10px] text-red-400 font-bold" title={t.chat.passionFalling}>↓</span>
                     )}
                     {passionMomentum >= -1 && passionMomentum <= 1 && passionHistory.length >= 5 && (
-                      <span className="text-[10px] text-orange-400 font-bold">→</span>
+                      <span className="text-[10px] text-orange-400 font-bold" title={t.chat.passionStable}>→</span>
                     )}
                     {currentStreak >= 3 && !isUnchainedMode && (
-                      <span className="text-[10px] text-orange-400 font-bold animate-pulse">
+                      <span className="text-[10px] text-orange-400 font-bold animate-pulse" title={(t.chat.passionStreak || '').replace('{count}', currentStreak)}>
                         x{currentStreak}
                       </span>
                     )}
                     {getTierKey(passionLevel) === 'primal' && (
                       <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                     )}
+                    <span className="text-[10px] text-zinc-600 ml-0.5">▾</span>
                   </>
                 )}
               </div>
@@ -1523,7 +1520,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           </div>
 
           <button
-            onClick={() => setIsUnchainedMode(!isUnchainedMode)}
+            onClick={() => {
+              const msg = isUnchainedMode
+                ? (t.chat.disableUnchainedConfirm || '').replace('{level}', passionLevel)
+                : t.chat.enableUnchainedConfirm;
+              setConfirmModal({ message: msg, onConfirm: () => setIsUnchainedMode(!isUnchainedMode) });
+            }}
             className={`p-3 rounded-xl transition-all duration-200 active:scale-95 ${
               isUnchainedMode
                 ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 shadow-lg shadow-rose-500/20'

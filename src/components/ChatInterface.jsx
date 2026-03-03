@@ -1307,6 +1307,16 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 ) : (
                   <>
                     <svg className="w-5 h-5" viewBox="0 0 20 20">
+                      {tierTransitioning && (
+                        <circle
+                          cx="10" cy="10" r="9"
+                          fill="none"
+                          stroke={getTierColor(passionLevel)}
+                          strokeWidth="3"
+                          opacity="0.6"
+                          style={{ animation: 'tierGlow 800ms ease-out forwards' }}
+                        />
+                      )}
                       <circle
                         cx="10" cy="10" r="8"
                         fill="none"
@@ -1340,7 +1350,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                       <span className="text-[10px] text-red-400 font-bold" title={t.chat.passionFalling}>↓</span>
                     )}
                     {passionMomentum >= -1 && passionMomentum <= 1 && passionHistory.length >= 5 && (
-                      <span className="text-[10px] text-orange-400 font-bold" title={t.chat.passionStable}>→</span>
+                      passionLevel > 15 && passionLevel < 86 && passionHistory.length >= 10 && Math.abs(passionHistory[passionHistory.length - 1] - passionHistory[Math.max(0, passionHistory.length - 5)]) < 5
+                        ? <span className="text-[10px] text-amber-500 font-bold animate-pulse" title={t.chat.passionStagnant || t.chat.passionStable}>~</span>
+                        : <span className="text-[10px] text-orange-400 font-bold" title={t.chat.passionStable}>→</span>
                     )}
                     {currentStreak >= 3 && !isUnchainedMode && (
                       <span className="text-[10px] text-orange-400 font-bold animate-pulse" title={(t.chat.passionStreak || '').replace('{count}', currentStreak)}>
@@ -1349,6 +1361,15 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                     )}
                     {getTierKey(passionLevel) === 'primal' && (
                       <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                    )}
+                    {character?.passionProfile && !isUnchainedMode && (
+                      <span className="text-[9px] text-zinc-600" title={
+                        character.passionProfile <= 0.5 ? (t.characterCreator?.passionProfileShy || 'Reserved')
+                        : character.passionProfile <= 0.8 ? (t.characterCreator?.passionProfileBalanced || 'Balanced')
+                        : (t.characterCreator?.passionProfileBold || 'Bold')
+                      }>
+                        {character.passionProfile <= 0.5 ? '🛡' : character.passionProfile <= 0.8 ? '⚖' : '🔥'}
+                      </span>
                     )}
                     <span className="text-[10px] text-zinc-600 ml-0.5">▾</span>
                   </>

@@ -312,6 +312,12 @@ body.oled-mode ::-webkit-scrollbar-thumb:hover {
   to { transform: rotate(360deg); }
 }
 
+@keyframes tierGlow {
+  0% { opacity: 0.8; stroke-width: 3; r: 9; }
+  50% { opacity: 0.4; stroke-width: 5; r: 11; }
+  100% { opacity: 0; stroke-width: 2; r: 12; }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
 }

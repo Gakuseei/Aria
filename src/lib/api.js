@@ -167,7 +167,6 @@ const DEFAULT_SETTINGS = {
   animationsEnabled: true,
   oledMode: false,
   passionSystemEnabled: true,
-  aiPassionScoringEnabled: false,
   preferredLanguage: 'en',
   userName: 'User', // v0.2.5: RESTORED
   userGender: 'male', // v0.2.5: NEW - User anatomical gender
@@ -178,8 +177,46 @@ const DEFAULT_SETTINGS = {
   passionSpeedMultiplier: 1.0
 };
 
-const LLM_BLEND_RATIO = { keyword: 0.7, llm: 0.3 };
-const LLM_SCORING_TIMEOUT_MS = 10000;
+const PASSION_SCORING_TIMEOUT_MS = 3000;
+
+/**
+ * Score romantic/sexual intensity of a message exchange using the LLM.
+ * @param {string} userMessage - User message text
+ * @param {string} aiMessage - AI response text
+ * @param {Object} settings - App settings (ollamaUrl, ollamaModel)
+ * @returns {Promise<number>} Score from -5 to 10, or 0 on failure
+ */
+async function scorePassionLLM(userMessage, aiMessage, settings) {
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), PASSION_SCORING_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${settings.ollamaUrl || 'http://127.0.0.1:11434'}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: abort.signal,
+      body: JSON.stringify({
+        model: settings.ollamaModel || 'hermes3',
+        messages: [{
+          role: 'user',
+          content: `Rate romantic/sexual intensity change. Reply with ONLY one integer from -5 to 10.\n-5=strong rejection, 0=neutral, 5=moderate romance, 10=explicit.\n\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`
+        }],
+        stream: false,
+        options: { temperature: 0.1, num_predict: 5, num_ctx: 512 }
+      })
+    });
+    if (!response.ok) return 0;
+    const data = await response.json();
+    const match = data.message?.content?.trim().match(/^(-?\d+)$/);
+    if (!match) return 0;
+    const score = parseInt(match[1], 10);
+    if (score < -5 || score > 10) return 0;
+    return score;
+  } catch {
+    return 0;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 // ============================================================================
 // HELPER: CHECK IF RUNNING IN ELECTRON
@@ -1150,62 +1187,25 @@ export const sendMessage = async (
     const assistantMsg = { role: 'assistant', content: aiMessage };
     const finalHistory = [...updatedHistory, assistantMsg];
 
-    // PASSION UPDATE (v9.2 FIX: Update per SESSION, not per character name)
+    // PASSION SCORING (synchronous LLM-based)
     if (settings.passionSystemEnabled && sessionId && !skipPassionUpdate) {
+      const rawScore = await scorePassionLLM(userMessage, aiMessage, settings);
+
       const profileValue = character?.passionProfile || 0.7;
-      const profileSpeedFactor = 0.7 + (profileValue * 0.4);
-      const speedMultiplier = Math.min(profileSpeedFactor * (settings.passionSpeedMultiplier || 1.0), 2.0);
-      const newPassionLevel = passionManager.updatePassion(
-        sessionId,
-        userMessage,
-        aiMessage,
-        speedMultiplier
-      );
+      const userSpeed = settings.passionSpeedMultiplier || 1.0;
+      let adjustedScore;
 
-      console.log('[v9.2 API] 🔥 Passion update:', currentPassionLevel, '→', newPassionLevel);
-      const breakdown = passionManager.getLastBreakdown();
-      if (breakdown) {
-        console.log('[PassionDebug] Score breakdown:', JSON.stringify(breakdown));
+      if (rawScore > 0) {
+        adjustedScore = rawScore * profileValue * userSpeed;
+      } else if (rawScore < 0) {
+        adjustedScore = rawScore * (2.0 - profileValue);
+      } else {
+        adjustedScore = 0;
       }
-      currentPassionLevel = newPassionLevel;
-    }
 
-    if (settings.aiPassionScoringEnabled && settings.passionSystemEnabled && sessionId && !skipPassionUpdate) {
-      (async () => {
-        const scoringAbort = new AbortController();
-        const scoringTimer = setTimeout(() => scoringAbort.abort(), LLM_SCORING_TIMEOUT_MS);
-        try {
-          const scoringResponse = await fetch(`${settings.ollamaUrl || 'http://127.0.0.1:11434'}/api/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: scoringAbort.signal,
-            body: JSON.stringify({
-              model: settings.ollamaModel || 'hermes3',
-              messages: [{ role: 'user', content: `Reply with ONLY a single digit 0-10. Rate intimacy: "${userMessage.substring(0, 100)}" "${aiMessage.substring(0, 100)}"` }],
-              stream: false,
-              options: { temperature: 0.1, num_predict: 5 }
-            })
-          });
-          if (scoringResponse.ok) {
-            const scoringData = await scoringResponse.json();
-            const match = scoringData.message?.content?.trim().match(/^(\d+)$/);
-            if (match) {
-              const rawScore = parseInt(match[1], 10);
-              if (rawScore >= 0 && rawScore <= 10) {
-                const llmLevel = rawScore * 10;
-                const currentKw = passionManager.getPassionLevel(sessionId);
-                const blended = Math.round(currentKw * LLM_BLEND_RATIO.keyword + llmLevel * LLM_BLEND_RATIO.llm);
-                passionManager.adjustPassion(sessionId, blended);
-                console.log(`[v9.2 API] 🧪 LLM scoring: raw=${rawScore}, kw=${currentKw}, blended=${blended}`);
-              }
-            }
-          }
-        } catch (e) {
-          if (e.name !== 'AbortError') {
-            console.warn('[v9.2 API] ⚠️ LLM passion scoring error:', e.message);
-          }
-        } finally { clearTimeout(scoringTimer); }
-      })();
+      const newPassionLevel = passionManager.applyScore(sessionId, adjustedScore);
+      console.log(`[API] Passion: ${currentPassionLevel} -> ${newPassionLevel} (raw=${rawScore}, adjusted=${adjustedScore.toFixed(1)})`);
+      currentPassionLevel = newPassionLevel;
     }
 
     console.log('[v8.1 API] ✅ Message processed successfully');

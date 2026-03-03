@@ -996,38 +996,41 @@ export const sendMessage = async (
     }
 
     if (settings.aiPassionScoringEnabled && settings.passionSystemEnabled && sessionId && !skipPassionUpdate) {
-      const scoringAbort = new AbortController();
-      const scoringTimer = setTimeout(() => scoringAbort.abort(), LLM_SCORING_TIMEOUT_MS);
-      try {
-        const scoringResponse = await fetch(`${settings.ollamaUrl || 'http://127.0.0.1:11434'}/api/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: scoringAbort.signal,
-          body: JSON.stringify({
-            model: settings.ollamaModel || 'hermes3',
-            messages: [{ role: 'user', content: `Rate the intimacy/sexual intensity of this exchange on a scale of 0-10. 0=casual, 5=flirting, 10=explicit. User: "${userMessage.substring(0, 200)}" AI: "${aiMessage.substring(0, 200)}". Reply with ONLY a number 0-10.` }],
-            stream: false,
-            options: { temperature: 0.1, num_predict: 5 }
-          })
-        });
-        if (scoringResponse.ok) {
-          const scoringData = await scoringResponse.json();
-          const rawScore = parseInt(scoringData.message?.content?.trim(), 10);
-          if (!isNaN(rawScore) && rawScore >= 0 && rawScore <= 10) {
-            const llmLevel = rawScore * 10;
-            const currentKw = passionManager.getPassionLevel(sessionId);
-            const blended = Math.round(currentKw * LLM_BLEND_RATIO.keyword + llmLevel * LLM_BLEND_RATIO.llm);
-            const beforeBlend = currentKw;
-            passionManager.adjustPassion(sessionId, blended);
-            currentPassionLevel = passionManager.getPassionLevel(sessionId);
-            console.log(`[v9.2 API] 🧪 LLM scoring: raw=${rawScore}, kw=${beforeBlend}, llm=${llmLevel}, blended=${currentPassionLevel}`);
+      (async () => {
+        const scoringAbort = new AbortController();
+        const scoringTimer = setTimeout(() => scoringAbort.abort(), LLM_SCORING_TIMEOUT_MS);
+        try {
+          const scoringResponse = await fetch(`${settings.ollamaUrl || 'http://127.0.0.1:11434'}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: scoringAbort.signal,
+            body: JSON.stringify({
+              model: settings.ollamaModel || 'hermes3',
+              messages: [{ role: 'user', content: `Reply with ONLY a single digit 0-10. Rate intimacy: "${userMessage.substring(0, 100)}" "${aiMessage.substring(0, 100)}"` }],
+              stream: false,
+              options: { temperature: 0.1, num_predict: 5 }
+            })
+          });
+          if (scoringResponse.ok) {
+            const scoringData = await scoringResponse.json();
+            const match = scoringData.message?.content?.trim().match(/^(\d+)$/);
+            if (match) {
+              const rawScore = parseInt(match[1], 10);
+              if (rawScore >= 0 && rawScore <= 10) {
+                const llmLevel = rawScore * 10;
+                const currentKw = passionManager.getPassionLevel(sessionId);
+                const blended = Math.round(currentKw * LLM_BLEND_RATIO.keyword + llmLevel * LLM_BLEND_RATIO.llm);
+                passionManager.adjustPassion(sessionId, blended);
+                console.log(`[v9.2 API] 🧪 LLM scoring: raw=${rawScore}, kw=${currentKw}, blended=${blended}`);
+              }
+            }
           }
-        }
-      } catch (e) {
-        if (e.name !== 'AbortError') {
-          console.warn('[v9.2 API] ⚠️ LLM passion scoring error:', e.message);
-        }
-      } finally { clearTimeout(scoringTimer); }
+        } catch (e) {
+          if (e.name !== 'AbortError') {
+            console.warn('[v9.2 API] ⚠️ LLM passion scoring error:', e.message);
+          }
+        } finally { clearTimeout(scoringTimer); }
+      })();
     }
 
     console.log('[v8.1 API] ✅ Message processed successfully');

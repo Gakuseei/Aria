@@ -1204,6 +1204,14 @@ export const sendMessage = async (
         adjustedScore = 0;
       }
 
+      // Mood inertia: dampen whiplash when score contradicts strong momentum
+      const scoringMomentum = passionManager.getMomentum(sessionId);
+      if (scoringMomentum > 1.5 && adjustedScore < 0) {
+        adjustedScore *= 0.5;
+      } else if (scoringMomentum < -1.5 && adjustedScore > 0) {
+        adjustedScore *= 0.5;
+      }
+
       const newPassionLevel = passionManager.applyScore(sessionId, adjustedScore);
       console.log(`[API] Passion: ${currentPassionLevel} -> ${newPassionLevel} (raw=${rawScore}, adjusted=${adjustedScore.toFixed(1)})`);
       currentPassionLevel = newPassionLevel;

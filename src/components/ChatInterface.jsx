@@ -284,7 +284,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [passionLevel, setPassionLevel] = useState(0);
-  const previousTierRef = useRef('innocent');
+  const previousTierRef = useRef('shy');
   const [tierTransitioning, setTierTransitioning] = useState(false);
   const [tierToast, setTierToast] = useState(null);
   const [showPassionPresets, setShowPassionPresets] = useState(false);
@@ -585,7 +585,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     if (currentTier !== previousTierRef.current) {
       setTierTransitioning(true);
       const timer = setTimeout(() => setTierTransitioning(false), 600);
-      const tierOrder = ['innocent', 'warm', 'passionate', 'primal'];
+      const tierOrder = ['shy', 'curious', 'flirty', 'heated', 'passionate', 'primal'];
       const oldIdx = tierOrder.indexOf(previousTierRef.current);
       const newIdx = tierOrder.indexOf(currentTier);
       const fromLabel = t.chat[`passion${previousTierRef.current.charAt(0).toUpperCase() + previousTierRef.current.slice(1)}`] || previousTierRef.current;
@@ -1204,8 +1204,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const getTierColor = (level) => {
     const tier = getTierKey(level);
     switch (tier) {
-      case 'innocent': return '#06b6d4';
-      case 'warm': return '#f472b6';
+      case 'shy': return '#06b6d4';
+      case 'curious': return '#a78bfa';
+      case 'flirty': return '#f472b6';
+      case 'heated': return '#f97316';
       case 'passionate': return '#f43f5e';
       case 'primal': return '#dc2626';
       default: return '#06b6d4';
@@ -1356,8 +1358,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 <div className="absolute top-full left-0 mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-50 min-w-[160px] py-1">
                   {[
                     { label: t.chat.presetFresh, level: 0 },
-                    { label: t.chat.presetWarm, level: 30 },
-                    { label: t.chat.presetPassionate, level: 65 },
+                    { label: t.chat.presetCurious, level: 25 },
+                    { label: t.chat.presetFlirty, level: 40 },
+                    { label: t.chat.presetHeated, level: 60 },
+                    { label: t.chat.presetPassionate, level: 78 },
                     { label: t.chat.presetMax, level: 100 },
                   ].map(({ label, level }) => (
                     <button

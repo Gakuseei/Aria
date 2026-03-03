@@ -811,7 +811,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       console.log('[BLOCK 8.1 Image Gen] ✅ Image generated successfully');
     } catch (error) {
       console.error('[BLOCK 8.1 Image Gen] ❌ Error:', error);
-      alert(`Image generation failed: ${error.message}`);
+      toast.error((t.chat.imageGenFailed || '').replace('{error}', error.message));
     } finally {
       setGeneratingImage(false);
     }
@@ -1158,7 +1158,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // v0.2.5 RESTORED: Image Generation Handler
   const handleImageGen = () => {
     if (!imageGenEnabled) {
-      alert('Image Generation is disabled. Enable it in Settings.');
+      toast.error(t.chat.imageGenDisabled);
       return;
     }
     setShowImagePanel(!showImagePanel);
@@ -1175,12 +1175,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     try {
       const result = await window.electronAPI?.testImageGen?.(url);
       if (result?.success) {
-        alert('✅ Image Generation connection successful!');
+        toast.success(t.chat.imageGenTestSuccess);
       } else {
-        alert('❌ Connection failed. Make sure AUTOMATIC1111 is running.');
+        toast.error(t.chat.imageGenTestFailed);
       }
     } catch (error) {
-      alert('❌ Error testing connection');
+      toast.error(t.chat.testError);
     }
   };
 
@@ -1188,12 +1188,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     try {
       const result = await window.electronAPI?.testVoice?.(url);
       if (result?.success) {
-        alert('✅ Voice/TTS connection successful!');
+        toast.success(t.chat.voiceTestSuccess);
       } else {
-        alert('❌ Connection failed. Make sure your TTS server is running.');
+        toast.error(t.chat.voiceTestFailed);
       }
     } catch (error) {
-      alert('❌ Error testing connection');
+      toast.error(t.chat.testError);
     }
   };
 

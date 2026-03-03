@@ -230,6 +230,9 @@ function App() {
       setLastApiWPS(stats.wordsPerSecond);
       
       addEventToLog('api', `Response: ${stats.responseTime}ms, ${stats.wordCount} words, ${stats.wordsPerSecond} WPS`);
+      if (stats.passionRaw !== null && stats.passionRaw !== undefined) {
+        addEventToLog('passion', `Level: ${stats.passionLevel}% | raw=${stats.passionRaw} | adjusted=${stats.passionAdjusted !== null ? stats.passionAdjusted.toFixed(1) : '0'}`);
+      }
     };
 
     window.addEventListener('aria-api-stats', handleApiStats);

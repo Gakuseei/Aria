@@ -578,10 +578,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   useEffect(() => {
     localStorage.setItem('passionGatekeepingEnabled', JSON.stringify(!isUnchainedMode));
-    const stored = JSON.parse(localStorage.getItem('settings') || '{}');
-    stored.passionSystemEnabled = !isUnchainedMode;
-    localStorage.setItem('settings', JSON.stringify(stored));
-    setLocalSettings(prev => ({ ...prev, passionSystemEnabled: !isUnchainedMode }));
   }, [isUnchainedMode]);
 
   useEffect(() => {
@@ -603,7 +599,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       previousTierRef.current = currentTier;
       return () => { clearTimeout(timer); if (toastTimer) clearTimeout(toastTimer); };
     }
-  }, [passionLevel]);
+  }, [passionLevel, t]);
 
   useEffect(() => {
     if (!showPassionPresets) return;
@@ -630,9 +626,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const restoredSessionId = loadedSession.sessionId || generateSessionId();
       setSessionId(restoredSessionId);
       setMessages(loadedSession.messages);
-      setPassionLevel(loadedSession.passionLevel || 0);
+      const restoredLevel = loadedSession.passionLevel || 0;
+      previousTierRef.current = getTierKey(restoredLevel);
+      setPassionLevel(restoredLevel);
       if (restoredSessionId) {
-        passionManager.setPassion(restoredSessionId, loadedSession.passionLevel || 0);
+        passionManager.setPassion(restoredSessionId, restoredLevel);
       }
 
       console.log('[v1.0 ChatInterface] 📂 Restored saved session:', restoredSessionId);
@@ -1056,6 +1054,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       // Import the chat
       setMessages(importData.messages);
       if (importData.passionLevel !== undefined) {
+        previousTierRef.current = getTierKey(importData.passionLevel);
         setPassionLevel(importData.passionLevel);
       }
       if (importData.sessionId) {
@@ -1524,7 +1523,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             onClick={() => {
               const msg = isUnchainedMode
                 ? (t.chat.disableUnchainedConfirm || '').replace('{level}', passionLevel)
-                : t.chat.enableUnchainedConfirm;
+                : (t.chat.enableUnchainedConfirm || '');
               setConfirmModal({ message: msg, onConfirm: () => setIsUnchainedMode(!isUnchainedMode) });
             }}
             className={`p-3 rounded-xl transition-all duration-200 active:scale-95 ${
@@ -1972,6 +1971,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                       passionManager.restoreHistory(sessionId, passionResumeData.lastHistory);
                     }
                   }
+                  previousTierRef.current = getTierKey(passionResumeData.lastLevel);
                   setPassionLevel(passionResumeData.lastLevel);
                   setShowPassionResumeModal(false);
                   setPassionResumeData(null);

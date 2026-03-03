@@ -459,7 +459,12 @@ export const translations = {
       systemPromptLength: "System Prompt Length",
       characters: "characters",
       detailed: "✓ Detailed",
-      failedToSave: "Failed to save character. Please try again."
+      failedToSave: "Failed to save character. Please try again.",
+      passionProfileLabel: "Passion Personality",
+      passionProfileShy: "Reserved",
+      passionProfileBalanced: "Balanced",
+      passionProfileBold: "Bold",
+      passionProfileTooltip: "Controls how the character responds to advances. Reserved characters need more time; Bold characters are eager from the start."
     },
     creative: {
       creativeWriting: "Creative Writing",
@@ -1094,7 +1099,12 @@ export const translations = {
       systemPromptLength: "System-Prompt-Länge",
       characters: "Zeichen",
       detailed: "✓ Detailliert",
-      failedToSave: "Charakter konnte nicht gespeichert werden. Bitte versuche es erneut."
+      failedToSave: "Charakter konnte nicht gespeichert werden. Bitte versuche es erneut.",
+      passionProfileLabel: "Leidenschafts-Persönlichkeit",
+      passionProfileShy: "Zurückhaltend",
+      passionProfileBalanced: "Ausgeglichen",
+      passionProfileBold: "Forsch",
+      passionProfileTooltip: "Bestimmt, wie der Charakter auf Annäherungen reagiert. Zurückhaltende brauchen mehr Zeit; Forsche sind von Anfang an willig."
     },
     creative: {
       creativeWriting: "Kreatives Schreiben",
@@ -1687,7 +1697,12 @@ export const translations = {
       systemPromptLength: "Longitud Prompt",
       characters: "caracteres",
       detailed: "✓ Detallado",
-      failedToSave: "Error al guardar"
+      failedToSave: "Error al guardar",
+      passionProfileLabel: "Personalidad Pasional",
+      passionProfileShy: "Reservado",
+      passionProfileBalanced: "Equilibrado",
+      passionProfileBold: "Atrevido",
+      passionProfileTooltip: "Controla cómo responde el personaje a los avances. Los reservados necesitan más tiempo; los atrevidos están dispuestos desde el inicio."
     },
     creative: {
       creativeWriting: "Escritura Creativa",
@@ -2280,7 +2295,12 @@ export const translations = {
       systemPromptLength: "提示词长度",
       characters: "字符",
       detailed: "✓ 详细",
-      failedToSave: "保存失败"
+      failedToSave: "保存失败",
+      passionProfileLabel: "激情个性",
+      passionProfileShy: "矜持",
+      passionProfileBalanced: "平衡",
+      passionProfileBold: "大胆",
+      passionProfileTooltip: "控制角色对挑逗的反应方式。矜持的角色需要更多时间；大胆的角色从一开始就热切。"
     },
     creative: {
       creativeWriting: "创意写作",
@@ -2872,7 +2892,12 @@ export const translations = {
       systemPromptLength: "Longueur du Prompt",
       characters: "caractères",
       detailed: "✓ Détaillé",
-      failedToSave: "Erreur de sauvegarde."
+      failedToSave: "Erreur de sauvegarde.",
+      passionProfileLabel: "Personnalité Passionnelle",
+      passionProfileShy: "Réservé",
+      passionProfileBalanced: "Équilibré",
+      passionProfileBold: "Audacieux",
+      passionProfileTooltip: "Contrôle la réaction du personnage aux avances. Les réservés ont besoin de plus de temps ; les audacieux sont enthousiastes dès le départ."
     },
     creative: {
       creativeWriting: "Écriture Créative",
@@ -3464,7 +3489,12 @@ export const translations = {
       systemPromptLength: "Lunghezza Prompt",
       characters: "caratteri",
       detailed: "✓ Dettagliato",
-      failedToSave: "Errore salvataggio"
+      failedToSave: "Errore salvataggio",
+      passionProfileLabel: "Personalità Passionale",
+      passionProfileShy: "Riservato",
+      passionProfileBalanced: "Equilibrato",
+      passionProfileBold: "Audace",
+      passionProfileTooltip: "Controlla come il personaggio risponde agli approcci. I riservati hanno bisogno di più tempo; gli audaci sono pronti fin dall'inizio."
     },
     creative: {
       creativeWriting: "Scrittura Creativa",
@@ -4050,7 +4080,12 @@ export const translations = {
       systemPromptLength: "Tamanho",
       characters: "chars",
       detailed: "✓ Detalhado",
-      failedToSave: "Erro ao salvar"
+      failedToSave: "Erro ao salvar",
+      passionProfileLabel: "Personalidade Passional",
+      passionProfileShy: "Reservado",
+      passionProfileBalanced: "Equilibrado",
+      passionProfileBold: "Ousado",
+      passionProfileTooltip: "Controla como o personagem responde aos avanços. Reservados precisam de mais tempo; Ousados estão prontos desde o início."
     },
     creative: {
       creativeWriting: "Escrita Criativa",
@@ -4642,7 +4677,12 @@ export const translations = {
       systemPromptLength: "Длина",
       characters: "симв",
       detailed: "✓ Детально",
-      failedToSave: "Ошибка сохранения"
+      failedToSave: "Ошибка сохранения",
+      passionProfileLabel: "Страстная личность",
+      passionProfileShy: "Сдержанный",
+      passionProfileBalanced: "Сбалансированный",
+      passionProfileBold: "Смелый",
+      passionProfileTooltip: "Определяет, как персонаж реагирует на ухаживания. Сдержанным нужно больше времени; Смелые готовы с самого начала."
     },
     creative: {
       creativeWriting: "Творчество",
@@ -5234,7 +5274,12 @@ export const translations = {
       systemPromptLength: "プロンプト長",
       characters: "文字",
       detailed: "✓ 詳細",
-      failedToSave: "保存失敗"
+      failedToSave: "保存失敗",
+      passionProfileLabel: "情熱パーソナリティ",
+      passionProfileShy: "控えめ",
+      passionProfileBalanced: "バランス",
+      passionProfileBold: "大胆",
+      passionProfileTooltip: "キャラクターがアプローチにどう反応するかを制御します。控えめなキャラは時間が必要；大胆なキャラは最初から積極的です。"
     },
     creative: {
       creativeWriting: "執筆",
@@ -5826,7 +5871,12 @@ export const translations = {
       systemPromptLength: "길이",
       characters: "자",
       detailed: "✓ 상세함",
-      failedToSave: "저장 실패"
+      failedToSave: "저장 실패",
+      passionProfileLabel: "열정 성격",
+      passionProfileShy: "내성적",
+      passionProfileBalanced: "균형잡힌",
+      passionProfileBold: "대담한",
+      passionProfileTooltip: "캐릭터가 접근에 어떻게 반응하는지 제어합니다. 내성적 캐릭터는 시간이 더 필요하고, 대담한 캐릭터는 처음부터 적극적입니다."
     },
     creative: {
       creativeWriting: "창작",
@@ -6413,7 +6463,12 @@ export const translations = {
       systemPromptLength: "طول موجه النظام",
       characters: "أحرف",
       detailed: "✓ مفصل",
-      failedToSave: "فشل الحفظ"
+      failedToSave: "فشل الحفظ",
+      passionProfileLabel: "شخصية العاطفة",
+      passionProfileShy: "متحفظ",
+      passionProfileBalanced: "متوازن",
+      passionProfileBold: "جريء",
+      passionProfileTooltip: "يتحكم في كيفية استجابة الشخصية للتقدم. الشخصيات المتحفظة تحتاج وقتاً أكثر؛ الجريئة متحمسة من البداية."
     },
     creative: {
       creativeWriting: "الكتابة الإبداعية",
@@ -7006,7 +7061,12 @@ export const translations = {
       systemPromptLength: "सिस्टम प्रॉम्प्ट लंबाई",
       characters: "वर्ण",
       detailed: "✓ विस्तृत",
-      failedToSave: "सहेजने में विफल"
+      failedToSave: "सहेजने में विफल",
+      passionProfileLabel: "जुनून व्यक्तित्व",
+      passionProfileShy: "संयमित",
+      passionProfileBalanced: "संतुलित",
+      passionProfileBold: "निडर",
+      passionProfileTooltip: "नियंत्रित करता है कि पात्र प्रगति पर कैसे प्रतिक्रिया करता है। संयमित पात्रों को अधिक समय चाहिए; निडर पात्र शुरू से उत्सुक होते हैं।"
     },
     creative: {
       creativeWriting: "रचनात्मक लेखन",
@@ -7599,7 +7659,12 @@ export const translations = {
       systemPromptLength: "Sistem İstemi Uzunluğu",
       characters: "karakter",
       detailed: "✓ Detaylı",
-      failedToSave: "Kaydetme başarısız"
+      failedToSave: "Kaydetme başarısız",
+      passionProfileLabel: "Tutku Kişiliği",
+      passionProfileShy: "Çekingen",
+      passionProfileBalanced: "Dengeli",
+      passionProfileBold: "Cesur",
+      passionProfileTooltip: "Karakterin yakınlaşmalara nasıl tepki vereceğini kontrol eder. Çekingen karakterler daha fazla zamana ihtiyaç duyar; Cesur karakterler baştan isteklidir."
     },
     creative: {
       creativeWriting: "Yaratıcı Yazma",

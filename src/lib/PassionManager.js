@@ -567,7 +567,7 @@ class PassionManager {
       const memory = stored ? JSON.parse(stored) : {};
       memory[characterId] = {
         lastLevel: Math.round(Math.max(0, Math.min(100, level))),
-        lastHistory: Array.isArray(history) ? history.slice(-10) : [],
+        lastHistory: Array.isArray(history) ? history.slice(-25) : [],
         timestamp: new Date().toISOString()
       };
       localStorage.setItem(PASSION_MEMORY_KEY, JSON.stringify(memory));

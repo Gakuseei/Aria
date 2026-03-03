@@ -335,7 +335,18 @@ class PassionManager {
     if (asteriskCount > 4) asteriskPoints += 1.0;
     if (asteriskCount > 10) asteriskPoints += 2.0;
 
-    const emotionalWords = ['mmm', 'ahh', 'ohh', 'yes', 'god', 'please', 'more', 'ja', 'bitte', 'mehr'];
+    const emotionalWords = [
+      'mmm', 'ahh', 'ohh', 'yes', 'god', 'please', 'more',
+      'ja', 'bitte', 'mehr', 'gott',
+      'sí', 'dios', 'por favor', 'más',
+      'oui', 'mon dieu', 'encore', 'plus',
+      'да', 'боже', 'пожалуйста', 'ещё',
+      'はい', 'もっと', 'お願い',
+      '是的', '求你', '还要',
+      '네', '제발', '더',
+      'sim', 'mais', 'meu deus',
+      'sì', 'dio', 'ancora', 'per favore'
+    ];
     emotionalWords.forEach(word => {
       if (matchesKeyword(response, word)) emotionalPoints += 1.0;
     });

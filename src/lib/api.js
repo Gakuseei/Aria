@@ -845,9 +845,6 @@ export const sendMessage = async (
 
   try {
     const settings = { ...(settingsOverride || await loadSettings()) };
-    if (unchainedMode) {
-      settings.passionSystemEnabled = false;
-    }
 
     // v0.2.5 PERFORMANCE: Sliding Window (10-15 messages) for faster responses
     const CONTEXT_WINDOW = 12;
@@ -899,7 +896,7 @@ export const sendMessage = async (
       state: currentState,
       characterContext: characterContext,
       messageCount: updatedHistory.length,
-      passionEnabled: settings.passionSystemEnabled,
+      passionEnabled: unchainedMode ? false : settings.passionSystemEnabled,
       userGender: userGender, // v0.2.5 NEW
       language: selectedLanguage, // v0.2.5: Language enforcement
       sessionId: sessionId

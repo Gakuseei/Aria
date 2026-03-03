@@ -76,10 +76,14 @@ export function validateResponseQuality(responseText) {
 
 /**
  * Injects sensory detail suggestions based on current passion level (6-tier system)
+ * @param {number} passionLevel - Current passion level (0-100)
+ * @param {number} [passionProfile] - Character personality factor (0-1, lower = reserved, higher = bold)
  */
-export function getSensoryGuidance(passionLevel) {
+export function getSensoryGuidance(passionLevel, passionProfile) {
+  let guidance;
+
   if (passionLevel <= 15) {
-    return {
+    guidance = {
       focus: 'Shy awareness and first tension',
       details: [
         'Eye contact and stolen glances',
@@ -90,7 +94,7 @@ export function getSensoryGuidance(passionLevel) {
       ]
     };
   } else if (passionLevel <= 30) {
-    return {
+    guidance = {
       focus: 'Curious exploration and boundary testing',
       details: [
         'Accidental touches that linger',
@@ -101,7 +105,7 @@ export function getSensoryGuidance(passionLevel) {
       ]
     };
   } else if (passionLevel <= 50) {
-    return {
+    guidance = {
       focus: 'Deliberate flirting and rising heat',
       details: [
         'Breath becoming heavier and more audible',
@@ -112,7 +116,7 @@ export function getSensoryGuidance(passionLevel) {
       ]
     };
   } else if (passionLevel <= 70) {
-    return {
+    guidance = {
       focus: 'Burning desire and desperate contact',
       details: [
         'Trembling hands that can\'t stay still',
@@ -123,7 +127,7 @@ export function getSensoryGuidance(passionLevel) {
       ]
     };
   } else if (passionLevel <= 85) {
-    return {
+    guidance = {
       focus: 'Deep arousal and intimate exploration',
       details: [
         'Trembling with anticipation and need',
@@ -134,7 +138,7 @@ export function getSensoryGuidance(passionLevel) {
       ]
     };
   } else {
-    return {
+    guidance = {
       focus: 'Intense climactic experience',
       details: [
         'Waves of sensation building and cresting',
@@ -145,6 +149,18 @@ export function getSensoryGuidance(passionLevel) {
       ]
     };
   }
+
+  if (passionProfile !== undefined) {
+    if (passionProfile <= 0.5) {
+      guidance.personalityFlavor = 'Character is RESERVED — emphasize internal conflict, reluctant arousal, body betraying mind.';
+    } else if (passionProfile <= 0.8) {
+      guidance.personalityFlavor = 'Character is BALANCED — natural responses, mutual energy, organic progression.';
+    } else {
+      guidance.personalityFlavor = 'Character is BOLD — confident reactions, eager body language, initiative and desire.';
+    }
+  }
+
+  return guidance;
 }
 
 /**

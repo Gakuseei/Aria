@@ -515,7 +515,23 @@ export const translations = {
       freeLocal: "100% free & local"
     },
     loadGame: {
-      selectSave: "Select a save to preview and continue"
+      selectSave: "Select a save to preview and continue",
+      messages: "messages",
+      passion: "Passion",
+      passionLevel: "Passion Level",
+      noSavesTitle: "No Saves Found",
+      noSavesDesc: "Start a new game to create your first save. Your progress will be automatically saved.",
+      selectedSave: "Selected Save",
+      characterChat: "Character Chat",
+      creativeWriting: "Creative Writing",
+      creativeWritingSession: "Creative Writing Session",
+      deleteSave: "Delete Save",
+      saved: "Saved",
+      generations: "Generations",
+      contentLength: "Content Length",
+      chars: "chars",
+      continueSession: "Continue Session",
+      chatWith: "Chat with"
     },
     debugConsole: {
       title: "Aria Monitor",
@@ -1123,7 +1139,23 @@ export const translations = {
       freeLocal: "100% kostenlos & lokal"
     },
     loadGame: {
-      selectSave: "Wähle einen Speicherstand aus, um ihn anzuzeigen und fortzusetzen"
+      selectSave: "Wähle einen Speicherstand aus, um ihn anzuzeigen und fortzusetzen",
+      messages: "Nachrichten",
+      passion: "Leidenschaft",
+      passionLevel: "Leidenschaftslevel",
+      noSavesTitle: "Keine Speicherstände",
+      noSavesDesc: "Starte ein neues Spiel, um deinen ersten Speicherstand zu erstellen. Dein Fortschritt wird automatisch gespeichert.",
+      selectedSave: "Ausgewählter Stand",
+      characterChat: "Charakter-Chat",
+      creativeWriting: "Kreatives Schreiben",
+      creativeWritingSession: "Kreative Schreib-Sitzung",
+      deleteSave: "Speicherstand löschen",
+      saved: "Gespeichert",
+      generations: "Generierungen",
+      contentLength: "Inhaltslänge",
+      chars: "Zeichen",
+      continueSession: "Sitzung fortsetzen",
+      chatWith: "Chat mit"
     },
     debugConsole: {
       title: "Aria Monitor",
@@ -1320,8 +1352,8 @@ export const translations = {
       passionStreak: "Racha romántica: {count} mensajes",
       tierUp: "Pasión: {from} → {to}",
       tierDown: "Enfriado: {from} → {to}",
-      enableUnchainedConfirm: "¿Activar Modo Desatado? Esto desactiva el control de pasión — el personaje responderá a contenido íntimo a cualquier nivel de pasión.",
-      disableUnchainedConfirm: "¿Desactivar Modo Desatado? El control de pasión se reanudará al nivel actual ({level}%).",
+      enableUnchainedConfirm: "¿Activar Modo Desencadenado? Esto desactiva el control de pasión — el personaje responderá a contenido íntimo a cualquier nivel de pasión.",
+      disableUnchainedConfirm: "¿Desactivar Modo Desencadenado? El control de pasión se reanudará al nivel actual ({level}%).",
       sendMessage: "Enviar mensaje",
       regenerate: "Regenerar",
       export: "Exportar Chat",
@@ -1689,7 +1721,23 @@ export const translations = {
       freeLocal: "100% gratis"
     },
     loadGame: {
-      selectSave: "Selecciona un guardado para previsualizar y continuar"
+      selectSave: "Selecciona un guardado para previsualizar y continuar",
+      messages: "mensajes",
+      passion: "Pasión",
+      passionLevel: "Nivel de Pasión",
+      noSavesTitle: "No hay guardados",
+      noSavesDesc: "Inicia un nuevo juego para crear tu primer guardado. Tu progreso se guardará automáticamente.",
+      selectedSave: "Guardado seleccionado",
+      characterChat: "Chat de Personaje",
+      creativeWriting: "Escritura Creativa",
+      creativeWritingSession: "Sesión de Escritura Creativa",
+      deleteSave: "Eliminar guardado",
+      saved: "Guardado",
+      generations: "Generaciones",
+      contentLength: "Longitud del contenido",
+      chars: "caracteres",
+      continueSession: "Continuar sesión",
+      chatWith: "Chat con"
     },
     debugConsole: {
       title: "Aria Monitor",
@@ -1886,8 +1934,8 @@ export const translations = {
       passionStreak: "浪漫连续：{count}条消息",
       tierUp: "热情：{from} → {to}",
       tierDown: "冷却：{from} → {to}",
-      enableUnchainedConfirm: "启用解锁模式？这将禁用热情门控——角色将在任何热情等级下回应亲密内容。",
-      disableUnchainedConfirm: "禁用解锁模式？热情门控将在当前等级（{level}%）恢复。",
+      enableUnchainedConfirm: "启用解放模式？这将禁用热情门控——角色将在任何热情等级下回应亲密内容。",
+      disableUnchainedConfirm: "禁用解放模式？热情门控将在当前等级（{level}%）恢复。",
       sendMessage: "发送消息",
       regenerate: "重新生成",
       export: "导出",
@@ -2255,7 +2303,23 @@ export const translations = {
       freeLocal: "免费"
     },
     loadGame: {
-      selectSave: "选择一个存档以预览并继续"
+      selectSave: "选择一个存档以预览并继续",
+      messages: "条消息",
+      passion: "激情",
+      passionLevel: "激情等级",
+      noSavesTitle: "没有存档",
+      noSavesDesc: "开始新游戏以创建你的第一个存档。你的进度将自动保存。",
+      selectedSave: "已选存档",
+      characterChat: "角色聊天",
+      creativeWriting: "创意写作",
+      creativeWritingSession: "创意写作会话",
+      deleteSave: "删除存档",
+      saved: "保存于",
+      generations: "生成次数",
+      contentLength: "内容长度",
+      chars: "字符",
+      continueSession: "继续会话",
+      chatWith: "与...聊天"
     },
     debugConsole: {
       title: "Aria 监控器",
@@ -2820,7 +2884,23 @@ export const translations = {
       freeLocal: "100% gratuit & local"
     },
     loadGame: {
-      selectSave: "Sélectionnez une sauvegarde pour prévisualiser et continuer"
+      selectSave: "Sélectionnez une sauvegarde pour prévisualiser et continuer",
+      messages: "messages",
+      passion: "Passion",
+      passionLevel: "Niveau de Passion",
+      noSavesTitle: "Aucune sauvegarde",
+      noSavesDesc: "Lancez une nouvelle partie pour créer votre première sauvegarde. Votre progression sera sauvegardée automatiquement.",
+      selectedSave: "Sauvegarde sélectionnée",
+      characterChat: "Chat Personnage",
+      creativeWriting: "Écriture Créative",
+      creativeWritingSession: "Session d'Écriture Créative",
+      deleteSave: "Supprimer la sauvegarde",
+      saved: "Sauvegardé",
+      generations: "Générations",
+      contentLength: "Longueur du contenu",
+      chars: "caractères",
+      continueSession: "Continuer la session",
+      chatWith: "Chat avec"
     },
     debugConsole: {
       title: "Aria Monitor",
@@ -3379,7 +3459,23 @@ export const translations = {
       freeLocal: "100% gratis"
     },
     loadGame: {
-      selectSave: "Seleziona un salvataggio per visualizzare e continuare"
+      selectSave: "Seleziona un salvataggio per visualizzare e continuare",
+      messages: "messaggi",
+      passion: "Passione",
+      passionLevel: "Livello di Passione",
+      noSavesTitle: "Nessun salvataggio",
+      noSavesDesc: "Inizia una nuova partita per creare il tuo primo salvataggio. I tuoi progressi verranno salvati automaticamente.",
+      selectedSave: "Salvataggio selezionato",
+      characterChat: "Chat Personaggio",
+      creativeWriting: "Scrittura Creativa",
+      creativeWritingSession: "Sessione di Scrittura Creativa",
+      deleteSave: "Elimina salvataggio",
+      saved: "Salvato",
+      generations: "Generazioni",
+      contentLength: "Lunghezza contenuto",
+      chars: "caratteri",
+      continueSession: "Continua sessione",
+      chatWith: "Chat con"
     },
     debugConsole: {
       title: "Aria Monitor",
@@ -3944,7 +4040,23 @@ export const translations = {
       freeLocal: "grátis"
     },
     loadGame: {
-      selectSave: "Selecione um salvamento para visualizar e continuar"
+      selectSave: "Selecione um salvamento para visualizar e continuar",
+      messages: "mensagens",
+      passion: "Paixão",
+      passionLevel: "Nível de Paixão",
+      noSavesTitle: "Nenhum salvamento",
+      noSavesDesc: "Inicie um novo jogo para criar seu primeiro salvamento. Seu progresso será salvo automaticamente.",
+      selectedSave: "Salvamento selecionado",
+      characterChat: "Chat de Personagem",
+      creativeWriting: "Escrita Criativa",
+      creativeWritingSession: "Sessão de Escrita Criativa",
+      deleteSave: "Excluir salvamento",
+      saved: "Salvo",
+      generations: "Gerações",
+      contentLength: "Tamanho do conteúdo",
+      chars: "caracteres",
+      continueSession: "Continuar sessão",
+      chatWith: "Chat com"
     },
     debugConsole: {
       title: "Aria Monitor",
@@ -4509,7 +4621,23 @@ export const translations = {
       freeLocal: "бесплатна"
     },
     loadGame: {
-      selectSave: "Выберите сохранение для предпросмотра и продолжения"
+      selectSave: "Выберите сохранение для предпросмотра и продолжения",
+      messages: "сообщений",
+      passion: "Страсть",
+      passionLevel: "Уровень страсти",
+      noSavesTitle: "Нет сохранений",
+      noSavesDesc: "Начните новую игру, чтобы создать первое сохранение. Ваш прогресс будет сохраняться автоматически.",
+      selectedSave: "Выбранное сохранение",
+      characterChat: "Чат с персонажем",
+      creativeWriting: "Творческое письмо",
+      creativeWritingSession: "Сеанс творческого письма",
+      deleteSave: "Удалить сохранение",
+      saved: "Сохранено",
+      generations: "Генерации",
+      contentLength: "Длина контента",
+      chars: "символов",
+      continueSession: "Продолжить сеанс",
+      chatWith: "Чат с"
     },
     debugConsole: {
       title: "Aria Монитор",
@@ -5074,7 +5202,23 @@ export const translations = {
       freeLocal: "無料"
     },
     loadGame: {
-      selectSave: "プレビューして続行する保存を選択"
+      selectSave: "プレビューして続行する保存を選択",
+      messages: "メッセージ",
+      passion: "情熱",
+      passionLevel: "情熱レベル",
+      noSavesTitle: "セーブデータなし",
+      noSavesDesc: "新しいゲームを開始して最初のセーブを作成してください。進行状況は自動保存されます。",
+      selectedSave: "選択したセーブ",
+      characterChat: "キャラクターチャット",
+      creativeWriting: "クリエイティブライティング",
+      creativeWritingSession: "クリエイティブライティングセッション",
+      deleteSave: "セーブを削除",
+      saved: "保存日",
+      generations: "生成回数",
+      contentLength: "コンテンツ長",
+      chars: "文字",
+      continueSession: "セッションを続行",
+      chatWith: "チャット："
     },
     debugConsole: {
       title: "Aria モニター",
@@ -5633,7 +5777,23 @@ export const translations = {
       freeLocal: "무료"
     },
     loadGame: {
-      selectSave: "미리보기하고 계속할 저장을 선택하세요"
+      selectSave: "미리보기하고 계속할 저장을 선택하세요",
+      messages: "메시지",
+      passion: "열정",
+      passionLevel: "열정 레벨",
+      noSavesTitle: "저장 없음",
+      noSavesDesc: "새 게임을 시작하여 첫 번째 저장을 만드세요. 진행 상황은 자동으로 저장됩니다.",
+      selectedSave: "선택한 저장",
+      characterChat: "캐릭터 채팅",
+      creativeWriting: "창작 글쓰기",
+      creativeWritingSession: "창작 글쓰기 세션",
+      deleteSave: "저장 삭제",
+      saved: "저장 날짜",
+      generations: "생성 횟수",
+      contentLength: "콘텐츠 길이",
+      chars: "자",
+      continueSession: "세션 계속",
+      chatWith: "채팅:"
     },
     debugConsole: {
       title: "Aria 모니터",
@@ -6199,7 +6359,23 @@ export const translations = {
       freeLocal: "100% مجاني ومحلي"
     },
     loadGame: {
-      selectSave: "اختر حفظاً للمعاينة والمتابعة"
+      selectSave: "اختر حفظاً للمعاينة والمتابعة",
+      messages: "رسائل",
+      passion: "الشغف",
+      passionLevel: "مستوى الشغف",
+      noSavesTitle: "لا توجد حفظات",
+      noSavesDesc: "ابدأ لعبة جديدة لإنشاء أول حفظ لك. سيتم حفظ تقدمك تلقائياً.",
+      selectedSave: "الحفظ المحدد",
+      characterChat: "محادثة شخصية",
+      creativeWriting: "كتابة إبداعية",
+      creativeWritingSession: "جلسة كتابة إبداعية",
+      deleteSave: "حذف الحفظ",
+      saved: "تم الحفظ",
+      generations: "التوليدات",
+      contentLength: "طول المحتوى",
+      chars: "حرف",
+      continueSession: "متابعة الجلسة",
+      chatWith: "محادثة مع"
     },
     debugConsole: {
       title: "مراقب Aria",
@@ -6765,7 +6941,23 @@ export const translations = {
       freeLocal: "100% मुफ्त और स्थानीय"
     },
     loadGame: {
-      selectSave: "पूर्वावलोकन और जारी रखने के लिए एक सेव चुनें"
+      selectSave: "पूर्वावलोकन और जारी रखने के लिए एक सेव चुनें",
+      messages: "संदेश",
+      passion: "जुनून",
+      passionLevel: "जुनून स्तर",
+      noSavesTitle: "कोई सेव नहीं",
+      noSavesDesc: "अपना पहला सेव बनाने के लिए नया गेम शुरू करें। आपकी प्रगति स्वचालित रूप से सेव होगी।",
+      selectedSave: "चयनित सेव",
+      characterChat: "कैरेक्टर चैट",
+      creativeWriting: "रचनात्मक लेखन",
+      creativeWritingSession: "रचनात्मक लेखन सत्र",
+      deleteSave: "सेव हटाएं",
+      saved: "सेव किया",
+      generations: "जनरेशन",
+      contentLength: "सामग्री लंबाई",
+      chars: "अक्षर",
+      continueSession: "सत्र जारी रखें",
+      chatWith: "चैट:"
     },
     debugConsole: {
       title: "Aria मॉनिटर",
@@ -7331,7 +7523,23 @@ export const translations = {
       freeLocal: "100% ücretsiz ve yerel"
     },
     loadGame: {
-      selectSave: "Önizlemek ve devam etmek için bir kayıt seçin"
+      selectSave: "Önizlemek ve devam etmek için bir kayıt seçin",
+      messages: "mesaj",
+      passion: "Tutku",
+      passionLevel: "Tutku Seviyesi",
+      noSavesTitle: "Kayıt bulunamadı",
+      noSavesDesc: "İlk kaydınızı oluşturmak için yeni bir oyun başlatın. İlerlemeniz otomatik olarak kaydedilecektir.",
+      selectedSave: "Seçilen kayıt",
+      characterChat: "Karakter Sohbeti",
+      creativeWriting: "Yaratıcı Yazarlık",
+      creativeWritingSession: "Yaratıcı Yazarlık Oturumu",
+      deleteSave: "Kaydı sil",
+      saved: "Kaydedildi",
+      generations: "Üretimler",
+      contentLength: "İçerik uzunluğu",
+      chars: "karakter",
+      continueSession: "Oturuma devam et",
+      chatWith: "Sohbet:"
     },
     debugConsole: {
       title: "Aria Monitör",

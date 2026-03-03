@@ -270,28 +270,36 @@ class PassionManager {
     const romanticKeywords = [
       'love', 'kiss', 'hug', 'touch', 'hold', 'embrace', 'caress', 'stroke',
       'beautiful', 'gorgeous', 'sexy', 'hot', 'attractive', 'cute', 'adorable',
-      'liebe', 'küss', 'umarm', 'berühr', 'halt', 'streichel', 'schön', 'heiß',
       'affection', 'desire', 'want', 'need', 'crave', 'yearn',
+      'liebe', 'küss', 'umarm', 'berühr', 'halt', 'streichel', 'schön', 'heiß',
       'amor', 'beso', 'abrazo', 'tocar', 'hermosa', 'deseo', 'querer',
       'amour', 'baiser', 'embrasser', 'toucher', 'belle', 'désir',
       'любовь', 'поцелуй', 'обнять', 'красивая', 'желание',
       '愛', 'キス', '抱きしめ', '触れ', '美しい', '欲しい',
-      'beijo', 'abraço', 'bonita', 'desejo',
-      'amore', 'bacio', 'abbraccio', 'toccare', 'bella', 'desiderio',
-      '사랑', '키스', '포옹', '만지', '예쁜', '원해'
+      '爱', '吻', '拥抱', '触摸', '抚摸', '美丽', '性感', '漂亮', '渴望', '想要',
+      'beijo', 'abraço', 'bonita', 'desejo', 'carinho', 'toque', 'linda', 'querer', 'precisar',
+      'amore', 'bacio', 'abbraccio', 'toccare', 'bella', 'desiderio', 'carezza', 'voglia', 'bisogno',
+      '사랑', '키스', '포옹', '만지', '예쁜', '원해',
+      'حب', 'قبلة', 'عناق', 'لمس', 'جميلة', 'مثير', 'رغبة', 'أريد',
+      'प्यार', 'चुम्बन', 'गले', 'छू', 'सुंदर', 'चाहत', 'चाहना',
+      'aşk', 'öpücük', 'sarıl', 'dokun', 'güzel', 'seksi', 'arzu', 'istek'
     ];
 
     const intimateKeywords = [
       'bed', 'bedroom', 'naked', 'undress', 'clothes', 'body', 'skin',
-      'bett', 'schlafzimmer', 'nackt', 'ausziehen', 'körper', 'haut',
       'moan', 'gasp', 'shiver', 'tremble', 'breathe', 'pant',
+      'bett', 'schlafzimmer', 'nackt', 'ausziehen', 'körper', 'haut',
       'cama', 'desnudo', 'cuerpo', 'piel', 'gemir', 'temblar',
       'lit', 'nu', 'corps', 'peau', 'gémir', 'frissonner',
       'кровать', 'голый', 'тело', 'кожа', 'стон', 'дрожь',
       'ベッド', '裸', '体', '肌', '喘ぐ', '震え',
-      'corpo', 'pele', 'gemer', 'tremer',
-      'letto', 'nudo', 'pelle', 'gemere', 'tremare',
-      '침대', '벗', '몸', '피부', '신음', '떨림'
+      '床', '裸体', '身体', '皮肤', '呻吟', '颤抖', '脱衣', '喘息',
+      'corpo', 'pele', 'gemer', 'tremer', 'cama', 'nu', 'gemido', 'arrepio',
+      'letto', 'nudo', 'pelle', 'gemere', 'tremare', 'gemito', 'brivido',
+      '침대', '벗', '몸', '피부', '신음', '떨림',
+      'سرير', 'عاري', 'جسد', 'بشرة', 'أنين', 'ارتجاف',
+      'बिस्तर', 'नंगा', 'शरीर', 'त्वचा', 'कराह', 'कांपना',
+      'yatak', 'çıplak', 'vücut', 'ten', 'inleme', 'titreme'
     ];
 
     const explicitKeywords = [
@@ -302,9 +310,13 @@ class PassionManager {
       'baiser', 'sexe', 'bite', 'chatte', 'orgasme', 'plaisir',
       'секс', 'оргазм', 'удовольствие', 'похоть',
       'セックス', 'オーガズム', '快感', '欲望',
-      'foder', 'pau', 'buceta', 'prazer',
-      'scopare', 'sesso', 'cazzo', 'piacere',
-      '섹스', '오르가즘', '쾌감', '욕망'
+      '做爱', '性爱', '高潮', '胸', '屁股', '欲望', '快感',
+      'foder', 'pau', 'buceta', 'prazer', 'sexo', 'gozo', 'tesão',
+      'scopare', 'sesso', 'cazzo', 'piacere', 'orgasmo', 'godere',
+      '섹스', '오르가즘', '쾌감', '욕망',
+      'جنس', 'نشوة', 'لذة', 'شهوة',
+      'सेक्स', 'चरमसुख', 'आनंद', 'वासना',
+      'seks', 'orgazm', 'zevk', 'şehvet'
     ];
 
     let romanticPoints = 0, intimatePoints = 0, explicitPoints = 0, asteriskPoints = 0, emotionalPoints = 0, lengthPoints = 0;
@@ -342,17 +354,22 @@ class PassionManager {
       'oui', 'mon dieu', 'encore', 'plus',
       'да', 'боже', 'пожалуйста', 'ещё',
       'はい', 'もっと', 'お願い',
-      '是的', '求你', '还要',
+      '是的', '求你', '还要', '天哪', '不要停',
       '네', '제발', '더',
       'sim', 'mais', 'meu deus',
-      'sì', 'dio', 'ancora', 'per favore'
+      'sì', 'dio', 'ancora', 'per favore',
+      'نعم', 'أرجوك', 'المزيد', 'يا إلهي',
+      'हाँ', 'और', 'भगवान', 'कृपया',
+      'evet', 'lütfen', 'daha', 'tanrım'
     ];
     emotionalWords.forEach(word => {
       if (matchesKeyword(response, word)) emotionalPoints += 1.0;
     });
 
-    if (message.length > 100) lengthPoints += 1.5;
-    if (response.length > 200) lengthPoints += 1.0;
+    const cjkCharsInMsg = (message.match(/[\u3000-\u9fff\uac00-\ud7af]/g) || []).length;
+    const cjkCharsInResp = (response.match(/[\u3000-\u9fff\uac00-\ud7af]/g) || []).length;
+    if (message.length + cjkCharsInMsg > 100) lengthPoints += 1.5;
+    if (response.length + cjkCharsInResp > 200) lengthPoints += 1.0;
 
     const points = romanticPoints + intimatePoints + explicitPoints + asteriskPoints + emotionalPoints + lengthPoints;
 

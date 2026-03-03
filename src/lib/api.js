@@ -744,10 +744,13 @@ ${passionGatekeeper}`;
 
   // Passion-based vocabulary guidance
   if (passionEnabled && passionLevel !== undefined) {
-    const sensoryGuidance = getSensoryGuidance(passionLevel);
+    const sensoryGuidance = getSensoryGuidance(passionLevel, character?.passionProfile);
     enhancements += `\n\n🔥 PASSION LEVEL: ${passionLevel}/100
 Focus: ${sensoryGuidance.focus}
 Key sensations: ${sensoryGuidance.details.join(', ')}`;
+    if (sensoryGuidance.personalityFlavor) {
+      enhancements += `\n${sensoryGuidance.personalityFlavor}`;
+    }
 
     const pacingReminder = getPacingReminder(messageCount || 0, passionLevel, character?.passionProfile);
     enhancements += pacingReminder;

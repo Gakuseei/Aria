@@ -12,12 +12,11 @@
 
 const PASSION_STORAGE_KEY = 'aria_passion_data';
 const PASSION_MEMORY_KEY = 'aria_passion_memory';
-const COOLDOWN_THRESHOLD = 3;
 const HISTORY_LIMIT = 50;
 const DECAY_INTERVAL_MS = 5 * 60 * 1000;
 const DECAY_POINTS_PER_INTERVAL = 2;
 const DECAY_MAX_POINTS = 10;
-const KNOWN_SUFFIXES = ['_cooldown', '_history', '_streak', '_transition', '_transition_down', '_lastUpdate'];
+const KNOWN_SUFFIXES = ['_history', '_streak', '_transition', '_transition_down', '_lastUpdate'];
 
 /** Unified passion tier definitions (6-tier v2.0) */
 export const PASSION_TIERS = {
@@ -553,43 +552,9 @@ const PASSION_VOCABULARY = {
   }
 };
 
-/** Regex cache for word-boundary keyword matching */
-const keywordRegexCache = new Map();
-
-/** CJK Unicode range test — \b word boundaries fail for these scripts */
-const CJK_RANGE = /[\u3000-\u9fff\uac00-\ud7af\uff00-\uffef]/;
-
-/**
- * Escapes regex metacharacters in a string
- * @param {string} str - Raw string to escape
- * @returns {string} Regex-safe string
- */
-function escapeRegex(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * Tests whether text contains keyword as a whole word.
- * Uses word-boundary regex for Latin/Cyrillic scripts,
- * falls back to plain includes() for CJK scripts where \b fails.
- * @param {string} text - Text to search in
- * @param {string} keyword - Keyword to match
- * @returns {boolean}
- */
-function matchesKeyword(text, keyword) {
-  if (CJK_RANGE.test(keyword)) {
-    return text.includes(keyword.toLowerCase());
-  }
-  if (!keywordRegexCache.has(keyword)) {
-    keywordRegexCache.set(keyword, new RegExp(`\\b${escapeRegex(keyword)}\\b`, 'i'));
-  }
-  return keywordRegexCache.get(keyword).test(text);
-}
-
 class PassionManager {
   constructor() {
     this.passionData = this.loadPassionData();
-    this._lastBreakdown = null;
   }
 
   /**
@@ -740,136 +705,6 @@ class PassionManager {
     return newLevel;
   }
 
-  /**
-   * Calculate passion points based on message content using word-boundary matching
-   * @param {string} userMessage - User message text
-   * @param {string} aiResponse - AI response text
-   * @returns {number} Calculated points (minimum 0)
-   */
-  calculatePassionPoints(userMessage, aiResponse) {
-    const message = userMessage.toLowerCase();
-    const response = aiResponse.toLowerCase();
-
-    const romanticKeywords = [
-      'love', 'kiss', 'hug', 'touch', 'hold', 'embrace', 'caress', 'stroke',
-      'beautiful', 'gorgeous', 'sexy', 'hot', 'attractive', 'cute', 'adorable',
-      'affection', 'desire', 'want', 'need', 'crave', 'yearn',
-      'liebe', 'küss', 'umarm', 'berühr', 'halt', 'streichel', 'schön', 'heiß',
-      'amor', 'beso', 'abrazo', 'tocar', 'hermosa', 'deseo', 'querer',
-      'amour', 'baiser', 'embrasser', 'toucher', 'belle', 'désir',
-      'любовь', 'поцелуй', 'обнять', 'красивая', 'желание',
-      '愛', 'キス', '抱きしめ', '触れ', '美しい', '欲しい',
-      '爱', '吻', '拥抱', '触摸', '抚摸', '美丽', '性感', '漂亮', '渴望', '想要',
-      'beijo', 'abraço', 'bonita', 'desejo', 'carinho', 'toque', 'linda', 'querer', 'precisar',
-      'amore', 'bacio', 'abbraccio', 'toccare', 'bella', 'desiderio', 'carezza', 'voglia', 'bisogno',
-      '사랑', '키스', '포옹', '만지', '예쁜', '원해',
-      'حب', 'قبلة', 'عناق', 'لمس', 'جميلة', 'مثير', 'رغبة', 'أريد',
-      'प्यार', 'चुम्बन', 'गले', 'छू', 'सुंदर', 'चाहत', 'चाहना',
-      'aşk', 'öpücük', 'sarıl', 'dokun', 'güzel', 'seksi', 'arzu', 'istek'
-    ];
-
-    const intimateKeywords = [
-      'bed', 'bedroom', 'naked', 'undress', 'clothes', 'body', 'skin',
-      'moan', 'gasp', 'shiver', 'tremble', 'breathe', 'pant',
-      'bett', 'schlafzimmer', 'nackt', 'ausziehen', 'körper', 'haut',
-      'cama', 'desnudo', 'cuerpo', 'piel', 'gemir', 'temblar',
-      'lit', 'nu', 'corps', 'peau', 'gémir', 'frissonner',
-      'кровать', 'голый', 'тело', 'кожа', 'стон', 'дрожь',
-      'ベッド', '裸', '体', '肌', '喘ぐ', '震え',
-      '床', '裸体', '身体', '皮肤', '呻吟', '颤抖', '脱衣', '喘息',
-      'corpo', 'pele', 'gemer', 'tremer', 'cama', 'nu', 'gemido', 'arrepio',
-      'letto', 'nudo', 'pelle', 'gemere', 'tremare', 'gemito', 'brivido',
-      '침대', '벗', '몸', '피부', '신음', '떨림',
-      'سرير', 'عاري', 'جسد', 'بشرة', 'أنين', 'ارتجاف',
-      'बिस्तर', 'नंगा', 'शरीर', 'त्वचा', 'कराह', 'कांपना',
-      'yatak', 'çıplak', 'vücut', 'ten', 'inleme', 'titreme'
-    ];
-
-    const explicitKeywords = [
-      'fuck', 'sex', 'cock', 'dick', 'pussy', 'breast', 'tits', 'ass',
-      'cum', 'orgasm', 'climax', 'pleasure', 'lust',
-      'ficken', 'orgasmus', 'verlangen',
-      'follar', 'sexo', 'polla', 'coño', 'orgasmo', 'placer',
-      'baiser', 'sexe', 'bite', 'chatte', 'orgasme', 'plaisir',
-      'секс', 'оргазм', 'удовольствие', 'похоть',
-      'セックス', 'オーガズム', '快感', '欲望',
-      '做爱', '性爱', '高潮', '胸', '屁股', '欲望', '快感',
-      'foder', 'pau', 'buceta', 'prazer', 'sexo', 'gozo', 'tesão',
-      'scopare', 'sesso', 'cazzo', 'piacere', 'orgasmo', 'godere',
-      '섹스', '오르가즘', '쾌감', '욕망',
-      'جنس', 'نشوة', 'لذة', 'شهوة',
-      'सेक्स', 'चरमसुख', 'आनंद', 'वासना',
-      'seks', 'orgazm', 'zevk', 'şehvet'
-    ];
-
-    let romanticPoints = 0, intimatePoints = 0, explicitPoints = 0, asteriskPoints = 0, emotionalPoints = 0, lengthPoints = 0;
-
-    const ROMANTIC_CAP = 6;
-    const INTIMATE_CAP = 8;
-    const EXPLICIT_CAP = 10;
-
-    romanticKeywords.forEach(keyword => {
-      if (matchesKeyword(message, keyword)) romanticPoints += 1.5;
-      if (matchesKeyword(response, keyword)) romanticPoints += 0.5;
-    });
-    romanticPoints = Math.min(romanticPoints, ROMANTIC_CAP);
-
-    intimateKeywords.forEach(keyword => {
-      if (matchesKeyword(message, keyword)) intimatePoints += 2.5;
-      if (matchesKeyword(response, keyword)) intimatePoints += 1.0;
-    });
-    intimatePoints = Math.min(intimatePoints, INTIMATE_CAP);
-
-    explicitKeywords.forEach(keyword => {
-      if (matchesKeyword(message, keyword)) explicitPoints += 3.5;
-      if (matchesKeyword(response, keyword)) explicitPoints += 1.5;
-    });
-    explicitPoints = Math.min(explicitPoints, EXPLICIT_CAP);
-
-    const asteriskCount = (response.match(/\*/g) || []).length;
-    if (asteriskCount > 4) asteriskPoints += 1.0;
-    if (asteriskCount > 10) asteriskPoints += 2.0;
-
-    const emotionalWords = [
-      'mmm', 'ahh', 'ohh', 'yes', 'god', 'please', 'more',
-      'ja', 'bitte', 'mehr', 'gott',
-      'sí', 'dios', 'por favor', 'más',
-      'oui', 'mon dieu', 'encore', 'plus',
-      'да', 'боже', 'пожалуйста', 'ещё',
-      'はい', 'もっと', 'お願い',
-      '是的', '求你', '还要', '天哪', '不要停',
-      '네', '제발', '더',
-      'sim', 'mais', 'meu deus',
-      'sì', 'dio', 'ancora', 'per favore',
-      'نعم', 'أرجوك', 'المزيد', 'يا إلهي',
-      'हाँ', 'और', 'भगवान', 'कृपया',
-      'evet', 'lütfen', 'daha', 'tanrım'
-    ];
-    emotionalWords.forEach(word => {
-      if (matchesKeyword(response, word)) emotionalPoints += 1.0;
-    });
-
-    const cjkCharsInMsg = (message.match(/[\u3000-\u9fff\uac00-\ud7af]/g) || []).length;
-    const cjkCharsInResp = (response.match(/[\u3000-\u9fff\uac00-\ud7af]/g) || []).length;
-    const effectiveMsgLen = message.length + Math.floor(cjkCharsInMsg * 0.5);
-    const effectiveRespLen = response.length + Math.floor(cjkCharsInResp * 0.5);
-    if (effectiveMsgLen > 100) lengthPoints += 1.5;
-    if (effectiveRespLen > 200) lengthPoints += 1.0;
-
-    const points = romanticPoints + intimatePoints + explicitPoints + asteriskPoints + emotionalPoints + lengthPoints;
-
-    this._lastBreakdown = {
-      romantic: romanticPoints,
-      intimate: intimatePoints,
-      explicit: explicitPoints,
-      asterisk: asteriskPoints,
-      emotional: emotionalPoints,
-      length: lengthPoints,
-      total: Math.max(0, points)
-    };
-
-    return Math.max(0, points);
-  }
 
   /**
    * Get vocabulary tier label for a passion level
@@ -893,13 +728,6 @@ class PassionManager {
     return langVocab[key];
   }
 
-  /**
-   * Get the breakdown from the last calculatePassionPoints call
-   * @returns {Object|null} Breakdown with romantic, intimate, explicit, asterisk, emotional, length, total
-   */
-  getLastBreakdown() {
-    return this._lastBreakdown || null;
-  }
 
   /**
    * Directly set passion level for a session

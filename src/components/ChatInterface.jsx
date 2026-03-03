@@ -595,12 +595,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const fromLabel = t.chat[`passion${previousTierRef.current.charAt(0).toUpperCase() + previousTierRef.current.slice(1)}`] || previousTierRef.current;
       const toLabel = t.chat[`passion${currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}`] || currentTier;
       const template = newIdx > oldIdx ? t.chat.tierUp : t.chat.tierDown;
+      let toastTimer;
       if (template) {
         setTierToast(template.replace('{from}', fromLabel).replace('{to}', toLabel));
-        setTimeout(() => setTierToast(null), 3000);
+        toastTimer = setTimeout(() => setTierToast(null), 3000);
       }
       previousTierRef.current = currentTier;
-      return () => clearTimeout(timer);
+      return () => { clearTimeout(timer); if (toastTimer) clearTimeout(toastTimer); };
     }
   }, [passionLevel]);
 
@@ -1030,7 +1031,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Export error:', error);
-      alert('Failed to export chat');
+      toast.error(t.chat.failedToExport);
     }
   };
 
@@ -1048,7 +1049,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       // Validate required fields
       if (!importData.messages || !Array.isArray(importData.messages)) {
-        toast.error('Invalid chat file: missing messages');
+        toast.error(t.chat.invalidChatFile);
         return;
       }
 
@@ -1067,12 +1068,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         }
       }
 
-      toast.success('Chat imported successfully!');
+      toast.success(t.chat.chatImported);
       // Restore focus to input after import
       setTimeout(() => inputRef.current?.focus(), 100);
     } catch (error) {
       console.error('Import error:', error);
-      toast.error('Failed to import chat. Please check the file format.');
+      toast.error(t.chat.failedToImport);
     } finally {
       e.target.value = '';
     }

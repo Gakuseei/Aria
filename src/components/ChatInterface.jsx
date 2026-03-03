@@ -379,6 +379,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   const [showPassionResumeModal, setShowPassionResumeModal] = useState(false);
   const [passionResumeData, setPassionResumeData] = useState(null);
+  const [confirmModal, setConfirmModal] = useState(null);
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -947,19 +948,22 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // ============================================================================
 
   const handleResetPassion = () => {
-    if (confirm(t.chat.resetPassionConfirm)) {
-      if (sessionId) {
-        passionManager.resetPassion(sessionId);
+    setConfirmModal({
+      message: t.chat.resetPassionConfirm,
+      onConfirm: () => {
+        if (sessionId) {
+          passionManager.resetPassion(sessionId);
+        }
+        if (character?.id) {
+          passionManager.clearCharacterMemory(character.id);
+        }
+        setPassionLevel(0);
       }
-      if (character?.id) {
-        passionManager.clearCharacterMemory(character.id);
-      }
-      setPassionLevel(0);
-    }
+    });
   };
 
   const handleClearChat = async (skipConfirmation = false) => {
-    if (skipConfirmation || confirm(t.chat.deleteConversationConfirm.replace('{name}', character.name))) {
+    const doReset = async () => {
       console.log('[v9.2 ChatInterface] 🗑️ HARD RESET: Deleting chat...');
 
       initializeGreeting();
@@ -980,13 +984,23 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         passionManager.clearCharacterMemory(character.id);
       }
       setPassionLevel(0);
+    };
+
+    if (skipConfirmation) {
+      await doReset();
+    } else {
+      setConfirmModal({
+        message: t.chat.deleteConversationConfirm.replace('{name}', character.name),
+        onConfirm: doReset
+      });
     }
   };
 
   const handleNewGame = async () => {
-    if (confirm(t.chat.startNewGameConfirm.replace('{name}', character.name))) {
-      await handleClearChat(true);
-    }
+    setConfirmModal({
+      message: t.chat.startNewGameConfirm.replace('{name}', character.name),
+      onConfirm: () => handleClearChat(true)
+    });
   };
 
   const handleExportChat = () => {
@@ -1962,6 +1976,28 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 className="flex-1 px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 rounded-lg text-sm transition-colors"
               >
                 {(t.chat.passionResumeResume || '').replace('{level}', passionResumeData.lastLevel)}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[200]">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm mx-4 shadow-2xl">
+            <p className="text-sm text-zinc-300 mb-4">{confirmModal.message}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="flex-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm transition-colors"
+              >
+                {t.common.cancel || 'Cancel'}
+              </button>
+              <button
+                onClick={() => { confirmModal.onConfirm(); setConfirmModal(null); }}
+                className="flex-1 px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 rounded-lg text-sm transition-colors"
+              >
+                {t.common.confirm || 'Confirm'}
               </button>
             </div>
           </div>

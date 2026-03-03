@@ -3,7 +3,7 @@
  *
  * Manages:
  * - Passion level tracking per session (0-100)
- * - Unified tier system (Innocent / Warm / Passionate / Primal)
+ * - Unified tier system (Shy / Curious / Flirty / Heated / Passionate / Primal)
  * - Word-boundary keyword matching with regex cache
  * - Cooldown-based decay for idle conversations
  * - Passion history tracking (last 50 values per session)
@@ -19,22 +19,26 @@ const DECAY_POINTS_PER_INTERVAL = 2;
 const DECAY_MAX_POINTS = 10;
 const KNOWN_SUFFIXES = ['_cooldown', '_history', '_streak', '_transition', '_transition_down', '_lastUpdate'];
 
-/** Unified passion tier definitions */
+/** Unified passion tier definitions (6-tier v2.0) */
 export const PASSION_TIERS = {
-  innocent:    { min: 0,  max: 20,  label: 'Innocent' },
-  warm:        { min: 21, max: 50,  label: 'Warm' },
-  passionate:  { min: 51, max: 80,  label: 'Passionate' },
-  primal:      { min: 81, max: 100, label: 'Primal' }
+  shy:         { min: 0,  max: 15,  label: 'Shy' },
+  curious:     { min: 16, max: 30,  label: 'Curious' },
+  flirty:      { min: 31, max: 50,  label: 'Flirty' },
+  heated:      { min: 51, max: 70,  label: 'Heated' },
+  passionate:  { min: 71, max: 85,  label: 'Passionate' },
+  primal:      { min: 86, max: 100, label: 'Primal' }
 };
 
 /**
  * Returns the tier key for a given passion level
  * @param {number} passionLevel - Current passion level (0-100)
- * @returns {'innocent'|'warm'|'passionate'|'primal'}
+ * @returns {'shy'|'curious'|'flirty'|'heated'|'passionate'|'primal'}
  */
 export function getTierKey(passionLevel) {
-  if (passionLevel <= PASSION_TIERS.innocent.max) return 'innocent';
-  if (passionLevel <= PASSION_TIERS.warm.max) return 'warm';
+  if (passionLevel <= PASSION_TIERS.shy.max) return 'shy';
+  if (passionLevel <= PASSION_TIERS.curious.max) return 'curious';
+  if (passionLevel <= PASSION_TIERS.flirty.max) return 'flirty';
+  if (passionLevel <= PASSION_TIERS.heated.max) return 'heated';
   if (passionLevel <= PASSION_TIERS.passionate.max) return 'passionate';
   return 'primal';
 }
@@ -242,7 +246,7 @@ class PassionManager {
 
     const oldTier = getTierKey(decayedLevel);
     const newTier = getTierKey(newLevel);
-    const tierOrder = ['innocent', 'warm', 'passionate', 'primal'];
+    const tierOrder = ['shy', 'curious', 'flirty', 'heated', 'passionate', 'primal'];
     if (oldTier !== newTier && tierOrder.indexOf(newTier) > tierOrder.indexOf(oldTier)) {
       this.passionData[`${sessionId}_transition`] = newTier;
     }
@@ -427,7 +431,7 @@ class PassionManager {
     const clamped = Math.round(Math.max(0, Math.min(100, level)));
     const oldTier = getTierKey(oldLevel);
     const newTier = getTierKey(clamped);
-    const tierOrder = ['innocent', 'warm', 'passionate', 'primal'];
+    const tierOrder = ['shy', 'curious', 'flirty', 'heated', 'passionate', 'primal'];
     if (oldTier !== newTier && tierOrder.indexOf(newTier) > tierOrder.indexOf(oldTier)) {
       this.passionData[`${sessionId}_transition`] = newTier;
     }
@@ -453,7 +457,7 @@ class PassionManager {
     const clamped = Math.round(Math.max(0, Math.min(100, level)));
     const oldTier = getTierKey(oldLevel);
     const newTier = getTierKey(clamped);
-    const tierOrder = ['innocent', 'warm', 'passionate', 'primal'];
+    const tierOrder = ['shy', 'curious', 'flirty', 'heated', 'passionate', 'primal'];
     if (oldTier !== newTier && tierOrder.indexOf(newTier) > tierOrder.indexOf(oldTier)) {
       this.passionData[`${sessionId}_transition`] = newTier;
     }

@@ -257,8 +257,6 @@ class PassionManager {
    * @returns {number} Calculated points (minimum 0)
    */
   calculatePassionPoints(userMessage, aiResponse) {
-    let points = 0;
-
     const message = userMessage.toLowerCase();
     const response = aiResponse.toLowerCase();
 
@@ -304,32 +302,41 @@ class PassionManager {
 
     let romanticPoints = 0, intimatePoints = 0, explicitPoints = 0, asteriskPoints = 0, emotionalPoints = 0, lengthPoints = 0;
 
+    const ROMANTIC_CAP = 6;
+    const INTIMATE_CAP = 8;
+    const EXPLICIT_CAP = 10;
+
     romanticKeywords.forEach(keyword => {
-      if (matchesKeyword(message, keyword)) { points += 1.5; romanticPoints += 1.5; }
-      if (matchesKeyword(response, keyword)) { points += 0.5; romanticPoints += 0.5; }
+      if (matchesKeyword(message, keyword)) romanticPoints += 1.5;
+      if (matchesKeyword(response, keyword)) romanticPoints += 0.5;
     });
+    romanticPoints = Math.min(romanticPoints, ROMANTIC_CAP);
 
     intimateKeywords.forEach(keyword => {
-      if (matchesKeyword(message, keyword)) { points += 2.5; intimatePoints += 2.5; }
-      if (matchesKeyword(response, keyword)) { points += 1.0; intimatePoints += 1.0; }
+      if (matchesKeyword(message, keyword)) intimatePoints += 2.5;
+      if (matchesKeyword(response, keyword)) intimatePoints += 1.0;
     });
+    intimatePoints = Math.min(intimatePoints, INTIMATE_CAP);
 
     explicitKeywords.forEach(keyword => {
-      if (matchesKeyword(message, keyword)) { points += 3.5; explicitPoints += 3.5; }
-      if (matchesKeyword(response, keyword)) { points += 1.5; explicitPoints += 1.5; }
+      if (matchesKeyword(message, keyword)) explicitPoints += 3.5;
+      if (matchesKeyword(response, keyword)) explicitPoints += 1.5;
     });
+    explicitPoints = Math.min(explicitPoints, EXPLICIT_CAP);
 
     const asteriskCount = (response.match(/\*/g) || []).length;
-    if (asteriskCount > 4) { points += 1.0; asteriskPoints += 1.0; }
-    if (asteriskCount > 10) { points += 2.0; asteriskPoints += 2.0; }
+    if (asteriskCount > 4) asteriskPoints += 1.0;
+    if (asteriskCount > 10) asteriskPoints += 2.0;
 
     const emotionalWords = ['mmm', 'ahh', 'ohh', 'yes', 'god', 'please', 'more', 'ja', 'bitte', 'mehr'];
     emotionalWords.forEach(word => {
-      if (matchesKeyword(response, word)) { points += 1.0; emotionalPoints += 1.0; }
+      if (matchesKeyword(response, word)) emotionalPoints += 1.0;
     });
 
-    if (message.length > 100) { points += 1.5; lengthPoints += 1.5; }
-    if (response.length > 200) { points += 1.0; lengthPoints += 1.0; }
+    if (message.length > 100) lengthPoints += 1.5;
+    if (response.length > 200) lengthPoints += 1.0;
+
+    const points = romanticPoints + intimatePoints + explicitPoints + asteriskPoints + emotionalPoints + lengthPoints;
 
     this._lastBreakdown = {
       romantic: romanticPoints,

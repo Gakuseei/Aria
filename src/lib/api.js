@@ -749,10 +749,10 @@ ${passionGatekeeper}`;
 Focus: ${sensoryGuidance.focus}
 Key sensations: ${sensoryGuidance.details.join(', ')}`;
 
-    const pacingReminder = getPacingReminder(messageCount || 0, passionLevel);
+    const pacingReminder = getPacingReminder(messageCount || 0, passionLevel, character?.passionProfile);
     enhancements += pacingReminder;
 
-    const vocab = passionManager.getVocabulary(passionLevel);
+    const vocab = passionManager.getVocabulary(passionLevel, language);
     if (vocab) {
       enhancements += `\n\n🗣️ PREFERRED VOCABULARY (match this intensity):
 - Touch: ${vocab.touch.join(', ')}
@@ -1993,7 +1993,7 @@ Format: 4 lines of pure text.`;
       suggestionPrompt = `Character said: "${characterMessage.substring(0, 150)}"
 Passion level: ${passionLevel}/100 (${PASSION_TIERS[tierKey].label}).
 
-${tierGuidance[tierKey] || tierGuidance.innocent}${plateauHint}
+${tierGuidance[tierKey] || tierGuidance.shy}${plateauHint}
 
 Generate 4 short user responses (max 5 words each).
 

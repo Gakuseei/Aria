@@ -34,12 +34,12 @@ function CharacterCreator({ onSave, onBack }) {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert(t.characterCreator.pleaseSelectImage);
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: t.characterCreator.pleaseSelectImage, type: 'error' } }));
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      alert(t.characterCreator.imageTooLarge);
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: t.characterCreator.imageTooLarge, type: 'error' } }));
       return;
     }
 
@@ -49,7 +49,7 @@ function CharacterCreator({ onSave, onBack }) {
       handleChange('avatarBase64', base64);
     } catch (error) {
       console.error('Image upload error:', error);
-      alert(t.characterCreator.failedToUpload);
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: t.characterCreator.failedToUpload, type: 'error' } }));
     } finally {
       setUploadingImage(false);
     }

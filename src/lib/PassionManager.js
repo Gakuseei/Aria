@@ -43,20 +43,34 @@ export function getTierKey(passionLevel) {
   return 'primal';
 }
 
-/** Word choice mapped to tier keys */
+/** Word choice mapped to tier keys (6-tier v2.0) */
 const PASSION_VOCABULARY = {
-  innocent: {
+  shy: {
     touch: ['gentle touch', 'soft brush', 'light caress', 'tender stroke'],
     reaction: ['blushes', 'heart flutters', 'breath catches', 'cheeks warm'],
     sound: ['soft gasp', 'quiet sigh', 'gentle hum', 'tiny whimper'],
     desire: ['curiosity', 'interest', 'attraction', 'fascination']
   },
 
-  warm: {
-    touch: ['warm hand', 'lingering touch', 'exploring fingers', 'firm grip'],
-    reaction: ['heart races', 'skin tingles', 'pulse quickens', 'body responds'],
-    sound: ['breathy moan', 'sharp inhale', 'soft whimper', 'throaty hum'],
+  curious: {
+    touch: ['warm hand', 'lingering touch', 'tentative caress', 'soft squeeze'],
+    reaction: ['pulse quickens', 'skin tingles', 'leans closer', 'eyes widen'],
+    sound: ['quiet hum', 'nervous laugh', 'sharp inhale', 'breathy whisper'],
+    desire: ['intrigue', 'growing interest', 'temptation', 'wonder']
+  },
+
+  flirty: {
+    touch: ['playful nudge', 'teasing stroke', 'exploring fingers', 'firm grip'],
+    reaction: ['heart races', 'bites lip', 'body responds', 'shivers'],
+    sound: ['breathy moan', 'soft whimper', 'throaty hum', 'pleased sigh'],
     desire: ['longing', 'craving', 'need', 'hunger']
+  },
+
+  heated: {
+    touch: ['urgent grip', 'pulling closer', 'roaming hands', 'insistent pressure'],
+    reaction: ['breathing quickens', 'muscles tense', 'skin flushes', 'trembles'],
+    sound: ['deep moan', 'sharp cry', 'needy whine', 'ragged breath'],
+    desire: ['burning want', 'aching desire', 'urgent need', 'mounting hunger']
   },
 
   passionate: {
@@ -160,7 +174,7 @@ class PassionManager {
   /**
    * Get and clear a pending tier transition for a session
    * @param {string} sessionId - Session identifier
-   * @returns {string|null} Tier key ('innocent'|'warm'|'passionate'|'primal') or null
+   * @returns {string|null} Tier key ('shy'|'curious'|'flirty'|'heated'|'passionate'|'primal') or null
    */
   getAndClearTransition(sessionId) {
     const key = `${sessionId}_transition`;

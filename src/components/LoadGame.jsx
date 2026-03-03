@@ -186,8 +186,8 @@ function LoadGame({ onLoad, onBack }) {
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="font-medium text-white truncate">
                           {session.mode === GAME_MODES.CHARACTER_CHAT
-                            ? `Chat with ${session.characterName || 'Character'}`
-                            : 'Creative Writing Session'
+                            ? `${t.loadGame.chatWith} ${session.characterName || t.loadGame.characterChat}`
+                            : t.loadGame.creativeWritingSession
                           }
                         </h3>
                         <span className="text-xs text-zinc-500">
@@ -197,8 +197,8 @@ function LoadGame({ onLoad, onBack }) {
 
                       <p className="text-sm text-zinc-500 mb-3">
                         {session.mode === GAME_MODES.CHARACTER_CHAT
-                          ? `${(session.conversationHistory || session.messages)?.length || 0} messages • Passion: ${session.passionLevel || 0}%`
-                          : `${session.history?.length || 0} generations`
+                          ? `${(session.conversationHistory || session.messages)?.length || 0} ${t.loadGame.messages} • ${t.loadGame.passion}: ${session.passionLevel || 0}%`
+                          : `${session.history?.length || 0} ${t.loadGame.generations}`
                         }
                       </p>
 
@@ -216,7 +216,7 @@ function LoadGame({ onLoad, onBack }) {
                     <button
                       onClick={(e) => handleDelete(session.id, e)}
                       className="p-2 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 transition-all z-10"
-                      title="Delete Save"
+                      title={t.loadGame.deleteSave}
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -233,9 +233,9 @@ function LoadGame({ onLoad, onBack }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-zinc-400 mb-2">No Saves Found</h3>
+              <h3 className="text-lg font-medium text-zinc-400 mb-2">{t.loadGame.noSavesTitle}</h3>
               <p className="text-sm text-zinc-600 max-w-xs">
-                Start a new game to create your first save. Your progress will be automatically saved.
+                {t.loadGame.noSavesDesc}
               </p>
             </div>
           )}
@@ -246,18 +246,18 @@ function LoadGame({ onLoad, onBack }) {
           {selectedSession ? (
             <>
               <div className="flex-1">
-                <div className="text-sm text-zinc-500 mb-2">Selected Save</div>
+                <div className="text-sm text-zinc-500 mb-2">{t.loadGame.selectedSave}</div>
                 
                 {/* Session Info */}
                 <div className="mb-6">
                   <h3 className="text-lg font-bold text-white mb-1">
                     {selectedSession.mode === GAME_MODES.CHARACTER_CHAT
-                      ? selectedSession.characterName || 'Character Chat'
-                      : 'Creative Writing'
+                      ? selectedSession.characterName || t.loadGame.characterChat
+                      : t.loadGame.creativeWriting
                     }
                   </h3>
                   <p className="text-xs text-zinc-500">
-                    Saved {formatDate(selectedSession.lastUpdated || selectedSession.savedAt)}
+                    {t.loadGame.saved} {formatDate(selectedSession.lastUpdated || selectedSession.savedAt)}
                   </p>
                 </div>
 
@@ -266,23 +266,23 @@ function LoadGame({ onLoad, onBack }) {
                   {selectedSession.mode === GAME_MODES.CHARACTER_CHAT ? (
                     <>
                       <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50">
-                        <span className="text-sm text-zinc-400">Messages</span>
+                        <span className="text-sm text-zinc-400">{t.loadGame.messages}</span>
                         <span className="text-white font-medium">{(selectedSession.conversationHistory || selectedSession.messages)?.length || 0}</span>
                       </div>
                       <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50">
-                        <span className="text-sm text-zinc-400">Passion Level</span>
+                        <span className="text-sm text-zinc-400">{t.loadGame.passionLevel}</span>
                         <span className="text-white font-medium">{selectedSession.passionLevel || 0}%</span>
                       </div>
                     </>
                   ) : (
                     <>
                       <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50">
-                        <span className="text-sm text-zinc-400">Generations</span>
+                        <span className="text-sm text-zinc-400">{t.loadGame.generations}</span>
                         <span className="text-white font-medium">{selectedSession.history?.length || 0}</span>
                       </div>
                       <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50">
-                        <span className="text-sm text-zinc-400">Content Length</span>
-                        <span className="text-white font-medium">{selectedSession.content?.length || 0} chars</span>
+                        <span className="text-sm text-zinc-400">{t.loadGame.contentLength}</span>
+                        <span className="text-white font-medium">{selectedSession.content?.length || 0} {t.loadGame.chars}</span>
                       </div>
                     </>
                   )}
@@ -298,7 +298,7 @@ function LoadGame({ onLoad, onBack }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Continue Session
+                {t.loadGame.continueSession}
               </button>
             </>
           ) : (

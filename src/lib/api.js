@@ -1693,7 +1693,7 @@ const secondaryFallbackSuggestions = {
  * @param {Object} character - Character object
  * @returns {Promise<Array<string>>} - 4 suggestion strings (max 6 words each)
  */
-export const generateSmartSuggestions = async (messages, character, language = 'en', passionLevel = 0, sessionId = null) => {
+export const generateSmartSuggestions = async (messages, character, language = 'en', passionLevel = 0, sessionId = null, unchainedMode = false) => {
   try {
     if (!messages || messages.length === 0) {
       const lang = language || 'en';
@@ -1763,10 +1763,7 @@ export const generateSmartSuggestions = async (messages, character, language = '
     // CONTEXT-AWARE PROMPT
     let suggestionPrompt = '';
 
-    // Check if Unchained Mode is active (passion system disabled)
-    const passionEnabled = settings.passionSystemEnabled !== false;
-
-    if (!passionEnabled) {
+    if (unchainedMode) {
       // UNCHAINED MODE - MIND-BREAK COMMANDS
       suggestionPrompt = `User is in UNCHAINED MODE (Mind vs Body split active).
 Generate 4 SHORT mind-break commands (max 5 words).
@@ -1886,7 +1883,7 @@ Format: 4 lines of pure text.`;
     if (suggestions.length < 4) {
       const fallbacks = FALLBACK_SUGGESTIONS[actualLanguage] || FALLBACK_SUGGESTIONS[selectedLanguage] || FALLBACK_SUGGESTIONS['en'];
 
-      if (!passionEnabled) {
+      if (unchainedMode) {
         return fallbacks.unchained;
       } else if (isAngry || isRefusing) {
         return fallbacks.refusal;

@@ -515,6 +515,13 @@ export const translations = {
       freeLocal: "100% free & local"
     },
     loadGame: {
+      title: "Load Game",
+      subtitle: "Continue a previous session",
+      filterAll: "All",
+      filterChat: "Chat",
+      filterWriting: "Writing",
+      deleteConfirm: "Are you sure you want to delete this save?",
+      unknownDate: "Unknown Date",
       selectSave: "Select a save to preview and continue",
       messages: "messages",
       passion: "Passion",
@@ -1139,6 +1146,13 @@ export const translations = {
       freeLocal: "100% kostenlos & lokal"
     },
     loadGame: {
+      title: "Spiel laden",
+      subtitle: "Vorherige Sitzung fortsetzen",
+      filterAll: "Alle",
+      filterChat: "Chat",
+      filterWriting: "Schreiben",
+      deleteConfirm: "Möchtest du diesen Speicherstand wirklich löschen?",
+      unknownDate: "Unbekanntes Datum",
       selectSave: "Wähle einen Speicherstand aus, um ihn anzuzeigen und fortzusetzen",
       messages: "Nachrichten",
       passion: "Leidenschaft",
@@ -1721,6 +1735,13 @@ export const translations = {
       freeLocal: "100% gratis"
     },
     loadGame: {
+      title: "Cargar partida",
+      subtitle: "Continuar una sesión anterior",
+      filterAll: "Todos",
+      filterChat: "Chat",
+      filterWriting: "Escritura",
+      deleteConfirm: "¿Estás seguro de que quieres eliminar este guardado?",
+      unknownDate: "Fecha desconocida",
       selectSave: "Selecciona un guardado para previsualizar y continuar",
       messages: "mensajes",
       passion: "Pasión",
@@ -2303,6 +2324,13 @@ export const translations = {
       freeLocal: "免费"
     },
     loadGame: {
+      title: "加载游戏",
+      subtitle: "继续之前的会话",
+      filterAll: "全部",
+      filterChat: "聊天",
+      filterWriting: "写作",
+      deleteConfirm: "确定要删除此存档吗？",
+      unknownDate: "未知日期",
       selectSave: "选择一个存档以预览并继续",
       messages: "条消息",
       passion: "激情",
@@ -2319,7 +2347,7 @@ export const translations = {
       contentLength: "内容长度",
       chars: "字符",
       continueSession: "继续会话",
-      chatWith: "与...聊天"
+      chatWith: "与{name}聊天"
     },
     debugConsole: {
       title: "Aria 监控器",
@@ -2884,6 +2912,13 @@ export const translations = {
       freeLocal: "100% gratuit & local"
     },
     loadGame: {
+      title: "Charger la partie",
+      subtitle: "Reprendre une session précédente",
+      filterAll: "Tout",
+      filterChat: "Chat",
+      filterWriting: "Écriture",
+      deleteConfirm: "Êtes-vous sûr de vouloir supprimer cette sauvegarde ?",
+      unknownDate: "Date inconnue",
       selectSave: "Sélectionnez une sauvegarde pour prévisualiser et continuer",
       messages: "messages",
       passion: "Passion",
@@ -3459,6 +3494,13 @@ export const translations = {
       freeLocal: "100% gratis"
     },
     loadGame: {
+      title: "Carica partita",
+      subtitle: "Continua una sessione precedente",
+      filterAll: "Tutto",
+      filterChat: "Chat",
+      filterWriting: "Scrittura",
+      deleteConfirm: "Sei sicuro di voler eliminare questo salvataggio?",
+      unknownDate: "Data sconosciuta",
       selectSave: "Seleziona un salvataggio per visualizzare e continuare",
       messages: "messaggi",
       passion: "Passione",
@@ -3671,8 +3713,8 @@ export const translations = {
       passionStreak: "Série romântica: {count} mensagens",
       tierUp: "Paixão: {from} → {to}",
       tierDown: "Esfriado: {from} → {to}",
-      enableUnchainedConfirm: "Ativar Modo Desacorrentado? Isso desativa o controle de paixão — o personagem responderá a conteúdo íntimo em qualquer nível de paixão.",
-      disableUnchainedConfirm: "Desativar Modo Desacorrentado? O controle de paixão será retomado no nível atual ({level}%).",
+      enableUnchainedConfirm: "Ativar Modo Sem Correntes? Isso desativa o controle de paixão — o personagem responderá a conteúdo íntimo em qualquer nível de paixão.",
+      disableUnchainedConfirm: "Desativar Modo Sem Correntes? O controle de paixão será retomado no nível atual ({level}%).",
       sendMessage: "Enviar mensagem",
       regenerate: "Regenerar",
       export: "Exportar",
@@ -4040,6 +4082,13 @@ export const translations = {
       freeLocal: "grátis"
     },
     loadGame: {
+      title: "Carregar jogo",
+      subtitle: "Continuar uma sessão anterior",
+      filterAll: "Todos",
+      filterChat: "Chat",
+      filterWriting: "Escrita",
+      deleteConfirm: "Tem certeza de que deseja excluir este salvamento?",
+      unknownDate: "Data desconhecida",
       selectSave: "Selecione um salvamento para visualizar e continuar",
       messages: "mensagens",
       passion: "Paixão",
@@ -4621,6 +4670,13 @@ export const translations = {
       freeLocal: "бесплатна"
     },
     loadGame: {
+      title: "Загрузить игру",
+      subtitle: "Продолжить предыдущий сеанс",
+      filterAll: "Все",
+      filterChat: "Чат",
+      filterWriting: "Письмо",
+      deleteConfirm: "Вы уверены, что хотите удалить это сохранение?",
+      unknownDate: "Неизвестная дата",
       selectSave: "Выберите сохранение для предпросмотра и продолжения",
       messages: "сообщений",
       passion: "Страсть",
@@ -5202,6 +5258,13 @@ export const translations = {
       freeLocal: "無料"
     },
     loadGame: {
+      title: "ゲームをロード",
+      subtitle: "前回のセッションを続行",
+      filterAll: "すべて",
+      filterChat: "チャット",
+      filterWriting: "執筆",
+      deleteConfirm: "このセーブを削除してもよろしいですか？",
+      unknownDate: "不明な日付",
       selectSave: "プレビューして続行する保存を選択",
       messages: "メッセージ",
       passion: "情熱",
@@ -5777,6 +5840,13 @@ export const translations = {
       freeLocal: "무료"
     },
     loadGame: {
+      title: "게임 불러오기",
+      subtitle: "이전 세션 계속하기",
+      filterAll: "전체",
+      filterChat: "채팅",
+      filterWriting: "글쓰기",
+      deleteConfirm: "이 저장을 삭제하시겠습니까?",
+      unknownDate: "알 수 없는 날짜",
       selectSave: "미리보기하고 계속할 저장을 선택하세요",
       messages: "메시지",
       passion: "열정",
@@ -6359,6 +6429,13 @@ export const translations = {
       freeLocal: "100% مجاني ومحلي"
     },
     loadGame: {
+      title: "تحميل اللعبة",
+      subtitle: "متابعة جلسة سابقة",
+      filterAll: "الكل",
+      filterChat: "محادثة",
+      filterWriting: "كتابة",
+      deleteConfirm: "هل أنت متأكد أنك تريد حذف هذا الحفظ؟",
+      unknownDate: "تاريخ غير معروف",
       selectSave: "اختر حفظاً للمعاينة والمتابعة",
       messages: "رسائل",
       passion: "الشغف",
@@ -6941,6 +7018,13 @@ export const translations = {
       freeLocal: "100% मुफ्त और स्थानीय"
     },
     loadGame: {
+      title: "गेम लोड करें",
+      subtitle: "पिछला सत्र जारी रखें",
+      filterAll: "सभी",
+      filterChat: "चैट",
+      filterWriting: "लेखन",
+      deleteConfirm: "क्या आप वाकई इस सेव को हटाना चाहते हैं?",
+      unknownDate: "अज्ञात तिथि",
       selectSave: "पूर्वावलोकन और जारी रखने के लिए एक सेव चुनें",
       messages: "संदेश",
       passion: "जुनून",
@@ -7523,6 +7607,13 @@ export const translations = {
       freeLocal: "100% ücretsiz ve yerel"
     },
     loadGame: {
+      title: "Oyunu yükle",
+      subtitle: "Önceki oturuma devam et",
+      filterAll: "Tümü",
+      filterChat: "Sohbet",
+      filterWriting: "Yazarlık",
+      deleteConfirm: "Bu kaydı silmek istediğinizden emin misiniz?",
+      unknownDate: "Bilinmeyen tarih",
       selectSave: "Önizlemek ve devam etmek için bir kayıt seçin",
       messages: "mesaj",
       passion: "Tutku",

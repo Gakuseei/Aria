@@ -861,7 +861,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   <input
                     type="range"
                     min="0.25"
-                    max="3.0"
+                    max="2.0"
                     step="0.25"
                     value={settings.passionSpeedMultiplier || 1.0}
                     onChange={(e) => onSettingChange('passionSpeedMultiplier', parseFloat(e.target.value))}

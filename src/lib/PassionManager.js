@@ -650,7 +650,11 @@ class PassionManager {
     let decayPoints = 0;
     if (elapsed > DECAY_INTERVAL_MS) {
       const intervals = Math.floor(elapsed / DECAY_INTERVAL_MS);
-      decayPoints = Math.min(intervals * DECAY_POINTS_PER_INTERVAL, DECAY_MAX_POINTS);
+      let decayRate = DECAY_POINTS_PER_INTERVAL;
+      const currentMomentum = this.getMomentum(sessionId);
+      if (currentMomentum > 1.5) decayRate = 1;
+      if (currentLevel >= 86) decayRate = 3;
+      decayPoints = Math.min(intervals * decayRate, DECAY_MAX_POINTS);
     }
     this.passionData[lastUpdateKey] = now;
     let decayedLevel = Math.max(0, currentLevel - decayPoints);

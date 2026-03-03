@@ -1314,7 +1314,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                           stroke={getTierColor(passionLevel)}
                           strokeWidth="3"
                           opacity="0.6"
-                          style={{ animation: 'tierGlow 800ms ease-out forwards' }}
+                          style={{ animation: 'tierGlow 800ms ease-out forwards', transformOrigin: '10px 10px' }}
                         />
                       )}
                       <circle
@@ -1363,12 +1363,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                       <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                     )}
                     {character?.passionProfile && !isUnchainedMode && (
-                      <span className="text-[9px] text-zinc-600" title={
+                      <span className="text-[9px] text-zinc-600 font-mono leading-none" title={
                         character.passionProfile <= 0.5 ? (t.characterCreator?.passionProfileShy || 'Reserved')
                         : character.passionProfile <= 0.8 ? (t.characterCreator?.passionProfileBalanced || 'Balanced')
                         : (t.characterCreator?.passionProfileBold || 'Bold')
                       }>
-                        {character.passionProfile <= 0.5 ? '🛡' : character.passionProfile <= 0.8 ? '⚖' : '🔥'}
+                        {character.passionProfile <= 0.5 ? 'S' : character.passionProfile <= 0.8 ? 'B' : 'F'}
                       </span>
                     )}
                     <span className="text-[10px] text-zinc-600 ml-0.5">▾</span>

@@ -204,7 +204,14 @@ class PassionManager {
       decayPoints = Math.min(intervals * DECAY_POINTS_PER_INTERVAL, DECAY_MAX_POINTS);
     }
     this.passionData[lastUpdateKey] = now;
-    const decayedLevel = Math.max(0, currentLevel - decayPoints);
+    let decayedLevel = Math.max(0, currentLevel - decayPoints);
+    if (decayPoints > 0) {
+      const currentTierKey = getTierKey(currentLevel);
+      const decayedTierKey = getTierKey(decayedLevel);
+      if (currentTierKey !== decayedTierKey) {
+        decayedLevel = PASSION_TIERS[currentTierKey].min;
+      }
+    }
 
     const basePoints = this.calculatePassionPoints(userMessage, aiResponse);
 

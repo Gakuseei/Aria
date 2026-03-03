@@ -1,11 +1,13 @@
 /**
- * PassionManager.js - Passion Level & Vocabulary Tier Management (v8.0 Overhaul)
+ * PassionManager.js - Passion Level & Vocabulary Tier Management (v9.0 LLM Scoring)
  *
  * Manages:
  * - Passion level tracking per session (0-100)
  * - Unified tier system (Shy / Curious / Flirty / Heated / Passionate / Primal)
- * - Word-boundary keyword matching with regex cache
- * - Cooldown-based decay for idle conversations
+ * - applyScore() for externally-calculated LLM passion scores
+ * - Time-based decay for idle conversations
+ * - Streak tracking with progressive bonus multiplier
+ * - Tier transition detection (up and down)
  * - Passion history tracking (last 50 values per session)
  * - localStorage persistence
  */
@@ -669,7 +671,7 @@ class PassionManager {
       if (streak >= 3) {
         finalScore *= 1.0 + Math.min((streak - 2) * 0.1, 0.5);
       }
-    } else {
+    } else if (score < 0) {
       this.passionData[streakKey] = 0;
     }
 

@@ -206,10 +206,10 @@ async function scorePassionLLM(userMessage, aiMessage, settings) {
     });
     if (!response.ok) return 0;
     const data = await response.json();
-    const match = data.message?.content?.trim().match(/^(-?\d+)$/);
+    const match = data.message?.content?.trim().match(/(-?\d+)/);
     if (!match) return 0;
     const score = parseInt(match[1], 10);
-    if (score < -5 || score > 10) return 0;
+    if (isNaN(score) || score < -5 || score > 10) return 0;
     return score;
   } catch {
     return 0;
@@ -1191,7 +1191,8 @@ export const sendMessage = async (
     if (settings.passionSystemEnabled && sessionId && !skipPassionUpdate) {
       const rawScore = await scorePassionLLM(userMessage, aiMessage, settings);
 
-      const profileValue = character?.passionProfile || 0.7;
+      const rawProfile = character?.passionProfile;
+      const profileValue = (typeof rawProfile === 'number' && !isNaN(rawProfile)) ? rawProfile : 0.7;
       const userSpeed = settings.passionSpeedMultiplier || 1.0;
       let adjustedScore;
 

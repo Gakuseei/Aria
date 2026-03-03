@@ -12,6 +12,7 @@ function CharacterCreator({ onSave, onBack }) {
     themeColor: '#ef4444',
     avatarBase64: '',
     startingMessage: '',
+    passionProfile: 0.7,
   });
 
   const [errors, setErrors] = useState({});
@@ -96,6 +97,7 @@ function CharacterCreator({ onSave, onBack }) {
       themeColor: formData.themeColor,
       avatarBase64: formData.avatarBase64 || null,
       startingMessage: formData.startingMessage.trim(),
+      passionProfile: formData.passionProfile,
       isCustom: true,
     };
 
@@ -108,7 +110,7 @@ function CharacterCreator({ onSave, onBack }) {
       console.log('[V4.3 CharacterCreator] ✓ Character saved successfully');
       onSave(character); // This navigates back to character select
     } else {
-      alert(t.characterCreator.failedToSave);
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: t.characterCreator.failedToSave, type: 'error' } }));
     }
   };
 
@@ -124,6 +126,7 @@ function CharacterCreator({ onSave, onBack }) {
         themeColor: '#ef4444',
         avatarBase64: '',
         startingMessage: '[Friendly] Hello! How can I help you today?',
+        passionProfile: 0.7,
       },
     },
     {
@@ -140,6 +143,7 @@ function CharacterCreator({ onSave, onBack }) {
         themeColor: '#dc2626',
         avatarBase64: '',
         startingMessage: '[Flirty] Hey there... what brings you here?',
+        passionProfile: 0.9,
       },
     },
   ];
@@ -375,6 +379,36 @@ function CharacterCreator({ onSave, onBack }) {
                 <p className="text-xs text-zinc-600 mt-1">
                   {t.characterCreator.startingMessageTip}
                 </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  {t.characterCreator.passionProfileLabel || 'Passion Personality'}
+                </label>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-zinc-500 w-16">{t.characterCreator.passionProfileShy || 'Reserved'}</span>
+                  <input
+                    type="range"
+                    min="0.3"
+                    max="1.0"
+                    step="0.1"
+                    value={formData.passionProfile}
+                    onChange={(e) => handleChange('passionProfile', parseFloat(e.target.value))}
+                    className="flex-1 accent-rose-500"
+                  />
+                  <span className="text-xs text-zinc-500 w-16 text-right">{t.characterCreator.passionProfileBold || 'Bold'}</span>
+                </div>
+                <div className="text-center mt-1">
+                  <span className="text-xs text-zinc-400">
+                    {formData.passionProfile <= 0.5
+                      ? (t.characterCreator.passionProfileShy || 'Reserved')
+                      : formData.passionProfile <= 0.8
+                        ? (t.characterCreator.passionProfileBalanced || 'Balanced')
+                        : (t.characterCreator.passionProfileBold || 'Bold')
+                    } ({formData.passionProfile})
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-600 mt-1">{t.characterCreator.passionProfileTooltip || 'Controls how the character responds to advances.'}</p>
               </div>
             </div>
 

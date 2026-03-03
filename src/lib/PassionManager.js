@@ -368,8 +368,10 @@ class PassionManager {
 
     const cjkCharsInMsg = (message.match(/[\u3000-\u9fff\uac00-\ud7af]/g) || []).length;
     const cjkCharsInResp = (response.match(/[\u3000-\u9fff\uac00-\ud7af]/g) || []).length;
-    if (message.length + cjkCharsInMsg > 100) lengthPoints += 1.5;
-    if (response.length + cjkCharsInResp > 200) lengthPoints += 1.0;
+    const effectiveMsgLen = message.length + Math.floor(cjkCharsInMsg * 0.5);
+    const effectiveRespLen = response.length + Math.floor(cjkCharsInResp * 0.5);
+    if (effectiveMsgLen > 100) lengthPoints += 1.5;
+    if (effectiveRespLen > 200) lengthPoints += 1.0;
 
     const points = romanticPoints + intimatePoints + explicitPoints + asteriskPoints + emotionalPoints + lengthPoints;
 

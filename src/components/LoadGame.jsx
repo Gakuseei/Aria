@@ -3,8 +3,14 @@ import { listSessions, deleteSession } from '../lib/api';
 import { GAME_MODES } from '../App';
 import { useLanguage } from '../context/LanguageContext';
 
+const LOCALE_MAP = {
+  en: 'en-US', de: 'de-DE', es: 'es-ES', zh: 'zh-CN', fr: 'fr-FR',
+  it: 'it-IT', pt: 'pt-BR', ru: 'ru-RU', ja: 'ja-JP', ko: 'ko-KR',
+  ar: 'ar-SA', hi: 'hi-IN', tr: 'tr-TR'
+};
+
 function LoadGame({ onLoad, onBack }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState(null);
@@ -38,7 +44,7 @@ function LoadGame({ onLoad, onBack }) {
   // Handle delete
   const handleDelete = async (sessionId, e) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this save?')) return;
+    if (!window.confirm(t.loadGame.deleteConfirm)) return;
 
     const result = await deleteSession(sessionId);
     if (result.success) {
@@ -69,11 +75,11 @@ function LoadGame({ onLoad, onBack }) {
   // Format date
   const formatDate = (dateStr) => {
     try {
-      if (!dateStr) return 'Unknown Date';
+      if (!dateStr) return t.loadGame.unknownDate;
       const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return 'Unknown Date';
-      
-      return date.toLocaleDateString('en-US', {
+      if (isNaN(date.getTime())) return t.loadGame.unknownDate;
+      const locale = LOCALE_MAP[language] || 'en-US';
+      return date.toLocaleDateString(locale, {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
@@ -81,7 +87,7 @@ function LoadGame({ onLoad, onBack }) {
         minute: '2-digit',
       });
     } catch (e) {
-      return 'Unknown Date';
+      return t.loadGame.unknownDate;
     }
   };
 
@@ -117,17 +123,17 @@ function LoadGame({ onLoad, onBack }) {
             </svg>
           </button>
           <div>
-            <h2 className="text-2xl font-bold text-white">Load Game</h2>
-            <p className="text-zinc-500 text-sm">Continue a previous session</p>
+            <h2 className="text-2xl font-bold text-white">{t.loadGame.title}</h2>
+            <p className="text-zinc-500 text-sm">{t.loadGame.subtitle}</p>
           </div>
         </div>
 
         {/* Filter Tabs - v1.0 ROSE NOIR */}
         <div className="flex gap-2">
           {[
-            { id: 'all', label: 'All' },
-            { id: GAME_MODES.CHARACTER_CHAT, label: 'Chat' },
-            { id: GAME_MODES.CREATIVE_WRITING, label: 'Writing' },
+            { id: 'all', label: t.loadGame.filterAll },
+            { id: GAME_MODES.CHARACTER_CHAT, label: t.loadGame.filterChat },
+            { id: GAME_MODES.CREATIVE_WRITING, label: t.loadGame.filterWriting },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -186,7 +192,9 @@ function LoadGame({ onLoad, onBack }) {
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="font-medium text-white truncate">
                           {session.mode === GAME_MODES.CHARACTER_CHAT
-                            ? `${t.loadGame.chatWith} ${session.characterName || t.loadGame.characterChat}`
+                            ? t.loadGame.chatWith.includes('{name}')
+                              ? t.loadGame.chatWith.replace('{name}', session.characterName || t.loadGame.characterChat)
+                              : `${t.loadGame.chatWith} ${session.characterName || t.loadGame.characterChat}`
                             : t.loadGame.creativeWritingSession
                           }
                         </h3>
@@ -309,7 +317,7 @@ function LoadGame({ onLoad, onBack }) {
                 </svg>
               </div>
               <p className="text-sm text-zinc-500">
-                {t.loadGame?.selectSave || "Select a save to preview and continue"}
+                {t.loadGame.selectSave}
               </p>
             </div>
           )}

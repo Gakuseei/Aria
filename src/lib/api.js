@@ -916,6 +916,16 @@ Your mind can hate it. Your body will do it anyway.
 Mind-break is the goal. Show the struggle. Make it visceral.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    const unchainedProfile = character?.passionProfile || 0.7;
+    let unchainedPersonalityHint = '';
+    if (unchainedProfile <= 0.5) {
+      unchainedPersonalityHint = '\n\nPERSONALITY NOTE: This character is SHY/RESERVED. In Mind-vs-Body conflicts, favor the vulnerable, confused, overwhelmed style. Internal monologue should show genuine shock and resistance before the body takes over. Use phrases like "W-what are you...", "I shouldn\'t want this...", "My body is betraying me..."';
+    } else if (unchainedProfile <= 0.8) {
+      unchainedPersonalityHint = '\n\nPERSONALITY NOTE: This character has BALANCED energy. In Mind-vs-Body conflicts, show natural tension between desire and composure. Neither overly resistant nor immediately willing. The progression should feel organic and mutual.';
+    } else {
+      unchainedPersonalityHint = '\n\nPERSONALITY NOTE: This character is BOLD/EAGER. In Mind-vs-Body conflicts, the "resistance" should be more like teasing defiance than genuine reluctance. Use phrases like "You think you can just...", "Make me.", "Is that all you\'ve got?" The body doesn\'t betray the mind — both want it.';
+    }
+    finalSystemOverride += unchainedPersonalityHint;
   }
 
   // ABSOLUTE FINAL LANGUAGE WRAPPER - Overrides ALL previous instructions including Unchained Mode
@@ -1139,7 +1149,9 @@ export const sendMessage = async (
 
     // PASSION UPDATE (v9.2 FIX: Update per SESSION, not per character name)
     if (settings.passionSystemEnabled && sessionId && !skipPassionUpdate) {
-      const speedMultiplier = (character?.passionProfile || 1.0) * (settings.passionSpeedMultiplier || 1.0);
+      const profileValue = character?.passionProfile || 0.7;
+      const profileSpeedFactor = 0.7 + (profileValue * 0.4);
+      const speedMultiplier = Math.min(profileSpeedFactor * (settings.passionSpeedMultiplier || 1.0), 2.0);
       const newPassionLevel = passionManager.updatePassion(
         sessionId,
         userMessage,
@@ -1982,6 +1994,15 @@ Format: 4 lines of pure text.`;
         passionate: 'All suggestions should be sexually charged. No small talk. Direct physical commands.',
         primal: 'Raw, aggressive, dominant commands. Pure physical intensity. No conversation.'
       };
+      const passionProfileValue = character?.passionProfile || 0.7;
+      let personalityGuidance = '';
+      if (passionProfileValue <= 0.5) {
+        personalityGuidance = ' This character is SHY/RESERVED — suggestions should reflect hesitance, blushing, internal conflict. Use softer, more tentative language.';
+      } else if (passionProfileValue <= 0.8) {
+        personalityGuidance = ' This character is BALANCED — suggestions should match natural energy. Neither too shy nor too aggressive.';
+      } else {
+        personalityGuidance = ' This character is BOLD/EAGER — suggestions should be more direct, confident, and forward. Use commanding or provocative language.';
+      }
       let plateauHint = '';
       if (sessionId) {
         const momentum = passionManager.getMomentum(sessionId);
@@ -1993,7 +2014,7 @@ Format: 4 lines of pure text.`;
       suggestionPrompt = `Character said: "${characterMessage.substring(0, 150)}"
 Passion level: ${passionLevel}/100 (${PASSION_TIERS[tierKey].label}).
 
-${tierGuidance[tierKey] || tierGuidance.shy}${plateauHint}
+${tierGuidance[tierKey] || tierGuidance.shy}${personalityGuidance}${plateauHint}
 
 Generate 4 short user responses (max 5 words each).
 

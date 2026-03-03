@@ -1188,8 +1188,11 @@ export const sendMessage = async (
     const finalHistory = [...updatedHistory, assistantMsg];
 
     // PASSION SCORING (synchronous LLM-based)
+    let passionRawScore = null;
+    let passionAdjustedScore = null;
     if (settings.passionSystemEnabled && sessionId && !skipPassionUpdate) {
       const rawScore = await scorePassionLLM(userMessage, aiMessage, settings);
+      passionRawScore = rawScore;
 
       const rawProfile = character?.passionProfile;
       const profileValue = (typeof rawProfile === 'number' && !isNaN(rawProfile)) ? rawProfile : 0.7;
@@ -1212,8 +1215,10 @@ export const sendMessage = async (
         adjustedScore *= 0.5;
       }
 
+      passionAdjustedScore = adjustedScore;
+      const previousLevel = currentPassionLevel;
       const newPassionLevel = passionManager.applyScore(sessionId, adjustedScore);
-      console.log(`[API] Passion: ${currentPassionLevel} -> ${newPassionLevel} (raw=${rawScore}, adjusted=${adjustedScore.toFixed(1)})`);
+      console.log(`[API] Passion: ${previousLevel} -> ${newPassionLevel} (raw=${rawScore}, adjusted=${adjustedScore.toFixed(1)})`);
       currentPassionLevel = newPassionLevel;
     }
 
@@ -1235,7 +1240,10 @@ export const sendMessage = async (
         responseTime: responseTime,
         wordCount: wordCount,
         wordsPerSecond: parseFloat(wordsPerSecond),
-        tokens: estimatedTokens
+        tokens: estimatedTokens,
+        passionRaw: passionRawScore,
+        passionAdjusted: passionAdjustedScore,
+        passionLevel: currentPassionLevel
       });
     }
 

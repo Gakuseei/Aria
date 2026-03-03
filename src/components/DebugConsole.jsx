@@ -496,6 +496,7 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}
                         event.type === 'settings' ? 'bg-blue-500/20 text-blue-300' :
                         event.type === 'chat' ? 'bg-green-500/20 text-green-300' :
                         event.type === 'error' ? 'bg-rose-500/20 text-rose-300' :
+                        event.type === 'passion' ? 'bg-pink-500/20 text-pink-300' :
                         'bg-amber-500/20 text-amber-300'
                       }`}>
                         {event.type.toUpperCase()}

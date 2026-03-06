@@ -204,12 +204,17 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, 'dist/index.html'));
   }
 
+  // Guard: prevent double IPC registration on macOS reactivation
+  if (createWindow._ipcRegistered) return;
+  createWindow._ipcRegistered = true;
+
   // Window controls
   ipcMain.on('window-minimize', () => {
-    mainWindow.minimize();
+    if (mainWindow) mainWindow.minimize();
   });
 
   ipcMain.on('window-maximize', () => {
+    if (!mainWindow) return;
     if (mainWindow.isMaximized()) {
       mainWindow.unmaximize();
     } else {
@@ -218,7 +223,7 @@ function createWindow() {
   });
 
   ipcMain.on('window-close', () => {
-    mainWindow.close();
+    if (mainWindow) mainWindow.close();
   });
 
   // Open external links in default browser
@@ -244,15 +249,21 @@ function createWindow() {
 
     try {
       await tool.install(destPath, (progress) => {
-        mainWindow.webContents.send('tool:progress', { tool: toolName, ...progress });
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('tool:progress', { tool: toolName, ...progress });
+        }
       }, abortController);
 
       activeInstalls.delete(toolName);
-      mainWindow.webContents.send('tool:complete', { tool: toolName, path: destPath });
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('tool:complete', { tool: toolName, path: destPath });
+      }
       return { success: true };
     } catch (error) {
       activeInstalls.delete(toolName);
-      mainWindow.webContents.send('tool:error', { tool: toolName, error: error.message });
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('tool:error', { tool: toolName, error: error.message });
+      }
       return { success: false, error: error.message };
     }
   });
@@ -283,20 +294,35 @@ function createWindow() {
 
   // Zonos-specific: server management
   ipcMain.handle('zonos-start-server', async (event, { zonosPath }) => {
-    const zonosTool = toolManager.getTool('zonos');
-    return zonosTool.startServer(zonosPath);
+    try {
+      const zonosTool = toolManager.getTool('zonos');
+      if (!zonosTool) return { success: false, error: 'Zonos tool not registered' };
+      return await zonosTool.startServer(zonosPath);
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   });
 
   ipcMain.handle('zonos-stop-server', async () => {
-    const zonosTool = toolManager.getTool('zonos');
-    zonosTool.stopServer();
-    return { success: true };
+    try {
+      const zonosTool = toolManager.getTool('zonos');
+      if (!zonosTool) return { success: false, error: 'Zonos tool not registered' };
+      zonosTool.stopServer();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   });
 
   ipcMain.handle('zonos-server-status', async () => {
-    const zonosTool = toolManager.getTool('zonos');
-    const running = await platform.isPortInUse(zonosTool.SERVER_PORT);
-    return { running };
+    try {
+      const zonosTool = toolManager.getTool('zonos');
+      if (!zonosTool) return { running: false };
+      const running = await platform.isPortInUse(zonosTool.SERVER_PORT);
+      return { running };
+    } catch {
+      return { running: false };
+    }
   });
 }
 
@@ -1002,7 +1028,7 @@ ipcMain.handle('generate-speech', async (event, params) => {
             errorMsg += ' (Access Violation - usually caused by missing or corrupt model JSON config file)';
             console.error('[Voice] CRITICAL: Access Violation detected!');
             console.error('[Voice] This usually means the .json config file is missing or invalid.');
-            console.error('[Voice] Expected JSON file:', jsonPath);
+            console.error('[Voice] Expected JSON file:', correctConfigPath);
           }
           
           console.error('[Voice] Full stderr:', stderrData);

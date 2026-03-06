@@ -6,32 +6,29 @@ Provides REST API endpoint /api/tts for text-to-speech generation
 import os
 import sys
 import subprocess
+import shutil
 
 # Set up espeak-ng environment BEFORE importing zonos
 def setup_espeak_environment():
-    """Configure espeak-ng paths for Windows"""
+    """Configure espeak-ng paths (cross-platform)"""
     try:
-        # Try to find espeak-ng installation
-        result = subprocess.run(
-            ['where', 'espeak-ng'],
-            capture_output=True,
-            text=True,
-            shell=True
-        )
-        if result.returncode == 0:
-            espeak_path = result.stdout.strip().split('\n')[0]
+        # Use shutil.which for cross-platform executable lookup
+        espeak_path = shutil.which('espeak-ng')
+        if espeak_path:
             espeak_dir = os.path.dirname(espeak_path)
-            
+
             # Set environment variables
             os.environ['ESPEAK_DATA_PATH'] = os.path.join(espeak_dir, '..', 'share', 'espeak-ng-data')
             os.environ['PATH'] = espeak_dir + os.pathsep + os.environ.get('PATH', '')
-            
+
             # Also set for phonemizer backend
             os.environ['PHONEMIZER_ESPEAK_PATH'] = espeak_path
             os.environ['PHONEMIZER_ESPEAK_DATA_PATH'] = os.environ['ESPEAK_DATA_PATH']
-            
+
             print(f"[Zonos API] espeak-ng found: {espeak_path}")
             print(f"[Zonos API] ESPEAK_DATA_PATH: {os.environ['ESPEAK_DATA_PATH']}")
+        else:
+            print("[Zonos API] Warning: espeak-ng not found in PATH")
     except Exception as e:
         print(f"[Zonos API] Warning: Could not auto-configure espeak: {e}")
 

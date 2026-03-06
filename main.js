@@ -8,6 +8,21 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 const dotenv = require('dotenv');
+const platform = require('./lib/platform');
+const toolManager = require('./lib/toolManager');
+const ollamaTool = require('./lib/tools/ollama');
+const piperTool = require('./lib/tools/piper');
+const zonosTool = require('./lib/tools/zonos');
+const stabilityTool = require('./lib/tools/stability');
+
+// Register tools
+toolManager.registerTool(ollamaTool);
+toolManager.registerTool(piperTool);
+toolManager.registerTool(zonosTool);
+toolManager.registerTool(stabilityTool);
+
+// Active installations (for cancel support)
+const activeInstalls = new Map();
 
 // Load environment variables
 dotenv.config();
@@ -219,217 +234,69 @@ function createWindow() {
     });
   });
 
-  // RUN TOOL SCRIPT HANDLER (True One-Click)
-  ipcMain.on('run-tool-script', (event, scriptName) => {
-    // Security: Only allow specific scripts or scripts in tools/
-    const allowedScripts = ['install_ollama.bat', 'install_piper.bat', 'install_zonos.bat', 'start_zonos.bat', 'install_stability.bat', 'zonos_smart_installer.bat', 'zonos_auto_installer.bat'];
-    
-    if (!allowedScripts.includes(scriptName)) {
-      console.error('Blocked unauthorized script execution:', scriptName);
-      return;
-    }
+  // CROSS-PLATFORM: Install any registered tool
+  ipcMain.handle('tool-install', async (event, { toolName, destPath }) => {
+    const tool = toolManager.getTool(toolName);
+    if (!tool) return { success: false, error: `Unknown tool: ${toolName}` };
 
-    const scriptPath = path.join(__dirname, 'tools', scriptName);
-    
-    // Use 'start' to open a new command window so the user sees progress
-    // "start cmd.exe /c ..." keeps the window open or manages it better
-    const command = `start cmd.exe /c "${scriptPath}"`;
-    
-    const { exec } = require('child_process');
-    exec(command, { cwd: path.join(__dirname, 'tools') }, (error) => {
-      if (error) {
-        console.error(`Failed to execute ${scriptName}:`, error);
-      }
-    });
+    const abortController = new AbortController();
+    activeInstalls.set(toolName, abortController);
+
+    try {
+      await tool.install(destPath, (progress) => {
+        mainWindow.webContents.send('tool:progress', { tool: toolName, ...progress });
+      }, abortController);
+
+      activeInstalls.delete(toolName);
+      mainWindow.webContents.send('tool:complete', { tool: toolName, path: destPath });
+      return { success: true };
+    } catch (error) {
+      activeInstalls.delete(toolName);
+      mainWindow.webContents.send('tool:error', { tool: toolName, error: error.message });
+      return { success: false, error: error.message };
+    }
   });
 
-  // ZONOS AUTO INSTALLER - True One-Click Handler
-  // These handlers manage the automatic installation and status checking
-  
-  let zonosInstallerProcess = null;
-  
-  // Start the automatic installer
-  ipcMain.handle('zonos-auto-install', async () => {
-    const toolsPath = path.join(__dirname, 'tools');
-    const scriptPath = path.join(toolsPath, 'zonos_auto_installer.bat');
-    const statusFile = path.join(toolsPath, 'zonos_install_status.txt');
-    
-    // Reset status file
-    try {
-      fs.writeFileSync(statusFile, 'STARTING');
-    } catch (e) {
-      console.error('[ZonosAuto] Failed to write status file:', e);
+  // Cancel active installation
+  ipcMain.handle('tool-cancel', async (event, { toolName }) => {
+    const controller = activeInstalls.get(toolName);
+    if (controller) {
+      controller.abort();
+      activeInstalls.delete(toolName);
+      return { success: true };
     }
-    
-    // Start installer in background (hidden window)
-    return new Promise((resolve) => {
-      zonosInstallerProcess = spawn('cmd.exe', ['/c', scriptPath], {
-        cwd: toolsPath,
-        windowsHide: true, // Hide the window for true one-click experience
-        detached: true
-      });
-      
-      zonosInstallerProcess.on('error', (err) => {
-        console.error('[ZonosAuto] Installer process error:', err);
-        resolve({ success: false, error: err.message });
-      });
-      
-      // Return immediately - status will be polled
-      resolve({ success: true, message: 'Installer started' });
-    });
+    return { success: true, message: 'No active installation' };
   });
-  
-  // Check installation status by reading status file
-  ipcMain.handle('zonos-check-status', async () => {
-    const toolsPath = path.join(__dirname, 'tools');
-    const statusFile = path.join(toolsPath, 'zonos_install_status.txt');
-    const logFile = path.join(toolsPath, 'zonos_install_log.txt');
-    
-    // Check if server is running
-    const isRunning = await new Promise((resolve) => {
-      const checkCmd = spawn('cmd.exe', ['/c', 'netstat -ano | findstr :7860 | findstr LISTENING'], {
-        windowsHide: true
-      });
-      let output = '';
-      checkCmd.stdout.on('data', (data) => { output += data.toString(); });
-      checkCmd.on('close', () => { resolve(output.includes('7860')); });
-    });
-    
-    if (isRunning) {
-      return { status: 'RUNNING', running: true };
-    }
-    
-    // Read status file
-    try {
-      if (fs.existsSync(statusFile)) {
-        const status = fs.readFileSync(statusFile, 'utf8').trim();
-        return { status, running: false };
-      }
-    } catch (e) {
-      console.error('[ZonosAuto] Failed to read status:', e);
-    }
-    
-    return { status: 'UNKNOWN', running: false };
+
+  // Detect if a tool is installed
+  ipcMain.handle('tool-detect', async (event, { toolName }) => {
+    const tool = toolManager.getTool(toolName);
+    if (!tool) return { installed: false };
+    const detectedPath = await tool.detect();
+    return { installed: !!detectedPath, path: detectedPath };
   });
-  
-  // Check if Zonos is already installed
-  ipcMain.handle('zonos-is-installed', async () => {
-    const zonosPath = path.join(__dirname, 'tools', 'Zonos');
-    const venvPython = path.join(zonosPath, 'venv', 'Scripts', 'python.exe');
-    const zonosModule = path.join(zonosPath, 'zonos', 'model.py');
-    
-    const isInstalled = fs.existsSync(venvPython) && fs.existsSync(zonosModule);
-    return { installed: isInstalled };
+
+  // List all registered tools
+  ipcMain.handle('tool-list', async () => {
+    return toolManager.getAllTools().map(t => ({ name: t.name, displayName: t.displayName }));
   });
-  
-  // Get last error from log file
-  ipcMain.handle('zonos-get-error', async () => {
-    const logFile = path.join(__dirname, 'tools', 'zonos_install_log.txt');
-    
-    try {
-      if (fs.existsSync(logFile)) {
-        const log = fs.readFileSync(logFile, 'utf8');
-        const lines = log.split('\n').filter(l => l.trim());
-        const lastError = lines.reverse().find(l => l.includes('Error') || l.includes('ERROR'));
-        return { error: lastError || null, fullLog: log };
-      }
-    } catch (e) {
-      console.error('[ZonosAuto] Failed to read log:', e);
-    }
-    
-    return { error: null, fullLog: '' };
+
+  // Zonos-specific: server management
+  ipcMain.handle('zonos-start-server', async (event, { zonosPath }) => {
+    const zonosTool = toolManager.getTool('zonos');
+    return zonosTool.startServer(zonosPath);
   });
-  
-  // Cancel the installation
-  ipcMain.handle('zonos-cancel-install', async () => {
-    if (zonosInstallerProcess) {
-      try {
-        // Kill the process tree on Windows
-        spawn('taskkill', ['/pid', zonosInstallerProcess.pid, '/f', '/t'], { windowsHide: true });
-        zonosInstallerProcess = null;
-        
-        // Update status file
-        const statusFile = path.join(__dirname, 'tools', 'zonos_install_status.txt');
-        fs.writeFileSync(statusFile, 'CANCELLED');
-        
-        return { success: true };
-      } catch (e) {
-        console.error('[ZonosAuto] Failed to cancel:', e);
-        return { success: false, error: e.message };
-      }
-    }
-    return { success: true, message: 'No process running' };
+
+  ipcMain.handle('zonos-stop-server', async () => {
+    const zonosTool = toolManager.getTool('zonos');
+    zonosTool.stopServer();
+    return { success: true };
   });
-  
-  // Get detailed progress (read status with more info)
-  ipcMain.handle('zonos-get-progress', async () => {
-    const toolsPath = path.join(__dirname, 'tools');
-    const statusFile = path.join(toolsPath, 'zonos_install_status.txt');
-    const logFile = path.join(toolsPath, 'zonos_install_log.txt');
-    
-    // Status mapping with user-friendly messages
-    const statusMessages = {
-      'STARTING': { step: 1, total: 8, message: 'Starting installation...', detail: 'Initializing installer' },
-      'CHECKING_DEPS': { step: 1, total: 8, message: 'Checking dependencies...', detail: 'Verifying Python and Git installation' },
-      'CHECKING_ESPEAK': { step: 2, total: 8, message: 'Checking espeak-ng...', detail: 'Verifying text-to-speech components' },
-      'INSTALLING_ESPEAK': { step: 2, total: 8, message: 'Installing espeak-ng...', detail: 'This may take a minute' },
-      'CLONING_REPO': { step: 3, total: 8, message: 'Downloading Zonos...', detail: 'Cloning repository from GitHub (~200MB)' },
-      'CREATING_VENV': { step: 4, total: 8, message: 'Creating virtual environment...', detail: 'Setting up Python environment' },
-      'INSTALLING_DEPS': { step: 5, total: 8, message: 'Installing dependencies...', detail: 'Downloading required packages' },
-      'INSTALLING_PYTORCH': { step: 5, total: 8, message: 'Installing PyTorch...', detail: 'This is the largest download (~2-3GB)' },
-      'INSTALLING_ZONOS': { step: 6, total: 8, message: 'Installing Zonos package...', detail: 'Setting up Zonos TTS engine' },
-      'INSTALLING_PACKAGES': { step: 7, total: 8, message: 'Installing Flask API...', detail: 'Setting up web server components' },
-      'STARTING_SERVER': { step: 8, total: 8, message: 'Starting server...', detail: 'Launching Zonos API server' },
-      'LOADING_MODEL': { step: 8, total: 8, message: 'Loading AI model...', detail: 'Downloading model files (~4GB on first run)' },
-      'RUNNING': { step: 8, total: 8, message: 'Server running!', detail: 'Zonos is ready to use' },
-      'CANCELLED': { step: 0, total: 8, message: 'Installation cancelled', detail: 'User cancelled the installation' },
-      'ERROR_PYTHON_NOT_FOUND': { step: 0, total: 8, message: 'Error: Python not found', detail: 'Please install Python 3.10+', error: true },
-      'ERROR_GIT_NOT_FOUND': { step: 0, total: 8, message: 'Error: Git not found', detail: 'Please install Git', error: true },
-      'ERROR_ESPEAK_INSTALL_FAILED': { step: 0, total: 8, message: 'Error: espeak-ng installation failed', detail: 'Restart may be required', error: true, needsRestart: true },
-      'ERROR_CLONE_FAILED': { step: 0, total: 8, message: 'Error: Download failed', detail: 'Check internet connection', error: true },
-      'ERROR_VENV_FAILED': { step: 0, total: 8, message: 'Error: Environment setup failed', detail: 'Please try again', error: true },
-      'ERROR_ZONOS_INSTALL_FAILED': { step: 0, total: 8, message: 'Error: Zonos installation failed', detail: 'Check the log for details', error: true },
-      'UNKNOWN': { step: 0, total: 8, message: 'Unknown status', detail: '' }
-    };
-    
-    try {
-      let status = 'UNKNOWN';
-      let log = '';
-      
-      if (fs.existsSync(statusFile)) {
-        status = fs.readFileSync(statusFile, 'utf8').trim();
-      }
-      
-      if (fs.existsSync(logFile)) {
-        log = fs.readFileSync(logFile, 'utf8');
-      }
-      
-      // Check if server is actually running
-      const isRunning = await new Promise((resolve) => {
-        const checkCmd = spawn('cmd.exe', ['/c', 'netstat -ano | findstr :7860 | findstr LISTENING'], {
-          windowsHide: true
-        });
-        let output = '';
-        checkCmd.stdout.on('data', (data) => { output += data.toString(); });
-        checkCmd.on('close', () => { resolve(output.includes('7860')); });
-      });
-      
-      if (isRunning) {
-        status = 'RUNNING';
-      }
-      
-      const progress = statusMessages[status] || statusMessages['UNKNOWN'];
-      
-      return {
-        status,
-        ...progress,
-        running: isRunning,
-        log: log.slice(-1000) // Last 1000 chars of log
-      };
-    } catch (e) {
-      console.error('[ZonosAuto] Failed to get progress:', e);
-      return { status: 'ERROR', message: 'Failed to read progress', detail: e.message, error: true };
-    }
+
+  ipcMain.handle('zonos-server-status', async () => {
+    const zonosTool = toolManager.getTool('zonos');
+    const running = await platform.isPortInUse(zonosTool.SERVER_PORT);
+    return { running };
   });
 }
 
@@ -603,7 +470,7 @@ ipcMain.handle('test-voice', async (event, url) => {
     // Validate Piper executable
     if (!piperPath) {
       // AUTO-DETECT: Check tools folder
-      const autoPath = path.join(__dirname, 'tools', 'piper', 'piper.exe');
+      const autoPath = path.join(__dirname, 'tools', 'piper', platform.getBinaryName('piper'));
       if (fs.existsSync(autoPath)) {
         console.log('[Voice Test] Auto-detected Piper at:', autoPath);
         piperPath = autoPath;

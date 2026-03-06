@@ -159,7 +159,7 @@ function cleanTranscriptArtifacts(text) {
 
 const DEFAULT_SETTINGS = {
   ollamaUrl: 'http://127.0.0.1:11434',
-  ollamaModel: 'hermes3',
+  ollamaModel: 'qwen3.5:9b',
   temperature: 0.85,
   fontSize: 'medium',
   autoSave: true,
@@ -195,7 +195,7 @@ async function scorePassionLLM(userMessage, aiMessage, settings) {
       headers: { 'Content-Type': 'application/json' },
       signal: abort.signal,
       body: JSON.stringify({
-        model: settings.ollamaModel || 'hermes3',
+        model: settings.ollamaModel || 'qwen3.5:9b',
         messages: [{
           role: 'user',
           content: `Rate romantic/sexual intensity change. Reply with ONLY one integer from -5 to 10.\n-5=strong rejection, 0=neutral, 5=moderate romance, 10=explicit.\n\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`
@@ -1901,7 +1901,7 @@ export const generateSmartSuggestions = async (messages, character, language = '
 
     const settings = await loadSettings();
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
-    const model = settings.ollamaModel || 'hermes3';
+    const model = settings.ollamaModel || 'qwen3.5:9b';
     const selectedLanguage = language || settings.preferredLanguage || 'en';
     
     const languageNames = {

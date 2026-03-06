@@ -14,10 +14,10 @@
 
 <br/>
 
-[![Version](https://img.shields.io/badge/v0.2.5%20Alpha-E91E63?style=for-the-badge&labelColor=0d1117&logo=gitlab)](https://gitlab.com/Gakuseeii/Aria/-/releases)
-[![Platform](https://img.shields.io/badge/Windows-8B5CF6?style=for-the-badge&labelColor=0d1117&logo=windows)](https://gitlab.com/Gakuseeii/Aria)
+[![Version](https://img.shields.io/badge/v0.2.5%20Alpha-E91E63?style=for-the-badge&labelColor=0d1117&logo=github)](https://github.com/Gakuseei/Aria/releases)
+[![Platform](https://img.shields.io/badge/Windows-8B5CF6?style=for-the-badge&labelColor=0d1117&logo=windows)](https://github.com/Gakuseei/Aria)
 [![License](https://img.shields.io/badge/MIT-FFD700?style=for-the-badge&labelColor=0d1117)](LICENSE.md)
-[![Offline](https://img.shields.io/badge/🔒%20100%25%20Private%20%26%20Offline-10B981?style=for-the-badge&labelColor=0d1117)](https://gitlab.com/Gakuseeii/Aria)
+[![Offline](https://img.shields.io/badge/🔒%20100%25%20Private%20%26%20Offline-10B981?style=for-the-badge&labelColor=0d1117)](https://github.com/Gakuseei/Aria)
 
 <br/>
 
@@ -57,7 +57,7 @@
 >
 > **This is an early ALPHA release.** Expect bugs — potentially many. Features may be incomplete, unstable, or change without notice. Your feedback helps shape the future of Aria.
 >
-> **Use at your own risk.** Report issues on [Discord](https://discord.gg/h3gVtkw9ja) or [GitLab Issues](https://gitlab.com/Gakuseeii/Aria/-/issues).
+> **Use at your own risk.** Report issues on [Discord](https://discord.gg/h3gVtkw9ja) or [GitHub Issues](https://github.com/Gakuseei/Aria/issues).
 
 <br/>
 
@@ -186,7 +186,7 @@ Full localization
 
 ### Download & Install
 
-1. Download **`Aria Setup 0.2.5.exe`** from [Releases](https://gitlab.com/Gakuseeii/Aria/-/releases)
+1. Download **`Aria Setup 0.2.5.exe`** from [Releases](https://github.com/Gakuseei/Aria/releases)
 2. Run the installer, Aria sets itself up
 3. Open Aria and you're good to go
 
@@ -203,7 +203,7 @@ Full localization
 Requires **Node.js v18+** (v20+ recommended).
 
 ```bash
-git clone https://gitlab.com/Gakuseeii/Aria.git
+git clone https://github.com/Gakuseei/Aria.git
 cd Aria
 npm install
 npm run dev
@@ -500,7 +500,7 @@ Made with 🌹 by the Aria Community
 
 <br/>
 
-[![GitLab stars](https://img.shields.io/gitlab/stars/Gakuseeii%2FAria?style=social&logo=gitlab)](https://gitlab.com/Gakuseeii/Aria)
+[![GitHub stars](https://img.shields.io/github/stars/Gakuseei/Aria?style=social&logo=github)](https://github.com/Gakuseei/Aria)
 &nbsp;
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.gg/h3gVtkw9ja)
 

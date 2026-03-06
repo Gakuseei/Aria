@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 describe('platform', () => {
   let platform;
@@ -62,6 +62,19 @@ describe('platform', () => {
     it('returns false for random high port', async () => {
       const result = await platform.isPortInUse(59999);
       expect(result).toBe(false);
+    });
+  });
+
+  describe('killProcess', () => {
+    it('returns false for nonexistent PID', () => {
+      const result = platform.killProcess(999999);
+      expect(result).toBe(false);
+    });
+
+    it('returns false for invalid PID', () => {
+      expect(platform.killProcess(0)).toBe(false);
+      expect(platform.killProcess(-1)).toBe(false);
+      expect(platform.killProcess(null)).toBe(false);
     });
   });
 });

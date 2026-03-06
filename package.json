@@ -52,12 +52,24 @@
       "main.js",
       "preload.js",
       "dist/**/*",
-      "tools/**/*",
-      "!tools/Zonos/**/*"
+      "lib/**/*",
+      "tools/zonos_api_server.py",
+      "tools/debug_zonos.js",
+      "tools/README.txt"
     ],
     "win": {
       "target": "nsis",
       "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "icon": "assets/icon.png",
+      "category": "Utility"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.utilities"
     },
     "nsis": {
       "oneClick": true,

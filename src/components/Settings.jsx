@@ -746,7 +746,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                           await audio.play();
                           alert('✅ Zonos test successful!');
                         } else {
-                          alert('❌ Zonos test failed.\n\nError: ' + (result?.error || 'Unknown error') + '\n\nMake sure Zonos is running (start_zonos.bat)');
+                          alert('❌ Zonos test failed.\n\nError: ' + (result?.error || 'Unknown error') + '\n\nMake sure Zonos is running.');
                         }
                       } catch (error) {
                         alert('❌ Zonos test failed.\n\nError: ' + error.message);

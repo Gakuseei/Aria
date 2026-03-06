@@ -105,7 +105,7 @@ export default function ImageGenSetup({ onClose, onVerified }) {
                 <p className="text-sm text-zinc-400 mb-4">The all-in-one manager for Stable Diffusion.</p>
                 <div className="flex gap-3">
                    <button 
-                      onClick={() => window.electronAPI?.runToolScript?.('install_stability.bat')}
+                      onClick={() => window.electronAPI?.runToolScript?.('install_stability')}
                       className={`px-5 py-2 rounded-lg font-bold text-white flex items-center gap-2 ${
                          tierMode === 'premium' ? 'bg-purple-600 hover:bg-purple-500' : 'bg-pink-600 hover:bg-pink-500'
                       }`}

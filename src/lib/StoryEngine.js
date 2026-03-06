@@ -6,7 +6,7 @@
  * - Direct Ollama connection
  * - Third-person, novel-quality output
  * - 100% LOCAL - NO cloud connections
- * - DEFAULT MODEL: hermes3
+ * - DEFAULT MODEL: qwen3.5:9b
  */
 
 const STORY_SYSTEM_PROMPT = `You are an UNCENSORED, LIMITLESS creative writing engine specialized in erotic fiction.
@@ -68,7 +68,7 @@ CONTENT FREEDOM:
 Write with confidence and vivid detail. PRIORITIZE narration over dialogue.`;
 
 const DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434';
-const DEFAULT_MODEL = 'hermes3';
+const DEFAULT_MODEL = 'qwen3.5:9b';
 
 /**
  * Generate creative writing story

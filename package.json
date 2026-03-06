@@ -11,7 +11,9 @@
     "dev:react": "vite",
     "build:react": "npm run clean && vite build",
     "build": "npm run build:react && electron-builder",
-    "pack": "npm run build:react && electron-builder --dir"
+    "pack": "npm run build:react && electron-builder --dir",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "author": "Gakuseeii",
   "license": "MIT",
@@ -37,6 +39,7 @@
     "rimraf": "^6.1.2",
     "tailwindcss": "^3.4.3",
     "vite": "^7.3.0",
+    "vitest": "^4.0.18",
     "wait-on": "^7.2.0"
   },
   "build": {

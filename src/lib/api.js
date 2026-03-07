@@ -214,9 +214,19 @@ async function getModelCapabilities(ollamaUrl, modelName) {
     if (!res.ok) return defaults;
     const info = await res.json();
 
-    const ctxParam = info.model_info?.['general.context_length']
+    let ctxParam = info.model_info?.['general.context_length']
       || info.model_info?.['llama.context_length']
-      || info.model_info?.['qwen2.context_length'];
+      || info.model_info?.['qwen2.context_length']
+      || info.model_info?.['qwen35.context_length'];
+    if (typeof ctxParam !== 'number') {
+      const mi = info.model_info || {};
+      for (const key of Object.keys(mi)) {
+        if (key.endsWith('.context_length') && typeof mi[key] === 'number') {
+          ctxParam = mi[key];
+          break;
+        }
+      }
+    }
     const contextLength = typeof ctxParam === 'number' ? ctxParam : 4096;
 
     const paramRaw = info.details?.parameter_size || '7B';

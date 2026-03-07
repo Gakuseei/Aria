@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSmartSuggestions } from '../lib/api';
+import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSmartSuggestions, resolveTemplates } from '../lib/api';
 import { passionManager, getTierKey } from '../lib/PassionManager';
 import { generateImage, cleanContextForImage, extractConversationContext } from '../lib/imageGen';
 import TutorialModal from './tutorials/TutorialModal';
@@ -655,6 +655,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       greeting = character.greeting || character.startingMessage || `*smiles warmly* Hey! I'm ${character.name}.`;
     }
 
+    greeting = resolveTemplates(greeting, character.name, userName);
     setMessages([{ role: 'assistant', content: greeting.trim(), timestamp: Date.now() }]);
   };
 

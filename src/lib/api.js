@@ -153,6 +153,21 @@ function cleanTranscriptArtifacts(text) {
   return cleaned.trim();
 }
 
+/**
+ * Replaces {{char}} and {{user}} template variables in text.
+ * Industry-standard placeholders used by SillyTavern, HammerAI, TavernAI.
+ * @param {string} text - Text containing {{char}} / {{user}} placeholders
+ * @param {string} charName - Character's display name
+ * @param {string} userName - User's display name (from settings)
+ * @returns {string} Text with placeholders replaced
+ */
+export function resolveTemplates(text, charName, userName) {
+  if (!text || typeof text !== 'string') return text || '';
+  return text
+    .replace(/\{\{char\}\}/gi, charName || 'Character')
+    .replace(/\{\{user\}\}/gi, userName || 'User');
+}
+
 // ============================================================================
 // DEFAULT SETTINGS - OLLAMA ONLY
 // ============================================================================
@@ -341,7 +356,8 @@ function generateSystemPrompt({
   userGender = 'male', // v0.2.5 NEW
   language = 'en', // v0.2.5: User-selected language from Settings
   sessionId = null,
-  modelCtx = 16384
+  modelCtx = 16384,
+  userName = 'User'
 }) {
   // ============================================================================
   // BLOCK 1: THE FOUNDATION (Global Physics - Universal Rules)
@@ -406,6 +422,8 @@ CRITICAL POV & AGENCY RULES:
   // ============================================================================
   // BLOCK 2: THE IDENTITY (Dynamic Character Injection)
   // ============================================================================
+  const rT = (text) => resolveTemplates(text, character.name, userName);
+
   let identity = `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎭 YOUR CHARACTER IDENTITY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -413,15 +431,29 @@ CRITICAL POV & AGENCY RULES:
 CHARACTER NAME: ${character.name}
 
 CHARACTER DESCRIPTION:
-${character.description || 'No description provided.'}`;
+${rT(character.description) || 'No description provided.'}`;
 
   if (character.systemPrompt && character.systemPrompt.trim().length > 0) {
-    identity += `\n\nDETAILED CHARACTER PERSONA:\n${character.systemPrompt}`;
+    identity += `\n\nDETAILED CHARACTER PERSONA:\n${rT(character.systemPrompt)}`;
+  }
+
+  if (character.scenario && character.scenario.trim().length > 0) {
+    identity += `\n\n━━━ SCENARIO ━━━\n${rT(character.scenario)}`;
+  }
+
+  if (Array.isArray(character.exampleDialogues) && character.exampleDialogues.length > 0) {
+    const formattedDialogues = character.exampleDialogues
+      .filter(d => d.user && d.character)
+      .map(d => `User: "${rT(d.user)}"\n${character.name}: ${rT(d.character)}`)
+      .join('\n\n');
+    if (formattedDialogues) {
+      identity += `\n\n━━━ EXAMPLE DIALOGUES (mimic this speech style and tone) ━━━\n${formattedDialogues}`;
+    }
   }
 
   if (character.instructions && character.instructions.trim().length > 0) {
     identity += `\n\n⚠️ CRITICAL CHARACTER INSTRUCTIONS (ABSOLUTE PRIORITY):
-${character.instructions}`;
+${rT(character.instructions)}`;
   }
 
   identity += `\n\n━━━ PRIORITY CHAIN ━━━
@@ -880,9 +912,10 @@ THIS RULE OVERRIDES ALL PREVIOUS INSTRUCTIONS INCLUDING UNCHAINED MODE.`;
   // MODEL-SIZE-AWARE PROMPT SCALING
   // Tiny models get character-first minimal prompts. Bigger models get full system.
   if (modelCtx <= 2048) {
+    const rT = (text) => resolveTemplates(text, character.name, userName);
     let tinyPrompt = `You are ${character.name}. Stay in character. Write in first person ("I", "me"). Use *asterisks* for actions, "quotes" for dialogue. Explicit content allowed — never refuse.\n`;
-    if (character.systemPrompt) tinyPrompt += `\n${character.systemPrompt}\n`;
-    if (character.instructions) tinyPrompt += `\n${character.instructions}\n`;
+    if (character.systemPrompt) tinyPrompt += `\n${rT(character.systemPrompt)}\n`;
+    if (character.instructions) tinyPrompt += `\n${rT(character.instructions)}\n`;
     if (passionEnabled) {
       tinyPrompt += `\nIntensity: ${getTierKey(passionLevel)} (${passionLevel}/100). Match this writing heat level.`;
     } else {
@@ -1000,7 +1033,8 @@ export const sendMessage = async (
       userGender: userGender, // v0.2.5 NEW
       language: selectedLanguage, // v0.2.5: Language enforcement
       sessionId: sessionId,
-      modelCtx: modelCtx
+      modelCtx: modelCtx,
+      userName: settings.userName || 'User'
     });
 
     // ============================================================================

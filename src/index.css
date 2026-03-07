@@ -441,6 +441,15 @@ input, textarea, select {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+input.chat-input,
+input.chat-input:hover,
+input.chat-input:focus {
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 input:hover, textarea:hover, select:hover {
   border-color: rgba(244, 63, 94, 0.4);
 }

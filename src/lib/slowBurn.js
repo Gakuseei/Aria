@@ -188,7 +188,7 @@ export function getPacingReminder(messageCount, passionLevel, passionProfile) {
   }
 
   if (passionLevel <= 15) {
-    return `\n⏱️ SHY: Subtle tension. Gentle sensory details.${personalityPacing}`;
+    return `\n⏱️ SHY: Subtle tension. Gentle sensory details. No physical escalation yet.${personalityPacing}`;
   }
   if (passionLevel <= 30) {
     return `\n⏱️ CURIOUS: Allow accidental touches and boundary testing. Keep the mystery alive.${personalityPacing}`;

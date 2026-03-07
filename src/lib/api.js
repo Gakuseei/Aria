@@ -1079,10 +1079,6 @@ export const sendMessage = async (
 ) => {
   const startTime = Date.now();  // v0.2.5: Track response time
   
-  console.log('[v9.2 API] 📤 Processing message...');
-  console.log('[v9.2 API] Character:', character?.name || 'None');
-  console.log('[v9.2 API] History length:', conversationHistory?.length || 0);
-
   // Safety checks
   if (!character || !character.name) {
     console.error('[v9.2 API] ❌ Invalid character data');
@@ -1120,31 +1116,20 @@ export const sendMessage = async (
 
     // LANGUAGE DETECTION
     const languageAnalysis = analyzeConversationLanguage(updatedHistory);
-    console.log('[v9.2 API] 🌍 Detected language:', languageAnalysis.language,
-                'Confidence:', languageAnalysis.confidence + '%');
 
     // ENVIRONMENT & STATE TRACKING
     const currentEnvironment = detectEnvironment(updatedHistory);
     const currentState = detectState(updatedHistory);
-
-    console.log('[v9.2 API] 🎬 Environment:', currentEnvironment || 'unspecified');
-    console.log('[v9.2 API] 👕 State:', currentState || 'unspecified');
 
     let currentPassionLevel = 0;
     if (settings.passionSystemEnabled && sessionId) {
       currentPassionLevel = passionManager.getPassionLevel(sessionId);
     }
 
-    console.log('[v9.2 API] 🔥 Passion level:', currentPassionLevel);
-
     // v0.2.5: USER GENDER INFO
     const userGender = settings.userGender || 'male';
-    console.log('[v9.2 API] 👤 User Gender:', userGender);
-
     // v0.2.5: USER-SELECTED LANGUAGE (from Settings)
     const selectedLanguage = settings.preferredLanguage || localStorage.getItem('language') || 'en';
-    console.log('[v1.0 API] 🌍 Selected Language:', selectedLanguage);
-
     // ============================================================================
     // v0.2.5: UNIVERSAL PROMPT GENERATOR + USER ANATOMY + POV FIX + LANGUAGE ENFORCEMENT
     // ============================================================================
@@ -1162,8 +1147,6 @@ export const sendMessage = async (
       sessionId: sessionId,
       modelCtx: modelCtx
     });
-
-    console.log('[v9.2 API] 📋 Final system prompt length:', finalSystemPrompt.length);
 
     // ============================================================================
     // v0.2.5: MINIAPPS STYLE - NO "User:" / "Assistant:" TRANSCRIPT
@@ -1236,8 +1219,6 @@ export const sendMessage = async (
     const qualityCheck = validateResponseQuality(aiMessage);
     if (!qualityCheck.isValid) {
       console.warn('[v8.1 API] ⚠️ Quality issues:', qualityCheck.issues);
-    } else {
-      console.log('[v8.1 API] ✅ Response quality validated');
     }
 
     // Add assistant response to history
@@ -1281,8 +1262,6 @@ export const sendMessage = async (
       }
     }
 
-    console.log('[v8.1 API] ✅ Message processed successfully');
-
     // v0.2.5: CALCULATE API STATS FOR MONITOR
     const endTime = Date.now();
     const responseTime = endTime - startTime;
@@ -1305,8 +1284,6 @@ export const sendMessage = async (
         passionLevel: currentPassionLevel
       });
     }
-
-    console.log(`[v1.0 API Monitor] Model: ${model}, Time: ${responseTime}ms, WPS: ${wordsPerSecond}, Tokens: ${estimatedTokens}`);
 
     return {
       success: true,
@@ -1348,19 +1325,15 @@ export const saveSettings = async (settings) => {
     };
 
     if (isElectron()) {
-      console.log('[v8.1 Settings] 💾 Saving via IPC...');
       const result = await window.electronAPI.saveSettings(completeSettings);
-      
+
       if (result && result.success) {
-        console.log('[v8.1 Settings] ✅ Saved successfully');
         return { success: true };
       } else {
         throw new Error(result?.error || 'IPC save failed');
       }
     } else {
-      console.log('[v8.1 Settings] 💾 Saving to localStorage...');
       localStorage.setItem('settings', JSON.stringify(completeSettings));
-      console.log('[v8.1 Settings] ✅ Saved successfully');
       return { success: true };
     }
   } catch (error) {
@@ -1372,23 +1345,19 @@ export const saveSettings = async (settings) => {
 export const loadSettings = async () => {
   try {
     if (isElectron()) {
-      console.log('[v8.1 Settings] 📖 Loading via IPC...');
       const result = await window.electronAPI.loadSettings();
-      
+
       if (result && result.success && result.settings) {
-        console.log('[v8.1 Settings] ✅ Loaded from IPC');
         return {
           ...DEFAULT_SETTINGS,
           ...result.settings
         };
       }
     } else {
-      console.log('[v8.1 Settings] 📖 Loading from localStorage...');
       const stored = localStorage.getItem('settings');
-      
+
       if (stored) {
         const parsed = JSON.parse(stored);
-        console.log('[v8.1 Settings] ✅ Loaded from localStorage');
         return {
           ...DEFAULT_SETTINGS,
           ...parsed
@@ -1396,12 +1365,10 @@ export const loadSettings = async () => {
       }
     }
 
-    console.log('[v8.1 Settings] ℹ️ No saved settings, using defaults');
     return { ...DEFAULT_SETTINGS };
-    
+
   } catch (error) {
-    console.error('[v8.1 Settings] ❌ Load error:', error);
-    console.log('[v8.1 Settings] ℹ️ Falling back to defaults');
+    console.error('[v8.1 Settings] Load error:', error);
     return { ...DEFAULT_SETTINGS };
   }
 };
@@ -1425,21 +1392,17 @@ export const saveSession = async (sessionId, sessionData) => {
     };
 
     if (isElectron()) {
-      console.log('[v8.1 Session] 💾 Saving via IPC:', sessionId);
       const result = await window.electronAPI.saveSession(sessionId, completeSessionData);
-      
+
       if (!result || !result.success) {
         throw new Error(result?.error || 'IPC save failed');
       }
-      
-      console.log('[v8.1 Session] ✅ Saved successfully');
+
       return { success: true };
     } else {
-      console.log('[v8.1 Session] 💾 Saving to localStorage:', sessionId);
       const sessions = JSON.parse(localStorage.getItem('sessions') || '{}');
       sessions[sessionId] = completeSessionData;
       localStorage.setItem('sessions', JSON.stringify(sessions));
-      console.log('[v8.1 Session] ✅ Saved successfully');
       return { success: true };
     }
   } catch (error) {
@@ -1453,23 +1416,19 @@ export const loadSession = async (sessionId) => {
     if (!sessionId) throw new Error('Session ID required');
 
     if (isElectron()) {
-      console.log('[v8.1 Session] 📖 Loading via IPC:', sessionId);
       const result = await window.electronAPI.loadSession(sessionId);
 
       if (result && result.success && (result.session || result.data)) {
-        console.log('[v8.1 Session] ✅ Loaded successfully');
         return { success: true, session: result.session || result.data };
       } else {
         throw new Error(result?.error || 'Session not found');
       }
     } else {
-      console.log('[v8.1 Session] 📖 Loading from localStorage:', sessionId);
       const sessions = JSON.parse(localStorage.getItem('sessions') || '{}');
       const session = sessions[sessionId];
-      
+
       if (!session) throw new Error('Session not found');
-      
-      console.log('[v8.1 Session] ✅ Loaded successfully');
+
       return { success: true, session: session };
     }
   } catch (error) {
@@ -1482,23 +1441,19 @@ export const deleteSession = async (sessionId) => {
   try {
     if (!sessionId) throw new Error('Session ID required');
 
-    console.log('[v8.1 Session] 🗑️ HARD RESET initiated for:', sessionId);
-
     if (isElectron()) {
       const deleteResult = await window.electronAPI.deleteSession(sessionId);
-      
+
       if (!deleteResult || !deleteResult.success) {
         throw new Error(deleteResult?.error || 'IPC delete failed');
       }
-      
-      console.log('[v8.1 Session] ✅ HARD RESET complete (IPC)');
+
       return { success: true };
     } else {
       const sessions = JSON.parse(localStorage.getItem('sessions') || '{}');
       delete sessions[sessionId];
       localStorage.setItem('sessions', JSON.stringify(sessions));
-      
-      console.log('[v8.1 Session] ✅ HARD RESET complete (localStorage)');
+
       return { success: true };
     }
   } catch (error) {
@@ -1510,24 +1465,20 @@ export const deleteSession = async (sessionId) => {
 export const listSessions = async () => {
   try {
     if (isElectron()) {
-      console.log('[v8.1 Session] 📋 Listing via IPC...');
       const result = await window.electronAPI.listSessions();
-      
+
       if (result && result.success) {
-        console.log('[v8.1 Session] ✅ Found', result.sessions.length, 'sessions');
         return { success: true, sessions: result.sessions };
       } else {
         throw new Error(result?.error || 'Failed to list sessions');
       }
     } else {
-      console.log('[v8.1 Session] 📋 Listing from localStorage...');
       const sessions = JSON.parse(localStorage.getItem('sessions') || '{}');
       const sessionList = Object.keys(sessions).map(id => ({
         id: id,
         ...sessions[id]
       }));
-      
-      console.log('[v8.1 Session] ✅ Found', sessionList.length, 'sessions');
+
       return { success: true, sessions: sessionList };
     }
   } catch (error) {
@@ -1604,11 +1555,6 @@ export const fetchOllamaModels = async (ollamaUrl = 'http://127.0.0.1:11434') =>
         return true;
       });
       
-      const filteredCount = allModels.length - chatModels.length;
-      if (filteredCount > 0) {
-        console.log(`[v1.1 API Filter] 🎯 Filtered ${filteredCount} embedding model(s). Chat models: ${chatModels.length}`);
-      }
-      
       return chatModels;
     }
 
@@ -1625,8 +1571,6 @@ export const fetchOllamaModels = async (ollamaUrl = 'http://127.0.0.1:11434') =>
  */
 export const autoDetectAndSetModel = async (ollamaUrl = 'http://127.0.0.1:11434') => {
   try {
-    console.log('[v8.2 Auto-Detect] 🔍 Searching for installed Ollama models...');
-
     const models = await fetchOllamaModels(ollamaUrl);
 
     if (!models || models.length === 0) {
@@ -1647,14 +1591,12 @@ export const autoDetectAndSetModel = async (ollamaUrl = 'http://127.0.0.1:11434'
         models.find(m => m.split(':')[0] === currentModel);
 
       if (exactMatch || fuzzyMatch) {
-        console.log('[v8.2 Auto-Detect] ✅ Current model is valid:', currentModel);
         return { success: true, model: currentModel, models: models, changed: false };
       }
     }
 
     // Auto-select first available model
     const selectedModel = models[0];
-    console.log(`[v8.2 Auto-Detect] 🎯 Auto-selecting first model: ${selectedModel}`);
 
     // Update settings properly (via Electron IPC if in Electron, otherwise localStorage)
     const updatedSettings = {
@@ -1666,16 +1608,11 @@ export const autoDetectAndSetModel = async (ollamaUrl = 'http://127.0.0.1:11434'
     // Save to both IPC AND localStorage to keep them in sync
     localStorage.setItem('settings', JSON.stringify(updatedSettings));
     if (isElectron()) {
-      console.log('[v8.2 Auto-Detect] 💾 Saving via IPC + localStorage...');
       const saveResult = await window.electronAPI.saveSettings(updatedSettings);
       if (!saveResult || !saveResult.success) {
-        console.error('[v8.2 Auto-Detect] ❌ Failed to save via IPC');
+        console.error('[API] Failed to save auto-detected model via IPC');
       }
-    } else {
-      console.log('[v8.2 Auto-Detect] 💾 Saving to localStorage...');
     }
-
-    console.log('[v8.2 Auto-Detect] ✅ Model auto-configured successfully!');
     return {
       success: true,
       model: selectedModel,
@@ -2002,8 +1939,6 @@ export const generateSmartSuggestions = async (messages, character, language = '
     const actualLanguage = detectedLangResult.confidence > 30 ? detectedLang : selectedLanguage;
     const actualLanguageName = languageNames[actualLanguage] || languageNames[selectedLanguage] || 'English';
     
-    console.log(`[SmartSuggestions] Detected language: ${actualLanguage} (confidence: ${detectedLangResult.confidence}%), using: ${actualLanguageName}`);
-
     // CONTEXT DETECTION
     const nsfwKeywords = ['naked', 'cock', 'pussy', 'fuck', 'cum', 'dick', 'tits', 'ass', 'strip', 'suck', 'wet', 'hard', 'moan'];
     const isExplicit = nsfwKeywords.some(kw => characterMessage.toLowerCase().includes(kw));
@@ -2167,7 +2102,6 @@ Format: 4 lines of pure text.`;
       return fallbacks.normal;
     }
 
-    console.log('[v1.0 Suggestions] Generated from last message:', suggestions);
     return suggestions;
 
   } catch (error) {
@@ -2177,6 +2111,3 @@ Format: 4 lines of pure text.`;
   }
 };
 
-console.log('[ARIA v1.0] ✅ Universal Roleplay Engine Online');
-console.log('[ARIA v1.0] 🎭 4-Block Architecture Active');
-console.log('[ARIA v1.0] 💡 Smart Suggestions Ready');

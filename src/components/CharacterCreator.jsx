@@ -123,7 +123,7 @@ function CharacterCreator({ onSave, onBack }) {
       systemPrompt: formData.systemPrompt.trim(),
       instructions: formData.instructions.trim() || '',
       scenario: formData.scenario.trim() || '',
-      exampleDialogues: formData.exampleDialogues.filter(d => d.user || d.character),
+      exampleDialogues: formData.exampleDialogues.filter(d => d.user && d.character),
       themeColor: formData.themeColor,
       avatarBase64: formData.avatarBase64 || null,
       startingMessage: formData.startingMessage.trim(),

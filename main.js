@@ -29,11 +29,16 @@ dotenv.config();
 
 let mainWindow;
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isValidSessionId(id) {
+  return typeof id === 'string' && (UUID_REGEX.test(id) || /^session_\d+_[a-z0-9]+$/i.test(id));
+}
+
 // v0.2.5: AGGRESSIVE Content Security Policy
 // CRITICAL: Only allow localhost/127.0.0.1 for Ollama + local services
 const CSP_DIRECTIVES = [
   "default-src 'self' file:",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: file:",
   "font-src 'self' data: file:",
@@ -165,7 +170,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      sandbox: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
     },
@@ -228,7 +233,9 @@ function createWindow() {
 
   // Open external links in default browser
   ipcMain.on('open-external', (event, url) => {
-    shell.openExternal(url);
+    if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
+      shell.openExternal(url);
+    }
   });
 
   // TOOLS FOLDER HANDLER
@@ -325,6 +332,13 @@ function createWindow() {
     }
   });
 }
+
+app.on('before-quit', () => {
+  for (const [, install] of activeInstalls) {
+    if (typeof install.abort === 'function') install.abort();
+  }
+  activeInstalls.clear();
+});
 
 app.whenReady().then(createWindow);
 
@@ -1074,6 +1088,11 @@ ipcMain.handle('check-file-exists', async (event, filePath) => {
     if (!filePath) {
       return { success: false, exists: false };
     }
+    const userDataPath = app.getPath('userData');
+    const resolved = path.resolve(filePath);
+    if (!resolved.startsWith(userDataPath) && !resolved.startsWith(path.resolve(__dirname))) {
+      return { success: false, exists: false };
+    }
     const exists = fs.existsSync(filePath);
     return { success: true, exists };
   } catch (error) {
@@ -1087,6 +1106,10 @@ ipcMain.handle('check-file-exists', async (event, filePath) => {
  */
 ipcMain.handle('download-voice-model', async (event, params) => {
   const { name, urlOnnx, urlJson } = params;
+
+  if (!/^[a-zA-Z0-9_.-]+$/.test(name)) {
+    return { success: false, error: 'Invalid model name' };
+  }
 
   if (!name || !urlOnnx || !urlJson) {
     return { success: false, error: 'Missing required parameters' };
@@ -1248,6 +1271,7 @@ ipcMain.handle('ai-chat', async (event, params) => {
           num_predict: maxTokens || 1000,
         }
       }),
+      signal: AbortSignal.timeout(120000),
     });
 
     if (!response.ok) {
@@ -1351,6 +1375,7 @@ Write VIVID, EXPLICIT, IMMERSIVE prose with minimal dialogue.`;
           num_predict: 2000,
         }
       }),
+      signal: AbortSignal.timeout(120000),
     });
 
     if (!response.ok) {
@@ -1447,6 +1472,9 @@ const getSessionsPath = () => path.join(app.getPath('userData'), 'sessions');
 
 ipcMain.handle('save-session', async (event, { sessionId, data }) => {
   try {
+    if (!isValidSessionId(sessionId)) {
+      return { success: false, error: 'Invalid session ID' };
+    }
     const sessionsDir = getSessionsPath();
     
     if (!fs.existsSync(sessionsDir)) {
@@ -1471,6 +1499,9 @@ ipcMain.handle('save-session', async (event, { sessionId, data }) => {
 
 ipcMain.handle('load-session', async (event, { sessionId }) => {
   try {
+    if (!isValidSessionId(sessionId)) {
+      return { success: false, error: 'Invalid session ID' };
+    }
     const sessionPath = path.join(getSessionsPath(), `${sessionId}.json`);
     
     if (!fs.existsSync(sessionPath)) {
@@ -1514,14 +1545,19 @@ ipcMain.handle('list-sessions', async () => {
       })
       .map(file => {
         const sessionPath = path.join(sessionsDir, file);
-        const data = JSON.parse(fs.readFileSync(sessionPath, 'utf-8'));
-        const sessionId = file.replace('.json', '');
-
-        return {
-          id: sessionId,
-          ...data,
-        };
-      });
+        try {
+          const data = JSON.parse(fs.readFileSync(sessionPath, 'utf-8'));
+          const sessionId = file.replace('.json', '');
+          return {
+            id: sessionId,
+            ...data,
+          };
+        } catch {
+          console.warn(`[Main] Skipping corrupt session file: ${file}`);
+          return null;
+        }
+      })
+      .filter(Boolean);
 
     return { success: true, sessions: files };
   } catch (error) {
@@ -1532,6 +1568,9 @@ ipcMain.handle('list-sessions', async () => {
 
 ipcMain.handle('delete-session', async (event, { sessionId }) => {
   try {
+    if (!isValidSessionId(sessionId)) {
+      return { success: false, error: 'Invalid session ID' };
+    }
     const sessionPath = path.join(getSessionsPath(), `${sessionId}.json`);
     
     if (fs.existsSync(sessionPath)) {
@@ -1598,7 +1637,8 @@ ipcMain.handle('load-settings', async () => {
     return { success: true, settings };
   } catch (error) {
     console.error('Load settings error:', error);
-    return { success: false, settings: {}, error: error.message };
+    console.warn('[Main] Settings corrupt, using defaults:', error.message);
+    return { success: true, settings: {} };
   }
 });
 
@@ -1613,3 +1653,12 @@ console.log('[CSP] Allowed: self, localhost:*, 127.0.0.1:*');
 console.log('[CSP] BLOCKED: ALL external domains');
 console.log('[AI] Only Ollama (local) supported - No cloud connections');
 console.log('[V5.5] Deep Immersion: Passion Manager + Image + Voice + OLED Mode');
+
+const STUB_HANDLERS = [
+  'zonos-auto-install', 'zonos-check-status', 'zonos-is-installed',
+  'zonos-get-error', 'zonos-cancel-install', 'zonos-get-progress',
+  'zonos-synthesize', 'run-tool-script'
+];
+STUB_HANDLERS.forEach(name => {
+  ipcMain.handle(name, async () => ({ success: false, error: 'Not yet available' }));
+});

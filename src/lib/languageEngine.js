@@ -105,12 +105,6 @@ const SUPPORTED_LANGUAGES = {
       /[şğıİçöüŞĞÇÖÜ]/i
     ]
   },
-  cn: {
-    name: '中文',
-    patterns: [
-      /[\u4E00-\u9FFF]/
-    ]
-  }
 };
 
 /**
@@ -271,7 +265,7 @@ export function validateResponseLanguage(responseText, expectedLanguage) {
     expected: expectedLanguage,
     confidence: detection.confidence,
     issue: detection.language !== expectedLanguage ? 
-      `Response in ${detection.name} but should be in ${SUPPORTED_LANGUAGES[expectedLanguage].name}` : null
+      `Response in ${detection.name} but should be in ${SUPPORTED_LANGUAGES[expectedLanguage]?.name || expectedLanguage}` : null
   };
 }
 

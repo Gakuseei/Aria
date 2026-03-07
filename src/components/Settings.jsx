@@ -300,6 +300,12 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   type="text"
                   value={settings.ollamaUrl}
                   onChange={(e) => onSettingChange('ollamaUrl', e.target.value)}
+                  onBlur={(e) => {
+                    const val = e.target.value;
+                    if (val && !val.startsWith('http://') && !val.startsWith('https://')) {
+                      onSettingChange('ollamaUrl', 'http://' + val);
+                    }
+                  }}
                   className={`w-full bg-zinc-900/80 border border-zinc-700/50 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 transition-all ${
                     isGoldMode ? 'focus:ring-amber-500/50 focus:border-amber-500/50' : 'focus:ring-rose-500/50 focus:border-rose-500/50'
                   }`}
@@ -356,7 +362,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   <label className="text-sm font-medium text-zinc-400">{t.settings.temperature}</label>
                   <span className={`text-sm font-mono px-2 py-0.5 rounded ${
                     isGoldMode ? 'text-amber-300 bg-amber-500/10' : 'text-rose-300 bg-rose-500/10'
-                  }`}>{settings.temperature.toFixed(2)}</span>
+                  }`}>{(settings.temperature ?? 0.85).toFixed(2)}</span>
                 </div>
                 <input
                   type="range"

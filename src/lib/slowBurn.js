@@ -151,9 +151,10 @@ export function getSensoryGuidance(passionLevel, passionProfile) {
   }
 
   if (passionProfile !== undefined) {
-    if (passionProfile <= 0.5) {
+    const safeProfile = Math.max(0, Math.min(1, passionProfile));
+    if (safeProfile <= 0.5) {
       guidance.personalityFlavor = 'Character is RESERVED — emphasize internal conflict, reluctant arousal, body betraying mind.';
-    } else if (passionProfile <= 0.8) {
+    } else if (safeProfile <= 0.8) {
       guidance.personalityFlavor = 'Character is BALANCED — natural responses, mutual energy, organic progression.';
     } else {
       guidance.personalityFlavor = 'Character is BOLD — confident reactions, eager body language, initiative and desire.';
@@ -176,9 +177,10 @@ export function getPacingReminder(messageCount, passionLevel, passionProfile) {
 
   let personalityPacing = '';
   if (passionProfile !== undefined) {
-    if (passionProfile <= 0.5) {
+    const safeProfile = Math.max(0, Math.min(1, passionProfile));
+    if (safeProfile <= 0.5) {
       personalityPacing = ' Savor every moment. Show internal conflict between desire and restraint.';
-    } else if (passionProfile <= 0.8) {
+    } else if (safeProfile <= 0.8) {
       personalityPacing = ' Natural progression. Match the user\'s energy.';
     } else {
       personalityPacing = ' Eager and willing. Respond with enthusiasm and initiative.';

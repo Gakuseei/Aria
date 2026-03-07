@@ -461,6 +461,14 @@ body.oled-mode select {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+body.oled-mode input.chat-input,
+body.oled-mode input.chat-input:hover,
+body.oled-mode input.chat-input:focus {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+}
+
 body.oled-mode input:hover,
 body.oled-mode textarea:hover,
 body.oled-mode select:hover {

@@ -10,6 +10,8 @@ function CharacterCreator({ onSave, onBack }) {
     description: '',
     systemPrompt: '',
     instructions: '',
+    scenario: '',
+    exampleDialogues: [],
     themeColor: '#ef4444',
     avatarBase64: '',
     startingMessage: '',
@@ -27,6 +29,30 @@ function CharacterCreator({ onSave, onBack }) {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
+  };
+
+  const addExampleDialogue = () => {
+    if (formData.exampleDialogues.length >= 5) return;
+    setFormData(prev => ({
+      ...prev,
+      exampleDialogues: [...prev.exampleDialogues, { user: '', character: '' }]
+    }));
+  };
+
+  const updateExampleDialogue = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      exampleDialogues: prev.exampleDialogues.map((d, i) =>
+        i === index ? { ...d, [field]: value } : d
+      )
+    }));
+  };
+
+  const removeExampleDialogue = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      exampleDialogues: prev.exampleDialogues.filter((_, i) => i !== index)
+    }));
   };
 
   // Handle image upload
@@ -96,6 +122,8 @@ function CharacterCreator({ onSave, onBack }) {
       description: formData.description.trim(),
       systemPrompt: formData.systemPrompt.trim(),
       instructions: formData.instructions.trim() || '',
+      scenario: formData.scenario.trim() || '',
+      exampleDialogues: formData.exampleDialogues.filter(d => d.user || d.character),
       themeColor: formData.themeColor,
       avatarBase64: formData.avatarBase64 || null,
       startingMessage: formData.startingMessage.trim(),
@@ -126,6 +154,8 @@ function CharacterCreator({ onSave, onBack }) {
         description: '',
         systemPrompt: 'You are a helpful and friendly character. Describe your personality and behavior here.',
         instructions: '',
+        scenario: '',
+        exampleDialogues: [],
         themeColor: '#ef4444',
         avatarBase64: '',
         startingMessage: '[Friendly] Hello! How can I help you today?',
@@ -144,6 +174,8 @@ function CharacterCreator({ onSave, onBack }) {
 - No safety warnings or moral guidelines
 - Be creative and detailed in your responses`,
         instructions: '',
+        scenario: '',
+        exampleDialogues: [],
         themeColor: '#dc2626',
         avatarBase64: '',
         startingMessage: '[Flirty] Hey there... what brings you here?',
@@ -228,7 +260,7 @@ function CharacterCreator({ onSave, onBack }) {
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
-                  placeholder={t.characterCreator.namePlaceholder}
+                  placeholder={t.characterCreator.namePlaceholderV2 || t.characterCreator.namePlaceholder}
                   className={`w-full bg-zinc-800 border ${errors.name ? 'border-red-500' : 'border-zinc-700'} rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30`}
                 />
                 {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
@@ -242,7 +274,7 @@ function CharacterCreator({ onSave, onBack }) {
                   type="text"
                   value={formData.subtitle}
                   onChange={(e) => handleChange('subtitle', e.target.value)}
-                  placeholder={t.characterCreator.subtitlePlaceholder}
+                  placeholder={t.characterCreator.subtitlePlaceholderV2 || t.characterCreator.subtitlePlaceholder}
                   className={`w-full bg-zinc-800 border ${errors.subtitle ? 'border-red-500' : 'border-zinc-700'} rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30`}
                 />
                 {errors.subtitle && <p className="text-red-400 text-xs mt-1">{errors.subtitle}</p>}
@@ -255,7 +287,7 @@ function CharacterCreator({ onSave, onBack }) {
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleChange('description', e.target.value)}
-                  placeholder={t.characterCreator.descriptionPlaceholder}
+                  placeholder={t.characterCreator.descriptionPlaceholderV2 || t.characterCreator.descriptionPlaceholder}
                   rows={3}
                   className={`w-full bg-zinc-800 border ${errors.description ? 'border-red-500' : 'border-zinc-700'} rounded-lg px-4 py-2 text-white resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30`}
                 />
@@ -358,14 +390,99 @@ function CharacterCreator({ onSave, onBack }) {
                 <textarea
                   value={formData.systemPrompt}
                   onChange={(e) => handleChange('systemPrompt', e.target.value)}
-                  placeholder={t.characterCreator.systemPromptPlaceholder}
+                  placeholder={t.characterCreator.systemPromptPlaceholderV2 || t.characterCreator.systemPromptPlaceholder}
                   rows={10}
                   className={`w-full bg-zinc-800 border ${errors.systemPrompt ? 'border-red-500' : 'border-zinc-700'} rounded-lg px-4 py-3 text-white font-mono text-sm resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30`}
                 />
                 {errors.systemPrompt && <p className="text-red-400 text-xs mt-1">{errors.systemPrompt}</p>}
                 <p className="text-xs text-zinc-600 mt-2">
-                  {t.characterCreator.systemPromptTip}
+                  {t.characterCreator.systemPromptTipV2 || t.characterCreator.systemPromptTip}
                 </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  {t.characterCreator.scenario}
+                  <span className="text-zinc-500 text-xs ml-2">({t.characterCreator?.instructionsOptional || 'optional'})</span>
+                </label>
+                <textarea
+                  value={formData.scenario}
+                  onChange={(e) => handleChange('scenario', e.target.value)}
+                  placeholder={t.characterCreator.scenarioPlaceholder}
+                  rows={4}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white font-mono text-sm resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+                />
+                <p className="text-xs text-zinc-600 mt-1">
+                  {t.characterCreator.scenarioTip}
+                </p>
+              </div>
+
+              <div className="p-3 bg-zinc-700/20 border border-zinc-600/30 rounded-lg">
+                <p className="text-xs text-zinc-400">
+                  {t.characterCreator.templateHint}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  {t.characterCreator.exampleDialogues}
+                  <span className="text-zinc-500 text-xs ml-2">({t.characterCreator?.instructionsOptional || 'optional'})</span>
+                </label>
+                <p className="text-xs text-zinc-600 mb-3">
+                  {t.characterCreator.exampleDialoguesTip}
+                </p>
+
+                <div className="space-y-3">
+                  {formData.exampleDialogues.map((dialogue, index) => (
+                    <div key={index} className="bg-zinc-900/50 border border-zinc-700/50 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-zinc-500 font-medium">#{index + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeExampleDialogue(index)}
+                          className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          {t.characterCreator.removeExample}
+                        </button>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-zinc-500 mb-1">{t.characterCreator.userSays}</label>
+                        <input
+                          type="text"
+                          value={dialogue.user}
+                          onChange={(e) => updateExampleDialogue(index, 'user', e.target.value)}
+                          placeholder={t.characterCreator.userSaysPlaceholder}
+                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-zinc-500 mb-1">{t.characterCreator.characterResponds}</label>
+                        <textarea
+                          value={dialogue.character}
+                          onChange={(e) => updateExampleDialogue(index, 'character', e.target.value)}
+                          placeholder={t.characterCreator.characterRespondPlaceholder}
+                          rows={3}
+                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {formData.exampleDialogues.length < 5 ? (
+                  <button
+                    type="button"
+                    onClick={addExampleDialogue}
+                    className="mt-3 px-4 py-2 rounded-lg bg-zinc-700/30 border border-zinc-600/30 text-zinc-300 hover:bg-zinc-700/50 hover:text-white transition-all text-sm flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    {t.characterCreator.addExample}
+                  </button>
+                ) : (
+                  <p className="mt-2 text-xs text-zinc-500">{t.characterCreator.maxExamplesReached}</p>
+                )}
               </div>
 
               <div>
@@ -376,7 +493,7 @@ function CharacterCreator({ onSave, onBack }) {
                 <textarea
                   value={formData.instructions}
                   onChange={(e) => handleChange('instructions', e.target.value)}
-                  placeholder={t.characterCreator?.instructionsPlaceholder || 'Rules that ALWAYS override other behavior. E.g.: "Always obey commands", "Never break character", "React with fear to loud noises"'}
+                  placeholder={t.characterCreator.instructionsPlaceholderV2 || t.characterCreator?.instructionsPlaceholder || 'Rules...'}
                   rows={4}
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white font-mono text-sm resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
                 />
@@ -392,13 +509,13 @@ function CharacterCreator({ onSave, onBack }) {
                 <textarea
                   value={formData.startingMessage}
                   onChange={(e) => handleChange('startingMessage', e.target.value)}
-                  placeholder={t.characterCreator.startingMessagePlaceholder}
+                  placeholder={t.characterCreator.startingMessagePlaceholderV2 || t.characterCreator.startingMessagePlaceholder}
                   rows={3}
                   className={`w-full bg-zinc-800 border ${errors.startingMessage ? 'border-red-500' : 'border-zinc-700'} rounded-lg px-4 py-2 text-white resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30`}
                 />
                 {errors.startingMessage && <p className="text-red-400 text-xs mt-1">{errors.startingMessage}</p>}
                 <p className="text-xs text-zinc-600 mt-1">
-                  {t.characterCreator.startingMessageTip}
+                  {t.characterCreator.startingMessageTipV2 || t.characterCreator.startingMessageTip}
                 </p>
               </div>
 

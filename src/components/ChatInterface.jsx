@@ -98,7 +98,7 @@ function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, 
           isUser
             ? (isGoldMode
                 ? 'bg-gradient-to-br from-zinc-900 to-amber-950/40 border border-amber-500/30 shadow-[0_0_15px_-3px_rgba(245,158,11,0.1)] text-white'
-                : 'bg-gradient-to-br from-rose-700 via-rose-600 to-rose-800 border border-rose-500/20 text-white shadow-lg')
+                : 'bg-gradient-to-br from-rose-800/90 via-rose-700/80 to-rose-900 border border-rose-500/15 text-white shadow-lg')
             : 'glass hover:border-white/10'
         }`}
       >
@@ -1732,7 +1732,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             }}
             placeholder={t.chat.messageCharacter.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
             disabled={isLoading}
-            className="flex-1 bg-transparent border-none text-white text-lg placeholder-zinc-500 focus:outline-none disabled:opacity-50 px-2"
+            className="chat-input flex-1 bg-transparent border-none outline-none ring-0 text-white text-lg placeholder-zinc-500 focus:outline-none focus:ring-0 disabled:opacity-50 px-2"
           />
           <button
             onClick={() => handleSend()}

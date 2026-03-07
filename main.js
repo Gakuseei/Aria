@@ -68,7 +68,6 @@ function downloadWithRedirects(url, destPath, maxRedirects = 5) {
     if (fs.existsSync(destPath)) {
       try {
         fs.unlinkSync(destPath);
-        console.log('[Download] Deleted existing file:', destPath);
       } catch (unlinkError) {
         console.warn('[Download] Could not delete existing file:', unlinkError.message);
       }
@@ -89,7 +88,6 @@ function downloadWithRedirects(url, destPath, maxRedirects = 5) {
         }
         // Resolve relative URLs
         const redirectUrl = location.startsWith('http') ? location : new URL(location, url).toString();
-        console.log('[Download] Following redirect to:', redirectUrl);
         // Recursively call with new URL
         return downloadWithRedirects(redirectUrl, destPath, maxRedirects - 1)
           .then(resolve)
@@ -104,11 +102,9 @@ function downloadWithRedirects(url, destPath, maxRedirects = 5) {
           errorMsg = `HTTP 404 - File not found at: ${url}`;
         }
         console.error('[Voice Download] Download failed:', errorMsg);
-        console.log('[Voice Download] Error detected. Cleaning up partial files...');
         if (fs.existsSync(destPath)) {
           try {
             fs.unlinkSync(destPath);
-            console.log('[Voice Download] Cleaned up partial file:', path.basename(destPath));
           } catch (cleanupError) {
             console.warn('[Voice Download] Cleanup warning:', cleanupError.message);
           }
@@ -120,18 +116,15 @@ function downloadWithRedirects(url, destPath, maxRedirects = 5) {
       response.pipe(file);
       file.on('finish', () => {
         file.close();
-        console.log('[Download] ✅ File downloaded successfully:', path.basename(destPath));
         resolve();
       });
       
       file.on('error', (fileError) => {
         console.error('[Download] File stream error:', fileError.message);
         file.close();
-        console.log('[Voice Download] Error detected. Cleaning up partial files...');
         if (fs.existsSync(destPath)) {
           try {
             fs.unlinkSync(destPath);
-            console.log('[Voice Download] Cleaned up partial file:', path.basename(destPath));
           } catch (cleanupError) {
             console.warn('[Voice Download] Cleanup warning:', cleanupError.message);
           }
@@ -141,11 +134,9 @@ function downloadWithRedirects(url, destPath, maxRedirects = 5) {
     }).on('error', (error) => {
       console.error('[Voice Download] Network error:', error.message);
       file.close();
-      console.log('[Voice Download] Error detected. Cleaning up partial files...');
       if (fs.existsSync(destPath)) {
         try {
           fs.unlinkSync(destPath);
-          console.log('[Voice Download] Cleaned up partial file:', path.basename(destPath));
         } catch (cleanupError) {
           console.warn('[Voice Download] Cleanup warning:', cleanupError.message);
         }
@@ -367,8 +358,6 @@ ipcMain.handle('analyze-sentiment', async (event, params) => {
   const { message, currentPassion } = params;
 
   try {
-    console.log('[V5.5 Sentiment IPC] Received request - delegating to frontend passionManager');
-    
     // Simple fallback if frontend doesn't have passionManager
     const lowerMessage = message.toLowerCase();
     
@@ -444,8 +433,6 @@ ipcMain.handle('analyze-sentiment', async (event, params) => {
  */
 ipcMain.handle('test-image-gen', async (event, url) => {
   try {
-    console.log('[V1.0 ImageGen Test] Testing:', url);
-    
     const testUrl = `${url}/sdapi/v1/options`;
     
     const response = await fetch(testUrl, {
@@ -457,7 +444,6 @@ ipcMain.handle('test-image-gen', async (event, url) => {
     });
     
     if (response.ok) {
-      console.log('[V1.0 ImageGen Test] ✅ Connection successful');
       return {
         success: true,
       };
@@ -512,7 +498,6 @@ ipcMain.handle('test-voice', async (event, url) => {
       // AUTO-DETECT: Check tools folder
       const autoPath = path.join(__dirname, 'tools', 'piper', platform.getBinaryName('piper'));
       if (fs.existsSync(autoPath)) {
-        console.log('[Voice Test] Auto-detected Piper at:', autoPath);
         piperPath = autoPath;
         // Optional: Update settings automatically? 
         // Better to just use it for this session of testing, user can save it later if the frontend updates?
@@ -528,14 +513,11 @@ ipcMain.handle('test-voice', async (event, url) => {
     const cleanPiperPath = piperPath.replace(/^"|"$/g, '').trim();
     
     if (!fs.existsSync(cleanPiperPath)) {
-      console.log('[Voice Test] ❌ Piper CLI not found at:', cleanPiperPath);
       return {
         success: false,
         error: `Piper executable not found: ${cleanPiperPath}`,
       };
     }
-    
-    console.log('[Voice Test] ✅ Piper CLI found at:', cleanPiperPath);
     
     // CRITICAL: Validate model and JSON config if model path is provided
     if (modelPath) {
@@ -544,11 +526,6 @@ ipcMain.handle('test-voice', async (event, url) => {
       const correctConfigPath = cleanModelPath + '.json';
       // Fallback: model.json (alternative naming that users might have)
       const fallbackConfigPath = cleanModelPath.replace(/\.onnx$/i, '.json');
-      
-      console.log('[Voice Test] Validating model files...');
-      console.log('[Voice Test] Model path:', cleanModelPath);
-      console.log('[Voice Test] Expected JSON (strict):', correctConfigPath);
-      console.log('[Voice Test] Fallback JSON (alternative):', fallbackConfigPath);
       
       if (!fs.existsSync(cleanModelPath)) {
         return {
@@ -559,15 +536,10 @@ ipcMain.handle('test-voice', async (event, url) => {
       
       // CRITICAL: Auto-Heal Logic - Fix JSON filename mismatch
       if (!fs.existsSync(correctConfigPath)) {
-        console.log('[Voice Test] Strict config file not found:', path.basename(correctConfigPath));
-        
         // Check if the alternative naming exists
         if (fs.existsSync(fallbackConfigPath)) {
-          console.log('[Voice Test] Found alternative config naming:', path.basename(fallbackConfigPath));
-          console.log('[Voice Test] APPLYING AUTO-FIX: Copying .json to .onnx.json to satisfy Piper...');
           try {
             fs.copyFileSync(fallbackConfigPath, correctConfigPath);
-            console.log('[Voice Test] ✅ Auto-fix successful! Created:', path.basename(correctConfigPath));
           } catch (copyError) {
             console.error('[Voice Test] Auto-fix failed:', copyError);
             return {
@@ -583,11 +555,7 @@ ipcMain.handle('test-voice', async (event, url) => {
             error: `CRITICAL: Model config file missing! Expected: ${path.basename(correctConfigPath)}. Please redownload the voice model.`,
           };
         }
-      } else {
-        console.log('[Voice Test] ✅ Config file found (strict naming):', path.basename(correctConfigPath));
       }
-      
-      console.log('[Voice Test] ✅ Model and JSON config validated');
       return {
         success: true,
         message: 'Piper CLI and model files validated',
@@ -633,7 +601,6 @@ ipcMain.handle('get-local-voice-models', async () => {
         };
       });
     
-    console.log('[Voice Models] Found', onnxFiles.length, 'local models');
     return { success: true, models: onnxFiles };
   } catch (error) {
     console.error('[Voice Models] Error:', error);
@@ -649,9 +616,6 @@ ipcMain.handle('generate-image', async (event, params) => {
   
   try {
     const isPremium = imageGenTier === 'premium';
-    console.log(`[V5.5 ImageGen] ${isPremium ? '🌟 Premium (FLUX)' : 'Standard (SDXL)'} mode`);
-    console.log('[V5.5 ImageGen] Generating image:', prompt.substring(0, 50) + '...');
-    
     const apiUrl = `${url}/sdapi/v1/txt2img`;
     
     // FLUX-specific settings for premium mode
@@ -686,7 +650,6 @@ ipcMain.handle('generate-image', async (event, params) => {
     const data = await response.json();
     
     if (data.images && data.images.length > 0) {
-      console.log('[V5.5 ImageGen] ✅ Image generated successfully');
       return {
         success: true,
         imageBase64: `data:image/png;base64,${data.images[0]}`,
@@ -715,15 +678,12 @@ ipcMain.handle('generate-speech', async (event, params) => {
 
   // PREMIUM MODE: Use Zonos API (Gradio via /gradio_api/)
   if (voiceTier === 'premium') {
-    console.log('[Voice] 🌟 Premium mode: Using Zonos API via /gradio_api/');
     try {
       const baseUrl = 'http://127.0.0.1:7860';
       
       // Found via debug tool: /gradio_api/info exists, and api_name: generate_audio exists
       // Try direct call first (stateless)
       const callUrl = `${baseUrl}/gradio_api/call/generate_audio`;
-      
-      console.log(`[Voice] Calling endpoint: ${callUrl}`);
       
       const response = await fetch(callUrl, {
         method: 'POST',
@@ -759,7 +719,6 @@ ipcMain.handle('generate-speech', async (event, params) => {
       
       if (!response.ok) {
         // Fallback: Try without /gradio_api prefix just in case (e.g. /call/generate_audio)
-        console.log(`[Voice] /gradio_api failed (${response.status}), trying /call/generate_audio...`);
         const responseFallback = await fetch(`${baseUrl}/call/generate_audio`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -804,8 +763,6 @@ ipcMain.handle('generate-speech', async (event, params) => {
     if (result.event_id) {
         // Gradio 5 async/event based response - we got an event ID
         // Need to poll result endpoint: GET /gradio_api/call/generate_audio/{event_id}
-        console.log('[Voice] Got event_id:', result.event_id, 'polling for result...');
-        
         const pollUrl = `${baseUrl}/gradio_api/call/generate_audio/${result.event_id}`;
         
         // Poll for up to 30 seconds
@@ -827,8 +784,6 @@ ipcMain.handle('generate-speech', async (event, params) => {
     }
     
     // Direct result format check
-    console.log('[Voice] Zonos raw response:', JSON.stringify(result).substring(0, 200));
-
     // Handle { event_id } case by just trying to read the result assuming it finished or handle error
     if (result.event_id) {
        // Since handling event loop in node without SSE lib is complex, let's inform user
@@ -850,11 +805,8 @@ ipcMain.handle('generate-speech', async (event, params) => {
            audioUrl = `${baseUrl}/file=${audioInfo.path}`; // Safety fallback
         }
         
-        console.log('[Voice] Fetching audio from:', audioUrl);
-        
         const audioResponse = await fetch(audioUrl);
         const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
-        console.log('[Voice] ✅ Zonos generated successfully, size:', audioBuffer.length);
         return { success: true, audioData: `data:audio/wav;base64,${audioBuffer.toString('base64')}` };
       }
     }
@@ -881,12 +833,6 @@ ipcMain.handle('generate-speech', async (event, params) => {
       // Fallback: model.json (alternative naming that users might have)
       const fallbackConfigPath = cleanModelPath.replace(/\.onnx$/i, '.json');
 
-      console.log('[Voice] Validating model files...');
-      console.log('[Voice] ONNX path:', cleanModelPath);
-      console.log('[Voice] Expected JSON (strict):', correctConfigPath);
-      console.log('[Voice] Fallback JSON (alternative):', fallbackConfigPath);
-      console.log('[Voice] Piper path:', cleanPiperPath);
-
       // Validate ONNX model file exists
       if (!fs.existsSync(cleanModelPath)) {
         console.error('[Voice] Model file not found:', cleanModelPath);
@@ -895,15 +841,10 @@ ipcMain.handle('generate-speech', async (event, params) => {
 
       // CRITICAL: Auto-Heal Logic - Fix JSON filename mismatch
       if (!fs.existsSync(correctConfigPath)) {
-        console.log('[Voice] Strict config file not found:', path.basename(correctConfigPath));
-        
         // Check if the alternative naming exists
         if (fs.existsSync(fallbackConfigPath)) {
-          console.log('[Voice] Found alternative config naming:', path.basename(fallbackConfigPath));
-          console.log('[Voice] APPLYING AUTO-FIX: Copying .json to .onnx.json to satisfy Piper...');
           try {
             fs.copyFileSync(fallbackConfigPath, correctConfigPath);
-            console.log('[Voice] ✅ Auto-fix successful! Created:', path.basename(correctConfigPath));
           } catch (copyError) {
             console.error('[Voice] Auto-fix failed:', copyError);
             return resolve({ 
@@ -922,8 +863,6 @@ ipcMain.handle('generate-speech', async (event, params) => {
             error: `CRITICAL: Model config file missing! Expected: ${path.basename(correctConfigPath)}. Please redownload the voice model.` 
           });
         }
-      } else {
-        console.log('[Voice] ✅ Config file found (strict naming):', path.basename(correctConfigPath));
       }
 
       // Validate Piper executable exists
@@ -938,24 +877,17 @@ ipcMain.handle('generate-speech', async (event, params) => {
         return resolve({ success: false, error: 'Empty text' });
       }
 
-      console.log('[Voice] ✅ All files validated, starting generation...');
-      console.log('[Voice] Text length:', cleanText.length);
-      console.log('[Voice] Text preview:', cleanText.substring(0, 50) + '...');
-
       // 4. PREPARE OUTPUT PATH
       const tempDir = path.join(app.getPath('temp'), 'aria-voice');
       if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir, { recursive: true });
-        console.log('[Voice] Created temp directory:', tempDir);
       }
 
       const timestamp = Date.now();
       const outputFile = path.join(tempDir, `speech-${timestamp}.wav`);
-      console.log('[Voice] Output file:', outputFile);
 
       // 5. SPAWN PIPER PROCESS
       const args = ['--model', cleanModelPath, '--output_file', outputFile];
-      console.log('[Voice] Spawning Piper with args:', args);
 
       const child = spawn(cleanPiperPath, args, {
         shell: false,
@@ -982,7 +914,6 @@ ipcMain.handle('generate-speech', async (event, params) => {
             console.error('[Voice] stdin write error:', writeError);
             return resolve({ success: false, error: `Failed to write text to stdin: ${writeError.message}` });
           }
-          console.log('[Voice] Text written to stdin, closing stream...');
           child.stdin.end();
         });
       } catch (writeException) {
@@ -994,13 +925,10 @@ ipcMain.handle('generate-speech', async (event, params) => {
       child.stderr.on('data', (data) => {
         const errorChunk = data.toString();
         stderrData += errorChunk;
-        console.log('[Piper Log]:', errorChunk.trim());
       });
 
       // Handle process close
       child.on('close', (code) => {
-        console.log('[Voice] Process exited with code:', code);
-        
         if (code === 0) {
           // Success - read output file
           setTimeout(() => {
@@ -1010,20 +938,16 @@ ipcMain.handle('generate-speech', async (event, params) => {
                 return resolve({ success: false, error: 'Output file missing - Piper may have failed silently' });
               }
 
-              console.log('[Voice] Reading output file...');
               const audioBuffer = fs.readFileSync(outputFile);
               const audioBase64 = audioBuffer.toString('base64');
-              console.log('[Voice] Audio file size:', audioBuffer.length, 'bytes');
 
               // Cleanup temp file
               try {
                 fs.unlinkSync(outputFile);
-                console.log('[Voice] Temp file cleaned up');
               } catch (cleanupError) {
                 console.warn('[Voice] Cleanup warning:', cleanupError.message);
               }
 
-              console.log('[Voice] ✅ Generated successfully');
               resolve({
                 success: true,
                 audioData: `data:audio/wav;base64,${audioBase64}`,
@@ -1126,11 +1050,9 @@ ipcMain.handle('download-voice-model', async (event, params) => {
 
   // Helper function to cleanup both files on error
   const cleanupFiles = () => {
-    console.log('[Voice Download] Error detected. Cleaning up partial files...');
     if (fs.existsSync(onnxPath)) {
       try {
         fs.unlinkSync(onnxPath);
-        console.log('[Voice Download] Deleted partial .onnx file');
       } catch (err) {
         console.warn('[Voice Download] Could not delete .onnx file:', err.message);
       }
@@ -1138,7 +1060,6 @@ ipcMain.handle('download-voice-model', async (event, params) => {
     if (fs.existsSync(jsonPath)) {
       try {
         fs.unlinkSync(jsonPath);
-        console.log('[Voice Download] Deleted partial .json file');
       } catch (err) {
         console.warn('[Voice Download] Could not delete .json file:', err.message);
       }
@@ -1147,11 +1068,8 @@ ipcMain.handle('download-voice-model', async (event, params) => {
 
   try {
     // FIX 1: Download .onnx file with Promise-based redirect support
-    console.log('[Voice Download] Downloading .onnx file...');
-    console.log('[Voice Download] URL:', urlOnnx);
     try {
       await downloadWithRedirects(urlOnnx, onnxPath);
-      console.log('[Voice Download] ✅ .onnx file downloaded');
     } catch (onnxError) {
       console.error('[Voice Download] .onnx download failed:', onnxError.message);
       cleanupFiles();
@@ -1159,8 +1077,6 @@ ipcMain.handle('download-voice-model', async (event, params) => {
     }
 
     // FIX 1: Download .json file with Promise-based redirect support + validation
-    console.log('[Voice Download] Downloading .json file...');
-    console.log('[Voice Download] URL:', urlJson);
     try {
       await downloadWithRedirects(urlJson, jsonPath);
     } catch (jsonError) {
@@ -1191,14 +1107,12 @@ ipcMain.handle('download-voice-model', async (event, params) => {
         return { success: false, error: 'Invalid JSON downloaded (parse error)' };
       }
       
-      console.log('[Voice Download] ✅ .json file downloaded and validated');
     } catch (validationError) {
       console.error('[Voice Download] JSON validation error:', validationError);
       cleanupFiles();
       return { success: false, error: `JSON validation failed: ${validationError.message}` };
     }
 
-    console.log('[Voice Download] ✅ Both files downloaded successfully');
     return {
       success: true,
       path: onnxPath
@@ -1214,7 +1128,6 @@ ipcMain.handle('download-voice-model', async (event, params) => {
  * Open file dialog
  */
 ipcMain.handle('open-file-dialog', async (event, filters) => {
-  console.log('[Main] Opening file dialog with filters:', filters);
 
   const result = await dialog.showOpenDialog({
     properties: ['openFile'],
@@ -1222,11 +1135,9 @@ ipcMain.handle('open-file-dialog', async (event, filters) => {
   });
 
   if (result.canceled) {
-    console.log('[Main] File dialog canceled');
     return null;
   }
 
-  console.log('[Main] File selected:', result.filePaths[0]);
   return result.filePaths[0];
 });
 
@@ -1249,7 +1160,6 @@ ipcMain.handle('ai-chat', async (event, params) => {
 
   try {
     const url = ollamaUrl || 'http://127.0.0.1:11434';
-    console.log('[Main IPC] Sending to Ollama:', url);
 
     // Build messages array with system prompt
     const ollamaMessages = [
@@ -1319,7 +1229,6 @@ ipcMain.handle('ai-creative-write', async (event, params) => {
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
     const ollamaModel = settings.ollamaModel || 'dolphin-llama3:latest';
 
-    console.log('[Main IPC] Creative Writing via Ollama:', ollamaUrl);
 
     const finalSystemPrompt = systemPrompt || `You are an UNCENSORED, LIMITLESS creative writing engine. 
 
@@ -1456,7 +1365,6 @@ ipcMain.handle('check-system-ready', async () => {
     results.errors.push(`Voice: ${error.message}`);
   }
 
-  console.log('[V5.5 System Check] Results:', results);
 
   return {
     success: true,
@@ -1530,7 +1438,6 @@ ipcMain.handle('list-sessions', async () => {
     if (fs.existsSync(ghostFile)) {
       try {
         fs.unlinkSync(ghostFile);
-        console.log('[Session Cleanup] Deleted ghost file: undefined.json');
       } catch (e) {
         console.warn('[Session Cleanup] Could not delete undefined.json:', e.message);
       }
@@ -1647,12 +1554,7 @@ ipcMain.handle('check-api-key', async () => {
   return { hasKey: true }; // Always true for local mode
 });
 
-console.log('[Aria v5.5 FINAL] Electron main process started');
-console.log('[CSP] AGGRESSIVE local-only policy active');
-console.log('[CSP] Allowed: self, localhost:*, 127.0.0.1:*');
-console.log('[CSP] BLOCKED: ALL external domains');
-console.log('[AI] Only Ollama (local) supported - No cloud connections');
-console.log('[V5.5] Deep Immersion: Passion Manager + Image + Voice + OLED Mode');
+console.log('[Aria] Main process started');
 
 const STUB_HANDLERS = [
   'zonos-auto-install', 'zonos-check-status', 'zonos-is-installed',

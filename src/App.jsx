@@ -145,13 +145,10 @@ function App() {
             const langContext = localStorage.getItem('language');
             if (langContext !== mergedSettings.preferredLanguage) {
               localStorage.setItem('language', mergedSettings.preferredLanguage);
-              console.log('[v1.0 App Init] Synced LanguageContext:', langContext, '→', mergedSettings.preferredLanguage);
             }
           }
 
-          console.log('[v9.5 App Init] ✅ Settings loaded from localStorage:', mergedSettings);
         } else {
-          console.log('[v9.5 App Init] No stored settings, using defaults');
         }
       } catch (error) {
         console.error('[v9.5 App Init] ❌ Error loading settings:', error);
@@ -160,32 +157,24 @@ function App() {
 
       // v0.2.5: Check Ollama connection (NO API KEY!)
       console.time('[Startup] Ollama check');
-      console.log('[v8.1 Startup] Checking Ollama connection...');
       try {
         const ollamaTest = await testOllamaConnection();
 
         if (ollamaTest.success) {
-          console.log('[v8.1 Startup] ✅ Ollama is ready!');
           setOllamaReady(true);
           setShowOnboarding(false);
 
           // v0.2.5: AUTO-DETECT AND SET MODEL
-          console.log('[v8.2 Startup] 🔍 Auto-detecting Ollama model...');
           const autoDetectResult = await autoDetectAndSetModel();
 
           if (autoDetectResult.success) {
             if (autoDetectResult.changed) {
-              console.log(`[v8.2 Startup] 🎯 Model auto-configured: ${autoDetectResult.model}`);
-              // Update settings state directly with the auto-detected model
               setSettings(prev => ({ ...prev, ollamaModel: autoDetectResult.model }));
-            } else {
-              console.log(`[v8.2 Startup] ✅ Model already configured: ${autoDetectResult.model}`);
             }
           } else {
             console.warn('[v8.2 Startup] ⚠️ No models found. User needs to install a model.');
           }
         } else {
-          console.log('[v8.1 Startup] ❌ Ollama not detected, showing onboarding');
           setOllamaReady(false);
           setShowOnboarding(true);
         }
@@ -208,7 +197,6 @@ function App() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
         e.preventDefault();
         setShowDebugConsole(prev => !prev);
-        console.log('[v9.3 Debug] Console toggled');
       }
     };
 
@@ -223,8 +211,6 @@ function App() {
   useEffect(() => {
     const handleApiStats = (event) => {
       const stats = event.detail;
-      console.log('[v1.0 App] API Stats received:', stats);
-      
       setLastApiResponseTime(stats.responseTime);
       setLastResponseWords(stats.wordCount);
       setLastResponseTokens(stats.tokens);
@@ -278,7 +264,6 @@ function App() {
       applyAnimations(value);
     }
 
-    console.log(`[v9.5 App] ✅ Setting "${key}" updated to:`, value);
   };
 
   // v0.2.5: Apply GLOBAL UI SCALING via REM-based font-size
@@ -299,47 +284,34 @@ function App() {
     const percentageMap = { 'small': '87.5%', 'medium': '100%', 'large': '125%' };
     root.style.setProperty('--app-scale', percentageMap[scale] || '100%');
 
-    console.log(`[v9.4 UI Scale] Applied REM-based scale: ${scale} (${fontSize})`);
   };
 
   // v0.2.5: Apply OLED mode to body element
   const applyOledMode = (enabled) => {
-    console.log('[v8.1 App] Applying OLED mode:', enabled);
-
     if (enabled) {
       document.body.classList.add('oled-mode');
-      console.log('[v8.1 App] ✅ OLED mode class ADDED to body');
     } else {
       document.body.classList.remove('oled-mode');
-      console.log('[v8.1 App] ❌ OLED mode class REMOVED from body');
     }
   };
 
   // v0.2.5: Apply/remove animations globally
   const applyAnimations = (enabled) => {
-    console.log('[v9.3 App] Applying animations:', enabled);
-
     if (!enabled) {
       document.body.classList.add('no-animations');
-      console.log('[v9.3 App] ❌ Animations DISABLED');
     } else {
       document.body.classList.remove('no-animations');
-      console.log('[v9.3 App] ✅ Animations ENABLED');
     }
   };
 
 
   // v0.2.5: Retry Ollama connection
   const handleRetryOllama = async () => {
-    console.log('[v8.1 Onboarding] Retrying Ollama connection...');
     const ollamaTest = await testOllamaConnection();
-    
+
     if (ollamaTest.success) {
-      console.log('[v8.1 Onboarding] ✅ Connection successful!');
       setOllamaReady(true);
       setShowOnboarding(false);
-    } else {
-      console.log('[v8.1 Onboarding] ❌ Still not connected');
     }
   };
 

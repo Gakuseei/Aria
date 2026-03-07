@@ -129,7 +129,7 @@ function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, 
           />
         )}
 
-        <div className={`whitespace-pre-wrap break-words leading-relaxed text-${fontSize}`}>
+        <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
           {(() => {
             const formattedParts = formatMessageText(message.content || '', isGoldMode && !isUser);
             return formattedParts.map((part, i) => {
@@ -936,6 +936,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     }
   }, [voiceEnabled]);
 
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    };
+  }, []);
+
   const handleSpeak = async (text) => {
     if (!settings.piperPath || !settings.modelPath) return;
 
@@ -1149,7 +1156,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         setPassionLevel(response.passionLevel);
       }
     } catch (error) {
-      console.error('Error regenerating:', error);
+      console.error('[ChatInterface] Regeneration error:', error);
+      toast.error(t.chat?.sendError || 'Failed to regenerate response');
     } finally {
       setIsLoading(false);
     }
@@ -1159,9 +1167,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     const safeContent = (content || '').trim();
     if (!safeContent) return;
     
-    navigator.clipboard.writeText(safeContent).catch(err => {
-      console.error('Failed to copy:', err);
-    });
+    navigator.clipboard.writeText(safeContent)
+      .then(() => toast.success(t.chat?.copied || 'Copied'))
+      .catch(err => {
+        console.error('Failed to copy:', err);
+        toast.error('Copy failed');
+      });
   };
 
   // v0.2.5 RESTORED: Image Generation Handler
@@ -1737,7 +1748,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => {
+            onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleSend();

@@ -386,6 +386,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const inputRef = useRef(null);
   const importFileRef = useRef(null);
   const audioRef = useRef(null);
+  const saveTimerRef = useRef(null);
 
   // BLOCK 6.9: Trigger entrance animation
   useEffect(() => {
@@ -535,7 +536,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         localStorage.setItem('settings', JSON.stringify(updatedSettings));
       }
     });
-    return cleanup;
+    return () => { if (typeof cleanup === 'function') cleanup(); };
   }, [voiceEnabled, settings]);
 
   // FIX 3: Settings updated listener (sync from backend)
@@ -561,7 +562,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       }
       localStorage.setItem('settings', JSON.stringify(newSettings));
     });
-    return cleanup;
+    return () => { if (typeof cleanup === 'function') cleanup(); };
   }, [voiceEnabled, imageGenEnabled, settings]);
 
   // ============================================================================
@@ -681,14 +682,18 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   useEffect(() => {
     if (messages.length > 0 && sessionId) {
-      saveCurrentSession();
-      
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        saveCurrentSession();
+      }, 500);
+
       const env = detectEnvironmentFromMessages(messages);
       const state = detectStateFromMessages(messages);
-      
+
       if (env !== currentEnvironment) setCurrentEnvironment(env);
       if (state !== currentState) setCurrentState(state);
     }
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [messages, passionLevel, sessionId]);
 
   const saveCurrentSession = async () => {
@@ -884,7 +889,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         handleSpeak(safeResponse);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('[ChatInterface] Send error:', error);
+      const errorMsg = error?.message === 'The operation was aborted'
+        ? (t.chat?.timeout || 'Request timed out')
+        : (t.chat?.sendError || 'Failed to get response');
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
       inputRef.current?.focus();
@@ -1651,7 +1660,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         <div className="max-w-5xl mx-auto">
           {messages.map((message, index) => (
             <MessageBubble
-              key={index}
+              key={`${message.timestamp || index}-${message.role}`}
               message={message}
               isUser={message.role === 'user'}
               character={character}

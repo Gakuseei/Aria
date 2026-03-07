@@ -413,9 +413,12 @@ CRITICAL POV & AGENCY RULES:
 CHARACTER NAME: ${character.name}
 
 CHARACTER DESCRIPTION:
-${character.description || character.systemPrompt || 'No description provided.'}`;
+${character.description || 'No description provided.'}`;
 
-  // PRIORITY: character.instructions (highest priority - overrides everything)
+  if (character.systemPrompt && character.systemPrompt.trim().length > 0) {
+    identity += `\n\nDETAILED CHARACTER PERSONA:\n${character.systemPrompt}`;
+  }
+
   if (character.instructions && character.instructions.trim().length > 0) {
     identity += `\n\n⚠️ CRITICAL CHARACTER INSTRUCTIONS (ABSOLUTE PRIORITY):
 ${character.instructions}`;

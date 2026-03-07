@@ -693,13 +693,16 @@ Key sensations: ${sensoryGuidance.details.join(', ')}`;
     'de': 'German',
     'es': 'Spanish',
     'cn': 'Chinese',
+    'zh': 'Chinese',
     'fr': 'French',
     'it': 'Italian',
     'pt': 'Portuguese',
     'ru': 'Russian',
     'ja': 'Japanese',
     'ko': 'Korean',
-    'ar': 'Arabic'
+    'ar': 'Arabic',
+    'hi': 'Hindi',
+    'tr': 'Turkish'
   };
 
   let languageEnforcement = '';
@@ -732,7 +735,21 @@ You MUST write ALL text (dialogue, narration, actions, thoughts) in ${languageNa
 
 ${!isEnglish ? `EXAMPLES:
 ❌ WRONG (English): "I understand master"
-✅ CORRECT (${languageName}): "${language === 'de' ? 'Ich verstehe, Meister' : language === 'ru' ? 'Я понимаю, Хозяин' : '...'}"` : ''}
+✅ CORRECT (${languageName}): "${
+  language === 'de' ? 'Ich verstehe, Meister' :
+  language === 'ru' ? 'Я понимаю, Хозяин' :
+  language === 'es' ? 'Entiendo, Maestro' :
+  language === 'fr' ? 'Je comprends, Maître' :
+  language === 'it' ? 'Capisco, Padrone' :
+  language === 'pt' ? 'Eu entendo, Mestre' :
+  (language === 'cn' || language === 'zh') ? '我明白了，主人' :
+  language === 'ja' ? '分かりました、ご主人様' :
+  language === 'ko' ? '알겠습니다, 주인님' :
+  language === 'ar' ? 'أنا أفهم، يا سيدي' :
+  language === 'hi' ? 'मैं समझता हूँ, मालिक' :
+  language === 'tr' ? 'Anlıyorum, Efendim' :
+  '...'
+}"` : ''}
 
 This instruction OVERRIDES all other language detection. The user explicitly selected ${languageName} - respect their choice absolutely.`;
   }
@@ -826,8 +843,12 @@ Mind-break is the goal. Show the struggle. Make it visceral.
       it: '*si avvicina* "Lascia che ti mostri qualcosa..." *sussurra all\'orecchio*',
       pt: '*se aproxima* "Deixe-me mostrar algo..." *sussurra no ouvido*',
       cn: '*靠近* "让我给你看点东西..." *在耳边低语*',
+      zh: '*靠近* "让我给你看点东西..." *在耳边低语*',
       ja: '*近づく* "何か見せてあげる..." *耳元でささやく*',
-      ko: '*다가간다* "뭔가 보여줄게..." *귓가에 속삭인다*'
+      ko: '*다가간다* "뭔가 보여줄게..." *귓가에 속삭인다*',
+      ar: '*يقترب* "دعني أريك شيئاً..." *يهمس في أذنك*',
+      hi: '*करीब आता है* "मुझे तुम्हें कुछ दिखाने दो..." *कान में फुसफुसाता है*',
+      tr: '*yaklaşır* "Sana bir şey göstereyim..." *kulağına fısıldar*'
     };
     const exampleText = examples[language] || `*[action in ${languageName}]* "[dialogue in ${languageName}]..." *[continuation in ${languageName}]*`;
 
@@ -1739,6 +1760,7 @@ export const generateSmartSuggestions = async (messages, character, language = '
       'de': 'German',
       'es': 'Spanish',
       'cn': 'Chinese',
+      'zh': 'Chinese',
       'fr': 'French',
       'it': 'Italian',
       'pt': 'Portuguese',

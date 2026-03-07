@@ -1015,7 +1015,9 @@ export const sendMessage = async (
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
     const model = settings.ollamaModel || 'llama3';
     const caps = await getModelCapabilities(ollamaUrl, model);
-    const modelCtx = Math.min(caps.contextLength, 16384);
+    const paramB = parseFloat(caps.parameterSize) || 7;
+    const ctxCap = paramB <= 3 ? 4096 : paramB <= 10 ? 8192 : 16384;
+    const modelCtx = Math.min(caps.contextLength, ctxCap);
 
     const historyToUse = Array.isArray(conversationHistory)
       ? conversationHistory.slice(-12)

@@ -1069,9 +1069,15 @@ export const sendMessage = async (
     // This prevents the AI from hallucinating "User:" and "Assistant:" labels
 
     const promptTokens = estimateTokens(finalSystemPrompt);
-    const availableForHistory = modelCtx - promptTokens - 300;
-    const maxMessages = Math.max(2, Math.min(12, Math.floor(availableForHistory / 150)));
-    const trimmedHistory = updatedHistory.slice(-maxMessages);
+    const numPredict = 1024;
+    const availableForHistory = modelCtx - promptTokens - numPredict - 128;
+
+    let trimmedHistory = updatedHistory.slice(-12);
+    while (trimmedHistory.length > 2) {
+      const historyTokens = trimmedHistory.reduce((sum, m) => sum + estimateTokens(m.content || ''), 0);
+      if (historyTokens <= availableForHistory) break;
+      trimmedHistory = trimmedHistory.slice(1);
+    }
 
     console.log(`[API] Prompt ~${promptTokens}t, history: ${trimmedHistory.length}/${updatedHistory.length} msgs, num_ctx: ${modelCtx}`);
 
@@ -1116,10 +1122,40 @@ export const sendMessage = async (
       throw new Error(`Ollama error: ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    let data = await response.json();
 
     if (!data.message || !data.message.content) {
-      throw new Error('No response from Ollama');
+      if (trimmedHistory.length > 2) {
+        console.warn(`[API] Empty response — retrying with fewer messages (${trimmedHistory.length} → 2)`);
+        const retryMessages = [
+          { role: 'system', content: finalSystemPrompt },
+          ...trimmedHistory.slice(-2).map(m => ({ role: m.role, content: m.content }))
+        ];
+        const retryCtrl = new AbortController();
+        const retryTimer = setTimeout(() => retryCtrl.abort(), 120000);
+        try {
+          const retryRes = await fetch(`${ollamaUrl}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: retryCtrl.signal,
+            body: JSON.stringify({
+              model, messages: retryMessages, stream: false,
+              options: { temperature: settings.temperature ?? 0.8, num_predict: 1024, num_ctx: modelCtx, repeat_penalty: 1.2, top_p: 0.9, top_k: 40 },
+              stop: ['\nUser:', '\nHuman:', '\nAssistant:', '\nAI:', '\nCharacter:']
+            })
+          });
+          clearTimeout(retryTimer);
+          if (retryRes.ok) {
+            const retryData = await retryRes.json();
+            if (retryData.message?.content) {
+              data = retryData;
+            }
+          }
+        } catch { /* retry failed, fall through */ }
+      }
+      if (!data.message || !data.message.content) {
+        throw new Error('No response from Ollama');
+      }
     }
 
     let aiMessage = data.message.content.trim();

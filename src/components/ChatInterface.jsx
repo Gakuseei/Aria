@@ -66,15 +66,13 @@ function formatMessageText(text, isGoldMode = false) {
 // MESSAGE BUBBLE COMPONENT
 // ============================================================================
 
-function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false }) {
+function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false, isSupporter = false }) {
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
-  // BLOCK 7.0: Gold Mode - Check supporter status for amber name
-  const isSupporter = localStorage.getItem('isSupporter') === 'true';
 
   // v0.2.5 ROSE NOIR: Avatar styling
   const avatarLetter = isUser ? (userName?.[0] || 'U') : (character?.name?.[0] || 'A');
@@ -334,6 +332,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   
   // Merge parent settings with local settings (memoized to prevent useEffect churn)
   const settings = useMemo(() => ({ ...localSettings, ...parentSettings }), [localSettings, parentSettings]);
+  const isSupporter = useMemo(() => localStorage.getItem('isSupporter') === 'true', []);
 
   // Voice Settings Popover State
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
@@ -473,7 +472,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         setImageGenEnabled(loadedSettings.imageGenEnabled || false);
         // STEP 2 FIX: Use voiceEnabled from IPC/backend settings (explicit boolean check)
         const savedVoiceEnabled = loadedSettings.voiceEnabled === true;
-        console.log('[ChatInterface] Loaded voiceEnabled from settings:', savedVoiceEnabled);
         setVoiceEnabled(savedVoiceEnabled);
         setSmartSuggestionsEnabled(loadedSettings.smartSuggestionsEnabled !== false);  // Default ON
 
@@ -481,24 +479,17 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         const savedFontSize = localStorage.getItem('chatFontSize') || 'base';
         setFontSize(savedFontSize);
 
-        console.log('[v8.1 ChatInterface] ✅ Settings loaded:', { userName, imageGenEnabled, voiceEnabled, fontSize: savedFontSize });
-
         // v0.2.5: AUTO-DETECT MODEL WHEN OPENING CHAT
-        console.log('[v8.2 ChatInterface] 🔍 Auto-detecting Ollama model...');
         const autoDetectResult = await autoDetectAndSetModel();
 
         if (autoDetectResult.success) {
-          if (autoDetectResult.changed) {
-            console.log(`[v8.2 ChatInterface] 🎯 Model auto-configured: ${autoDetectResult.model}`);
-          } else {
-            console.log(`[v8.2 ChatInterface] ✅ Model already configured: ${autoDetectResult.model}`);
-          }
         } else {
           console.warn('[v8.2 ChatInterface] ⚠️ No models found. User needs to install a model.');
         }
 
         // v0.2.5: Generate initial suggestions (chat starters)
-        if (settings.smartSuggestionsEnabled !== false) {
+        const mergedSmartSuggestions = loadedSettings.smartSuggestionsEnabled ?? backendSettings.smartSuggestionsEnabled ?? true;
+        if (mergedSmartSuggestions !== false) {
           generateSuggestions([]);
         }
       } catch (error) {
@@ -549,7 +540,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       // Image Generation sync
       if (newSettings.imageGenEnabled !== undefined && newSettings.imageGenEnabled !== imageGenEnabled) {
         setImageGenEnabled(newSettings.imageGenEnabled);
-        console.log('[ChatInterface] Image Generation synced:', newSettings.imageGenEnabled);
       }
       if (newSettings.imageGenUrl !== undefined) {
         setLocalSettings(prev => ({ ...prev, imageGenUrl: newSettings.imageGenUrl }));
@@ -618,59 +608,51 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // ============================================================================
 
   useEffect(() => {
+    const initializeChat = async () => {
+      // Check if we're restoring a saved session
+      if (loadedSession && loadedSession.messages && loadedSession.messages.length > 0) {
+        const restoredSessionId = loadedSession.sessionId || generateSessionId();
+        setSessionId(restoredSessionId);
+        setMessages(loadedSession.messages);
+        const restoredLevel = loadedSession.passionLevel || 0;
+        previousTierRef.current = getTierKey(restoredLevel);
+        setPassionLevel(restoredLevel);
+        if (restoredSessionId) {
+          passionManager.setPassion(restoredSessionId, restoredLevel);
+        }
+
+        return;
+      }
+
+      // v0.2.5 FIX: Generate UNIQUE session ID for each new chat (not per character)
+      // This ensures Passion Level resets to 0 for new chats
+      const newSessionId = generateSessionId();
+      setSessionId(newSessionId);
+
+      // ALWAYS start with Passion Level 0 for new chats
+      setPassionLevel(0);
+
+      if (character?.id) {
+        const memory = passionManager.getCharacterMemory(character.id);
+        if (memory && memory.lastLevel > 0) {
+          setPassionResumeData(memory);
+          setShowPassionResumeModal(true);
+        }
+      }
+
+      initializeGreeting();
+    };
+
     initializeChat();
   }, [character]);
-
-  const initializeChat = async () => {
-    // Check if we're restoring a saved session
-    if (loadedSession && loadedSession.messages && loadedSession.messages.length > 0) {
-      const restoredSessionId = loadedSession.sessionId || generateSessionId();
-      setSessionId(restoredSessionId);
-      setMessages(loadedSession.messages);
-      const restoredLevel = loadedSession.passionLevel || 0;
-      previousTierRef.current = getTierKey(restoredLevel);
-      setPassionLevel(restoredLevel);
-      if (restoredSessionId) {
-        passionManager.setPassion(restoredSessionId, restoredLevel);
-      }
-
-      console.log('[v1.0 ChatInterface] 📂 Restored saved session:', restoredSessionId);
-      console.log('[v1.0 ChatInterface] 💬 Messages:', loadedSession.messages.length);
-      console.log('[v1.0 ChatInterface] 🔥 Passion Level:', loadedSession.passionLevel || 0);
-      return;
-    }
-
-    // v0.2.5 FIX: Generate UNIQUE session ID for each new chat (not per character)
-    // This ensures Passion Level resets to 0 for new chats
-    const newSessionId = generateSessionId();
-    setSessionId(newSessionId);
-
-    // ALWAYS start with Passion Level 0 for new chats
-    setPassionLevel(0);
-
-    console.log('[v9.2 ChatInterface] 🆕 Starting NEW chat session:', newSessionId);
-    console.log('[v9.2 ChatInterface] 🔥 Passion Level: 0 (fresh start)');
-
-    if (character?.id) {
-      const memory = passionManager.getCharacterMemory(character.id);
-      if (memory && memory.lastLevel > 0) {
-        setPassionResumeData(memory);
-        setShowPassionResumeModal(true);
-      }
-    }
-
-    initializeGreeting();
-  };
 
   const initializeGreeting = () => {
     let greeting;
 
     if (character.id && t.characters && t.characters[character.id] && t.characters[character.id].greeting) {
       greeting = t.characters[character.id].greeting;
-      console.log('[v1.0 ChatInterface] Using translated greeting for', character.id);
     } else {
       greeting = character.greeting || character.startingMessage || `*smiles warmly* Hey! I'm ${character.name}.`;
-      console.log('[v1.0 ChatInterface] Using original greeting (custom character or fallback)');
     }
 
     setMessages([{ role: 'assistant', content: greeting.trim(), timestamp: Date.now() }]);
@@ -787,7 +769,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     const recentContext = messages.slice(-3).map(m => m.content).join(' ');
     const visualPrompt = `NSFW, intimate scene, ${character.name}, ${recentContext.substring(0, 200)}`;
     
-    console.log('[v1.0 Image Gen AUTO] Generating:', visualPrompt);
     // TODO: Call IPC handler for image generation
   };
 
@@ -796,7 +777,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
     setGeneratingImage(true);
     try {
-      console.log('[BLOCK 8.1 Image Gen] Generating:', imagePrompt);
 
       // Generate image using AUTOMATIC1111 API
       const base64Image = await generateImage(imagePrompt, settings.imageGenUrl, settings.imageGenTier || 'standard');
@@ -813,7 +793,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       setImagePrompt('');
       setShowImageModal(false);
 
-      console.log('[BLOCK 8.1 Image Gen] ✅ Image generated successfully');
     } catch (error) {
       console.error('[BLOCK 8.1 Image Gen] ❌ Error:', error);
       toast.error((t.chat.imageGenFailed || '').replace('{error}', error.message));
@@ -983,7 +962,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   const handleClearChat = async (skipConfirmation = false) => {
     const doReset = async () => {
-      console.log('[v9.2 ChatInterface] 🗑️ HARD RESET: Deleting chat...');
 
       initializeGreeting();
       setCurrentEnvironment(null);
@@ -991,7 +969,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       try {
         await deleteSession(sessionId);
-        console.log('[v9.2 ChatInterface] ✅ Session HARD RESET complete');
       } catch (error) {
         console.error('[v9.2 ChatInterface] ❌ Error during hard reset:', error);
       }
@@ -1182,7 +1159,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       return;
     }
     setShowImagePanel(!showImagePanel);
-    console.log('[v8.1 ChatInterface] 🎨 Image panel toggled');
   };
 
   // Voice Settings Toggle Handler
@@ -1459,8 +1435,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                         // STEP 2 FIX: Handle null state (not loaded yet)
                         const currentValue = voiceEnabled === null ? false : voiceEnabled;
                         const newValue = !currentValue;
-                        console.log('[ChatInterface] Toggling voice:', currentValue, '->', newValue);
-                        
                         // STEP 2 FIX: Save immediately via IPC (broadcasts automatically)
                         const updatedSettings = { ...settings, voiceEnabled: newValue };
                         localStorage.setItem('settings', JSON.stringify(updatedSettings));
@@ -1681,9 +1655,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
               voiceEnabled={voiceEnabled}
               fontSize={fontSize}
               isGoldMode={isGoldMode}
+              isSupporter={isSupporter}
             />
           ))}
-          
+
           {isLoading && (
             <div className="flex justify-start mb-4">
               <div className="relative mr-3 flex-shrink-0">
@@ -1722,7 +1697,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           <div className="flex gap-2.5 mb-4 flex-wrap justify-center">
             {smartSuggestions.map((suggestion, i) => (
               <button
-                key={i}
+                key={`suggestion-${suggestion.slice(0, 20)}-${i}`}
                 onClick={() => handleSuggestionClick(suggestion)}
                 disabled={isLoading}
                 className={`px-4 py-2 bg-zinc-900/95 backdrop-blur-2xl border rounded-full text-sm transition-all duration-200 disabled:opacity-50 flex items-center gap-2 shadow-lg ${
@@ -1804,7 +1779,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                       currentSettings.imageGenEnabled = true;
                       localStorage.setItem('settings', JSON.stringify(currentSettings));
                       await window.electronAPI?.saveSettings?.(currentSettings);
-                      console.log('[ChatInterface] Image Generation enabled directly');
                     }}
                     className="w-full px-4 py-2.5 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/50 rounded-lg text-purple-300 font-medium transition-all flex items-center justify-center gap-2"
                   >

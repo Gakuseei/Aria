@@ -177,7 +177,44 @@ const DEFAULT_SETTINGS = {
   passionSpeedMultiplier: 1.0
 };
 
-const PASSION_SCORING_TIMEOUT_MS = 3000;
+const PASSION_SCORING_TIMEOUT_MS = 15000;
+
+const MODEL_CAPS_CACHE = {};
+
+async function getModelCapabilities(ollamaUrl, modelName) {
+  const cacheKey = `${ollamaUrl}::${modelName}`;
+  if (MODEL_CAPS_CACHE[cacheKey]) return MODEL_CAPS_CACHE[cacheKey];
+
+  const defaults = { contextLength: 4096, parameterSize: '7B' };
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(`${ollamaUrl}/api/show`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({ name: modelName })
+    });
+    clearTimeout(timer);
+    if (!res.ok) return defaults;
+    const info = await res.json();
+
+    const ctxParam = info.model_info?.['general.context_length']
+      || info.model_info?.['llama.context_length']
+      || info.model_info?.['qwen2.context_length'];
+    const contextLength = typeof ctxParam === 'number' ? ctxParam : 4096;
+
+    const paramRaw = info.details?.parameter_size || '7B';
+    MODEL_CAPS_CACHE[cacheKey] = { contextLength, parameterSize: paramRaw };
+    return MODEL_CAPS_CACHE[cacheKey];
+  } catch {
+    return defaults;
+  }
+}
+
+function estimateTokens(text) {
+  return Math.ceil(text.length / 3.5);
+}
 
 /**
  * Score romantic/sexual intensity of a message exchange using the LLM.
@@ -201,7 +238,7 @@ async function scorePassionLLM(userMessage, aiMessage, settings) {
           content: `Rate romantic/sexual intensity change. Reply with ONLY one integer from -5 to 10.\n-5=strong rejection, 0=neutral, 5=moderate romance, 10=explicit.\n\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`
         }],
         stream: false,
-        options: { temperature: 0.1, num_predict: 5, num_ctx: 512 }
+        options: { temperature: 0.1, num_predict: 20, num_ctx: 1024 }
       })
     });
     if (!response.ok) return 0;
@@ -211,7 +248,8 @@ async function scorePassionLLM(userMessage, aiMessage, settings) {
     const score = parseInt(match[1], 10);
     if (isNaN(score) || score < -5 || score > 10) return 0;
     return score;
-  } catch {
+  } catch (err) {
+    console.warn('[API] Passion scoring failed:', err?.message || 'timeout');
     return 0;
   } finally {
     clearTimeout(timer);
@@ -302,7 +340,8 @@ function generateSystemPrompt({
   passionEnabled,
   userGender = 'male', // v0.2.5 NEW
   language = 'en', // v0.2.5: User-selected language from Settings
-  sessionId = null
+  sessionId = null,
+  modelCtx = 16384
 }) {
   // ============================================================================
   // BLOCK 1: THE FOUNDATION (Global Physics - Universal Rules)
@@ -463,7 +502,7 @@ SPEAK NATURALLY as ${character.name} would speak:
   if (passionEnabled) {
     const tierKey = getTierKey(passionLevel);
 
-    const passionProfileValue = character?.passionProfile || 0.7;
+    const passionProfileValue = Math.max(0, Math.min(1, character?.passionProfile ?? 0.7));
     let personalityHint = '';
     if (passionProfileValue <= 0.5) {
       personalityHint = 'THIS CHARACTER IS SHY/RESERVED — they resist, deflect, and need patience.';
@@ -472,6 +511,10 @@ SPEAK NATURALLY as ${character.name} would speak:
     } else {
       personalityHint = 'THIS CHARACTER IS BOLD/EAGER — they are willing, forward, and enthusiastic.';
     }
+
+    if (modelCtx <= 4096) {
+      passionGatekeeper = `\n\n━━━ PASSION: ${tierKey.toUpperCase()} (${passionLevel}/100) ━━━\n${personalityHint}\nMatch intensity to tier. Shy=reserved, Curious=hesitant, Flirty=teasing, Heated=explicit, Passionate=intense, Primal=unleashed.`;
+    } else {
 
     switch (tierKey) {
       case 'shy':
@@ -704,6 +747,7 @@ PRIMAL INTENSITY GUIDANCE:
 - If they want more — give more. If they want harder — give harder
 - The only language here is the language of raw, unrestrained desire`;
         break;
+    }
     }
   } else {
     // UNCHAINED MODE - Placeholder (real override happens at the END)
@@ -1059,13 +1103,16 @@ export const sendMessage = async (
   try {
     const settings = { ...(settingsOverride || await loadSettings()) };
 
-    // v0.2.5 PERFORMANCE: Sliding Window (10-15 messages) for faster responses
-    const CONTEXT_WINDOW = 12;
+    const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
+    const model = settings.ollamaModel || 'llama3';
+    const caps = await getModelCapabilities(ollamaUrl, model);
+    const modelCtx = Math.min(caps.contextLength, 16384);
+
     const historyToUse = Array.isArray(conversationHistory)
-      ? conversationHistory.slice(-CONTEXT_WINDOW)
+      ? conversationHistory.slice(-12)
       : [];
 
-    console.log('[v1.0 API] 🧠 Context window:', historyToUse.length, '/', CONTEXT_WINDOW);
+    console.log(`[API] Model: ${model}, ctx: ${modelCtx}, caps: ${caps.parameterSize}`);
 
     // Add user message to history
     const userMsg = { role: 'user', content: userMessage };
@@ -1112,7 +1159,8 @@ export const sendMessage = async (
       passionEnabled: unchainedMode ? false : settings.passionSystemEnabled,
       userGender: userGender, // v0.2.5 NEW
       language: selectedLanguage, // v0.2.5: Language enforcement
-      sessionId: sessionId
+      sessionId: sessionId,
+      modelCtx: modelCtx
     });
 
     console.log('[v9.2 API] 📋 Final system prompt length:', finalSystemPrompt.length);
@@ -1123,39 +1171,48 @@ export const sendMessage = async (
     // CRITICAL: Use Ollama's /api/chat endpoint with proper message format
     // This prevents the AI from hallucinating "User:" and "Assistant:" labels
 
-    const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
-    const model = settings.ollamaModel || 'llama3';
+    const promptTokens = estimateTokens(finalSystemPrompt);
+    const availableForHistory = modelCtx - promptTokens - 300;
+    const maxMessages = Math.max(2, Math.min(12, Math.floor(availableForHistory / 150)));
+    const trimmedHistory = updatedHistory.slice(-maxMessages);
 
-    console.log(`[v8.2 API] 🤖 Calling Ollama: ${ollamaUrl} | Model: ${model}`);
+    console.log(`[API] Prompt ~${promptTokens}t, history: ${trimmedHistory.length}/${updatedHistory.length} msgs, num_ctx: ${modelCtx}`);
 
-    // Build messages array for /api/chat endpoint with system message
     const messages = [
       { role: 'system', content: finalSystemPrompt },
-      ...updatedHistory.map(msg => ({
+      ...trimmedHistory.map(msg => ({
         role: msg.role,
         content: msg.content
       }))
     ];
 
-    const response = await fetch(`${ollamaUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: model,
-        messages: messages,
-        stream: false,
-        options: {
-          temperature: settings.temperature || 0.8,
-          num_predict: 1024,
-          num_ctx: 4096,
-          repeat_penalty: 1.2,
-          top_p: 0.9,
-          top_k: 40
-        },
-        // CRITICAL: Stop sequences prevent AI from speaking for the user
-        stop: ['User:', '\nUser ', 'User', 'Human:', '\nHuman']
-      })
-    });
+    const fetchController = new AbortController();
+    const fetchTimer = setTimeout(() => fetchController.abort(), 120000);
+
+    let response;
+    try {
+      response = await fetch(`${ollamaUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: fetchController.signal,
+        body: JSON.stringify({
+          model: model,
+          messages: messages,
+          stream: false,
+          options: {
+            temperature: settings.temperature ?? 0.8,
+            num_predict: 1024,
+            num_ctx: modelCtx,
+            repeat_penalty: 1.2,
+            top_p: 0.9,
+            top_k: 40
+          },
+          stop: ['User:', '\nUser ', 'User', 'Human:', '\nHuman', 'Assistant:', 'AI:', 'Character:']
+        })
+      });
+    } finally {
+      clearTimeout(fetchTimer);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -1187,39 +1244,41 @@ export const sendMessage = async (
     const assistantMsg = { role: 'assistant', content: aiMessage };
     const finalHistory = [...updatedHistory, assistantMsg];
 
-    // PASSION SCORING (synchronous LLM-based)
     let passionRawScore = null;
     let passionAdjustedScore = null;
     if (settings.passionSystemEnabled && sessionId && !skipPassionUpdate) {
-      const rawScore = await scorePassionLLM(userMessage, aiMessage, settings);
-      passionRawScore = rawScore;
+      try {
+        const rawScore = await scorePassionLLM(userMessage, aiMessage, settings);
+        passionRawScore = rawScore;
 
-      const rawProfile = character?.passionProfile;
-      const profileValue = (typeof rawProfile === 'number' && !isNaN(rawProfile)) ? rawProfile : 0.7;
-      const userSpeed = settings.passionSpeedMultiplier || 1.0;
-      let adjustedScore;
+        const rawProfile = character?.passionProfile;
+        const profileValue = Math.max(0, Math.min(1, (typeof rawProfile === 'number' && !isNaN(rawProfile)) ? rawProfile : 0.7));
+        const userSpeed = settings.passionSpeedMultiplier ?? 1.0;
+        let adjustedScore;
 
-      if (rawScore > 0) {
-        adjustedScore = rawScore * profileValue * userSpeed;
-      } else if (rawScore < 0) {
-        adjustedScore = rawScore * (2.0 - profileValue);
-      } else {
-        adjustedScore = 0;
+        if (rawScore > 0) {
+          adjustedScore = rawScore * profileValue * userSpeed;
+        } else if (rawScore < 0) {
+          adjustedScore = rawScore * (2.0 - profileValue);
+        } else {
+          adjustedScore = 0;
+        }
+
+        const scoringMomentum = passionManager.getMomentum(sessionId);
+        if (scoringMomentum > 1.5 && adjustedScore < 0) {
+          adjustedScore *= 0.5;
+        } else if (scoringMomentum < -1.5 && adjustedScore > 0) {
+          adjustedScore *= 0.5;
+        }
+
+        passionAdjustedScore = adjustedScore;
+        const previousLevel = currentPassionLevel;
+        const newPassionLevel = passionManager.applyScore(sessionId, adjustedScore);
+        console.log(`[API] Passion: ${previousLevel} -> ${newPassionLevel} (raw=${rawScore}, adjusted=${adjustedScore.toFixed(1)})`);
+        currentPassionLevel = newPassionLevel;
+      } catch (passionErr) {
+        console.warn('[API] Passion scoring error (non-fatal):', passionErr?.message);
       }
-
-      // Mood inertia: dampen whiplash when score contradicts strong momentum
-      const scoringMomentum = passionManager.getMomentum(sessionId);
-      if (scoringMomentum > 1.5 && adjustedScore < 0) {
-        adjustedScore *= 0.5;
-      } else if (scoringMomentum < -1.5 && adjustedScore > 0) {
-        adjustedScore *= 0.5;
-      }
-
-      passionAdjustedScore = adjustedScore;
-      const previousLevel = currentPassionLevel;
-      const newPassionLevel = passionManager.applyScore(sessionId, adjustedScore);
-      console.log(`[API] Passion: ${previousLevel} -> ${newPassionLevel} (raw=${rawScore}, adjusted=${adjustedScore.toFixed(1)})`);
-      currentPassionLevel = newPassionLevel;
     }
 
     console.log('[v8.1 API] ✅ Message processed successfully');
@@ -2050,26 +2109,35 @@ Format: 4 lines of pure text.`;
     const languageInstruction = `\n\nIMPORTANT: Generate ALL suggestions in ${actualLanguageName} language. Do NOT use English unless the language is English.`;
     const finalSuggestionPrompt = suggestionPrompt + languageInstruction;
 
-    const response = await fetch(`${ollamaUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: model,
-        messages: [{ role: 'user', content: finalSuggestionPrompt }],
-        stream: false,
-        options: {
-          temperature: 0.85,
-          num_predict: 100
-        }
-      })
-    });
+    const suggestController = new AbortController();
+    const suggestTimer = setTimeout(() => suggestController.abort(), 30000);
+
+    let response;
+    try {
+      response = await fetch(`${ollamaUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: suggestController.signal,
+        body: JSON.stringify({
+          model: model,
+          messages: [{ role: 'user', content: finalSuggestionPrompt }],
+          stream: false,
+          options: {
+            temperature: 0.85,
+            num_predict: 100
+          }
+        })
+      });
+    } finally {
+      clearTimeout(suggestTimer);
+    }
 
     if (!response.ok) {
       throw new Error('Ollama request failed');
     }
 
     const data = await response.json();
-    const rawSuggestions = data.message.content.trim().split('\n').filter(s => s.trim());
+    const rawSuggestions = (data.message?.content || '').trim().split('\n').filter(s => s.trim());
 
     // Clean and limit
     const suggestions = rawSuggestions

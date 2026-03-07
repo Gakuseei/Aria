@@ -238,7 +238,7 @@ async function scorePassionLLM(userMessage, aiMessage, settings) {
           content: `Rate romantic/sexual intensity change. Reply with ONLY one integer from -5 to 10.\n-5=strong rejection, 0=neutral, 5=moderate romance, 10=explicit.\n\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`
         }],
         stream: false,
-        options: { temperature: 0.1, num_predict: 20, num_ctx: 1024 }
+        options: { temperature: 0.1, num_predict: 20 }
       })
     });
     if (!response.ok) return 0;
@@ -1110,9 +1110,7 @@ export const sendMessage = async (
 
     console.log(`[API] Model: ${model}, ctx: ${modelCtx}, caps: ${caps.parameterSize}`);
 
-    // Add user message to history
-    const userMsg = { role: 'user', content: userMessage };
-    const updatedHistory = [...historyToUse, userMsg];
+    const updatedHistory = historyToUse;
 
     // LANGUAGE DETECTION
     const languageAnalysis = analyzeConversationLanguage(updatedHistory);

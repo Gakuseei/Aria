@@ -871,7 +871,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       console.error('[ChatInterface] Send error:', error);
       const errorMsg = error?.message === 'The operation was aborted'
         ? (t.chat?.timeout || 'Request timed out')
-        : (t.chat?.sendError || 'Failed to get response');
+        : (t.chat?.sendError || error?.message || 'Failed to get response');
       toast.error(errorMsg);
     } finally {
       setIsLoading(false);

@@ -79,6 +79,7 @@ function App() {
     voiceUrl: 'http://127.0.0.1:5000',
     voiceTier: 'standard', // 'standard' (Piper) or 'premium' (Zonos)
     passionSystemEnabled: true,
+    passionSpeedMultiplier: 1.0,
     fontSize: 'medium',
     autoSave: true,
     smartSuggestionsEnabled: false, // AUFGABE 2: Replaced soundEnabled
@@ -111,22 +112,23 @@ function App() {
           const mergedSettings = {
             ollamaUrl: loadedSettings.ollamaUrl || 'http://127.0.0.1:11434',
             ollamaModel: loadedSettings.ollamaModel || 'lukey03/qwen3.5-9b-abliterated-vision',
-            temperature: loadedSettings.temperature || 0.85,
+            temperature: loadedSettings.temperature ?? 0.85,
             userName: loadedSettings.userName || 'User',
             userGender: loadedSettings.userGender || 'male',
-            imageGenEnabled: loadedSettings.imageGenEnabled || false,
+            imageGenEnabled: loadedSettings.imageGenEnabled ?? false,
             imageGenUrl: loadedSettings.imageGenUrl || 'http://127.0.0.1:7860',
             imageGenTier: loadedSettings.imageGenTier || 'standard',
-            voiceEnabled: loadedSettings.voiceEnabled || false,
+            voiceEnabled: loadedSettings.voiceEnabled ?? false,
             voiceUrl: loadedSettings.voiceUrl || 'http://127.0.0.1:5000',
             voiceTier: loadedSettings.voiceTier || 'standard',
-            passionSystemEnabled: loadedSettings.passionSystemEnabled !== false,
+            passionSystemEnabled: loadedSettings.passionSystemEnabled ?? true,
+            passionSpeedMultiplier: loadedSettings.passionSpeedMultiplier ?? 1.0,
             fontSize: loadedSettings.fontSize || 'medium',
-            autoSave: loadedSettings.autoSave !== false,
+            autoSave: loadedSettings.autoSave ?? true,
             // AUFGABE 2: Migrate soundEnabled to smartSuggestionsEnabled
-            smartSuggestionsEnabled: loadedSettings.smartSuggestionsEnabled || false,
-            animationsEnabled: loadedSettings.animationsEnabled !== false,
-            oledMode: loadedSettings.oledMode || false,
+            smartSuggestionsEnabled: loadedSettings.smartSuggestionsEnabled ?? false,
+            animationsEnabled: loadedSettings.animationsEnabled ?? true,
+            oledMode: loadedSettings.oledMode ?? false,
             preferredLanguage: loadedSettings.preferredLanguage || 'en'
           };
 

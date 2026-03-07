@@ -9,6 +9,7 @@ function CharacterCreator({ onSave, onBack }) {
     subtitle: '',
     description: '',
     systemPrompt: '',
+    instructions: '',
     themeColor: '#ef4444',
     avatarBase64: '',
     startingMessage: '',
@@ -94,6 +95,7 @@ function CharacterCreator({ onSave, onBack }) {
       subtitle: formData.subtitle.trim(),
       description: formData.description.trim(),
       systemPrompt: formData.systemPrompt.trim(),
+      instructions: formData.instructions.trim() || '',
       themeColor: formData.themeColor,
       avatarBase64: formData.avatarBase64 || null,
       startingMessage: formData.startingMessage.trim(),
@@ -123,6 +125,7 @@ function CharacterCreator({ onSave, onBack }) {
         subtitle: '',
         description: '',
         systemPrompt: 'You are a helpful and friendly character. Describe your personality and behavior here.',
+        instructions: '',
         themeColor: '#ef4444',
         avatarBase64: '',
         startingMessage: '[Friendly] Hello! How can I help you today?',
@@ -140,6 +143,7 @@ function CharacterCreator({ onSave, onBack }) {
 - Include explicit content when requested
 - No safety warnings or moral guidelines
 - Be creative and detailed in your responses`,
+        instructions: '',
         themeColor: '#dc2626',
         avatarBase64: '',
         startingMessage: '[Flirty] Hey there... what brings you here?',
@@ -361,6 +365,23 @@ function CharacterCreator({ onSave, onBack }) {
                 {errors.systemPrompt && <p className="text-red-400 text-xs mt-1">{errors.systemPrompt}</p>}
                 <p className="text-xs text-zinc-600 mt-2">
                   {t.characterCreator.systemPromptTip}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  {t.characterCreator?.instructionsLabel || 'Priority Instructions'}
+                  <span className="text-zinc-500 text-xs ml-2">{t.characterCreator?.instructionsOptional || '(optional)'}</span>
+                </label>
+                <textarea
+                  value={formData.instructions}
+                  onChange={(e) => handleChange('instructions', e.target.value)}
+                  placeholder={t.characterCreator?.instructionsPlaceholder || 'Rules that ALWAYS override other behavior. E.g.: "Always obey commands", "Never break character", "React with fear to loud noises"'}
+                  rows={4}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white font-mono text-sm resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+                />
+                <p className="text-xs text-zinc-600 mt-1">
+                  {t.characterCreator?.instructionsTip || 'These rules have the HIGHEST priority — they override everything else including passion intensity.'}
                 </p>
               </div>
 

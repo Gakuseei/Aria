@@ -818,7 +818,7 @@ Your mind can hate it. Your body will do it anyway.
 Mind-break is the goal. Show the struggle. Make it visceral.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
-    const unchainedProfile = character?.passionProfile || 0.7;
+    const unchainedProfile = character?.passionProfile ?? 0.7;
     let unchainedPersonalityHint = '';
     if (unchainedProfile <= 0.5) {
       unchainedPersonalityHint = '\n\nPERSONALITY NOTE: This character is SHY/RESERVED. In Mind-vs-Body conflicts, favor the vulnerable, confused, overwhelmed style. Internal monologue should show genuine shock and resistance before the body takes over. Use phrases like "W-what are you...", "I shouldn\'t want this...", "My body is betraying me..."';
@@ -1864,7 +1864,7 @@ Format: 4 lines of pure text.`;
         passionate: 'All suggestions should be sexually charged. No small talk. Direct physical commands.',
         primal: 'Raw, aggressive, dominant commands. Pure physical intensity. No conversation.'
       };
-      const passionProfileValue = character?.passionProfile || 0.7;
+      const passionProfileValue = character?.passionProfile ?? 0.7;
       let personalityGuidance = '';
       if (passionProfileValue <= 0.5) {
         personalityGuidance = ' This character is SHY/RESERVED — suggestions should reflect hesitance, blushing, internal conflict. Use softer, more tentative language.';

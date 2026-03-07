@@ -859,8 +859,8 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-zinc-300">{t.settings.passionSpeed}</span>
                     <span className="text-xs text-zinc-500">
-                      {(settings.passionSpeedMultiplier || 1.0) === 1.0 ? '1.0x' :
-                       (settings.passionSpeedMultiplier || 1.0) < 1.0 ? `${t.settings.passionSpeedSlow} (${settings.passionSpeedMultiplier}x)` :
+                      {(settings.passionSpeedMultiplier ?? 1.0) === 1.0 ? '1.0x' :
+                       (settings.passionSpeedMultiplier ?? 1.0) < 1.0 ? `${t.settings.passionSpeedSlow} (${settings.passionSpeedMultiplier}x)` :
                        `${t.settings.passionSpeedFast} (${settings.passionSpeedMultiplier}x)`}
                     </span>
                   </div>
@@ -869,7 +869,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                     min="0.25"
                     max="2.0"
                     step="0.25"
-                    value={settings.passionSpeedMultiplier || 1.0}
+                    value={settings.passionSpeedMultiplier ?? 1.0}
                     onChange={(e) => onSettingChange('passionSpeedMultiplier', parseFloat(e.target.value))}
                     className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-rose-500"
                   />

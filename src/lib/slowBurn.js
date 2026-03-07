@@ -153,11 +153,11 @@ export function getSensoryGuidance(passionLevel, passionProfile) {
   if (passionProfile !== undefined) {
     const safeProfile = Math.max(0, Math.min(1, passionProfile));
     if (safeProfile <= 0.5) {
-      guidance.personalityFlavor = 'Character is RESERVED — emphasize internal conflict, reluctant arousal, body betraying mind.';
+      guidance.personalityFlavor = 'Intensity builds slowly for this character.';
     } else if (safeProfile <= 0.8) {
-      guidance.personalityFlavor = 'Character is BALANCED — natural responses, mutual energy, organic progression.';
+      guidance.personalityFlavor = 'Intensity matches the user\'s energy naturally.';
     } else {
-      guidance.personalityFlavor = 'Character is BOLD — confident reactions, eager body language, initiative and desire.';
+      guidance.personalityFlavor = 'Intensity leads with confident energy.';
     }
   }
 
@@ -188,7 +188,7 @@ export function getPacingReminder(messageCount, passionLevel, passionProfile) {
   }
 
   if (passionLevel <= 15) {
-    return `\n⏱️ SHY: Build tension through stolen glances and nervous awareness. No physical escalation yet.${personalityPacing}`;
+    return `\n⏱️ SHY: Subtle tension. Gentle sensory details.${personalityPacing}`;
   }
   if (passionLevel <= 30) {
     return `\n⏱️ CURIOUS: Allow accidental touches and boundary testing. Keep the mystery alive.${personalityPacing}`;

@@ -1492,6 +1492,64 @@ ipcMain.handle('delete-session', async (event, { sessionId }) => {
 });
 
 // ===========================================
+// CHARACTER SESSION MEMORY
+// ===========================================
+
+const getMemoriesPath = () => path.join(app.getPath('userData'), 'memories');
+
+ipcMain.handle('save-character-memory', async (event, { characterId, sessionId, data }) => {
+  try {
+    if (!characterId || !sessionId) {
+      return { success: false, error: 'Character ID and session ID required' };
+    }
+    const memoriesDir = getMemoriesPath();
+    if (!fs.existsSync(memoriesDir)) {
+      fs.mkdirSync(memoriesDir, { recursive: true });
+    }
+    const memoryPath = path.join(memoriesDir, `${characterId}_${sessionId}.json`);
+    const memoryData = { ...data, savedAt: new Date().toISOString() };
+    fs.writeFileSync(memoryPath, JSON.stringify(memoryData, null, 2));
+    return { success: true };
+  } catch (error) {
+    console.error('Save character memory error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('load-character-memory', async (event, { characterId, sessionId }) => {
+  try {
+    if (!characterId || !sessionId) {
+      return { success: false, error: 'Character ID and session ID required' };
+    }
+    const memoryPath = path.join(getMemoriesPath(), `${characterId}_${sessionId}.json`);
+    if (!fs.existsSync(memoryPath)) {
+      return { success: true, data: null };
+    }
+    const data = JSON.parse(fs.readFileSync(memoryPath, 'utf-8'));
+    return { success: true, data };
+  } catch (error) {
+    console.error('Load character memory error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('delete-character-memory', async (event, { characterId, sessionId }) => {
+  try {
+    if (!characterId || !sessionId) {
+      return { success: false, error: 'Character ID and session ID required' };
+    }
+    const memoryPath = path.join(getMemoriesPath(), `${characterId}_${sessionId}.json`);
+    if (fs.existsSync(memoryPath)) {
+      fs.unlinkSync(memoryPath);
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('Delete character memory error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// ===========================================
 // SETTINGS MANAGEMENT
 // ===========================================
 

@@ -26,7 +26,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadSession: (sessionId) => ipcRenderer.invoke('load-session', { sessionId }),
   listSessions: () => ipcRenderer.invoke('list-sessions'),
   deleteSession: (sessionId) => ipcRenderer.invoke('delete-session', { sessionId }),
-  
+
+  // Character Session Memory
+  saveCharacterMemory: (characterId, sessionId, data) => ipcRenderer.invoke('save-character-memory', { characterId, sessionId, data }),
+  loadCharacterMemory: (characterId, sessionId) => ipcRenderer.invoke('load-character-memory', { characterId, sessionId }),
+  deleteCharacterMemory: (characterId, sessionId) => ipcRenderer.invoke('delete-character-memory', { characterId, sessionId }),
+
   // Settings
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   loadSettings: () => ipcRenderer.invoke('load-settings'),

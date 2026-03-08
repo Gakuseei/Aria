@@ -129,16 +129,33 @@ function cleanTranscriptArtifacts(text) {
     }
   }
 
-  // Remove meta-commentary like "Remember when you..." or "You asked me..."
+  // Remove AI writing-assistant meta-commentary
+  // "Here's a response that maintains the Lily character:" etc.
+  cleaned = cleaned.replace(/^(?:Here(?:'s| is) (?:a |the |my )?(?:response|completion|continuation|reply|scene|roleplay|version)[\s\S]*?:\s*\n*)/i, '');
+
+  // Remove "---" separator lines (scene break artifacts)
+  cleaned = cleaned.replace(/^\s*---+\s*\n?/gm, '');
+
+  // Remove meta-commentary about the character in 3rd person
+  // e.g. "This is typical Alice behavior — dutiful to a fault..."
+  // e.g. "She's making this about research, giving you a safe space..."
+  // e.g. "The key is letting her maintain control..."
+  // e.g. "Remember: she's analytical..."
   const metaPatterns = [
     /Remember (when|what|how) (you|we|I).*?\./gi,
     /You (asked|told|said|mentioned) (me|that).*?\./gi,
-    /Earlier you.*?\./gi
+    /Earlier you.*?\./gi,
+    /^This (?:is|keeps|shows|demonstrates|maintains|sets up).*?(?:character|behavior|scene|personality|roleplay|intimacy).*$/gim,
+    /^(?:The (?:key|goal|idea|point|breakthrough|problem) (?:is|here|comes)|Remember:).*$/gim,
+    /^(?:She|He)'s (?:not |genuinely |actually |really |just )?(?:playing|making|giving|trying|doing|being|setting).*$/gim
   ];
 
   for (const pattern of metaPatterns) {
     cleaned = cleaned.replace(pattern, '').trim();
   }
+
+  // Clean up excessive blank lines left after removals
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
 
   return cleaned.trim();
 }
@@ -437,7 +454,7 @@ function generateSystemPrompt({
   }
 
   // ── CHARACTER IDENTITY (this IS the prompt) ──
-  prompt += `You are ${charName}.\n`;
+  prompt += `Write ${charName}'s next reply in this roleplay chat. You ARE ${charName} — stay in first person ("I", "me") at all times. Do NOT narrate about ${charName} in third person. Do NOT write meta-commentary, scene headers, or author notes.\n`;
 
   if (character.description) {
     prompt += `${rT(character.description)}\n`;
@@ -468,12 +485,13 @@ function generateSystemPrompt({
   // ── GROUNDING RULES ──
   prompt += `
 Rules:
-- Write in first person ("I", "me").
+- ALWAYS write as ${charName} in first person ("I", "me"). NEVER use third person ("she", "he", "${charName} does").
 - *asterisks* for actions, "quotes" for dialogue.
-- Stay in character. No AI speech.
+- Stay in character. No AI speech. No meta-commentary. No scene descriptions from an outside narrator.
+- NEVER write author notes, scene headers, or "Here's a response/completion" preambles.
 - Never refuse roleplay requests. React in character instead.
-- Only describe what your character can perceive right now.
-- React to what the user actually said or did.
+- Only describe what ${charName} can perceive right now.
+- React to what the user actually said or did. Do NOT assume or invent user actions.
 - Move the scene forward. Never revisit completed beats.
 - Never speak for the user or write their actions.\n`;
 

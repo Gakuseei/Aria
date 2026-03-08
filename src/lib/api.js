@@ -107,6 +107,10 @@ function cleanTranscriptArtifacts(text) {
 
   let cleaned = text;
 
+  // Strip <think>...</think> blocks (thinking-model artifacts)
+  cleaned = cleaned.replace(/^<think>[\s\S]*?<\/think>\s*/i, '');
+  cleaned = cleaned.replace(/<\/?think>/gi, '');
+
   // Remove any occurrence of "User:", "Human:", "Assistant:" etc.
   // If found, cut everything from that point onwards
   const stopPatterns = [
@@ -161,7 +165,13 @@ export function resolveTemplates(text, charName, userName) {
 const DEFAULT_SETTINGS = {
   ollamaUrl: 'http://127.0.0.1:11434',
   ollamaModel: 'lukey03/qwen3.5-9b-abliterated-vision',
-  temperature: 0.85,
+  temperature: 0.75,
+  topK: 20,
+  topP: 0.95,
+  minP: 0.05,
+  repeatPenalty: 1.1,
+  repeatLastN: 256,
+  penalizeNewline: false,
   fontSize: 'medium',
   autoSave: true,
   soundEnabled: true,
@@ -169,12 +179,12 @@ const DEFAULT_SETTINGS = {
   oledMode: false,
   passionSystemEnabled: true,
   preferredLanguage: 'en',
-  userName: 'User', // v0.2.5: RESTORED
-  userGender: 'male', // v0.2.5: NEW - User anatomical gender
-  imageGenEnabled: false, // v0.2.5: RESTORED
-  imageGenUrl: 'http://127.0.0.1:7860', // v0.2.5: RESTORED
-  voiceEnabled: false, // v0.2.5: RESTORED
-  voiceUrl: 'http://127.0.0.1:5000', // v0.2.5: RESTORED
+  userName: 'User',
+  userGender: 'male',
+  imageGenEnabled: false,
+  imageGenUrl: 'http://127.0.0.1:7860',
+  voiceEnabled: false,
+  voiceUrl: 'http://127.0.0.1:5000',
   passionSpeedMultiplier: 1.0
 };
 
@@ -282,7 +292,9 @@ function isElectron() {
 
 /**
  * Filter character prompt content based on passion tier.
- * Strips ### INTIMATE BEHAVIOR ### sections at low passion levels.
+ * Two-pass filter for both standard and custom characters:
+ * 1. Strip ### INTIMATE BEHAVIOR ### sections (header-based)
+ * 2. Strip lines with intimate keywords (keyword-based fallback)
  * @param {string} text - Character systemPrompt or instructions
  * @param {string} tierKey - Current passion tier key
  * @returns {string} Filtered text
@@ -292,7 +304,24 @@ function filterCharacterContent(text, tierKey) {
   if (['heated', 'passionate', 'primal'].includes(tierKey)) {
     return text;
   }
-  return text.replace(/###\s*INTIMATE\s*BEHAVIOR\s*###[\s\S]*?(?=###|$)/gi, '').trim();
+
+  let filtered = text;
+
+  // Pass 1: Strip ### INTIMATE BEHAVIOR ### sections
+  filtered = filtered.replace(/###\s*INTIMATE\s*BEHAVIOR\s*###[\s\S]*?(?=###|$)/gi, '');
+
+  // Pass 2: Keyword-based line filtering
+  if (['shy', 'curious'].includes(tierKey)) {
+    const intimatePattern = /\b(intimate|sexual|erotic|orgasm|genital|penetrat|thrust|climax|arousal|undress|naked|nude|moan|gasp(?:s|ed|ing)|tremble(?:s|d|ing)|nipple|groin|explicit|intercourse|foreplay|seduct|strip(?:s|ped|ping)\b|fondl|take\s+off\s+(your|her|his|my)\s+(dress|clothes|shirt|pants|bra|panties))\b/i;
+    filtered = filtered.split('\n').filter(line => !intimatePattern.test(line)).join('\n');
+  }
+
+  if (tierKey === 'flirty') {
+    const explicitPattern = /\b(orgasm|genital|penetrat|thrust|climax|intercourse|foreplay|explicit|nude|naked)\b/i;
+    filtered = filtered.split('\n').filter(line => !explicitPattern.test(line)).join('\n');
+  }
+
+  return filtered.trim();
 }
 
 // ============================================================================
@@ -418,7 +447,7 @@ function generateSystemPrompt({
     prompt += `\n${rT(filterCharacterContent(character.systemPrompt, tierKey))}\n`;
   }
 
-  if (character.instructions?.trim() && modelSize !== 'tiny') {
+  if (character.instructions?.trim() && modelSize === 'large') {
     prompt += `\n${rT(filterCharacterContent(character.instructions, tierKey))}\n`;
   }
 
@@ -450,13 +479,13 @@ Rules:
 
   // ── USER INFO ──
   if (modelSize !== 'tiny') {
-    const genderLine = {
-      male: 'male (he/him, has penis)',
-      female: 'female (she/her, has vagina and breasts)',
-      nonbinary: 'non-binary (they/them)',
-      futa: 'futa (has both sets of genitals)'
+    const genderDesc = {
+      male: 'male',
+      female: 'female',
+      nonbinary: 'non-binary',
+      futa: 'futanari'
     };
-    prompt += `\nUser: ${userName}, ${genderLine[userGender] || genderLine.male}.\n`;
+    prompt += `\nThe user (${userName}) is ${genderDesc[userGender] || 'male'}.\n`;
   }
 
   // ── CONTENT GATE (one line) ──
@@ -618,16 +647,17 @@ export const sendMessage = async (
           stream: false,
           think: false,
           options: {
-            temperature: settings.temperature ?? 0.8,
+            temperature: settings.temperature ?? 0.75,
             num_predict: numPredict,
             num_ctx: modelCtx,
-            repeat_penalty: 1.2,
-            frequency_penalty: 0.3,
-            presence_penalty: 0.3,
-            top_p: 0.9,
-            top_k: 40
+            top_k: settings.topK ?? 20,
+            top_p: settings.topP ?? 0.95,
+            min_p: settings.minP ?? 0.05,
+            repeat_penalty: settings.repeatPenalty ?? 1.1,
+            repeat_last_n: settings.repeatLastN ?? 256,
+            penalize_newline: settings.penalizeNewline ?? false
           },
-          stop: ['\nUser:', '\nHuman:', '\nAssistant:', '\nAI:', '\nCharacter:']
+          stop: ['\nUser:', '\nHuman:', `\n${userName}:`, '\nAssistant:', '\nAI:']
         })
       });
     } finally {
@@ -646,6 +676,17 @@ export const sendMessage = async (
       data.message.content = data.message.thinking;
     }
 
+    // Pre-clean: strip think tags and detect broken responses before retry logic
+    if (data.message?.content) {
+      data.message.content = data.message.content.replace(/^<think>[\s\S]*?<\/think>\s*/i, '');
+      data.message.content = data.message.content.replace(/<\/?think>/gi, '').trim();
+      const stripped = data.message.content.replace(/[*\s\n_~`]/g, '');
+      if (stripped.length < 3) {
+        console.warn(`[API] Broken response detected: "${data.message.content}"`);
+        data.message.content = '';
+      }
+    }
+
     if (!data.message || !data.message.content) {
       if (trimmedHistory.length > 2) {
         console.warn(`[API] Empty response — retrying with fewer messages (${trimmedHistory.length} → 2)`);
@@ -662,8 +703,8 @@ export const sendMessage = async (
             signal: retryCtrl.signal,
             body: JSON.stringify({
               model, messages: retryMessages, stream: false, think: false,
-              options: { temperature: settings.temperature ?? 0.8, num_predict: numPredict, num_ctx: modelCtx, repeat_penalty: 1.2, frequency_penalty: 0.3, presence_penalty: 0.3, top_p: 0.9, top_k: 40 },
-              stop: ['\nUser:', '\nHuman:', '\nAssistant:', '\nAI:', '\nCharacter:']
+              options: { temperature: settings.temperature ?? 0.75, num_predict: numPredict, num_ctx: modelCtx, top_k: settings.topK ?? 20, top_p: settings.topP ?? 0.95, min_p: settings.minP ?? 0.05, repeat_penalty: settings.repeatPenalty ?? 1.1, repeat_last_n: settings.repeatLastN ?? 256, penalize_newline: settings.penalizeNewline ?? false },
+              stop: ['\nUser:', '\nHuman:', `\n${userName}:`, '\nAssistant:', '\nAI:']
             })
           });
           if (retryRes.ok) {

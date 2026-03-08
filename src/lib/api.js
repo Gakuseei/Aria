@@ -249,11 +249,15 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
           content: `Score: -3 to 10. Just the number.\n-3=rejection 0=neutral 5=romance 10=explicit\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`
         }],
         stream: false,
+        think: false,
         options: { temperature: 0.1, num_predict: 16, num_ctx: modelCtx }
       })
     });
     if (!response.ok) return 0;
     const data = await response.json();
+    if (data.message && !data.message.content && data.message.thinking) {
+      data.message.content = data.message.thinking;
+    }
     const match = data.message?.content?.trim().match(/(-?\d+)/);
     if (!match) return 0;
     const score = parseInt(match[1], 10);
@@ -580,6 +584,7 @@ export const sendMessage = async (
           model: model,
           messages: messages,
           stream: false,
+          think: false,
           options: {
             temperature: settings.temperature ?? 0.8,
             num_predict: numPredict,
@@ -602,6 +607,11 @@ export const sendMessage = async (
 
     let data = await response.json();
 
+    // Thinking-model fallback: some models put content in message.thinking instead of message.content
+    if (data.message && !data.message.content && data.message.thinking) {
+      data.message.content = data.message.thinking;
+    }
+
     if (!data.message || !data.message.content) {
       if (trimmedHistory.length > 2) {
         console.warn(`[API] Empty response — retrying with fewer messages (${trimmedHistory.length} → 2)`);
@@ -617,13 +627,16 @@ export const sendMessage = async (
             headers: { 'Content-Type': 'application/json' },
             signal: retryCtrl.signal,
             body: JSON.stringify({
-              model, messages: retryMessages, stream: false,
+              model, messages: retryMessages, stream: false, think: false,
               options: { temperature: settings.temperature ?? 0.8, num_predict: numPredict, num_ctx: modelCtx, repeat_penalty: 1.2, top_p: 0.9, top_k: 40 },
               stop: ['\nUser:', '\nHuman:', '\nAssistant:', '\nAI:', '\nCharacter:']
             })
           });
           if (retryRes.ok) {
             const retryData = await retryRes.json();
+            if (retryData.message && !retryData.message.content && retryData.message.thinking) {
+              retryData.message.content = retryData.message.thinking;
+            }
             if (retryData.message?.content) {
               data = retryData;
             }
@@ -1450,6 +1463,7 @@ Format: 4 lines of pure text.`;
           model: model,
           messages: [{ role: 'user', content: finalSuggestionPrompt }],
           stream: false,
+          think: false,
           options: {
             temperature: 0.85,
             num_predict: 100,
@@ -1466,6 +1480,9 @@ Format: 4 lines of pure text.`;
     }
 
     const data = await response.json();
+    if (data.message && !data.message.content && data.message.thinking) {
+      data.message.content = data.message.thinking;
+    }
     const rawSuggestions = (data.message?.content || '').trim().split('\n').filter(s => s.trim());
 
     // Clean and limit

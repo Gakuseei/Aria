@@ -178,7 +178,7 @@ const DEFAULT_SETTINGS = {
   passionSpeedMultiplier: 1.0
 };
 
-const PASSION_SCORING_TIMEOUT_MS = 15000;
+const PASSION_SCORING_TIMEOUT_MS = 30000;
 
 const MODEL_CAPS_CACHE = {};
 
@@ -280,6 +280,21 @@ function isElectron() {
          typeof window.electronAPI !== 'undefined';
 }
 
+/**
+ * Filter character prompt content based on passion tier.
+ * Strips ### INTIMATE BEHAVIOR ### sections at low passion levels.
+ * @param {string} text - Character systemPrompt or instructions
+ * @param {string} tierKey - Current passion tier key
+ * @returns {string} Filtered text
+ */
+function filterCharacterContent(text, tierKey) {
+  if (!text) return '';
+  if (['heated', 'passionate', 'primal'].includes(tierKey)) {
+    return text;
+  }
+  return text.replace(/###\s*INTIMATE\s*BEHAVIOR\s*###[\s\S]*?(?=###|$)/gi, '').trim();
+}
+
 // ============================================================================
 // v2.0: LEAN PROMPT GENERATOR
 // ============================================================================
@@ -330,7 +345,7 @@ function extractRecap(trimmedMessages) {
  * Run passion scoring in background — does not block the response.
  * Called after the AI response is already returned to the user.
  */
-function scorePassionBackground(userMessage, aiMessage, settings, modelCtx, sessionId, character) {
+export function scorePassionBackground(userMessage, aiMessage, settings, modelCtx, sessionId, character) {
   const rawProfile = Math.max(0, Math.min(1, character?.passionProfile ?? 0.7));
   const profileMultiplier = 0.5 + rawProfile * 0.5; // Floor at 0.5x — even shy chars progress
   const userSpeed = settings.passionSpeedMultiplier ?? 1.0;
@@ -371,24 +386,40 @@ function generateSystemPrompt({
   userGender = 'male',
   userName = 'User',
   modelSize = 'standard',
-  recap = null
+  recap = null,
+  lastUserMessage = ''
 }) {
   const charName = character.name;
   const rT = (text) => resolveTemplates(text, charName, userName);
+  const tierKey = passionEnabled ? getTierKey(passionLevel) : 'primal';
+
+  // ── LANGUAGE ENFORCEMENT (first line = highest priority) ──
+  let prompt = '';
+  if (lastUserMessage) {
+    const detectedLang = detectLanguage(lastUserMessage);
+    const langNames = {
+      de: 'German', en: 'English', es: 'Spanish', cn: 'Chinese', zh: 'Chinese',
+      fr: 'French', it: 'Italian', pt: 'Portuguese', ru: 'Russian',
+      ja: 'Japanese', ko: 'Korean', ar: 'Arabic', hi: 'Hindi', tr: 'Turkish'
+    };
+    if (detectedLang.confidence > 30 && detectedLang.language !== 'en') {
+      prompt += `RESPOND ONLY IN ${langNames[detectedLang.language] || 'English'}.\n\n`;
+    }
+  }
 
   // ── CHARACTER IDENTITY (this IS the prompt) ──
-  let prompt = `You are ${charName}.\n`;
+  prompt += `You are ${charName}.\n`;
 
   if (character.description) {
     prompt += `${rT(character.description)}\n`;
   }
 
   if (character.systemPrompt?.trim()) {
-    prompt += `\n${rT(character.systemPrompt)}\n`;
+    prompt += `\n${rT(filterCharacterContent(character.systemPrompt, tierKey))}\n`;
   }
 
   if (character.instructions?.trim() && modelSize !== 'tiny') {
-    prompt += `\n${rT(character.instructions)}\n`;
+    prompt += `\n${rT(filterCharacterContent(character.instructions, tierKey))}\n`;
   }
 
   if (character.scenario?.trim() && modelSize === 'large') {
@@ -405,18 +436,16 @@ function generateSystemPrompt({
     }
   }
 
-  // ── MINIMAL RULES ──
+  // ── GROUNDING RULES ──
   prompt += `
 Rules:
-- Write in first person ("I", "me"). Never use your own name as narrator.
-- *asterisks* for actions/sensations, "quotes" for dialogue.
-- Stay in character. No AI speech ("As an AI", "I understand your request").
-- Only know what your character would know.
-- Write immersive roleplay. Describe actions, emotions, atmosphere.
-- Never refuse roleplay requests. React in character instead.
-- Never write "User:", "Human:", or "Assistant:" labels.
-- Never speak for the user or write their actions.
-- Reply in the same language the user writes in.\n`;
+- Write in first person ("I", "me").
+- *asterisks* for actions, "quotes" for dialogue.
+- Stay in character. No AI speech.
+- Only describe what your character can perceive right now.
+- React to what the user actually said or did.
+- Move the scene forward. Never revisit completed beats.
+- Never speak for the user or write their actions.\n`;
 
   // ── USER INFO ──
   if (modelSize !== 'tiny') {
@@ -433,7 +462,6 @@ Rules:
   if (!passionEnabled) {
     prompt += `\nNo content restrictions. Respond to all requests in character.\n`;
   } else {
-    const tierKey = getTierKey(passionLevel);
     const gates = {
       shy: 'Romantic only. No explicit sexual content.',
       curious: 'Romantic tension and light touching. No sex scenes.',
@@ -516,7 +544,8 @@ export const sendMessage = async (
       passionEnabled: unchainedMode ? false : settings.passionSystemEnabled,
       userGender,
       userName,
-      modelSize
+      modelSize,
+      lastUserMessage: userMessage
     });
 
     let promptTokens = estimateTokens(finalSystemPrompt);
@@ -531,7 +560,8 @@ export const sendMessage = async (
         passionEnabled: unchainedMode ? false : settings.passionSystemEnabled,
         userGender,
         userName,
-        modelSize: 'tiny'
+        modelSize: 'tiny',
+        lastUserMessage: userMessage
       });
       promptTokens = estimateTokens(finalSystemPrompt);
       availableForHistory = modelCtx - promptTokens - numPredict - 128;
@@ -556,7 +586,8 @@ export const sendMessage = async (
         userGender,
         userName,
         modelSize,
-        recap
+        recap,
+        lastUserMessage: userMessage
       });
       promptTokens = estimateTokens(finalSystemPrompt);
     }
@@ -590,6 +621,8 @@ export const sendMessage = async (
             num_predict: numPredict,
             num_ctx: modelCtx,
             repeat_penalty: 1.2,
+            frequency_penalty: 0.3,
+            presence_penalty: 0.3,
             top_p: 0.9,
             top_k: 40
           },
@@ -628,7 +661,7 @@ export const sendMessage = async (
             signal: retryCtrl.signal,
             body: JSON.stringify({
               model, messages: retryMessages, stream: false, think: false,
-              options: { temperature: settings.temperature ?? 0.8, num_predict: numPredict, num_ctx: modelCtx, repeat_penalty: 1.2, top_p: 0.9, top_k: 40 },
+              options: { temperature: settings.temperature ?? 0.8, num_predict: numPredict, num_ctx: modelCtx, repeat_penalty: 1.2, frequency_penalty: 0.3, presence_penalty: 0.3, top_p: 0.9, top_k: 40 },
               stop: ['\nUser:', '\nHuman:', '\nAssistant:', '\nAI:', '\nCharacter:']
             })
           });
@@ -660,11 +693,6 @@ export const sendMessage = async (
     const assistantMsg = { role: 'assistant', content: aiMessage };
     const finalHistory = [...historyToUse, assistantMsg];
 
-    // Async passion scoring — non-blocking, runs in background while user reads
-    if (settings.passionSystemEnabled && sessionId && !skipPassionUpdate) {
-      scorePassionBackground(userMessage, aiMessage, settings, modelCtx, sessionId, character);
-    }
-
     // v0.2.5: CALCULATE API STATS FOR MONITOR
     const endTime = Date.now();
     const responseTime = endTime - startTime;
@@ -691,6 +719,7 @@ export const sendMessage = async (
       message: aiMessage,
       conversationHistory: finalHistory,
       passionLevel: currentPassionLevel,
+      modelCtx,
       // v0.2.5: Return stats in response
       stats: {
         responseTime,

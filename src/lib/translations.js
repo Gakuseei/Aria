@@ -568,7 +568,11 @@ export const translations = {
       contentLength: "Content Length",
       chars: "chars",
       continueSession: "Continue Session",
-      chatWith: "Chat with"
+      chatWith: "Chat with",
+      allCharacters: "All Characters",
+      deleteAll: "Delete All",
+      deleteAllConfirm: "Delete all {count} sessions?",
+      deleteAllConfirmFiltered: "Delete {count} filtered sessions?"
     },
     debugConsole: {
       title: "Aria Monitor",
@@ -1229,7 +1233,11 @@ export const translations = {
       contentLength: "Inhaltslänge",
       chars: "Zeichen",
       continueSession: "Sitzung fortsetzen",
-      chatWith: "Chat mit"
+      chatWith: "Chat mit",
+      allCharacters: "Alle Charaktere",
+      deleteAll: "Alle löschen",
+      deleteAllConfirm: "Alle {count} Sitzungen löschen?",
+      deleteAllConfirmFiltered: "{count} gefilterte Sitzungen löschen?"
     },
     debugConsole: {
       title: "Aria Monitor",
@@ -1848,7 +1856,11 @@ export const translations = {
       contentLength: "Longitud del contenido",
       chars: "caracteres",
       continueSession: "Continuar sesión",
-      chatWith: "Chat con"
+      chatWith: "Chat con",
+      allCharacters: "Todos los personajes",
+      deleteAll: "Eliminar todo",
+      deleteAllConfirm: "¿Eliminar las {count} sesiones?",
+      deleteAllConfirmFiltered: "¿Eliminar {count} sesiones filtradas?"
     },
     debugConsole: {
       title: "Aria Monitor",
@@ -2467,7 +2479,11 @@ export const translations = {
       contentLength: "内容长度",
       chars: "字符",
       continueSession: "继续会话",
-      chatWith: "与{name}聊天"
+      chatWith: "与{name}聊天",
+      allCharacters: "所有角色",
+      deleteAll: "全部删除",
+      deleteAllConfirm: "删除全部 {count} 个会话？",
+      deleteAllConfirmFiltered: "删除 {count} 个已筛选的会话？"
     },
     debugConsole: {
       title: "Aria 监控器",
@@ -3085,7 +3101,11 @@ export const translations = {
       contentLength: "Longueur du contenu",
       chars: "caractères",
       continueSession: "Continuer la session",
-      chatWith: "Chat avec"
+      chatWith: "Chat avec",
+      allCharacters: "Tous les personnages",
+      deleteAll: "Tout supprimer",
+      deleteAllConfirm: "Supprimer les {count} sessions ?",
+      deleteAllConfirmFiltered: "Supprimer {count} sessions filtrées ?"
     },
     debugConsole: {
       title: "Aria Monitor",
@@ -3697,7 +3717,11 @@ export const translations = {
       contentLength: "Lunghezza contenuto",
       chars: "caratteri",
       continueSession: "Continua sessione",
-      chatWith: "Chat con"
+      chatWith: "Chat con",
+      allCharacters: "Tutti i personaggi",
+      deleteAll: "Elimina tutto",
+      deleteAllConfirm: "Eliminare tutte le {count} sessioni?",
+      deleteAllConfirmFiltered: "Eliminare {count} sessioni filtrate?"
     },
     debugConsole: {
       title: "Aria Monitor",
@@ -4315,7 +4339,11 @@ export const translations = {
       contentLength: "Tamanho do conteúdo",
       chars: "caracteres",
       continueSession: "Continuar sessão",
-      chatWith: "Chat com"
+      chatWith: "Chat com",
+      allCharacters: "Todos os personagens",
+      deleteAll: "Excluir tudo",
+      deleteAllConfirm: "Excluir todas as {count} sessões?",
+      deleteAllConfirmFiltered: "Excluir {count} sessões filtradas?"
     },
     debugConsole: {
       title: "Aria Monitor",
@@ -4933,7 +4961,11 @@ export const translations = {
       contentLength: "Длина контента",
       chars: "символов",
       continueSession: "Продолжить сеанс",
-      chatWith: "Чат с"
+      chatWith: "Чат с",
+      allCharacters: "Все персонажи",
+      deleteAll: "Удалить все",
+      deleteAllConfirm: "Удалить все {count} сессий?",
+      deleteAllConfirmFiltered: "Удалить {count} отфильтрованных сессий?"
     },
     debugConsole: {
       title: "Aria Монитор",
@@ -5551,7 +5583,11 @@ export const translations = {
       contentLength: "コンテンツ長",
       chars: "文字",
       continueSession: "セッションを続行",
-      chatWith: "チャット："
+      chatWith: "チャット：",
+      allCharacters: "全キャラクター",
+      deleteAll: "すべて削除",
+      deleteAllConfirm: "{count}件のセッションを削除しますか？",
+      deleteAllConfirmFiltered: "{count}件のフィルター済みセッションを削除しますか？"
     },
     debugConsole: {
       title: "Aria モニター",
@@ -6163,7 +6199,11 @@ export const translations = {
       contentLength: "콘텐츠 길이",
       chars: "자",
       continueSession: "세션 계속",
-      chatWith: "채팅:"
+      chatWith: "채팅:",
+      allCharacters: "모든 캐릭터",
+      deleteAll: "모두 삭제",
+      deleteAllConfirm: "{count}개 세션을 모두 삭제하시겠습니까?",
+      deleteAllConfirmFiltered: "필터링된 {count}개 세션을 삭제하시겠습니까?"
     },
     debugConsole: {
       title: "Aria 모니터",
@@ -6782,7 +6822,11 @@ export const translations = {
       contentLength: "طول المحتوى",
       chars: "حرف",
       continueSession: "متابعة الجلسة",
-      chatWith: "محادثة مع"
+      chatWith: "محادثة مع",
+      allCharacters: "جميع الشخصيات",
+      deleteAll: "حذف الكل",
+      deleteAllConfirm: "حذف جميع الجلسات ({count})؟",
+      deleteAllConfirmFiltered: "حذف {count} جلسات مفلترة؟"
     },
     debugConsole: {
       title: "مراقب Aria",
@@ -7401,7 +7445,11 @@ export const translations = {
       contentLength: "सामग्री लंबाई",
       chars: "अक्षर",
       continueSession: "सत्र जारी रखें",
-      chatWith: "चैट:"
+      chatWith: "चैट:",
+      allCharacters: "सभी पात्र",
+      deleteAll: "सभी हटाएं",
+      deleteAllConfirm: "सभी {count} सत्र हटाएं?",
+      deleteAllConfirmFiltered: "{count} फ़िल्टर किए गए सत्र हटाएं?"
     },
     debugConsole: {
       title: "Aria मॉनिटर",
@@ -8020,7 +8068,11 @@ export const translations = {
       contentLength: "İçerik uzunluğu",
       chars: "karakter",
       continueSession: "Oturuma devam et",
-      chatWith: "Sohbet:"
+      chatWith: "Sohbet:",
+      allCharacters: "Tüm karakterler",
+      deleteAll: "Tümünü sil",
+      deleteAllConfirm: "Tüm {count} oturumu silmek istiyor musunuz?",
+      deleteAllConfirmFiltered: "{count} filtrelenmiş oturumu silmek istiyor musunuz?"
     },
     debugConsole: {
       title: "Aria Monitör",

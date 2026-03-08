@@ -250,7 +250,7 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
         }],
         stream: false,
         think: false,
-        options: { temperature: 0.1, num_predict: 16, num_ctx: modelCtx }
+        options: { temperature: 0.1, num_predict: 16 }
       })
     });
     if (!response.ok) return 0;
@@ -1329,10 +1329,6 @@ export const generateSmartSuggestions = async (messages, character, language = '
     const settings = await loadSettings();
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
     const model = settings.ollamaModel || 'lukey03/qwen3.5-9b-abliterated-vision';
-    const caps = await getModelCapabilities(ollamaUrl, model);
-    const paramB = parseFloat(caps.parameterSize) || 7;
-    const ctxCap = paramB <= 3 ? 4096 : paramB <= 10 ? 8192 : 16384;
-    const suggestCtx = Math.min(caps.contextLength, ctxCap);
     const selectedLanguage = language || settings.preferredLanguage || 'en';
     
     const languageNames = {
@@ -1368,11 +1364,13 @@ export const generateSmartSuggestions = async (messages, character, language = '
     const characterMessage = lastAiMessage.content.substring(0, 400);
     const userMessage = lastUserMessage?.content.substring(0, 200) || '';
 
-    // v0.2.5: DETECT LANGUAGE FROM LAST AI MESSAGE (not UI settings)
-    // This ensures suggestions match the language the AI is currently speaking
-    const detectedLangResult = detectLanguage(characterMessage);
-    const detectedLang = detectedLangResult.language;
-    const actualLanguage = detectedLangResult.confidence > 30 ? detectedLang : selectedLanguage;
+    // Detect language from USER message first (what they actually speak), fallback to AI message
+    const userLangResult = userMessage ? detectLanguage(userMessage) : null;
+    const aiLangResult = detectLanguage(characterMessage);
+    const detectedLang = (userLangResult && userLangResult.confidence > 30)
+      ? userLangResult.language
+      : (aiLangResult.confidence > 30 ? aiLangResult.language : selectedLanguage);
+    const actualLanguage = detectedLang;
     const actualLanguageName = languageNames[actualLanguage] || languageNames[selectedLanguage] || 'English';
     
     // CONTEXT DETECTION
@@ -1477,8 +1475,8 @@ OUTPUT RULES:
 Format: 4 lines of pure text.`;
     }
 
-    const languageInstruction = `\n\nIMPORTANT: Generate ALL suggestions in ${actualLanguageName} language. Do NOT use English unless the language is English.`;
-    const finalSuggestionPrompt = suggestionPrompt + languageInstruction;
+    const languageInstruction = `LANGUAGE: ${actualLanguageName}. ALL output MUST be in ${actualLanguageName}. No other language.\n\n`;
+    const finalSuggestionPrompt = languageInstruction + suggestionPrompt;
 
     const suggestController = new AbortController();
     const suggestTimer = setTimeout(() => suggestController.abort(), 30000);
@@ -1496,8 +1494,7 @@ Format: 4 lines of pure text.`;
           think: false,
           options: {
             temperature: 0.85,
-            num_predict: 100,
-            num_ctx: suggestCtx
+            num_predict: 100
           }
         })
       });

@@ -803,7 +803,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       // Passion scoring — runs after suggestions are done
       if (settings.passionSystemEnabled && sessionId) {
-        scorePassionBackground(userMessage, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
+        scorePassionBackground(safeMessageText, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
       }
 
       if (imageGenEnabled && freshPassion > 60) {
@@ -1076,8 +1076,19 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const updatedMessages = [...messagesUpToLastUser, assistantMessage];
       setMessages(updatedMessages);
 
+      const freshPassion = response.passionLevel !== undefined ? response.passionLevel : passionLevel;
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
+      }
+
+      // Re-generate suggestions after regeneration
+      if (smartSuggestionsEnabled) {
+        await generateSuggestions(updatedMessages, freshPassion);
+      }
+
+      // Passion scoring after regeneration
+      if (settings.passionSystemEnabled && sessionId) {
+        scorePassionBackground(lastUserMessage, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
       }
     } catch (error) {
       console.error('[ChatInterface] Regeneration error:', error);

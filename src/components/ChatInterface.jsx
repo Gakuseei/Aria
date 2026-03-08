@@ -194,59 +194,6 @@ function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, 
 }
 
 // ============================================================================
-// ENVIRONMENT & STATE DETECTOR
-// ============================================================================
-
-function detectEnvironmentFromMessages(messages) {
-  if (!messages || messages.length === 0) return null;
-  
-  const recentMessages = messages.slice(-10);
-  const combinedText = recentMessages
-    .map(m => (m.content || '').toLowerCase())
-    .join(' ');
-  
-  const environments = {
-    shower: ['shower', 'dusche', 'water', 'wasser'],
-    bed: ['bed', 'bett', 'sheets', 'laken'],
-    couch: ['couch', 'sofa'],
-    kitchen: ['kitchen', 'küche'],
-    car: ['car', 'auto'],
-    outdoors: ['park', 'forest', 'beach']
-  };
-  
-  for (const [env, keywords] of Object.entries(environments)) {
-    for (const keyword of keywords) {
-      if (combinedText.includes(keyword)) return env;
-    }
-  }
-  
-  return null;
-}
-
-function detectStateFromMessages(messages) {
-  if (!messages || messages.length === 0) return null;
-  
-  const recentMessages = messages.slice(-10);
-  const combinedText = recentMessages
-    .map(m => (m.content || '').toLowerCase())
-    .join(' ');
-  
-  const states = {
-    undressed: ['naked', 'nackt', 'undressed', 'bare', 'nude'],
-    partially_undressed: ['shirt off', 'pants down', 'topless'],
-    clothed: ['dressed', 'angezogen', 'wearing']
-  };
-  
-  for (const [state, keywords] of Object.entries(states)) {
-    for (const keyword of keywords) {
-      if (combinedText.includes(keyword)) return state;
-    }
-  }
-  
-  return null;
-}
-
-// ============================================================================
 // PASSION SPARKLINE
 // ============================================================================
 
@@ -287,8 +234,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [tierToast, setTierToast] = useState(null);
   const [showPassionPresets, setShowPassionPresets] = useState(false);
   const passionRingRef = useRef(null);
-  const [currentEnvironment, setCurrentEnvironment] = useState(null);
-  const [currentState, setCurrentState] = useState(null);
   const [sessionId, setSessionId] = useState(null);
 
   const passionHistory = useMemo(() => {
@@ -670,11 +615,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         saveCurrentSession();
       }, 500);
 
-      const env = detectEnvironmentFromMessages(messages);
-      const state = detectStateFromMessages(messages);
-
-      if (env !== currentEnvironment) setCurrentEnvironment(env);
-      if (state !== currentState) setCurrentState(state);
     }
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [messages, passionLevel, sessionId]);

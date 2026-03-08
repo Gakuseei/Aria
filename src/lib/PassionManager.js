@@ -13,18 +13,18 @@ const PASSION_STORAGE_KEY = 'aria_passion_data';
 const PASSION_MEMORY_KEY = 'aria_passion_memory';
 const HISTORY_LIMIT = 50;
 const DECAY_INTERVAL_MS = 5 * 60 * 1000;
-const DECAY_POINTS_PER_INTERVAL = 2;
-const DECAY_MAX_POINTS = 10;
+const DECAY_POINTS_PER_INTERVAL = 1;
+const DECAY_MAX_POINTS = 5;
 const KNOWN_SUFFIXES = ['_history', '_streak', '_transition', '_transition_down', '_lastUpdate'];
 
 /** Unified passion tier definitions (6-tier v2.0) */
 export const PASSION_TIERS = {
-  shy:         { min: 0,  max: 15,  label: 'Shy' },
-  curious:     { min: 16, max: 30,  label: 'Curious' },
-  flirty:      { min: 31, max: 50,  label: 'Flirty' },
-  heated:      { min: 51, max: 70,  label: 'Heated' },
-  passionate:  { min: 71, max: 85,  label: 'Passionate' },
-  primal:      { min: 86, max: 100, label: 'Primal' }
+  shy:         { min: 0,  max: 10,  label: 'Shy' },
+  curious:     { min: 11, max: 25,  label: 'Curious' },
+  flirty:      { min: 26, max: 45,  label: 'Flirty' },
+  heated:      { min: 46, max: 65,  label: 'Heated' },
+  passionate:  { min: 66, max: 80,  label: 'Passionate' },
+  primal:      { min: 81, max: 100, label: 'Primal' }
 };
 
 /**
@@ -139,10 +139,8 @@ class PassionManager {
       const intervals = Math.floor(elapsed / DECAY_INTERVAL_MS);
       let decayRate = DECAY_POINTS_PER_INTERVAL;
       const currentMomentum = this.getMomentum(sessionId);
-      if (currentLevel >= 86) {
-        decayRate = 3;
-      } else if (currentMomentum > 1.5) {
-        decayRate = 1;
+      if (currentMomentum > 1.5) {
+        decayRate = 0.5;
       }
       decayPoints = Math.min(intervals * decayRate, DECAY_MAX_POINTS);
     }
@@ -162,11 +160,11 @@ class PassionManager {
     if (score > 0) {
       this.passionData[streakKey] = (this.passionData[streakKey] || 0) + 1;
       const streak = this.passionData[streakKey];
-      if (streak >= 3) {
-        finalScore *= 1.0 + Math.min((streak - 2) * 0.1, 0.5);
+      if (streak >= 2) {
+        finalScore *= 1.0 + Math.min((streak - 1) * 0.15, 0.75);
       }
     } else if (score < 0) {
-      this.passionData[streakKey] = 0;
+      this.passionData[streakKey] = Math.max(0, (this.passionData[streakKey] || 0) - 1);
     }
 
     const newLevel = Math.round(Math.max(0, Math.min(100, decayedLevel + finalScore)));

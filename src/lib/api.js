@@ -327,23 +327,24 @@ function extractRecap(trimmedMessages) {
  * Called after the AI response is already returned to the user.
  */
 function scorePassionBackground(userMessage, aiMessage, settings, modelCtx, sessionId, character) {
-  const passionProfileValue = Math.max(0, Math.min(1, character?.passionProfile ?? 0.7));
+  const rawProfile = Math.max(0, Math.min(1, character?.passionProfile ?? 0.7));
+  const profileMultiplier = 0.5 + rawProfile * 0.5; // Floor at 0.5x — even shy chars progress
   const userSpeed = settings.passionSpeedMultiplier ?? 1.0;
 
   scorePassionLLM(userMessage, aiMessage, settings, modelCtx)
     .then(rawScore => {
       let adjustedScore;
       if (rawScore > 0) {
-        adjustedScore = rawScore * passionProfileValue * userSpeed;
+        adjustedScore = rawScore * profileMultiplier * userSpeed;
       } else if (rawScore < 0) {
-        adjustedScore = rawScore * (2.0 - passionProfileValue);
+        adjustedScore = rawScore * 0.5; // Soft de-escalation — drops never punish hard
       } else {
         adjustedScore = 0;
       }
 
       const momentum = passionManager.getMomentum(sessionId);
       if (momentum > 1.5 && adjustedScore < 0) adjustedScore *= 0.5;
-      else if (momentum < -1.5 && adjustedScore > 0) adjustedScore *= 0.5;
+      else if (momentum < -1.5 && adjustedScore > 0) adjustedScore *= 0.7;
 
       const prevLevel = passionManager.getPassionLevel(sessionId);
       const newLevel = passionManager.applyScore(sessionId, adjustedScore);

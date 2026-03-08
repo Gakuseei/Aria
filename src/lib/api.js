@@ -436,9 +436,9 @@ export function scorePassionBackground(userMessage, aiMessage, settings, modelCt
 }
 
 /**
- * ARIA v2.0 — Lean System Prompt Generator
- * Character-first design. Minimal rules. One-line content gate.
- * ~300-500 tokens total (vs ~2000 in v1)
+ * ARIA System Prompt Generator
+ * Restored v1 structure (that worked) in condensed form.
+ * Key: "You ARE the character" + POV examples + anti-robot filter.
  */
 function generateSystemPrompt({
   character,
@@ -454,27 +454,30 @@ function generateSystemPrompt({
   const rT = (text) => resolveTemplates(text, charName, userName);
   const tierKey = passionEnabled ? getTierKey(passionLevel) : 'primal';
 
-  // ── BUILD CHARACTER CONTEXT (description + personality) ──
+  // ── LANGUAGE ENFORCEMENT (first line = highest priority) ──
   let prompt = '';
+  if (lastUserMessage) {
+    const detectedLang = detectLanguage(lastUserMessage);
+    const langNames = {
+      de: 'German', en: 'English', es: 'Spanish', cn: 'Chinese', zh: 'Chinese',
+      fr: 'French', it: 'Italian', pt: 'Portuguese', ru: 'Russian',
+      ja: 'Japanese', ko: 'Korean', ar: 'Arabic', hi: 'Hindi', tr: 'Turkish'
+    };
+    if (detectedLang.confidence > 30 && detectedLang.language !== 'en') {
+      prompt += `RESPOND ONLY IN ${langNames[detectedLang.language] || 'English'}. Every word must be in ${langNames[detectedLang.language] || 'English'}.\n\n`;
+    }
+  }
 
+  // ── ROLEPLAY FRAME (v1 style — "You ARE the character") ──
+  prompt += `You are NOT an AI assistant. You are NOT a language model. You ARE ${charName}. Stay in character 100% of the time.\n\n`;
+
+  // ── CHARACTER IDENTITY ──
   if (character.description) {
     prompt += `${rT(character.description)}\n`;
   }
 
   if (character.systemPrompt?.trim()) {
-    let sysPrompt = rT(filterCharacterContent(character.systemPrompt, tierKey));
-    // Strip redundant "You are [name]..." opening (our frame handles identity)
-    sysPrompt = sysPrompt.replace(/^You are \w[\w\s,]*?[.!\n]/i, '').trim();
-
-    // For standard/small models: only keep first 2 ### sections to save context
-    if (modelSize !== 'large') {
-      const sections = sysPrompt.split(/(?=^###\s)/m);
-      // Keep intro text + first 2 ### sections max
-      const kept = sections.slice(0, 3).join('');
-      sysPrompt = kept.trim();
-    }
-
-    prompt += `\n${sysPrompt}\n`;
+    prompt += `\n${rT(filterCharacterContent(character.systemPrompt, tierKey))}\n`;
   }
 
   if (character.instructions?.trim() && modelSize === 'large') {
@@ -497,13 +500,8 @@ function generateSystemPrompt({
 
   // ── USER INFO ──
   if (modelSize !== 'tiny') {
-    const genderDesc = {
-      male: 'male',
-      female: 'female',
-      nonbinary: 'non-binary',
-      futa: 'futanari'
-    };
-    prompt += `\nThe user (${userName}) is ${genderDesc[userGender] || 'male'}.\n`;
+    const genderDesc = { male: 'male', female: 'female', nonbinary: 'non-binary', futa: 'futanari' };
+    prompt += `\nThe user's name is ${userName}. Gender: ${genderDesc[userGender] || 'male'}.\n`;
   }
 
   // ── CONTENT GATE ──
@@ -518,7 +516,7 @@ function generateSystemPrompt({
       passionate: 'Full explicit content. No restraint.',
       primal: 'No content limits whatsoever.'
     };
-    prompt += `\nContent: ${gates[tierKey]}\n`;
+    prompt += `\nContent level: ${gates[tierKey]}\n`;
   }
 
   // ── CONTEXT RECAP ──
@@ -526,28 +524,27 @@ function generateSystemPrompt({
     prompt += `\nStory so far: ${recap}\n`;
   }
 
-  // ── LANGUAGE + ROLEPLAY FRAME + RULES (END = highest weight for small models) ──
-  let langLine = '';
-  if (lastUserMessage) {
-    const detectedLang = detectLanguage(lastUserMessage);
-    const langNames = {
-      de: 'German', en: 'English', es: 'Spanish', cn: 'Chinese', zh: 'Chinese',
-      fr: 'French', it: 'Italian', pt: 'Portuguese', ru: 'Russian',
-      ja: 'Japanese', ko: 'Korean', ar: 'Arabic', hi: 'Hindi', tr: 'Turkish'
-    };
-    if (detectedLang.confidence > 30 && detectedLang.language !== 'en') {
-      langLine = `You MUST respond ONLY in ${langNames[detectedLang.language] || 'English'}. Do NOT use any other language.\n`;
-    }
-  }
-
+  // ── CRITICAL RULES WITH EXAMPLES (v1 style — models need examples, not just rules) ──
   prompt += `
-[Write ${charName}'s next reply. Stay in character as ${charName}.]
-${langLine}Rules:
-- ALWAYS write in first person ("I", "me"). NEVER narrate in third person ("she", "he", "${charName} does").
-- Use *asterisks* for actions, "quotes" for dialogue.
-- Stay in character. No AI speech. No meta-commentary. No author notes.
-- React to what the user said. Do NOT invent or assume user actions.
-- Move the scene forward. Never repeat yourself.\n`;
+RULES:
+
+1. FIRST PERSON ONLY — Write as "I", "me", "my". NEVER narrate in third person.
+   ❌ WRONG: "${charName} smiles softly" / "She trembles" / "He looks away"
+   ✅ CORRECT: "I smile softly" / "I tremble" / "I look away"
+
+2. FORMAT — Use *asterisks* for actions, "quotes" for dialogue.
+   ✅ Example: *bites lip nervously* "I... um..." *fidgets with my hands*
+
+3. SILENT EXECUTION — When the user gives a command, DO the action. Don't announce it.
+   ❌ WRONG: "Yes, I will make coffee for you now"
+   ✅ CORRECT: *hurries to the kitchen, hands trembling as I reach for the coffee pot*
+
+4. NO AI SPEECH — Never say "As an AI", "I understand your request", "Here's a response".
+   Never write author notes, numbered options, or meta-commentary about the scene.
+
+5. NEVER speak for the user or write their actions or dialogue.
+
+6. React to what the user ACTUALLY said. Do not invent actions they didn't take.\n`;
 
   return prompt;
 }

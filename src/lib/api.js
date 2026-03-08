@@ -246,7 +246,7 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
         model: settings.ollamaModel || 'lukey03/qwen3.5-9b-abliterated-vision',
         messages: [{
           role: 'user',
-          content: `Score: -5 to 10. Just the number.\n-5=rejection 0=neutral 5=romance 10=explicit\nUser: "${userMessage.substring(0, 300)}"\nAI: "${aiMessage.substring(0, 300)}"`
+          content: `Score: -3 to 10. Just the number.\n-3=rejection 0=neutral 5=romance 10=explicit\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`
         }],
         stream: false,
         options: { temperature: 0.1, num_predict: 16, num_ctx: modelCtx }
@@ -257,7 +257,7 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
     const match = data.message?.content?.trim().match(/(-?\d+)/);
     if (!match) return 0;
     const score = parseInt(match[1], 10);
-    if (isNaN(score) || score < -5 || score > 10) return 0;
+    if (isNaN(score) || score < -3 || score > 10) return 0;
     return score;
   } catch (err) {
     console.warn('[API] Passion scoring failed:', err?.message || 'timeout');
@@ -621,7 +621,6 @@ export const sendMessage = async (
               stop: ['\nUser:', '\nHuman:', '\nAssistant:', '\nAI:', '\nCharacter:']
             })
           });
-          clearTimeout(retryTimer);
           if (retryRes.ok) {
             const retryData = await retryRes.json();
             if (retryData.message?.content) {
@@ -629,6 +628,7 @@ export const sendMessage = async (
             }
           }
         } catch { /* retry failed, fall through */ }
+        finally { clearTimeout(retryTimer); }
       }
       if (!data.message || !data.message.content) {
         throw new Error('No response from Ollama');
@@ -1285,6 +1285,10 @@ export const generateSmartSuggestions = async (messages, character, language = '
     const settings = await loadSettings();
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
     const model = settings.ollamaModel || 'lukey03/qwen3.5-9b-abliterated-vision';
+    const caps = await getModelCapabilities(ollamaUrl, model);
+    const paramB = parseFloat(caps.parameterSize) || 7;
+    const ctxCap = paramB <= 3 ? 4096 : paramB <= 10 ? 8192 : 16384;
+    const suggestCtx = Math.min(caps.contextLength, ctxCap);
     const selectedLanguage = language || settings.preferredLanguage || 'en';
     
     const languageNames = {
@@ -1447,7 +1451,8 @@ Format: 4 lines of pure text.`;
           stream: false,
           options: {
             temperature: 0.85,
-            num_predict: 100
+            num_predict: 100,
+            num_ctx: suggestCtx
           }
         })
       });

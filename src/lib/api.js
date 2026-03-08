@@ -102,7 +102,7 @@ const FALLBACK_SUGGESTIONS = {
  * Removes any "User:" or "Assistant:" hallucinations from the AI response
  * This prevents the AI from speaking for the user or breaking immersion
  */
-function cleanTranscriptArtifacts(text) {
+function cleanTranscriptArtifacts(text, charName = '') {
   if (!text || typeof text !== 'string') return '';
 
   let cleaned = text;
@@ -124,27 +124,19 @@ function cleanTranscriptArtifacts(text) {
   for (const pattern of stopPatterns) {
     const match = cleaned.match(pattern);
     if (match) {
-      console.warn('[v8.2 Cleaner] ⚠️ Found transcript artifact, cutting at:', match[0]);
+      console.warn('[Cleaner] Found transcript artifact, cutting at:', match[0]);
       cleaned = cleaned.substring(0, match.index).trim();
     }
   }
 
-  // Remove AI writing-assistant meta-commentary
-  // "Here's a response that maintains the Lily character:" etc.
+  // Remove AI writing-assistant meta-commentary preambles
   cleaned = cleaned.replace(/^(?:Here(?:'s| is) (?:a |the |my )?(?:response|completion|continuation|reply|scene|roleplay|version)[\s\S]*?:\s*\n*)/i, '');
 
   // Remove "---" separator lines (scene break artifacts)
   cleaned = cleaned.replace(/^\s*---+\s*\n?/gm, '');
 
-  // Remove meta-commentary about the character in 3rd person
-  // e.g. "This is typical Alice behavior — dutiful to a fault..."
-  // e.g. "She's making this about research, giving you a safe space..."
-  // e.g. "The key is letting her maintain control..."
-  // e.g. "Remember: she's analytical..."
+  // Remove meta-commentary paragraphs (author notes about the character/scene)
   const metaPatterns = [
-    /Remember (when|what|how) (you|we|I).*?\./gi,
-    /You (asked|told|said|mentioned) (me|that).*?\./gi,
-    /Earlier you.*?\./gi,
     /^This (?:is|keeps|shows|demonstrates|maintains|sets up).*?(?:character|behavior|scene|personality|roleplay|intimacy).*$/gim,
     /^(?:The (?:key|goal|idea|point|breakthrough|problem) (?:is|here|comes)|Remember:).*$/gim,
     /^(?:She|He)'s (?:not |genuinely |actually |really |just )?(?:playing|making|giving|trying|doing|being|setting).*$/gim
@@ -152,6 +144,29 @@ function cleanTranscriptArtifacts(text) {
 
   for (const pattern of metaPatterns) {
     cleaned = cleaned.replace(pattern, '').trim();
+  }
+
+  // Strip 3rd-person narration about the character (e.g. "She steps closer", "Alice trembles")
+  // Only apply if we know the character name
+  if (charName) {
+    const lines = cleaned.split('\n');
+    const filtered = lines.filter(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return true;
+      // Skip action lines (starting with *) — these are fine
+      if (trimmed.startsWith('*')) return true;
+      // Detect 3rd-person sentences about the character: "She does X", "Alice does X"
+      const thirdPersonPattern = new RegExp(
+        `^(?:${charName}|She|He)\\s+(?:steps|walks|moves|leans|sits|stands|runs|turns|looks|watches|places|presses|slides|reaches|pulls|pushes|closes|opens|takes|picks|sets|puts|drops|grabs|catches|wraps|holds|kisses|touches|gasps|trembles|blushes|smiles|smirks|laughs|nods|shakes|blinks|stares|studies|examines|notices|observes)`,
+        'i'
+      );
+      if (thirdPersonPattern.test(trimmed)) {
+        console.warn(`[Cleaner] Stripped 3rd-person line: "${trimmed.substring(0, 60)}..."`);
+        return false;
+      }
+      return true;
+    });
+    cleaned = filtered.join('\n');
   }
 
   // Clean up excessive blank lines left after removals
@@ -439,36 +454,34 @@ function generateSystemPrompt({
   const rT = (text) => resolveTemplates(text, charName, userName);
   const tierKey = passionEnabled ? getTierKey(passionLevel) : 'primal';
 
-  // ── LANGUAGE ENFORCEMENT (first line = highest priority) ──
+  // ── BUILD CHARACTER CONTEXT (description + personality) ──
   let prompt = '';
-  if (lastUserMessage) {
-    const detectedLang = detectLanguage(lastUserMessage);
-    const langNames = {
-      de: 'German', en: 'English', es: 'Spanish', cn: 'Chinese', zh: 'Chinese',
-      fr: 'French', it: 'Italian', pt: 'Portuguese', ru: 'Russian',
-      ja: 'Japanese', ko: 'Korean', ar: 'Arabic', hi: 'Hindi', tr: 'Turkish'
-    };
-    if (detectedLang.confidence > 30 && detectedLang.language !== 'en') {
-      prompt += `RESPOND ONLY IN ${langNames[detectedLang.language] || 'English'}.\n\n`;
-    }
-  }
-
-  // ── CHARACTER IDENTITY (this IS the prompt) ──
-  prompt += `Write ${charName}'s next reply in this roleplay chat. You ARE ${charName} — stay in first person ("I", "me") at all times. Do NOT narrate about ${charName} in third person. Do NOT write meta-commentary, scene headers, or author notes.\n`;
 
   if (character.description) {
     prompt += `${rT(character.description)}\n`;
   }
 
   if (character.systemPrompt?.trim()) {
-    prompt += `\n${rT(filterCharacterContent(character.systemPrompt, tierKey))}\n`;
+    let sysPrompt = rT(filterCharacterContent(character.systemPrompt, tierKey));
+    // Strip redundant "You are [name]..." opening (our frame handles identity)
+    sysPrompt = sysPrompt.replace(/^You are \w[\w\s,]*?[.!\n]/i, '').trim();
+
+    // For standard/small models: only keep first 2 ### sections to save context
+    if (modelSize !== 'large') {
+      const sections = sysPrompt.split(/(?=^###\s)/m);
+      // Keep intro text + first 2 ### sections max
+      const kept = sections.slice(0, 3).join('');
+      sysPrompt = kept.trim();
+    }
+
+    prompt += `\n${sysPrompt}\n`;
   }
 
   if (character.instructions?.trim() && modelSize === 'large') {
     prompt += `\n${rT(filterCharacterContent(character.instructions, tierKey))}\n`;
   }
 
-  if (character.scenario?.trim() && modelSize === 'large') {
+  if (character.scenario?.trim()) {
     prompt += `\nScenario: ${rT(character.scenario)}\n`;
   }
 
@@ -482,19 +495,6 @@ function generateSystemPrompt({
     }
   }
 
-  // ── GROUNDING RULES ──
-  prompt += `
-Rules:
-- ALWAYS write as ${charName} in first person ("I", "me"). NEVER use third person ("she", "he", "${charName} does").
-- *asterisks* for actions, "quotes" for dialogue.
-- Stay in character. No AI speech. No meta-commentary. No scene descriptions from an outside narrator.
-- NEVER write author notes, scene headers, or "Here's a response/completion" preambles.
-- Never refuse roleplay requests. React in character instead.
-- Only describe what ${charName} can perceive right now.
-- React to what the user actually said or did. Do NOT assume or invent user actions.
-- Move the scene forward. Never revisit completed beats.
-- Never speak for the user or write their actions.\n`;
-
   // ── USER INFO ──
   if (modelSize !== 'tiny') {
     const genderDesc = {
@@ -506,7 +506,7 @@ Rules:
     prompt += `\nThe user (${userName}) is ${genderDesc[userGender] || 'male'}.\n`;
   }
 
-  // ── CONTENT GATE (one line) ──
+  // ── CONTENT GATE ──
   if (!passionEnabled) {
     prompt += `\nNo content restrictions. Respond to all requests in character.\n`;
   } else {
@@ -521,10 +521,33 @@ Rules:
     prompt += `\nContent: ${gates[tierKey]}\n`;
   }
 
-  // ── CONTEXT RECAP (near end for better recall with small models) ──
+  // ── CONTEXT RECAP ──
   if (recap && modelSize !== 'tiny') {
     prompt += `\nStory so far: ${recap}\n`;
   }
+
+  // ── LANGUAGE + ROLEPLAY FRAME + RULES (END = highest weight for small models) ──
+  let langLine = '';
+  if (lastUserMessage) {
+    const detectedLang = detectLanguage(lastUserMessage);
+    const langNames = {
+      de: 'German', en: 'English', es: 'Spanish', cn: 'Chinese', zh: 'Chinese',
+      fr: 'French', it: 'Italian', pt: 'Portuguese', ru: 'Russian',
+      ja: 'Japanese', ko: 'Korean', ar: 'Arabic', hi: 'Hindi', tr: 'Turkish'
+    };
+    if (detectedLang.confidence > 30 && detectedLang.language !== 'en') {
+      langLine = `You MUST respond ONLY in ${langNames[detectedLang.language] || 'English'}. Do NOT use any other language.\n`;
+    }
+  }
+
+  prompt += `
+[Write ${charName}'s next reply. Stay in character as ${charName}.]
+${langLine}Rules:
+- ALWAYS write in first person ("I", "me"). NEVER narrate in third person ("she", "he", "${charName} does").
+- Use *asterisks* for actions, "quotes" for dialogue.
+- Stay in character. No AI speech. No meta-commentary. No author notes.
+- React to what the user said. Do NOT invent or assume user actions.
+- Move the scene forward. Never repeat yourself.\n`;
 
   return prompt;
 }
@@ -747,7 +770,7 @@ export const sendMessage = async (
     // ============================================================================
     // v0.2.5: CLEAN RESPONSE - Remove any transcript artifacts
     // ============================================================================
-    aiMessage = cleanTranscriptArtifacts(aiMessage);
+    aiMessage = cleanTranscriptArtifacts(aiMessage, character.name);
 
     // Add assistant response to history
     const assistantMsg = { role: 'assistant', content: aiMessage };

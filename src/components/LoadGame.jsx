@@ -15,6 +15,8 @@ function LoadGame({ onLoad, onBack }) {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [characterFilter, setCharacterFilter] = useState('all');
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
   // Load sessions on mount
@@ -41,6 +43,12 @@ function LoadGame({ onLoad, onBack }) {
     setIsLoading(false);
   };
 
+  const characterNames = [...new Set(
+    sessions
+      .filter(s => s.mode === GAME_MODES.CHARACTER_CHAT && s.characterName)
+      .map(s => s.characterName)
+  )].sort();
+
   // Handle delete
   const handleDelete = async (sessionId, e) => {
     e.stopPropagation();
@@ -53,6 +61,31 @@ function LoadGame({ onLoad, onBack }) {
         setSelectedSession(null);
       }
     }
+  };
+
+  const handleDeleteAll = async () => {
+    const count = filteredSessions.length;
+    if (count === 0) return;
+
+    const hasFilter = filter !== 'all' || characterFilter !== 'all';
+    const msg = hasFilter
+      ? t.loadGame.deleteAllConfirmFiltered.replace('{count}', count)
+      : t.loadGame.deleteAllConfirm.replace('{count}', count);
+
+    if (!window.confirm(msg)) return;
+
+    setIsDeleting(true);
+    const idsToDelete = filteredSessions.map(s => s.id);
+
+    for (const id of idsToDelete) {
+      await deleteSession(id);
+    }
+
+    setSessions(prev => prev.filter(s => !idsToDelete.includes(s.id)));
+    if (selectedSession && idsToDelete.includes(selectedSession.id)) {
+      setSelectedSession(null);
+    }
+    setIsDeleting(false);
   };
 
   // Handle load
@@ -68,8 +101,9 @@ function LoadGame({ onLoad, onBack }) {
 
   // Filter sessions
   const filteredSessions = sessions.filter(session => {
-    if (filter === 'all') return true;
-    return session.mode === filter;
+    if (filter !== 'all' && session.mode !== filter) return false;
+    if (characterFilter !== 'all' && session.characterName !== characterFilter) return false;
+    return true;
   });
 
   // Format date
@@ -137,7 +171,7 @@ function LoadGame({ onLoad, onBack }) {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setFilter(tab.id)}
+              onClick={() => { setFilter(tab.id); setCharacterFilter('all'); }}
               className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 filter === tab.id
                   ? 'bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/30'
@@ -148,6 +182,33 @@ function LoadGame({ onLoad, onBack }) {
             </button>
           ))}
         </div>
+
+        {(filter === 'all' || filter === GAME_MODES.CHARACTER_CHAT) && characterNames.length > 0 && (
+          <select
+            value={characterFilter}
+            onChange={(e) => setCharacterFilter(e.target.value)}
+            className="px-4 py-2.5 rounded-xl text-sm font-medium bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 hover:border-rose-500/30 hover:bg-zinc-800 transition-all duration-200 outline-none focus:border-rose-500/50 cursor-pointer appearance-none"
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a1a1aa' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: '32px' }}
+          >
+            <option value="all">{t.loadGame.allCharacters}</option>
+            {characterNames.map(name => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+        )}
+
+        {filteredSessions.length > 0 && (
+          <button
+            onClick={handleDeleteAll}
+            disabled={isDeleting}
+            className="px-4 py-2.5 rounded-xl text-sm font-medium bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            {t.loadGame.deleteAll} ({filteredSessions.length})
+          </button>
+        )}
       </div>
 
       {/* Content */}

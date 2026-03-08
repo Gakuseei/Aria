@@ -38,8 +38,10 @@ characters/*.json
 /.*
 !/.gitignore
 AGENTS.md
+CLAUDE.md
 PROJECT_STRUCTURE.md
 gemini-rules.md
+docs/plans/
 Discord/
 tools/Zonos
 testsprite_tests

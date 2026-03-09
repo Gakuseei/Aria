@@ -80,6 +80,7 @@ function App() {
     voiceTier: 'standard', // 'standard' (Piper) or 'premium' (Zonos)
     passionSystemEnabled: true,
     passionSpeedMultiplier: 1.0,
+    contextSize: 'medium',
     fontSize: 'medium',
     autoSave: true,
     smartSuggestionsEnabled: false, // AUFGABE 2: Replaced soundEnabled
@@ -123,6 +124,7 @@ function App() {
             voiceTier: loadedSettings.voiceTier || 'standard',
             passionSystemEnabled: loadedSettings.passionSystemEnabled ?? true,
             passionSpeedMultiplier: loadedSettings.passionSpeedMultiplier ?? 1.0,
+            contextSize: loadedSettings.contextSize || 'medium',
             fontSize: loadedSettings.fontSize || 'medium',
             autoSave: loadedSettings.autoSave ?? true,
             // AUFGABE 2: Migrate soundEnabled to smartSuggestionsEnabled

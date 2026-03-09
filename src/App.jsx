@@ -68,7 +68,7 @@ function App() {
   // v0.2.5: CRITICAL FIX - Lifted Settings State (AUFGABE 1)
   const [settings, setSettings] = useState({
     ollamaUrl: 'http://127.0.0.1:11434',
-    ollamaModel: 'huihui_ai/qwen3.5-abliterated:9b',
+    ollamaModel: 'HammerAI/mn-mag-mell-r1:12b-q4_K_M',
     temperature: 0.85,
     userName: 'User',
     userGender: 'male',
@@ -112,7 +112,7 @@ function App() {
           // Merge loaded settings with defaults to ensure all keys exist
           const mergedSettings = {
             ollamaUrl: loadedSettings.ollamaUrl || 'http://127.0.0.1:11434',
-            ollamaModel: loadedSettings.ollamaModel || 'huihui_ai/qwen3.5-abliterated:9b',
+            ollamaModel: loadedSettings.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M',
             temperature: loadedSettings.temperature ?? 0.85,
             userName: loadedSettings.userName || 'User',
             userGender: loadedSettings.userGender || 'male',

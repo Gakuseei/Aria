@@ -349,11 +349,28 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   />
                 )}
                 <p className="text-xs text-zinc-500 mt-1.5">
-                  {loadingModels 
+                  {loadingModels
                     ? (t.settings.detectingModels || 'Detecting models...')
-                    : availableModels.length > 0 
+                    : availableModels.length > 0
                       ? (t.settings.foundModels ? t.settings.foundModels.replace('{count}', availableModels.length) : `Found ${availableModels.length} models`)
                       : (t.settings.modelsAutoDetected || 'Models auto-detected on startup')}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">{t.settings.contextSize || 'Context Size'}</label>
+                <CustomDropdown
+                  value={settings.contextSize || 'medium'}
+                  onChange={(e) => onSettingChange('contextSize', e.target.value)}
+                  options={[
+                    { value: 'low', label: t.settings.contextLow || 'Low (8GB VRAM)' },
+                    { value: 'medium', label: t.settings.contextMedium || 'Medium (12GB VRAM)' },
+                    { value: 'high', label: t.settings.contextHigh || 'High (16GB VRAM)' },
+                    { value: 'max', label: t.settings.contextMax || 'Max (24GB+ VRAM)' }
+                  ]}
+                />
+                <p className="text-xs text-zinc-500 mt-1.5">
+                  {t.settings.contextSizeDesc || 'More context = longer conversations in memory. Requires more VRAM.'}
                 </p>
               </div>
 

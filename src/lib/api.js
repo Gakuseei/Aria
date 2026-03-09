@@ -204,6 +204,7 @@ const DEFAULT_SETTINGS = {
   repeatPenalty: 1.1,
   repeatLastN: 256,
   penalizeNewline: false,
+  contextSize: 'medium',
   fontSize: 'medium',
   autoSave: true,
   soundEnabled: true,
@@ -225,14 +226,26 @@ const PASSION_SCORING_TIMEOUT_MS = 30000;
 const MODEL_CAPS_CACHE = {};
 
 /**
+ * Context size presets (tokens). Users pick a tier in Settings.
+ * Ollama offloads to CPU if VRAM is exceeded — safe to overshoot.
+ */
+const CTX_PRESETS = {
+  low:    { small: 4096,  medium: 8192,   large: 16384  },
+  medium: { small: 8192,  medium: 16384,  large: 32768  },
+  high:   { small: 16384, medium: 32768,  large: 65536  },
+  max:    { small: 32768, medium: 65536,  large: 131072 }
+};
+
+/**
  * Compute the capped num_ctx for a given model.
  * Centralised so every Ollama request uses the same value.
  */
-async function getModelCtx(ollamaUrl, model) {
+async function getModelCtx(ollamaUrl, model, contextPreset = 'medium') {
   const caps = await getModelCapabilities(ollamaUrl, model);
   const paramB = parseFloat(caps.parameterSize) || 7;
-  const ctxCap = paramB <= 3 ? 4096 : paramB <= 10 ? 8192 : 16384;
-  return Math.min(caps.contextLength, ctxCap);
+  const sizeKey = paramB <= 3 ? 'small' : paramB <= 10 ? 'medium' : 'large';
+  const preset = CTX_PRESETS[contextPreset] || CTX_PRESETS.medium;
+  return Math.min(caps.contextLength, preset[sizeKey]);
 }
 
 /**
@@ -619,7 +632,7 @@ export const sendMessage = async (
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
     const model = settings.ollamaModel || 'llama3';
     const caps = await getModelCapabilities(ollamaUrl, model);
-    const modelCtx = await getModelCtx(ollamaUrl, model);
+    const modelCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
 
     const modelSize = getModelTier(caps.parameterSize);
     const historyToUse = Array.isArray(conversationHistory) ? conversationHistory : [];
@@ -1436,7 +1449,7 @@ export const generateSmartSuggestions = async (messages, character, language = '
     const settings = await loadSettings();
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
     const model = settings.ollamaModel || 'huihui_ai/qwen3.5-abliterated:9b';
-    const modelCtx = await getModelCtx(ollamaUrl, model);
+    const modelCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
     const selectedLanguage = language || settings.preferredLanguage || 'en';
     
     const languageNames = {

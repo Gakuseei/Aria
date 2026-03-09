@@ -108,6 +108,12 @@ function cleanTranscriptArtifacts(text, charName = '') {
 
   let cleaned = text;
 
+  // Strip model special tokens — cut everything from first special token onwards
+  const specialTokenIdx = cleaned.search(/<\|(?:endoftext|im_start|im_end|end|eot_id|start_header_id)\|>/i);
+  if (specialTokenIdx !== -1) {
+    cleaned = cleaned.substring(0, specialTokenIdx).trim();
+  }
+
   // Strip <think>...</think> blocks (thinking-model artifacts)
   cleaned = cleaned.replace(/^<think>[\s\S]*?<\/think>\s*/i, '');
   cleaned = cleaned.replace(/<\/?think>/gi, '');
@@ -548,7 +554,7 @@ export const sendMessage = async (
             repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
             penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline
           },
-          stop: ['\nUser:', '\nHuman:', `\n${userName}:`, '\nAssistant:', '\nAI:']
+          stop: ['\nUser:', '\nHuman:', `\n${userName}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>']
         })
       });
     } finally {
@@ -600,7 +606,7 @@ export const sendMessage = async (
           body: JSON.stringify({
             model, messages: retryMessages, stream: false, think: profile.flags?.think ?? false,
             options: { temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx, top_k: settings.topK ?? profile.topK, top_p: settings.topP ?? profile.topP, min_p: settings.minP ?? profile.minP, repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty, repeat_last_n: settings.repeatLastN ?? profile.repeatLastN, penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline },
-            stop: ['\nUser:', '\nHuman:', `\n${userName}:`, '\nAssistant:', '\nAI:']
+            stop: ['\nUser:', '\nHuman:', `\n${userName}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>']
           })
         });
         if (retryRes.ok) {

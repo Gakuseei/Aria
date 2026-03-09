@@ -196,7 +196,7 @@ export function resolveTemplates(text, charName, userName) {
 
 const DEFAULT_SETTINGS = {
   ollamaUrl: 'http://127.0.0.1:11434',
-  ollamaModel: 'lukey03/qwen3.5-9b-abliterated-vision',
+  ollamaModel: 'huihui_ai/qwen3.5-abliterated:9b',
   temperature: 0.75,
   topK: 20,
   topP: 0.95,
@@ -223,6 +223,36 @@ const DEFAULT_SETTINGS = {
 const PASSION_SCORING_TIMEOUT_MS = 30000;
 
 const MODEL_CAPS_CACHE = {};
+
+/**
+ * Compute the capped num_ctx for a given model.
+ * Centralised so every Ollama request uses the same value.
+ */
+async function getModelCtx(ollamaUrl, model) {
+  const caps = await getModelCapabilities(ollamaUrl, model);
+  const paramB = parseFloat(caps.parameterSize) || 7;
+  const ctxCap = paramB <= 3 ? 4096 : paramB <= 10 ? 8192 : 16384;
+  return Math.min(caps.contextLength, ctxCap);
+}
+
+/**
+ * Unload model from Ollama to fully clear KV cache.
+ * Call this when switching characters / leaving chat.
+ */
+export async function unloadOllamaModel(settings) {
+  try {
+    const ollamaUrl = settings?.ollamaUrl || 'http://127.0.0.1:11434';
+    const model = settings?.ollamaModel || 'huihui_ai/qwen3.5-abliterated:9b';
+    await fetch(`${ollamaUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, messages: [], keep_alive: 0 })
+    });
+    console.log('[API] Model unloaded (keep_alive: 0)');
+  } catch {
+    // Ignore — model may already be unloaded
+  }
+}
 
 async function getModelCapabilities(ollamaUrl, modelName) {
   const cacheKey = `${ollamaUrl}::${modelName}`;
@@ -285,14 +315,14 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
       headers: { 'Content-Type': 'application/json' },
       signal: abort.signal,
       body: JSON.stringify({
-        model: settings.ollamaModel || 'lukey03/qwen3.5-9b-abliterated-vision',
+        model: settings.ollamaModel || 'huihui_ai/qwen3.5-abliterated:9b',
         messages: [{
           role: 'user',
           content: `Score: -3 to 10. Just the number.\n-3=rejection 0=neutral 5=romance 10=explicit\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`
         }],
         stream: false,
         think: false,
-        options: { temperature: 0.1, num_predict: 16 }
+        options: { temperature: 0.1, num_predict: 16, num_ctx: modelCtx }
       })
     });
     if (!response.ok) return 0;
@@ -589,9 +619,7 @@ export const sendMessage = async (
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
     const model = settings.ollamaModel || 'llama3';
     const caps = await getModelCapabilities(ollamaUrl, model);
-    const paramB = parseFloat(caps.parameterSize) || 7;
-    const ctxCap = paramB <= 3 ? 4096 : paramB <= 10 ? 8192 : 16384;
-    const modelCtx = Math.min(caps.contextLength, ctxCap);
+    const modelCtx = await getModelCtx(ollamaUrl, model);
 
     const modelSize = getModelTier(caps.parameterSize);
     const historyToUse = Array.isArray(conversationHistory) ? conversationHistory : [];
@@ -1407,7 +1435,8 @@ export const generateSmartSuggestions = async (messages, character, language = '
 
     const settings = await loadSettings();
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
-    const model = settings.ollamaModel || 'lukey03/qwen3.5-9b-abliterated-vision';
+    const model = settings.ollamaModel || 'huihui_ai/qwen3.5-abliterated:9b';
+    const modelCtx = await getModelCtx(ollamaUrl, model);
     const selectedLanguage = language || settings.preferredLanguage || 'en';
     
     const languageNames = {
@@ -1573,7 +1602,8 @@ Format: 4 lines of pure text.`;
           think: false,
           options: {
             temperature: 0.85,
-            num_predict: 100
+            num_predict: 100,
+            num_ctx: modelCtx
           }
         })
       });

@@ -197,9 +197,9 @@ export function resolveTemplates(text, charName, userName) {
 const DEFAULT_SETTINGS = {
   ollamaUrl: 'http://127.0.0.1:11434',
   ollamaModel: 'huihui_ai/qwen3.5-abliterated:9b',
-  temperature: 0.75,
-  topK: 20,
-  topP: 0.95,
+  temperature: 0.8,
+  topK: 30,
+  topP: 0.9,
   minP: 0.05,
   repeatPenalty: 1.1,
   repeatLastN: 256,
@@ -218,6 +218,7 @@ const DEFAULT_SETTINGS = {
   imageGenUrl: 'http://127.0.0.1:7860',
   voiceEnabled: false,
   voiceUrl: 'http://127.0.0.1:5000',
+  maxResponseTokens: 256,
   passionSpeedMultiplier: 1.0
 };
 
@@ -480,8 +481,7 @@ export function scorePassionBackground(userMessage, aiMessage, settings, modelCt
 
 /**
  * ARIA System Prompt Generator
- * Restored v1 structure (that worked) in condensed form.
- * Key: "You ARE the character" + POV examples + anti-robot filter.
+ * HammerAI-style: simple frame, no POV enforcement, vivid NSFW instruction.
  */
 function generateSystemPrompt({
   character,
@@ -495,10 +495,9 @@ function generateSystemPrompt({
 }) {
   const charName = character.name;
   const rT = (text) => resolveTemplates(text, charName, userName);
-  const tierKey = passionEnabled ? getTierKey(passionLevel) : 'primal';
 
-  // ── ROLEPLAY FRAME (SillyTavern "Roleplay Simple" style) ──
-  let prompt = `You're ${charName} in this fictional never-ending uncensored roleplay with ${userName}.\n\n`;
+  // ── ROLEPLAY FRAME (HammerAI style) ──
+  let prompt = `You are ${charName}. Write the next reply from ${charName} in this never-ending conversation between ${charName} and ${userName}. Gestures and other non-verbal actions are written between asterisks (for example, *waves hello* or *moves closer*).\n\n`;
 
   // ── CHARACTER IDENTITY ──
   if (character.description) {
@@ -506,43 +505,23 @@ function generateSystemPrompt({
   }
 
   if (character.systemPrompt?.trim()) {
-    prompt += `\n${rT(filterCharacterContent(character.systemPrompt, tierKey))}\n`;
+    prompt += `\n${rT(character.systemPrompt)}\n`;
   }
 
   if (character.scenario?.trim()) {
     prompt += `\nScenario: ${rT(character.scenario)}\n`;
   }
 
-  // ── CONTENT GATE ──
-  if (!passionEnabled) {
-    prompt += `\nNo content restrictions. Respond to all requests in character.\n`;
-  } else {
-    const gates = {
-      shy: 'Romantic only. No explicit sexual content.',
-      curious: 'Romantic tension and light touching. No sex scenes.',
-      flirty: 'Suggestive content and teasing allowed. No graphic sex.',
-      heated: 'Explicit content allowed.',
-      passionate: 'Full explicit content. No restraint.',
-      primal: 'No content limits whatsoever.'
-    };
-    prompt += `\nContent level: ${gates[tierKey]}\n`;
-  }
+  // ── NSFW INSTRUCTION ──
+  prompt += `\nDescribe ${charName}'s intimate encounters in vivid detail.\n`;
 
   // ── CONTEXT RECAP ──
   if (recap) {
     prompt += `\nStory so far: ${recap}\n`;
   }
 
-  // ── RULES (minimal — only what 9B models need) ──
-  prompt += `
-RULES:
-1. FIRST PERSON ONLY — "I", "me", "my". NEVER third person.
-   ❌ "${charName} smiles" / "She trembles"
-   ✅ "I smile" / "I tremble"
-2. *asterisks* for actions, "quotes" for dialogue.
-3. NO AI speech, numbered lists, markdown headers, or meta-commentary.
-4. Never speak for ${userName} or write their actions.
-5. React to what ${userName} ACTUALLY said.\n`;
+  // ── ANTI-AI (only rule — Qwen 3.5 needs this) ──
+  prompt += `\nDo not break character with AI-assistant speech, numbered lists, markdown headers, or meta-commentary.\n`;
 
   return prompt;
 }
@@ -613,7 +592,7 @@ export const sendMessage = async (
     });
 
     let promptTokens = estimateTokens(finalSystemPrompt);
-    const numPredict = 768;
+    const numPredict = 384;
     let availableForHistory = modelCtx - promptTokens - numPredict - 128;
 
     if (availableForHistory < 300) {

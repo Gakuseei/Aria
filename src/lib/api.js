@@ -153,27 +153,30 @@ function cleanTranscriptArtifacts(text, charName = '') {
     cleaned = cleaned.replace(pattern, '').trim();
   }
 
-  // Strip 3rd-person narration about the character (e.g. "She steps closer", "Alice trembles")
-  // Only apply if we know the character name
+  // Strip character name prefixes (e.g. "**Sophia:**", "Alice:", "Sophia said:")
   if (charName) {
-    const lines = cleaned.split('\n');
-    const filtered = lines.filter(line => {
-      const trimmed = line.trim();
-      if (!trimmed) return true;
-      // Skip action lines (starting with *) — these are fine
-      if (trimmed.startsWith('*')) return true;
-      // Detect 3rd-person sentences about the character: "She does X", "Alice does X"
-      const thirdPersonPattern = new RegExp(
-        `^(?:${charName}|She|He)\\s+(?:steps|walks|moves|leans|sits|stands|runs|turns|looks|watches|places|presses|slides|reaches|pulls|pushes|closes|opens|takes|picks|sets|puts|drops|grabs|catches|wraps|holds|kisses|touches|gasps|trembles|blushes|smiles|smirks|laughs|nods|shakes|blinks|stares|studies|examines|notices|observes)`,
-        'i'
-      );
-      if (thirdPersonPattern.test(trimmed)) {
-        console.warn(`[Cleaner] Stripped 3rd-person line: "${trimmed.substring(0, 60)}..."`);
-        return false;
-      }
-      return true;
-    });
-    cleaned = filtered.join('\n');
+    cleaned = cleaned.replace(new RegExp(`^\\*{0,2}${charName}\\*{0,2}\\s*:\\s*`, 'gim'), '');
+  }
+
+  // Strip markdown headers (e.g. "### The Velvet Room's Signature Surprise")
+  cleaned = cleaned.replace(/^#{1,6}\s+\*{0,2}.*\*{0,2}\s*$/gm, '');
+  cleaned = cleaned.replace(/^#{1,6}\s+.*$/gm, '');
+
+  // Trim incomplete sentences — if num_predict cuts mid-sentence, trim to last complete one
+  // If response was cut off mid-sentence by num_predict, trim to last complete sentence
+  const lastChar = cleaned.trim().slice(-1);
+  if (lastChar && !['.', '!', '?', '"', '*', '~', ')'].includes(lastChar)) {
+    const sentenceEnd = Math.max(
+      cleaned.lastIndexOf('*'),
+      cleaned.lastIndexOf('"'),
+      cleaned.lastIndexOf('.'),
+      cleaned.lastIndexOf('!'),
+      cleaned.lastIndexOf('?')
+    );
+    if (sentenceEnd > cleaned.length * 0.5) {
+      console.warn(`[Cleaner] Trimmed incomplete sentence (cut at ${sentenceEnd}/${cleaned.length})`);
+      cleaned = cleaned.substring(0, sentenceEnd + 1);
+    }
   }
 
   // Clean up excessive blank lines left after removals
@@ -184,7 +187,7 @@ function cleanTranscriptArtifacts(text, charName = '') {
 
 /**
  * Replaces {{char}} and {{user}} template variables in text.
- * Industry-standard placeholders used by SillyTavern, HammerAI, TavernAI.
+ * Industry-standard placeholders ({{char}} / {{user}}).
  * @param {string} text - Text containing {{char}} / {{user}} placeholders
  * @param {string} charName - Character's display name
  * @param {string} userName - User's display name (from settings)
@@ -412,7 +415,7 @@ export function scorePassionBackground(userMessage, aiMessage, settings, modelCt
 
 /**
  * Build system prompt from template slots.
- * HammerAI-style: built ONCE per session, never rebuilt mid-conversation.
+ * Built ONCE per session, never rebuilt mid-conversation.
  */
 function buildSystemPrompt({ character, userName = 'User', userGender = 'male' }) {
   const charName = character.name;
@@ -429,16 +432,27 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male' }
     prompt += `\n${rT(character.systemPrompt)}\n`;
   }
 
+  // {{instructions}} — behavioral rules
+  if (character.instructions?.trim()) {
+    prompt += `\n${rT(character.instructions)}\n`;
+  }
+
   // {{scenario}}
   if (character.scenario?.trim()) {
     prompt += `\nScenario: ${rT(character.scenario)}\n`;
   }
 
-  // {{exampleDialogue}} — NSFW instructions + examples
+  // {{exampleDialogsStripped}} — formatted example exchanges
+  if (character.exampleDialogues?.length > 0) {
+    prompt += '\nExample responses:\n';
+    for (const ex of character.exampleDialogues) {
+      prompt += `${userName}: ${rT(ex.user)}\n${charName}: ${rT(ex.character)}\n\n`;
+    }
+  }
+
+  // {{exampleDialogue}} — free-form NSFW instructions
   if (character.exampleDialogue?.trim()) {
     prompt += `\n${rT(character.exampleDialogue)}\n`;
-  } else {
-    prompt += `\nDescribe ${charName}'s intimate encounters in vivid detail.\n`;
   }
 
   // {{authorsNote}} — per-character tweaks
@@ -446,8 +460,8 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male' }
     prompt += `\n${rT(character.authorsNote)}\n`;
   }
 
-  // Anti-AI rule (small models need this)
-  prompt += `\nDo not break character with AI-assistant speech, numbered lists, markdown headers, or meta-commentary.\n`;
+  // Rules — conciseness, reactivity, anti-AI (critical for small models)
+  prompt += `\nRules:\n- Always respond directly to what ${userName} said or did\n- Keep responses to 1-3 short paragraphs\n- Do not break character with AI-assistant speech, numbered lists, markdown headers, or meta-commentary\n`;
 
   return prompt;
 }
@@ -554,7 +568,7 @@ export const sendMessage = async (
             repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
             penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline
           },
-          stop: ['\nUser:', '\nHuman:', `\n${userName}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>']
+          stop: ['\nUser:', '\nHuman:', `\n${userName}:`, `\n${character.name}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>', '<|start_header_id|>']
         })
       });
     } finally {
@@ -606,7 +620,7 @@ export const sendMessage = async (
           body: JSON.stringify({
             model, messages: retryMessages, stream: false, think: profile.flags?.think ?? false,
             options: { temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx, top_k: settings.topK ?? profile.topK, top_p: settings.topP ?? profile.topP, min_p: settings.minP ?? profile.minP, repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty, repeat_last_n: settings.repeatLastN ?? profile.repeatLastN, penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline },
-            stop: ['\nUser:', '\nHuman:', `\n${userName}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>']
+            stop: ['\nUser:', '\nHuman:', `\n${userName}:`, `\n${character.name}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>', '<|start_header_id|>']
           })
         });
         if (retryRes.ok) {
@@ -652,9 +666,12 @@ export const sendMessage = async (
     const responseTime = endTime - startTime;
     const wordCount = aiMessage.split(/\s+/).length;
     const wordsPerSecond = (wordCount / (responseTime / 1000)).toFixed(2);
-    
-    // Estimate token count (rough approximation: 1.3 tokens per word)
-    const estimatedTokens = Math.round(wordCount * 1.3);
+
+    // Use Ollama's actual token counts when available, fallback to estimation
+    const responseTokens = data.eval_count || Math.round(wordCount * 1.3);
+    const promptTokens_actual = data.prompt_eval_count || promptTokens;
+
+    console.log(`[API] Tokens — response: ${responseTokens}, prompt: ${promptTokens_actual}, total: ${responseTokens + promptTokens_actual}`);
 
     // v0.2.5: Send stats to callback if provided
     if (onApiStats && typeof onApiStats === 'function') {
@@ -663,7 +680,8 @@ export const sendMessage = async (
         responseTime: responseTime,
         wordCount: wordCount,
         wordsPerSecond: parseFloat(wordsPerSecond),
-        tokens: estimatedTokens,
+        tokens: responseTokens,
+        promptTokens: promptTokens_actual,
         passionLevel: currentPassionLevel
       });
     }
@@ -674,12 +692,12 @@ export const sendMessage = async (
       conversationHistory: finalHistory,
       passionLevel: currentPassionLevel,
       modelCtx,
-      // v0.2.5: Return stats in response
       stats: {
         responseTime,
         wordCount,
         wordsPerSecond: parseFloat(wordsPerSecond),
-        tokens: estimatedTokens,
+        tokens: responseTokens,
+        promptTokens: promptTokens_actual,
         model
       }
     };

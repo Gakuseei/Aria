@@ -687,6 +687,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // ============================================================================
 
   const generateSuggestions = async (currentMessages, currentPassion) => {
+    return; // DISABLED FOR TESTING
     if (!smartSuggestionsEnabled) return;
 
     setLoadingSuggestions(true);
@@ -818,10 +819,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         await generateSuggestions(updatedMessages, freshPassion);
       }
 
-      // Passion scoring — runs after suggestions are done
-      if (settings.passionSystemEnabled && sessionId) {
-        scorePassionBackground(safeMessageText, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
-      }
+      // Passion scoring — DISABLED FOR TESTING
+      // if (settings.passionSystemEnabled && sessionId) {
+      //   scorePassionBackground(safeMessageText, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
+      // }
 
       if (imageGenEnabled && freshPassion > 60) {
         handleAutoImageGen();
@@ -1106,10 +1107,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         await generateSuggestions(updatedMessages, freshPassion);
       }
 
-      // Passion scoring after regeneration
-      if (settings.passionSystemEnabled && sessionId) {
-        scorePassionBackground(lastUserMessage, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
-      }
+      // Passion scoring after regeneration — DISABLED FOR TESTING
+      // if (settings.passionSystemEnabled && sessionId) {
+      //   scorePassionBackground(lastUserMessage, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
+      // }
     } catch (error) {
       console.error('[ChatInterface] Regeneration error:', error);
       toast.error(t.chat?.sendError || 'Failed to regenerate response');

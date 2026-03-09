@@ -367,85 +367,9 @@ function isElectron() {
          typeof window.electronAPI !== 'undefined';
 }
 
-/**
- * Filter character prompt content based on passion tier.
- * Two-pass filter for both standard and custom characters:
- * 1. Strip ### INTIMATE BEHAVIOR ### sections (header-based)
- * 2. Strip lines with intimate keywords (keyword-based fallback)
- * @param {string} text - Character systemPrompt or instructions
- * @param {string} tierKey - Current passion tier key
- * @returns {string} Filtered text
- */
-function filterCharacterContent(text, tierKey) {
-  if (!text) return '';
-  if (['heated', 'passionate', 'primal'].includes(tierKey)) {
-    return text;
-  }
-
-  let filtered = text;
-
-  // Pass 1: Strip ### INTIMATE BEHAVIOR ### sections
-  filtered = filtered.replace(/###\s*INTIMATE\s*BEHAVIOR\s*###[\s\S]*?(?=###|$)/gi, '');
-
-  // Pass 2: Keyword-based line filtering
-  if (['shy', 'curious'].includes(tierKey)) {
-    const intimatePattern = /\b(intimate|sexual|erotic|orgasm|genital|penetrat|thrust|climax|arousal|undress|naked|nude|moan|gasp(?:s|ed|ing)|tremble(?:s|d|ing)|nipple|groin|explicit|intercourse|foreplay|seduct|strip(?:s|ped|ping)\b|fondl|take\s+off\s+(your|her|his|my)\s+(dress|clothes|shirt|pants|bra|panties))\b/i;
-    filtered = filtered.split('\n').filter(line => !intimatePattern.test(line)).join('\n');
-  }
-
-  if (tierKey === 'flirty') {
-    const explicitPattern = /\b(orgasm|genital|penetrat|thrust|climax|intercourse|foreplay|explicit|nude|naked)\b/i;
-    filtered = filtered.split('\n').filter(line => !explicitPattern.test(line)).join('\n');
-  }
-
-  return filtered.trim();
-}
-
 // ============================================================================
-// v2.0: LEAN PROMPT GENERATOR
+// v3.0: TEMPLATE-BASED PROMPT SYSTEM
 // ============================================================================
-
-/**
- * Determine prompt tier based on model parameter size.
- * @param {string} parameterSize - e.g. "2B", "7B", "70B"
- * @returns {'tiny'|'standard'|'large'}
- */
-function getModelTier(parameterSize) {
-  const paramB = parseFloat(parameterSize) || 7;
-  if (paramB <= 3) return 'tiny';
-  if (paramB <= 14) return 'standard';
-  return 'large';
-}
-
-/**
- * Extract a compact recap from messages that are about to be trimmed.
- * Rule-based extraction — no API call needed.
- * @param {Array} trimmedMessages - Messages being removed from context
- * @returns {string|null} Compact recap or null
- */
-function extractRecap(trimmedMessages) {
-  if (!trimmedMessages || trimmedMessages.length === 0) return null;
-
-  const events = [];
-
-  for (const msg of trimmedMessages) {
-    const content = msg.content || '';
-    if (!content.trim()) continue;
-
-    const actions = content.match(/\*([^*]+)\*/g);
-    if (actions && actions.length > 0) {
-      const lastAction = actions[actions.length - 1].replace(/\*/g, '').trim();
-      if (lastAction.length > 10 && lastAction.length < 200) {
-        events.push(lastAction);
-      }
-    }
-  }
-
-  const significant = events.slice(-5);
-  if (significant.length === 0) return null;
-
-  return significant.join('. ') + '.';
-}
 
 /**
  * Run passion scoring in background — does not block the response.

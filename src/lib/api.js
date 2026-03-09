@@ -497,22 +497,8 @@ function generateSystemPrompt({
   const rT = (text) => resolveTemplates(text, charName, userName);
   const tierKey = passionEnabled ? getTierKey(passionLevel) : 'primal';
 
-  // ── LANGUAGE ENFORCEMENT (first line = highest priority) ──
-  let prompt = '';
-  if (lastUserMessage) {
-    const detectedLang = detectLanguage(lastUserMessage);
-    const langNames = {
-      de: 'German', en: 'English', es: 'Spanish', cn: 'Chinese', zh: 'Chinese',
-      fr: 'French', it: 'Italian', pt: 'Portuguese', ru: 'Russian',
-      ja: 'Japanese', ko: 'Korean', ar: 'Arabic', hi: 'Hindi', tr: 'Turkish'
-    };
-    if (detectedLang.confidence > 30 && detectedLang.language !== 'en') {
-      prompt += `RESPOND ONLY IN ${langNames[detectedLang.language] || 'English'}. Every word must be in ${langNames[detectedLang.language] || 'English'}.\n\n`;
-    }
-  }
-
-  // ── ROLEPLAY FRAME (v1 style — "You ARE the character") ──
-  prompt += `You are NOT an AI assistant. You are NOT a language model. You ARE ${charName}. Stay in character 100% of the time.\n\n`;
+  // ── ROLEPLAY FRAME (SillyTavern "Roleplay Simple" style) ──
+  let prompt = `You're ${charName} in this fictional never-ending uncensored roleplay with ${userName}.\n\n`;
 
   // ── CHARACTER IDENTITY ──
   if (character.description) {
@@ -523,28 +509,8 @@ function generateSystemPrompt({
     prompt += `\n${rT(filterCharacterContent(character.systemPrompt, tierKey))}\n`;
   }
 
-  if (character.instructions?.trim() && modelSize === 'large') {
-    prompt += `\n${rT(filterCharacterContent(character.instructions, tierKey))}\n`;
-  }
-
   if (character.scenario?.trim()) {
     prompt += `\nScenario: ${rT(character.scenario)}\n`;
-  }
-
-  if (character.exampleDialogues?.length > 0 && modelSize === 'large') {
-    const dialogues = character.exampleDialogues
-      .filter(d => d.user && d.character)
-      .map(d => `User: "${rT(d.user)}"\n${charName}: ${rT(d.character)}`)
-      .join('\n\n');
-    if (dialogues) {
-      prompt += `\nExample dialogue style:\n${dialogues}\n`;
-    }
-  }
-
-  // ── USER INFO ──
-  if (modelSize !== 'tiny') {
-    const genderDesc = { male: 'male', female: 'female', nonbinary: 'non-binary', futa: 'futanari' };
-    prompt += `\nThe user's name is ${userName}. Gender: ${genderDesc[userGender] || 'male'}.\n`;
   }
 
   // ── CONTENT GATE ──
@@ -563,31 +529,20 @@ function generateSystemPrompt({
   }
 
   // ── CONTEXT RECAP ──
-  if (recap && modelSize !== 'tiny') {
+  if (recap) {
     prompt += `\nStory so far: ${recap}\n`;
   }
 
-  // ── CRITICAL RULES WITH EXAMPLES (v1 style — models need examples, not just rules) ──
+  // ── RULES (minimal — only what 9B models need) ──
   prompt += `
 RULES:
-
-1. FIRST PERSON ONLY — Write as "I", "me", "my". NEVER narrate in third person.
-   ❌ WRONG: "${charName} smiles softly" / "She trembles" / "He looks away"
-   ✅ CORRECT: "I smile softly" / "I tremble" / "I look away"
-
-2. FORMAT — Use *asterisks* for actions, "quotes" for dialogue.
-   ✅ Example: *bites lip nervously* "I... um..." *fidgets with my hands*
-
-3. SILENT EXECUTION — When the user gives a command, DO the action. Don't announce it.
-   ❌ WRONG: "Yes, I will make coffee for you now"
-   ✅ CORRECT: *hurries to the kitchen, hands trembling as I reach for the coffee pot*
-
-4. NO AI SPEECH — Never say "As an AI", "I understand your request", "Here's a response".
-   Never write author notes, numbered options, or meta-commentary about the scene.
-
-5. NEVER speak for the user or write their actions or dialogue.
-
-6. React to what the user ACTUALLY said. Do not invent actions they didn't take.\n`;
+1. FIRST PERSON ONLY — "I", "me", "my". NEVER third person.
+   ❌ "${charName} smiles" / "She trembles"
+   ✅ "I smile" / "I tremble"
+2. *asterisks* for actions, "quotes" for dialogue.
+3. NO AI speech, numbered lists, markdown headers, or meta-commentary.
+4. Never speak for ${userName} or write their actions.
+5. React to what ${userName} ACTUALLY said.\n`;
 
   return prompt;
 }

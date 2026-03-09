@@ -192,7 +192,10 @@ export const translations = {
       chatImported: "Chat imported successfully",
       invalidChatFile: "Invalid chat file: missing messages",
       failedToImport: "Failed to import chat. Please check the file format.",
-      failedToExport: "Failed to export chat"
+      failedToExport: "Failed to export chat",
+      timeout: "Request timed out. Ollama may be overloaded — try again.",
+      sendError: "Failed to get a response. Please try again.",
+      noOllamaResponse: "Model returned empty response (think-mode). Retried automatically — please send again."
     },
     tutorials: {
       download: "Download",
@@ -865,7 +868,10 @@ export const translations = {
       chatImported: "Chat erfolgreich importiert",
       invalidChatFile: "Ungültige Chat-Datei: Nachrichten fehlen",
       failedToImport: "Chat konnte nicht importiert werden. Bitte überprüfe das Dateiformat.",
-      failedToExport: "Chat konnte nicht exportiert werden"
+      failedToExport: "Chat konnte nicht exportiert werden",
+      timeout: "Zeitüberschreitung. Ollama ist möglicherweise überlastet — bitte erneut versuchen.",
+      sendError: "Antwort fehlgeschlagen. Bitte erneut versuchen.",
+      noOllamaResponse: "Modell hat leere Antwort erzeugt (Think-Modus). Automatisch erneut versucht — bitte erneut senden."
     },
     tutorials: {
       download: "Herunterladen",
@@ -1536,7 +1542,10 @@ export const translations = {
       chatImported: "Chat importado con éxito",
       invalidChatFile: "Archivo de chat inválido",
       failedToImport: "Error al importar chat",
-      failedToExport: "Error al exportar chat"
+      failedToExport: "Error al exportar chat",
+      timeout: "Tiempo de espera agotado. Ollama puede estar sobrecargado — inténtalo de nuevo.",
+      sendError: "Error al obtener respuesta. Por favor, inténtalo de nuevo.",
+      noOllamaResponse: "El modelo devolvió respuesta vacía (modo think). Reintentado automáticamente — por favor envía de nuevo."
     },
     tutorials: {
       download: "Descargar",
@@ -2165,7 +2174,10 @@ export const translations = {
       chatImported: "导入成功",
       invalidChatFile: "无效文件",
       failedToImport: "导入失败",
-      failedToExport: "导出失败"
+      failedToExport: "导出失败",
+      timeout: "请求超时。Ollama 可能过载 — 请重试。",
+      sendError: "获取回复失败，请重试。",
+      noOllamaResponse: "模型返回空响应（思考模式）。已自动重试 — 请再次发送。"
     },
     tutorials: {
       download: "下载",
@@ -2793,7 +2805,10 @@ export const translations = {
       chatImported: "Chat importé avec succès",
       invalidChatFile: "Fichier invalide",
       failedToImport: "Échec de l'importation",
-      failedToExport: "Échec de l'exportation"
+      failedToExport: "Échec de l'exportation",
+      timeout: "Délai dépassé. Ollama est peut-être surchargé — réessayez.",
+      sendError: "Échec de la réponse. Veuillez réessayer.",
+      noOllamaResponse: "Le modèle a renvoyé une réponse vide (mode think). Réessayé automatiquement — veuillez renvoyer."
     },
     tutorials: {
       download: "Télécharger",
@@ -3421,7 +3436,10 @@ export const translations = {
       chatImported: "Chat importata",
       invalidChatFile: "File non valido",
       failedToImport: "Importazione fallita",
-      failedToExport: "Esportazione fallita"
+      failedToExport: "Esportazione fallita",
+      timeout: "Timeout della richiesta. Ollama potrebbe essere sovraccarico — riprova.",
+      sendError: "Impossibile ottenere risposta. Per favore riprova.",
+      noOllamaResponse: "Il modello ha restituito risposta vuota (modalità think). Riprovato automaticamente — invia di nuovo."
     },
     tutorials: {
       download: "Scarica",
@@ -4043,7 +4061,10 @@ export const translations = {
       chatImported: "Chat importado",
       invalidChatFile: "Arquivo inválido",
       failedToImport: "Falha ao importar",
-      failedToExport: "Falha ao exportar"
+      failedToExport: "Falha ao exportar",
+      timeout: "Tempo esgotado. Ollama pode estar sobrecarregado — tente novamente.",
+      sendError: "Falha ao obter resposta. Por favor, tente novamente.",
+      noOllamaResponse: "Modelo retornou resposta vazia (modo think). Tentado novamente automaticamente — envie novamente."
     },
     tutorials: {
       download: "Baixar",
@@ -4671,7 +4692,10 @@ export const translations = {
       chatImported: "Импортировано",
       invalidChatFile: "Неверный файл",
       failedToImport: "Ошибка импорта",
-      failedToExport: "Ошибка экспорта"
+      failedToExport: "Ошибка экспорта",
+      timeout: "Превышено время ожидания. Ollama перегружен — попробуйте снова.",
+      sendError: "Не удалось получить ответ. Попробуйте снова.",
+      noOllamaResponse: "Модель вернула пустой ответ (режим думания). Автоматически повторено — отправьте снова."
     },
     tutorials: {
       download: "Скачать",
@@ -5299,7 +5323,10 @@ export const translations = {
       chatImported: "インポート完了",
       invalidChatFile: "無効なファイル",
       failedToImport: "失敗",
-      failedToExport: "失敗"
+      failedToExport: "失敗",
+      timeout: "タイムアウト。Ollamaが過負荷かもしれません — 再試行してください。",
+      sendError: "応答の取得に失敗しました。再試行してください。",
+      noOllamaResponse: "モデルが空の応答を返しました（思考モード）。自動再試行済み — 再送信してください。"
     },
     tutorials: {
       download: "DL",
@@ -5927,7 +5954,10 @@ export const translations = {
       chatImported: "가져오기 완료",
       invalidChatFile: "유효하지 않은 파일",
       failedToImport: "실패",
-      failedToExport: "실패"
+      failedToExport: "실패",
+      timeout: "요청 시간 초과. Ollama가 과부하 상태일 수 있습니다 — 다시 시도하세요.",
+      sendError: "응답을 가져오지 못했습니다. 다시 시도해 주세요.",
+      noOllamaResponse: "모델이 빈 응답을 반환했습니다(생각 모드). 자동으로 재시도됨 — 다시 보내주세요."
     },
     tutorials: {
       download: "다운로드",
@@ -6550,7 +6580,10 @@ export const translations = {
       chatImported: "تم الاستيراد",
       invalidChatFile: "ملف غير صالح",
       failedToImport: "فشل الاستيراد",
-      failedToExport: "فشل التصدير"
+      failedToExport: "فشل التصدير",
+      timeout: "انتهت مهلة الطلب. قد يكون Ollama مثقلاً — حاول مرة أخرى.",
+      sendError: "فشل الحصول على رد. يرجى المحاولة مرة أخرى.",
+      noOllamaResponse: "أعاد النموذج استجابة فارغة (وضع التفكير). تمت إعادة المحاولة تلقائياً — أرسل مرة أخرى."
     },
     tutorials: {
       download: "تحميل",
@@ -7179,7 +7212,10 @@ export const translations = {
       chatImported: "चैट सफलतापूर्वक आयात की गई",
       invalidChatFile: "अमान्य चैट फ़ाइल",
       failedToImport: "आयात विफल",
-      failedToExport: "निर्यात विफल"
+      failedToExport: "निर्यात विफल",
+      timeout: "अनुरोध टाइम आउट। Ollama अधिभारित हो सकता है — पुनः प्रयास करें।",
+      sendError: "प्रतिक्रिया प्राप्त करने में विफल। कृपया पुनः प्रयास करें।",
+      noOllamaResponse: "मॉडल ने खाली प्रतिक्रिया दी (थिंक मोड)। स्वचालित रूप से पुनः प्रयास किया — कृपया फिर से भेजें।"
     },
     tutorials: {
       download: "डाउनलोड",
@@ -7808,7 +7844,10 @@ export const translations = {
       chatImported: "Sohbet başarıyla içe aktarıldı",
       invalidChatFile: "Geçersiz sohbet dosyası",
       failedToImport: "İçe aktarma başarısız",
-      failedToExport: "Dışa aktarma başarısız"
+      failedToExport: "Dışa aktarma başarısız",
+      timeout: "İstek zaman aşımına uğradı. Ollama aşırı yüklenmiş olabilir — tekrar deneyin.",
+      sendError: "Yanıt alınamadı. Lütfen tekrar deneyin.",
+      noOllamaResponse: "Model boş yanıt döndürdü (düşünme modu). Otomatik olarak yeniden denendi — lütfen tekrar gönderin."
     },
     tutorials: {
       download: "İndir",

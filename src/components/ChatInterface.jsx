@@ -835,7 +835,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       console.error('[ChatInterface] Send error:', error);
       const errorMsg = error?.message === 'The operation was aborted'
         ? (t.chat?.timeout || 'Request timed out')
-        : (t.chat?.sendError || error?.message || 'Failed to get response');
+        : error?.message === 'No response from Ollama'
+          ? (t.chat?.noOllamaResponse || 'Model returned empty response — please send again.')
+          : (t.chat?.sendError || error?.message || 'Failed to get response');
       toast.error(errorMsg);
     } finally {
       setIsLoading(false);

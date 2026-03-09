@@ -757,46 +757,61 @@ export const sendMessage = async (
 
     // Pre-clean: strip think tags and detect broken responses before retry logic
     if (data.message?.content) {
+      const thinkMatch = data.message.content.match(/^<think>([\s\S]*?)<\/think>/i);
       data.message.content = data.message.content.replace(/^<think>[\s\S]*?<\/think>\s*/i, '');
       data.message.content = data.message.content.replace(/<\/?think>/gi, '').trim();
       const stripped = data.message.content.replace(/[*\s\n_~`]/g, '');
       if (stripped.length < 3) {
-        console.warn(`[API] Broken response detected: "${data.message.content}"`);
+        console.warn(`[API] Broken/think-only response — scheduling retry`);
         data.message.content = '';
+        // Preserve think content for last-resort fallback
+        if (!data.message.thinking && thinkMatch?.[1]?.trim().length > 20) {
+          data.message.thinking = thinkMatch[1].trim();
+        }
       }
     }
 
     if (!data.message || !data.message.content) {
-      if (trimmedHistory.length > 2) {
-        console.warn(`[API] Empty response — retrying with fewer messages (${trimmedHistory.length} → 2)`);
-        const retryMessages = [
-          { role: 'system', content: finalSystemPrompt },
-          ...trimmedHistory.slice(-2).map(m => ({ role: m.role, content: m.content }))
-        ];
-        const retryCtrl = new AbortController();
-        const retryTimer = setTimeout(() => retryCtrl.abort(), 120000);
-        try {
-          const retryRes = await fetch(`${ollamaUrl}/api/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: retryCtrl.signal,
-            body: JSON.stringify({
-              model, messages: retryMessages, stream: false, think: false,
-              options: { temperature: settings.temperature ?? 0.75, num_predict: numPredict, num_ctx: modelCtx, top_k: settings.topK ?? 20, top_p: settings.topP ?? 0.95, min_p: settings.minP ?? 0.05, repeat_penalty: settings.repeatPenalty ?? 1.1, repeat_last_n: settings.repeatLastN ?? 256, penalize_newline: settings.penalizeNewline ?? false },
-              stop: ['\nUser:', '\nHuman:', `\n${userName}:`, '\nAssistant:', '\nAI:']
-            })
-          });
-          if (retryRes.ok) {
-            const retryData = await retryRes.json();
-            if (retryData.message && !retryData.message.content && retryData.message.thinking) {
-              retryData.message.content = retryData.message.thinking;
-            }
-            if (retryData.message?.content) {
+      console.warn(`[API] Empty response — retrying (history: ${trimmedHistory.length} msgs)`);
+      const retrySystemPrompt = finalSystemPrompt + '\nIMPORTANT: Respond directly as the character. Do NOT use <think> tags.';
+      const retryMessages = [
+        { role: 'system', content: retrySystemPrompt },
+        ...trimmedHistory.slice(-2).map(m => ({ role: m.role, content: m.content }))
+      ];
+      const retryCtrl = new AbortController();
+      const retryTimer = setTimeout(() => retryCtrl.abort(), 120000);
+      try {
+        const retryRes = await fetch(`${ollamaUrl}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: retryCtrl.signal,
+          body: JSON.stringify({
+            model, messages: retryMessages, stream: false, think: false,
+            options: { temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx, top_k: settings.topK ?? 20, top_p: settings.topP ?? 0.95, min_p: settings.minP ?? 0.05, repeat_penalty: settings.repeatPenalty ?? 1.1, repeat_last_n: settings.repeatLastN ?? 256, penalize_newline: settings.penalizeNewline ?? false },
+            stop: ['\nUser:', '\nHuman:', `\n${userName}:`, '\nAssistant:', '\nAI:']
+          })
+        });
+        if (retryRes.ok) {
+          const retryData = await retryRes.json();
+          if (retryData.message && !retryData.message.content && retryData.message.thinking) {
+            retryData.message.content = retryData.message.thinking;
+          }
+          if (retryData.message?.content) {
+            // Pre-clean retry response too
+            retryData.message.content = retryData.message.content.replace(/^<think>[\s\S]*?<\/think>\s*/i, '');
+            retryData.message.content = retryData.message.content.replace(/<\/?think>/gi, '').trim();
+            if (retryData.message.content.replace(/[*\s\n_~`]/g, '').length >= 3) {
               data = retryData;
             }
           }
-        } catch { /* retry failed, fall through */ }
-        finally { clearTimeout(retryTimer); }
+        }
+      } catch { /* retry failed, fall through */ }
+      finally { clearTimeout(retryTimer); }
+
+      if (!data.message?.content && data.message?.thinking) {
+        // Last resort: use think content from original response
+        console.warn('[API] Using think-content as last-resort fallback');
+        data.message.content = data.message.thinking;
       }
       if (!data.message || !data.message.content) {
         throw new Error('No response from Ollama');

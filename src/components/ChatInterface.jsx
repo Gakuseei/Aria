@@ -7,6 +7,7 @@ import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Se
 import toast from 'react-hot-toast';
 import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSmartSuggestions, scorePassionBackground, resolveTemplates, unloadOllamaModel } from '../lib/api';
 import { passionManager, getTierKey } from '../lib/PassionManager';
+import { getModelProfile } from '../lib/modelProfiles';
 import { generateImage, cleanContextForImage, extractConversationContext } from '../lib/imageGen';
 import TutorialModal from './tutorials/TutorialModal';
 import { useLanguage } from '../context/LanguageContext';
@@ -1915,6 +1916,29 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                     </div>
                   </div>
                 )}
+
+                {/* Model Sampling Params */}
+                <div>
+                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">{t.settings.samplingParams || 'Sampling Parameters'}</h3>
+                  {(() => {
+                    const mp = getModelProfile(settings?.ollamaModel);
+                    return (
+                      <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
+                        <div className="grid grid-cols-2 gap-2 text-sm text-zinc-400">
+                          <div>Temperature: <span className="text-zinc-200">{mp.temperature}</span></div>
+                          <div>Top P: <span className="text-zinc-200">{mp.topP}</span></div>
+                          <div>Top K: <span className="text-zinc-200">{mp.topK}</span></div>
+                          <div>Max Tokens: <span className="text-zinc-200">{mp.maxResponseTokens}</span></div>
+                          <div>Min P: <span className="text-zinc-200">{mp.minP}</span></div>
+                          <div>Repeat Penalty: <span className="text-zinc-200">{mp.repeatPenalty}</span></div>
+                        </div>
+                        {!character.isCustom && (
+                          <p className="text-xs text-zinc-600 mt-2 italic">{t.settings.readOnly || 'Auto-configured for this model'}</p>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
 
                 {/* Theme Color */}
                 <div>

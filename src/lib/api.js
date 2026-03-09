@@ -7,6 +7,7 @@
 
 import { detectLanguage } from './languageEngine.js';
 import { passionManager, PASSION_TIERS, getTierKey } from './PassionManager.js';
+import { getModelProfile } from './modelProfiles.js';
 
 /**
  * Fallback suggestions for all 10 languages
@@ -560,74 +561,32 @@ export const sendMessage = async (
 
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
     const model = settings.ollamaModel || 'llama3';
-    const caps = await getModelCapabilities(ollamaUrl, model);
     const modelCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
-
-    const modelSize = getModelTier(caps.parameterSize);
+    const profile = getModelProfile(model);
     const historyToUse = Array.isArray(conversationHistory) ? conversationHistory : [];
 
-    console.log(`[API] Model: ${model}, ctx: ${modelCtx}, size: ${modelSize}`);
+    console.log(`[API] Model: ${model} (${profile.family}), ctx: ${modelCtx}`);
 
-    let currentPassionLevel = 0;
-    if (settings.passionSystemEnabled && sessionId) {
-      currentPassionLevel = passionManager.getPassionLevel(sessionId);
-    }
+    const currentPassionLevel = 0;
 
     const userGender = settings.userGender || 'male';
     const userName = settings.userName || 'User';
 
-    let finalSystemPrompt = generateSystemPrompt({
+    const finalSystemPrompt = buildSystemPrompt({
       character,
-      passionLevel: currentPassionLevel,
-      passionEnabled: unchainedMode ? false : settings.passionSystemEnabled,
-      userGender,
       userName,
-      modelSize,
-      lastUserMessage: userMessage
+      userGender
     });
-
-    let promptTokens = estimateTokens(finalSystemPrompt);
-    const numPredict = 384;
+    const promptTokens = estimateTokens(finalSystemPrompt);
+    const numPredict = settings.maxResponseTokens ?? profile.maxResponseTokens ?? 256;
     let availableForHistory = modelCtx - promptTokens - numPredict - 128;
-
-    if (availableForHistory < 300) {
-      console.warn(`[API] Prompt too large (~${promptTokens}t) for ctx ${modelCtx} — regenerating as tiny`);
-      finalSystemPrompt = generateSystemPrompt({
-        character,
-        passionLevel: currentPassionLevel,
-        passionEnabled: unchainedMode ? false : settings.passionSystemEnabled,
-        userGender,
-        userName,
-        modelSize: 'tiny',
-        lastUserMessage: userMessage
-      });
-      promptTokens = estimateTokens(finalSystemPrompt);
-      availableForHistory = modelCtx - promptTokens - numPredict - 128;
-    }
 
     // Dynamic sliding window — keep as many recent messages as fit
     let trimmedHistory = [...historyToUse];
-    const trimmedOut = [];
     while (trimmedHistory.length > 2) {
       const historyTokens = trimmedHistory.reduce((sum, m) => sum + estimateTokens(m.content || ''), 0);
       if (historyTokens <= availableForHistory) break;
-      trimmedOut.push(trimmedHistory.shift());
-    }
-
-    // Extract recap from trimmed messages and regenerate prompt with it
-    const recap = extractRecap(trimmedOut);
-    if (recap) {
-      finalSystemPrompt = generateSystemPrompt({
-        character,
-        passionLevel: currentPassionLevel,
-        passionEnabled: unchainedMode ? false : settings.passionSystemEnabled,
-        userGender,
-        userName,
-        modelSize,
-        recap,
-        lastUserMessage: userMessage
-      });
-      promptTokens = estimateTokens(finalSystemPrompt);
+      trimmedHistory.shift();
     }
 
     console.log(`[API] Prompt ~${promptTokens}t, history: ${trimmedHistory.length}/${historyToUse.length} msgs, num_ctx: ${modelCtx}`);
@@ -653,17 +612,17 @@ export const sendMessage = async (
           model: model,
           messages: messages,
           stream: false,
-          think: false,
+          think: profile.flags?.think ?? false,
           options: {
-            temperature: settings.temperature ?? 0.75,
+            temperature: settings.temperature ?? profile.temperature,
             num_predict: numPredict,
             num_ctx: modelCtx,
-            top_k: settings.topK ?? 20,
-            top_p: settings.topP ?? 0.95,
-            min_p: settings.minP ?? 0.05,
-            repeat_penalty: settings.repeatPenalty ?? 1.1,
-            repeat_last_n: settings.repeatLastN ?? 256,
-            penalize_newline: settings.penalizeNewline ?? false
+            top_k: settings.topK ?? profile.topK,
+            top_p: settings.topP ?? profile.topP,
+            min_p: settings.minP ?? profile.minP,
+            repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty,
+            repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
+            penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline
           },
           stop: ['\nUser:', '\nHuman:', `\n${userName}:`, '\nAssistant:', '\nAI:']
         })
@@ -715,8 +674,8 @@ export const sendMessage = async (
           headers: { 'Content-Type': 'application/json' },
           signal: retryCtrl.signal,
           body: JSON.stringify({
-            model, messages: retryMessages, stream: false, think: false,
-            options: { temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx, top_k: settings.topK ?? 20, top_p: settings.topP ?? 0.95, min_p: settings.minP ?? 0.05, repeat_penalty: settings.repeatPenalty ?? 1.1, repeat_last_n: settings.repeatLastN ?? 256, penalize_newline: settings.penalizeNewline ?? false },
+            model, messages: retryMessages, stream: false, think: profile.flags?.think ?? false,
+            options: { temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx, top_k: settings.topK ?? profile.topK, top_p: settings.topP ?? profile.topP, min_p: settings.minP ?? profile.minP, repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty, repeat_last_n: settings.repeatLastN ?? profile.repeatLastN, penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline },
             stop: ['\nUser:', '\nHuman:', `\n${userName}:`, '\nAssistant:', '\nAI:']
           })
         });

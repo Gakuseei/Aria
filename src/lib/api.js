@@ -206,7 +206,7 @@ export function resolveTemplates(text, charName, userName) {
 
 const DEFAULT_SETTINGS = {
   ollamaUrl: 'http://127.0.0.1:11434',
-  ollamaModel: 'huihui_ai/qwen3.5-abliterated:9b',
+  ollamaModel: 'HammerAI/mn-mag-mell-r1:12b-q4_K_M',
   temperature: 0.8,
   topK: 30,
   topP: 0.9,
@@ -266,7 +266,7 @@ async function getModelCtx(ollamaUrl, model, contextPreset = 'medium') {
 export async function unloadOllamaModel(settings) {
   try {
     const ollamaUrl = settings?.ollamaUrl || 'http://127.0.0.1:11434';
-    const model = settings?.ollamaModel || 'huihui_ai/qwen3.5-abliterated:9b';
+    const model = settings?.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M';
     await fetch(`${ollamaUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -339,7 +339,7 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
       headers: { 'Content-Type': 'application/json' },
       signal: abort.signal,
       body: JSON.stringify({
-        model: settings.ollamaModel || 'huihui_ai/qwen3.5-abliterated:9b',
+        model: settings.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M',
         messages: [{
           role: 'user',
           content: `Score: -3 to 10. Just the number.\n-3=rejection 0=neutral 5=romance 10=explicit\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`
@@ -1299,7 +1299,7 @@ export const generateSmartSuggestions = async (messages, character, language = '
 
     const settings = await loadSettings();
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
-    const model = settings.ollamaModel || 'huihui_ai/qwen3.5-abliterated:9b';
+    const model = settings.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M';
     const modelCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
     const selectedLanguage = language || settings.preferredLanguage || 'en';
     

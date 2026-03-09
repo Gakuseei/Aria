@@ -801,10 +801,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       const safeResponse = (response.message || '').trim();
 
-      const assistantMessage = { 
-        role: 'assistant', 
+      const assistantMessage = {
+        role: 'assistant',
         content: safeResponse,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        ...(response.stats && { stats: response.stats })
       };
       const updatedMessages = [...newMessages, assistantMessage];
       setMessages(updatedMessages);
@@ -970,7 +971,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const handleExportChat = () => {
     try {
       const exportData = {
-        character: character,
+        character: { name: character.name, description: character.description },
+        model: settings.ollamaModel || 'unknown',
         messages: messages,
         passionLevel: passionLevel,
         passionHistory: passionManager.getHistory(sessionId),
@@ -1089,10 +1091,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       const safeResponse = (response.message || '').trim();
 
-      const assistantMessage = { 
-        role: 'assistant', 
+      const assistantMessage = {
+        role: 'assistant',
         content: safeResponse,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        ...(response.stats && { stats: response.stats })
       };
       const updatedMessages = [...messagesUpToLastUser, assistantMessage];
       setMessages(updatedMessages);

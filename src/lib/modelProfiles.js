@@ -103,7 +103,7 @@ const FAMILY_KEYWORDS = [
 
 /**
  * Detect model family from a model name string.
- * @param {string} modelName - Ollama model name (e.g. "huihui_ai/qwen3.5-abliterated:9b")
+ * @param {string} modelName - Ollama model name (e.g. "HammerAI/mn-mag-mell-r1:12b-q4_K_M")
  * @returns {string} Family key ("qwen", "llama", etc.) or "generic" if unknown
  */
 export function detectModelFamily(modelName) {

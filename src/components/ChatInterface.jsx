@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSmartSuggestions, scorePassionBackground, resolveTemplates } from '../lib/api';
+import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSmartSuggestions, scorePassionBackground, resolveTemplates, unloadOllamaModel } from '../lib/api';
 import { passionManager, getTierKey } from '../lib/PassionManager';
 import { generateImage, cleanContextForImage, extractConversationContext } from '../lib/imageGen';
 import TutorialModal from './tutorials/TutorialModal';
@@ -331,6 +331,18 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const importFileRef = useRef(null);
   const audioRef = useRef(null);
   const saveTimerRef = useRef(null);
+  const abortRef = useRef(null);
+
+  // Cleanup: abort pending requests + unload model on unmount (character switch)
+  useEffect(() => {
+    return () => {
+      if (abortRef.current) {
+        abortRef.current.abort();
+        abortRef.current = null;
+      }
+      unloadOllamaModel(parentSettings);
+    };
+  }, []);
 
   // BLOCK 6.9: Trigger entrance animation
   useEffect(() => {
@@ -750,6 +762,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     const safeMessageText = (messageText || '').trim();
     if (!safeMessageText || isLoading) return;
 
+    // Cancel any previous pending request
+    if (abortRef.current) abortRef.current.abort();
+    abortRef.current = new AbortController();
+
     const userMessage = {
       role: 'user',
       content: safeMessageText,
@@ -815,6 +831,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         handleSpeak(safeResponse);
       }
     } catch (error) {
+      if (abortRef.current?.signal?.aborted) return;
       console.error('[ChatInterface] Send error:', error);
       const errorMsg = error?.message === 'The operation was aborted'
         ? (t.chat?.timeout || 'Request timed out')

@@ -336,7 +336,7 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
           content: `Score: -3 to 10. Just the number.\n-3=rejection 0=neutral 5=romance 10=explicit\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`
         }],
         stream: false,
-        think: false,
+        think: getModelProfile(settings.ollamaModel || '').flags?.think ?? false,
         options: { temperature: 0.1, num_predict: 16, num_ctx: modelCtx }
       })
     });
@@ -1439,7 +1439,7 @@ Format: 4 lines of pure text.`;
           model: model,
           messages: [{ role: 'user', content: finalSuggestionPrompt }],
           stream: false,
-          think: false,
+          think: getModelProfile(model).flags?.think ?? false,
           options: {
             temperature: 0.85,
             num_predict: 100,

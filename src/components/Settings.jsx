@@ -379,7 +379,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   <label className="text-sm font-medium text-zinc-400">{t.settings.temperature}</label>
                   <span className={`text-sm font-mono px-2 py-0.5 rounded ${
                     isGoldMode ? 'text-amber-300 bg-amber-500/10' : 'text-rose-300 bg-rose-500/10'
-                  }`}>{(settings.temperature ?? 0.85).toFixed(2)}</span>
+                  }`}>{(settings.temperature ?? 0.8).toFixed(2)}</span>
                 </div>
                 <input
                   type="range"
@@ -394,6 +394,29 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                 />
                 <p className="text-xs text-zinc-500 mt-1.5">
                   {t.settings.lowerMoreFocused}
+                </p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-zinc-400">{t.settings.maxResponseTokens}</label>
+                  <span className={`text-sm font-mono px-2 py-0.5 rounded ${
+                    isGoldMode ? 'text-amber-300 bg-amber-500/10' : 'text-rose-300 bg-rose-500/10'
+                  }`}>{settings.maxResponseTokens ?? 256}</span>
+                </div>
+                <input
+                  type="range"
+                  min="64"
+                  max="2048"
+                  step="32"
+                  value={settings.maxResponseTokens ?? 256}
+                  onChange={(e) => onSettingChange('maxResponseTokens', parseInt(e.target.value))}
+                  className={`w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer ${
+                    isGoldMode ? 'accent-amber-500' : 'accent-rose-500'
+                  }`}
+                />
+                <p className="text-xs text-zinc-500 mt-1.5">
+                  {t.settings.maxResponseTokensDesc}
                 </p>
               </div>
 

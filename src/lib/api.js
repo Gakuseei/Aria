@@ -480,47 +480,42 @@ export function scorePassionBackground(userMessage, aiMessage, settings, modelCt
 }
 
 /**
- * ARIA System Prompt Generator
- * HammerAI-style: simple frame, no POV enforcement, vivid NSFW instruction.
+ * Build system prompt from template slots.
+ * HammerAI-style: built ONCE per session, never rebuilt mid-conversation.
  */
-function generateSystemPrompt({
-  character,
-  passionLevel = 0,
-  passionEnabled = true,
-  userGender = 'male',
-  userName = 'User',
-  modelSize = 'standard',
-  recap = null,
-  lastUserMessage = ''
-}) {
+function buildSystemPrompt({ character, userName = 'User', userGender = 'male' }) {
   const charName = character.name;
   const rT = (text) => resolveTemplates(text, charName, userName);
 
-  // ── ROLEPLAY FRAME (HammerAI style) ──
+  // {{system}} — roleplay frame
   let prompt = `You are ${charName}. Write the next reply from ${charName} in this never-ending conversation between ${charName} and ${userName}. Gestures and other non-verbal actions are written between asterisks (for example, *waves hello* or *moves closer*).\n\n`;
 
-  // ── CHARACTER IDENTITY ──
+  // {{personality}} — character identity
   if (character.description) {
     prompt += `${rT(character.description)}\n`;
   }
-
   if (character.systemPrompt?.trim()) {
     prompt += `\n${rT(character.systemPrompt)}\n`;
   }
 
+  // {{scenario}}
   if (character.scenario?.trim()) {
     prompt += `\nScenario: ${rT(character.scenario)}\n`;
   }
 
-  // ── NSFW INSTRUCTION ──
-  prompt += `\nDescribe ${charName}'s intimate encounters in vivid detail.\n`;
-
-  // ── CONTEXT RECAP ──
-  if (recap) {
-    prompt += `\nStory so far: ${recap}\n`;
+  // {{exampleDialogue}} — NSFW instructions + examples
+  if (character.exampleDialogue?.trim()) {
+    prompt += `\n${rT(character.exampleDialogue)}\n`;
+  } else {
+    prompt += `\nDescribe ${charName}'s intimate encounters in vivid detail.\n`;
   }
 
-  // ── ANTI-AI (only rule — Qwen 3.5 needs this) ──
+  // {{authorsNote}} — per-character tweaks
+  if (character.authorsNote?.trim()) {
+    prompt += `\n${rT(character.authorsNote)}\n`;
+  }
+
+  // Anti-AI rule (small models need this)
   prompt += `\nDo not break character with AI-assistant speech, numbered lists, markdown headers, or meta-commentary.\n`;
 
   return prompt;

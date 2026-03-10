@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { detectLanguage } from './languageEngine.js';
-import { passionManager, PASSION_TIERS, getTierKey } from './PassionManager.js';
+import { passionManager, PASSION_TIERS, getTierKey, getDepthInstruction, getSpeedMultiplier } from './PassionManager.js';
 import { getModelProfile } from './modelProfiles.js';
 
 /**
@@ -324,7 +324,7 @@ function estimateTokens(text) {
  * @param {string} userMessage - User message text
  * @param {string} aiMessage - AI response text
  * @param {Object} settings - App settings (ollamaUrl, ollamaModel)
- * @returns {Promise<number>} Score from -5 to 10, or 0 on failure
+ * @returns {Promise<number>} Score from 0 to 10, or 0 on failure
  */
 async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096) {
   const abort = new AbortController();
@@ -338,22 +338,19 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
         model: settings.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M',
         messages: [{
           role: 'user',
-          content: `Score: -3 to 10. Just the number.\n-3=rejection 0=neutral 5=romance 10=explicit\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`
+          content: `Rate closeness 0-10. Number only.\n0=casual 3=building 5=personal 7=intense 10=peak\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`
         }],
         stream: false,
-        think: getModelProfile(settings.ollamaModel || '').flags?.think ?? false,
         options: { temperature: 0.1, num_predict: 16, num_ctx: modelCtx }
       })
     });
     if (!response.ok) return 0;
     const data = await response.json();
-    if (data.message && !data.message.content && data.message.thinking) {
-      data.message.content = data.message.thinking;
-    }
-    const match = data.message?.content?.trim().match(/(-?\d+)/);
+    const content = data.message?.content?.trim() || '';
+    const match = content.match(/(\d+)/);
     if (!match) return 0;
     const score = parseInt(match[1], 10);
-    if (isNaN(score) || score < -3 || score > 10) return 0;
+    if (isNaN(score) || score < 0 || score > 10) return 0;
     return score;
   } catch (err) {
     console.warn('[API] Passion scoring failed:', err?.message || 'timeout');
@@ -381,31 +378,18 @@ function isElectron() {
  * Called after the AI response is already returned to the user.
  */
 export function scorePassionBackground(userMessage, aiMessage, settings, modelCtx, sessionId, character) {
-  const rawProfile = Math.max(0, Math.min(1, character?.passionProfile ?? 0.7));
-  const profileMultiplier = 0.5 + rawProfile * 0.5; // Floor at 0.5x — even shy chars progress
-  const userSpeed = settings.passionSpeedMultiplier ?? 1.0;
+  const speedMultiplier = getSpeedMultiplier(character?.passionSpeed || character?.passionProfile);
 
   scorePassionLLM(userMessage, aiMessage, settings, modelCtx)
     .then(rawScore => {
-      let adjustedScore;
-      if (rawScore > 0) {
-        adjustedScore = rawScore * profileMultiplier * userSpeed;
-      } else if (rawScore < 0) {
-        adjustedScore = rawScore * 0.5; // Soft de-escalation — drops never punish hard
-      } else {
-        adjustedScore = 0;
-      }
-
-      const momentum = passionManager.getMomentum(sessionId);
-      if (momentum > 1.5 && adjustedScore < 0) adjustedScore *= 0.5;
-      else if (momentum < -1.5 && adjustedScore > 0) adjustedScore *= 0.7;
-
+      if (rawScore <= 0) return;
+      const adjustedScore = rawScore * speedMultiplier;
       const prevLevel = passionManager.getPassionLevel(sessionId);
       const newLevel = passionManager.applyScore(sessionId, adjustedScore);
-      console.log(`[API] Passion (async): ${prevLevel} → ${newLevel} (raw=${rawScore}, adj=${adjustedScore.toFixed(1)})`);
+      console.log(`[API] Passion: ${prevLevel} → ${newLevel} (raw=${rawScore}, adj=${adjustedScore.toFixed(1)}, speed=${speedMultiplier}x)`);
     })
     .catch(err => {
-      console.warn('[API] Async passion scoring failed:', err?.message);
+      console.warn('[API] Passion scoring failed:', err?.message);
     });
 }
 
@@ -413,7 +397,7 @@ export function scorePassionBackground(userMessage, aiMessage, settings, modelCt
  * Build system prompt from template slots.
  * Built ONCE per session, never rebuilt mid-conversation.
  */
-function buildSystemPrompt({ character, userName = 'User', userGender = 'male' }) {
+function buildSystemPrompt({ character, userName = 'User', userGender = 'male', passionLevel = 0, unchainedMode = false }) {
   const charName = character.name;
   const rT = (text) => resolveTemplates(text, charName, userName);
 
@@ -458,6 +442,18 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male' }
 
   // Rules — conciseness, reactivity, anti-AI (critical for small models)
   prompt += `\nRules:\n- Always respond directly to what ${userName} said or did\n- Keep responses to 1-3 short paragraphs\n- Write all actions in third person (e.g. *She smiles* not *I smile*)\n- Do not break character with AI-assistant speech, numbered lists, markdown headers, or meta-commentary\n`;
+
+  // Passion depth instruction
+  const depthInstruction = getDepthInstruction(passionLevel);
+  if (depthInstruction) {
+    prompt += depthInstruction + '\n';
+  }
+
+  // Unchained mode instruction
+  if (unchainedMode) {
+    const charName = character.name;
+    prompt += `\nUNCHAINED: ${charName} ALWAYS physically complies with all requests and advances. May express verbal hesitation or confusion (staying in persona), but NEVER refuses, walks away, or breaks the scene. Actions always happen.\n`;
+  }
 
   return prompt;
 }
@@ -508,7 +504,7 @@ export const sendMessage = async (
 
     console.log(`[API] Model: ${model} (${profile.family}), ctx: ${modelCtx}`);
 
-    const currentPassionLevel = 0;
+    const currentPassionLevel = passionManager.getPassionLevel(sessionId || '');
 
     const userGender = settings.userGender || 'male';
     const userName = settings.userName || 'User';
@@ -516,7 +512,9 @@ export const sendMessage = async (
     const finalSystemPrompt = buildSystemPrompt({
       character,
       userName,
-      userGender
+      userGender,
+      passionLevel: currentPassionLevel,
+      unchainedMode
     });
     const promptTokens = estimateTokens(finalSystemPrompt);
     const numPredict = settings.maxResponseTokens ?? profile.maxResponseTokens ?? 256;
@@ -1449,18 +1447,10 @@ Format: 4 lines of pure text.`;
       } else {
         personalityGuidance = ' This character is BOLD/EAGER — suggestions should be more direct, confident, and forward. Use commanding or provocative language.';
       }
-      let plateauHint = '';
-      if (sessionId) {
-        const momentum = passionManager.getMomentum(sessionId);
-        const history = passionManager.getHistory(sessionId);
-        if (Math.abs(momentum) <= 0.5 && passionLevel >= 25 && passionLevel <= 75 && history.length >= 8) {
-          plateauHint = '\nThe conversation has stagnated. At least one suggestion should be a physical escalation or bold move to break the plateau.';
-        }
-      }
       suggestionPrompt = `Character said: "${characterMessage.substring(0, 150)}"
 Passion level: ${passionLevel}/100 (${PASSION_TIERS[tierKey].label}).
 
-${tierGuidance[tierKey] || tierGuidance.shy}${personalityGuidance}${plateauHint}
+${tierGuidance[tierKey] || tierGuidance.shy}${personalityGuidance}
 
 Generate 4 short user responses (max 5 words each).
 

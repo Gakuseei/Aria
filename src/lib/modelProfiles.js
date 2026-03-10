@@ -15,7 +15,7 @@ export const MODEL_PROFILES = {
     repeatPenalty: 1.1,
     repeatLastN: 256,
     penalizeNewline: false,
-    flags: { think: false }
+    flags: {}
   },
   mistral: {
     label: 'Mistral',
@@ -63,7 +63,7 @@ export const MODEL_PROFILES = {
     repeatPenalty: 1.1,
     repeatLastN: 256,
     penalizeNewline: false,
-    flags: { think: false }
+    flags: {}
   },
   phi: {
     label: 'Phi',

@@ -196,32 +196,6 @@ function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, 
 }
 
 // ============================================================================
-// PASSION SPARKLINE
-// ============================================================================
-
-const PassionSparkline = React.memo(function PassionSparkline({ history, color }) {
-  if (!history || history.length < 5) return null;
-
-  const points = history.slice(-25);
-  const width = 40;
-  const height = 16;
-
-  const pathData = points
-    .map((val, i) => {
-      const x = (i / (points.length - 1)) * width;
-      const y = height - (val / 100) * height;
-      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
-
-  return (
-    <svg width={width} height={height} className="opacity-60">
-      <path d={pathData} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-});
-
-// ============================================================================
 // MAIN CHAT INTERFACE - v8.1 RESTORED
 // ============================================================================
 
@@ -233,27 +207,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
   const [passionLevel, setPassionLevel] = useState(0);
-  const previousTierRef = useRef('shy');
+  const previousTierRef = useRef('surface');
   const [tierTransitioning, setTierTransitioning] = useState(false);
   const [tierToast, setTierToast] = useState(null);
-  const [showPassionPresets, setShowPassionPresets] = useState(false);
-  const passionRingRef = useRef(null);
   const [sessionId, setSessionId] = useState(null);
-
-  const passionHistory = useMemo(() => {
-    if (!sessionId) return [];
-    return passionManager.getHistory(sessionId);
-  }, [sessionId, passionLevel]);
-
-  const passionMomentum = useMemo(() => {
-    if (!sessionId) return 0;
-    return passionManager.getMomentum(sessionId);
-  }, [sessionId, passionLevel]);
-
-  const currentStreak = useMemo(() => {
-    if (!sessionId) return 0;
-    return passionManager.getStreak(sessionId);
-  }, [sessionId, passionLevel]);
+  const [showPassionPopover, setShowPassionPopover] = useState(false);
   const [showChatOptions, setShowChatOptions] = useState(false);
 
   // BLOCK 6.9: Entrance Animation
@@ -325,8 +283,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // v0.2.5: Tutorial Modal
   const [showTutorial, setShowTutorial] = useState(null);
 
-  const [showPassionResumeModal, setShowPassionResumeModal] = useState(false);
-  const [passionResumeData, setPassionResumeData] = useState(null);
   const [confirmModal, setConfirmModal] = useState(null);
 
   const messagesEndRef = useRef(null);
@@ -539,7 +495,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     if (currentTier !== previousTierRef.current) {
       setTierTransitioning(true);
       const timer = setTimeout(() => setTierTransitioning(false), 600);
-      const tierOrder = ['shy', 'curious', 'flirty', 'heated', 'passionate', 'primal'];
+      const tierOrder = ['surface', 'aware', 'vivid', 'immersive', 'consuming', 'transcendent'];
       const oldIdx = tierOrder.indexOf(previousTierRef.current);
       const newIdx = tierOrder.indexOf(currentTier);
       const fromLabel = t.chat[`passion${previousTierRef.current.charAt(0).toUpperCase() + previousTierRef.current.slice(1)}`] || previousTierRef.current;
@@ -554,17 +510,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       return () => { clearTimeout(timer); if (toastTimer) clearTimeout(toastTimer); };
     }
   }, [passionLevel, t]);
-
-  useEffect(() => {
-    if (!showPassionPresets) return;
-    const handleClickOutside = (e) => {
-      if (passionRingRef.current && !passionRingRef.current.contains(e.target)) {
-        setShowPassionPresets(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showPassionPresets]);
 
   // ============================================================================
   // INITIALIZATION
@@ -597,9 +542,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       if (character?.id) {
         const memory = passionManager.getCharacterMemory(character.id);
-        if (memory && memory.lastLevel > 0) {
-          setPassionResumeData(memory);
-          setShowPassionResumeModal(true);
+        if (memory) {
+          passionManager.setPassion(newSessionId, memory.lastLevel);
+          if (memory.lastHistory) {
+            passionManager.restoreHistory(newSessionId, memory.lastHistory);
+          }
+          previousTierRef.current = getTierKey(memory.lastLevel);
+          setPassionLevel(memory.lastLevel);
         }
       }
 
@@ -1244,36 +1193,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   };
 
   // ============================================================================
-  // PASSION HELPERS
-  // ============================================================================
-
-  const getTierColor = (level) => {
-    const tier = getTierKey(level);
-    switch (tier) {
-      case 'shy': return '#06b6d4';
-      case 'curious': return '#a78bfa';
-      case 'flirty': return '#f472b6';
-      case 'heated': return '#f97316';
-      case 'passionate': return '#f43f5e';
-      case 'primal': return '#dc2626';
-      default: return '#06b6d4';
-    }
-  };
-
-  const handleTogglePresets = () => {
-    setShowPassionPresets(prev => !prev);
-  };
-
-  const handlePresetSelect = (level) => {
-    if (sessionId) {
-      passionManager.setPassion(sessionId, level);
-    }
-    setPassionLevel(level);
-    setShowPassionPresets(false);
-  };
-
-
-  // ============================================================================
   // RENDER
   // ============================================================================
 
@@ -1335,114 +1254,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 <Info size={18} strokeWidth={1.5} />
               </button>
             </div>
-            <div
-              ref={passionRingRef}
-              className="flex items-center gap-2 mt-1.5 relative cursor-pointer select-none"
-              onClick={!isUnchainedMode ? handleTogglePresets : undefined}
-            >
-              <div className={`text-xs font-medium px-3 py-1.5 rounded-full inline-flex items-center gap-2 ${
-                isUnchainedMode
-                  ? 'bg-rose-500/20 text-rose-300 animate-pulse'
-                  : 'bg-zinc-800/80 text-zinc-400'
-              }`}>
-                {isUnchainedMode ? (
-                  <>
-                    <span className="w-2 h-2 rounded-full bg-rose-400" />
-                    {t.chat.unchained}
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" viewBox="0 0 20 20">
-                      {tierTransitioning && (
-                        <circle
-                          cx="10" cy="10" r="9"
-                          fill="none"
-                          stroke={getTierColor(passionLevel)}
-                          strokeWidth="3"
-                          opacity="0.6"
-                          style={{ animation: 'tierGlow 800ms ease-out forwards', transformOrigin: '10px 10px' }}
-                        />
-                      )}
-                      <circle
-                        cx="10" cy="10" r="8"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        opacity="0.2"
-                      />
-                      <circle
-                        cx="10" cy="10" r="8"
-                        fill="none"
-                        stroke={getTierColor(passionLevel)}
-                        strokeWidth="2"
-                        strokeDasharray={`${passionLevel * 0.5027} 50.27`}
-                        strokeLinecap="round"
-                        transform="rotate(-90 10 10)"
-                        style={{ transition: 'stroke 300ms ease, stroke-dasharray 300ms ease' }}
-                      />
-                    </svg>
-                    <span
-                      style={{ transition: 'opacity 200ms ease' }}
-                      className={tierTransitioning ? 'opacity-50' : 'opacity-100'}
-                      title={t.chat.passionTooltip}
-                    >
-                      {passionLevel}% {t.chat[`passion${getTierKey(passionLevel).charAt(0).toUpperCase() + getTierKey(passionLevel).slice(1)}`]}
-                    </span>
-                    <PassionSparkline history={passionHistory} color={getTierColor(passionLevel)} />
-                    {passionMomentum > 1 && (
-                      <span className="text-[10px] text-emerald-400 font-bold" title={t.chat.passionRising}>↑</span>
-                    )}
-                    {passionMomentum < -1 && (
-                      <span className="text-[10px] text-red-400 font-bold" title={t.chat.passionFalling}>↓</span>
-                    )}
-                    {passionMomentum >= -1 && passionMomentum <= 1 && passionHistory.length >= 5 && (
-                      passionLevel > 15 && passionLevel < 86 && passionHistory.length >= 10 && Math.abs(passionHistory[passionHistory.length - 1] - passionHistory[Math.max(0, passionHistory.length - 5)]) < 5
-                        ? <span className="text-[10px] text-amber-500 font-bold animate-pulse" title={t.chat.passionStagnant || t.chat.passionStable}>~</span>
-                        : <span className="text-[10px] text-orange-400 font-bold" title={t.chat.passionStable}>→</span>
-                    )}
-                    {currentStreak >= 3 && !isUnchainedMode && (
-                      <span className="text-[10px] text-orange-400 font-bold animate-pulse" title={(t.chat.passionStreak || '').replace('{count}', currentStreak)}>
-                        x{currentStreak}
-                      </span>
-                    )}
-                    {getTierKey(passionLevel) === 'primal' && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                    )}
-                    {character?.passionProfile && !isUnchainedMode && (
-                      <span className="text-[9px] text-zinc-600 font-mono leading-none" title={
-                        character.passionProfile <= 0.5 ? (t.characterCreator?.passionProfileShy || 'Reserved')
-                        : character.passionProfile <= 0.8 ? (t.characterCreator?.passionProfileBalanced || 'Balanced')
-                        : (t.characterCreator?.passionProfileBold || 'Bold')
-                      }>
-                        {character.passionProfile <= 0.5 ? 'S' : character.passionProfile <= 0.8 ? 'B' : 'F'}
-                      </span>
-                    )}
-                    <span className="text-[10px] text-zinc-600 ml-0.5">▾</span>
-                  </>
-                )}
-              </div>
-              {showPassionPresets && !isUnchainedMode && (
-                <div className="absolute top-full left-0 mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-50 min-w-[160px] py-1">
-                  {[
-                    { label: t.chat.presetFresh, level: 0 },
-                    { label: t.chat.presetCurious, level: 25 },
-                    { label: t.chat.presetFlirty, level: 40 },
-                    { label: t.chat.presetHeated, level: 60 },
-                    { label: t.chat.presetPassionate, level: 78 },
-                    { label: t.chat.presetMax, level: 100 },
-                  ].map(({ label, level }) => (
-                    <button
-                      key={level}
-                      onClick={() => handlePresetSelect(level)}
-                      className="w-full px-3 py-2 text-left text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors flex items-center gap-2"
-                    >
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getTierColor(level) }} />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <p className="text-sm text-zinc-500">
+              {character.isCustom ? character.subtitle || character.role : (t.characters?.[character.id]?.subtitle || character.subtitle || character.role)}
+            </p>
           </div>
         </div>
 
@@ -2064,45 +1878,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 className="w-full px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded-lg transition-all text-cyan-300 font-medium"
               >
                 {t.common.back}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showPassionResumeModal && passionResumeData && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[200]">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm mx-4 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2">{t.chat.passionResumeTitle}</h3>
-            <p className="text-sm text-zinc-400 mb-4">
-              {(t.chat.passionResumeMessage || '').replace('{level}', passionResumeData.lastLevel)}
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowPassionResumeModal(false);
-                  setPassionResumeData(null);
-                }}
-                className="flex-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm transition-colors"
-              >
-                {t.chat.passionResumeFresh}
-              </button>
-              <button
-                onClick={() => {
-                  if (sessionId) {
-                    passionManager.setPassion(sessionId, passionResumeData.lastLevel);
-                    if (passionResumeData.lastHistory) {
-                      passionManager.restoreHistory(sessionId, passionResumeData.lastHistory);
-                    }
-                  }
-                  previousTierRef.current = getTierKey(passionResumeData.lastLevel);
-                  setPassionLevel(passionResumeData.lastLevel);
-                  setShowPassionResumeModal(false);
-                  setPassionResumeData(null);
-                }}
-                className="flex-1 px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 rounded-lg text-sm transition-colors"
-              >
-                {(t.chat.passionResumeResume || '').replace('{level}', passionResumeData.lastLevel)}
               </button>
             </div>
           </div>

@@ -475,7 +475,8 @@ export const sendMessage = async (
   unchainedMode = false,
   onApiStats = null,  // v0.2.5: NEW - Callback for API Monitor stats
   settingsOverride = null,  // v0.2.5: FIX - Accept settings directly to avoid race conditions
-  skipPassionUpdate = false
+  skipPassionUpdate = false,
+  onToken = null  // Streaming callback — receives each token chunk as string
 ) => {
   const startTime = Date.now();  // v0.2.5: Track response time
   
@@ -551,7 +552,7 @@ export const sendMessage = async (
         body: JSON.stringify({
           model: model,
           messages: messages,
-          stream: false,
+          stream: !!onToken,
           options: {
             temperature: settings.temperature ?? profile.temperature,
             num_predict: numPredict,
@@ -575,7 +576,60 @@ export const sendMessage = async (
       throw new Error(`Ollama error: ${response.status} - ${errorText}`);
     }
 
-    let data = await response.json();
+    let data;
+
+    if (onToken && response.body) {
+      // STREAMING MODE: Read NDJSON line-by-line
+      let fullContent = '';
+      let finalChunk = null;
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const chunk = JSON.parse(line);
+            if (chunk.message?.content) {
+              fullContent += chunk.message.content;
+              onToken(chunk.message.content);
+            }
+            if (chunk.done) {
+              finalChunk = chunk;
+            }
+          } catch { /* skip malformed lines */ }
+        }
+      }
+
+      // Process any remaining buffer
+      if (buffer.trim()) {
+        try {
+          const chunk = JSON.parse(buffer);
+          if (chunk.message?.content) {
+            fullContent += chunk.message.content;
+            onToken(chunk.message.content);
+          }
+          if (chunk.done) finalChunk = chunk;
+        } catch { /* skip */ }
+      }
+
+      data = {
+        message: { content: fullContent },
+        eval_count: finalChunk?.eval_count,
+        prompt_eval_count: finalChunk?.prompt_eval_count
+      };
+    } else {
+      // NON-STREAMING MODE: Original behavior
+      data = await response.json();
+    }
 
     // Check for empty response
     if (data.message?.content) {

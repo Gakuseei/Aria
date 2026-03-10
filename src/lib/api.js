@@ -5,7 +5,7 @@
 // ~300-500 token system prompts (vs ~2000 in v1)
 // ============================================================================
 
-import { detectLanguage } from './languageEngine.js';
+import { detectLanguage, generateLanguageInstruction } from './languageEngine.js';
 import { passionManager, PASSION_TIERS, getTierKey, getDepthInstruction, getSpeedMultiplier } from './PassionManager.js';
 import { getModelProfile } from './modelProfiles.js';
 
@@ -438,13 +438,9 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male', 
     prompt += `\n${rT(character.authorsNote)}\n`;
   }
 
-  // Language enforcement — match user's language
+  // Language enforcement — only inject for non-English (saves ~100 tokens for English users)
   if (userLanguage && userLanguage !== 'en') {
-    const langNames = { de: 'German', es: 'Spanish', zh: 'Chinese', fr: 'French', it: 'Italian', pt: 'Portuguese', ru: 'Russian', ja: 'Japanese', ko: 'Korean', ar: 'Arabic', hi: 'Hindi', tr: 'Turkish' };
-    const langName = langNames[userLanguage];
-    if (langName) {
-      prompt += `\nIMPORTANT: ${userName} speaks ${langName}. Respond in ${langName}. All dialogue and narration MUST be in ${langName}.\n`;
-    }
+    prompt += `\n${generateLanguageInstruction(userLanguage, charName)}\n`;
   }
 
   // Rules — conciseness, reactivity, anti-AI (critical for small models)
@@ -516,14 +512,21 @@ export const sendMessage = async (
     const userGender = settings.userGender || 'male';
     const userName = settings.userName || 'User';
 
-    const detectedLang = detectLanguage(userMessage);
+    // Language: app setting is primary, detection overrides only for non-Latin scripts (CJK, Arabic, Hindi, Russian)
+    const appLanguage = settings.preferredLanguage || 'en';
+    const detected = detectLanguage(userMessage);
+    const nonLatinScripts = ['ru', 'ja', 'zh', 'ko', 'ar', 'hi'];
+    const userLanguage = (nonLatinScripts.includes(detected?.language) && detected.confidence > 0)
+      ? detected.language
+      : appLanguage;
+
     const finalSystemPrompt = buildSystemPrompt({
       character,
       userName,
       userGender,
       passionLevel: currentPassionLevel,
       unchainedMode,
-      userLanguage: detectedLang?.language || 'en'
+      userLanguage
     });
     const promptTokens = estimateTokens(finalSystemPrompt);
     const numPredict = settings.maxResponseTokens ?? profile.maxResponseTokens ?? 256;

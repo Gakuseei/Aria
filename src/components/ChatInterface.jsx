@@ -258,7 +258,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [showImagePanel, setShowImagePanel] = useState(false);
 
   // Text Zoom State
-  const [fontSize, setFontSize] = useState('base');
+  const [fontSize, setFontSize] = useState(() => localStorage.getItem('chatFontSize') || 'base');
 
   // v0.2.5: Character Bio Modal
   const [showBioModal, setShowBioModal] = useState(false);
@@ -554,25 +554,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         return;
       }
 
-      // v0.2.5 FIX: Generate UNIQUE session ID for each new chat (not per character)
-      // This ensures Passion Level resets to 0 for new chats
+      // New chat = fresh passion level. Always 0.
       const newSessionId = generateSessionId();
       setSessionId(newSessionId);
-
-      // ALWAYS start with Passion Level 0 for new chats
       setPassionLevel(0);
-
-      if (character?.id) {
-        const memory = passionManager.getCharacterMemory(character.id);
-        if (memory) {
-          passionManager.setPassion(newSessionId, memory.lastLevel);
-          if (memory.lastHistory) {
-            passionManager.restoreHistory(newSessionId, memory.lastHistory);
-          }
-          previousTierRef.current = getTierKey(memory.lastLevel);
-          setPassionLevel(memory.lastLevel);
-        }
-      }
+      previousTierRef.current = 'surface';
 
       initializeGreeting();
     };
@@ -1654,7 +1640,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                   {character.name.charAt(0)}
                 </div>
               </div>
-              <div className="glass rounded-2xl px-5 py-3.5 max-w-[75%]">
+              <div className="max-w-[75%] rounded-2xl px-5 py-3.5 relative transition-all duration-200 glass hover:border-white/10">
                 {isLoading && !isStreaming ? (
                   <div className="flex items-center gap-3">
                     <div className="flex gap-1.5">
@@ -1668,7 +1654,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                   </div>
                 ) : (
                   <>
-                    <div className="text-xs text-zinc-400 mb-1.5 font-medium">{character.name}</div>
+                    <div className="text-xs text-zinc-400 mb-1.5 font-medium flex items-center gap-1.5"><span>{character.name}</span></div>
                     <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
                       {(() => {
                         const formattedParts = formatMessageText(streamingContent || '', false);

@@ -395,7 +395,7 @@ export function scorePassionBackground(userMessage, aiMessage, settings, modelCt
  * Build system prompt from template slots.
  * Built ONCE per session, never rebuilt mid-conversation.
  */
-function buildSystemPrompt({ character, userName = 'User', userGender = 'male', passionLevel = 0, unchainedMode = false }) {
+function buildSystemPrompt({ character, userName = 'User', userGender = 'male', passionLevel = 0, unchainedMode = false, userLanguage = 'en' }) {
   const charName = character.name;
   const rT = (text) => resolveTemplates(text, charName, userName);
 
@@ -436,6 +436,15 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male', 
   // {{authorsNote}} — per-character tweaks
   if (character.authorsNote?.trim()) {
     prompt += `\n${rT(character.authorsNote)}\n`;
+  }
+
+  // Language enforcement — match user's language
+  if (userLanguage && userLanguage !== 'en') {
+    const langNames = { de: 'German', es: 'Spanish', zh: 'Chinese', fr: 'French', it: 'Italian', pt: 'Portuguese', ru: 'Russian', ja: 'Japanese', ko: 'Korean', ar: 'Arabic', hi: 'Hindi', tr: 'Turkish' };
+    const langName = langNames[userLanguage];
+    if (langName) {
+      prompt += `\nIMPORTANT: ${userName} speaks ${langName}. Respond in ${langName}. All dialogue and narration MUST be in ${langName}.\n`;
+    }
   }
 
   // Rules — conciseness, reactivity, anti-AI (critical for small models)
@@ -507,12 +516,14 @@ export const sendMessage = async (
     const userGender = settings.userGender || 'male';
     const userName = settings.userName || 'User';
 
+    const detectedLang = detectLanguage(userMessage);
     const finalSystemPrompt = buildSystemPrompt({
       character,
       userName,
       userGender,
       passionLevel: currentPassionLevel,
-      unchainedMode
+      unchainedMode,
+      userLanguage: detectedLang?.language || 'en'
     });
     const promptTokens = estimateTokens(finalSystemPrompt);
     const numPredict = settings.maxResponseTokens ?? profile.maxResponseTokens ?? 256;

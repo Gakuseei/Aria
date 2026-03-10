@@ -200,7 +200,7 @@ function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, 
 // ============================================================================
 
 export default function ChatInterface({ character, loadedSession, onBack, settings: parentSettings }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -548,7 +548,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         previousTierRef.current = getTierKey(restoredLevel);
         setPassionLevel(restoredLevel);
         if (restoredSessionId) {
-          passionManager.setPassion(restoredSessionId, restoredLevel);
+          passionManager.setPassion(restoredSessionId, restoredLevel, true);
         }
 
         return;
@@ -584,12 +584,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // ============================================================================
 
   useEffect(() => {
-    if (messages.length > 0 && sessionId) {
+    const hasUserMessage = messages.some(m => m.role === 'user');
+    if (hasUserMessage && sessionId) {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(() => {
         saveCurrentSession();
       }, 500);
-
     }
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [messages, passionLevel, sessionId]);

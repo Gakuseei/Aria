@@ -1,44 +1,87 @@
 /**
- * PassionManager.js - Passion Level Tracking (v2.0)
+ * PassionManager.js - Passion Level Tracking (v3.0)
  *
  * Manages:
  * - Passion level tracking per session (0-100)
- * - 6-tier system (Shy / Curious / Flirty / Heated / Passionate / Primal)
- * - applyScore() for async LLM passion scores
- * - Time-based decay, streak tracking, tier transitions
+ * - 6-tier system (Surface / Aware / Vivid / Immersive / Consuming / Transcendent)
+ * - applyScore() for async LLM passion scores (upward only)
+ * - Depth instructions per tier
  * - localStorage persistence
  */
 
 const PASSION_STORAGE_KEY = 'aria_passion_data';
 const PASSION_MEMORY_KEY = 'aria_passion_memory';
 const HISTORY_LIMIT = 50;
-const DECAY_INTERVAL_MS = 5 * 60 * 1000;
-const DECAY_POINTS_PER_INTERVAL = 1;
-const DECAY_MAX_POINTS = 5;
-const KNOWN_SUFFIXES = ['_history', '_streak', '_transition', '_transition_down', '_lastUpdate'];
+const KNOWN_SUFFIXES = ['_history', '_transition', '_lastUpdate'];
 
-/** Unified passion tier definitions (6-tier v2.0) */
+/** Unified passion tier definitions (6-tier v3.0) */
 export const PASSION_TIERS = {
-  shy:         { min: 0,  max: 10,  label: 'Shy' },
-  curious:     { min: 11, max: 25,  label: 'Curious' },
-  flirty:      { min: 26, max: 45,  label: 'Flirty' },
-  heated:      { min: 46, max: 65,  label: 'Heated' },
-  passionate:  { min: 66, max: 80,  label: 'Passionate' },
-  primal:      { min: 81, max: 100, label: 'Primal' }
+  surface:      { min: 0,  max: 15,  label: 'Surface' },
+  aware:        { min: 16, max: 35,  label: 'Aware' },
+  vivid:        { min: 36, max: 55,  label: 'Vivid' },
+  immersive:    { min: 56, max: 75,  label: 'Immersive' },
+  consuming:    { min: 76, max: 90,  label: 'Consuming' },
+  transcendent: { min: 91, max: 100, label: 'Transcendent' }
 };
 
 /**
  * Returns the tier key for a given passion level
  * @param {number} passionLevel - Current passion level (0-100)
- * @returns {'shy'|'curious'|'flirty'|'heated'|'passionate'|'primal'}
+ * @returns {'surface'|'aware'|'vivid'|'immersive'|'consuming'|'transcendent'}
  */
 export function getTierKey(passionLevel) {
-  if (passionLevel <= PASSION_TIERS.shy.max) return 'shy';
-  if (passionLevel <= PASSION_TIERS.curious.max) return 'curious';
-  if (passionLevel <= PASSION_TIERS.flirty.max) return 'flirty';
-  if (passionLevel <= PASSION_TIERS.heated.max) return 'heated';
-  if (passionLevel <= PASSION_TIERS.passionate.max) return 'passionate';
-  return 'primal';
+  if (passionLevel <= PASSION_TIERS.surface.max) return 'surface';
+  if (passionLevel <= PASSION_TIERS.aware.max) return 'aware';
+  if (passionLevel <= PASSION_TIERS.vivid.max) return 'vivid';
+  if (passionLevel <= PASSION_TIERS.immersive.max) return 'immersive';
+  if (passionLevel <= PASSION_TIERS.consuming.max) return 'consuming';
+  return 'transcendent';
+}
+
+/**
+ * Returns a depth instruction string for the current passion tier
+ * @param {number} passionLevel - Current passion level (0-100)
+ * @returns {string} Instruction string (empty at surface tier)
+ */
+export function getDepthInstruction(passionLevel) {
+  const tier = getTierKey(passionLevel);
+  switch (tier) {
+    case 'surface':
+      return '';
+    case 'aware':
+      return '\n[Engagement: Aware] Add subtle physical awareness — proximity, temperature, small gestures.';
+    case 'vivid':
+      return '\n[Engagement: Vivid] Write with sensory detail — textures, sounds, breath, warmth. 2-3 paragraphs minimum.';
+    case 'immersive':
+      return '\n[Engagement: Immersive] Rich multi-paragraph responses. Every physical sensation described in detail. Internal reactions in italics.';
+    case 'consuming':
+      return '\n[Engagement: Consuming] Maximum descriptive depth. Overwhelming sensory detail. Character\'s thoughts, sensations, and physical reactions fill each paragraph.';
+    case 'transcendent':
+      return '\n[Engagement: Transcendent] Peak immersion. Every touch, sound, taste, and tremor described with visceral precision. Deep, layered responses.';
+    default:
+      return '';
+  }
+}
+
+/**
+ * Returns a speed multiplier based on passion profile or speed string
+ * @param {string|number} passionProfileOrSpeed - Speed string ('slow'|'fast'|'extreme') or numeric profile (0-1)
+ * @returns {number} Multiplier value
+ */
+export function getSpeedMultiplier(passionProfileOrSpeed) {
+  if (typeof passionProfileOrSpeed === 'string') {
+    switch (passionProfileOrSpeed) {
+      case 'slow': return 0.5;
+      case 'fast': return 1.5;
+      case 'extreme': return 2.5;
+      default: return 1.0;
+    }
+  }
+  const p = passionProfileOrSpeed ?? 0.7;
+  if (p <= 0.3) return 0.5;
+  if (p <= 0.7) return 1.0;
+  if (p <= 0.9) return 1.5;
+  return 2.5;
 }
 
 class PassionManager {
@@ -82,18 +125,9 @@ class PassionManager {
   }
 
   /**
-   * Get current romantic streak count for a session
-   * @param {string} sessionId - Session identifier
-   * @returns {number} Consecutive romantic message count
-   */
-  getStreak(sessionId) {
-    return this.passionData[`${sessionId}_streak`] || 0;
-  }
-
-  /**
    * Get and clear a pending tier transition for a session
    * @param {string} sessionId - Session identifier
-   * @returns {string|null} Tier key ('shy'|'curious'|'flirty'|'heated'|'passionate'|'primal') or null
+   * @returns {string|null} Tier key or null
    */
   getAndClearTransition(sessionId) {
     const key = `${sessionId}_transition`;
@@ -106,89 +140,29 @@ class PassionManager {
   }
 
   /**
-   * Get and clear a pending downward tier transition for a session
-   * @param {string} sessionId - Session identifier
-   * @returns {string|null} Tier key or null
-   */
-  getAndClearDownTransition(sessionId) {
-    const key = `${sessionId}_transition_down`;
-    const transition = this.passionData[key];
-    if (transition) {
-      delete this.passionData[key];
-      this.savePassionData();
-    }
-    return transition || null;
-  }
-
-  /**
    * Apply an externally-calculated passion score to a session.
-   * Handles decay, streak tracking, tier transitions, and persistence.
+   * Passion only goes up (scores <= 0 are ignored). No decay, no streak, no momentum.
    * @param {string} sessionId - Session identifier
-   * @param {number} score - Pre-calculated score (negative = de-escalation, positive = escalation)
+   * @param {number} score - Pre-calculated score (only positive values applied)
    * @returns {number} New passion level (rounded integer 0-100)
    */
   applyScore(sessionId, score) {
+    if (score <= 0) return this.getPassionLevel(sessionId);
+
     const currentLevel = this.passionData[sessionId] || 0;
+    const newLevel = Math.round(Math.min(100, currentLevel + score));
 
-    const lastUpdateKey = `${sessionId}_lastUpdate`;
-    const now = Date.now();
-    const lastUpdate = this.passionData[lastUpdateKey] || now;
-    const elapsed = now - lastUpdate;
-    let decayPoints = 0;
-    if (elapsed > DECAY_INTERVAL_MS) {
-      const intervals = Math.floor(elapsed / DECAY_INTERVAL_MS);
-      let decayRate = DECAY_POINTS_PER_INTERVAL;
-      const currentMomentum = this.getMomentum(sessionId);
-      if (currentMomentum > 1.5) {
-        decayRate = 0.5;
-      }
-      decayPoints = Math.min(intervals * decayRate, DECAY_MAX_POINTS);
-    }
-    this.passionData[lastUpdateKey] = now;
-    let decayedLevel = Math.max(0, currentLevel - decayPoints);
-    if (decayPoints > 0) {
-      const currentTierKey = getTierKey(currentLevel);
-      const decayedTierKey = getTierKey(decayedLevel);
-      if (currentTierKey !== decayedTierKey) {
-        decayedLevel = PASSION_TIERS[currentTierKey].min;
-      }
-    }
-
-    const streakKey = `${sessionId}_streak`;
-    let finalScore = score;
-
-    if (score > 0) {
-      this.passionData[streakKey] = (this.passionData[streakKey] || 0) + 1;
-      const streak = this.passionData[streakKey];
-      if (streak >= 2) {
-        finalScore *= 1.0 + Math.min((streak - 1) * 0.15, 0.75);
-      }
-    } else if (score < 0) {
-      this.passionData[streakKey] = Math.max(0, (this.passionData[streakKey] || 0) - 1);
-    }
-
-    const newLevel = Math.round(Math.max(0, Math.min(100, decayedLevel + finalScore)));
-
-    const oldTier = getTierKey(decayedLevel);
+    const oldTier = getTierKey(currentLevel);
     const newTier = getTierKey(newLevel);
-    const tierOrder = ['shy', 'curious', 'flirty', 'heated', 'passionate', 'primal'];
-    if (oldTier !== newTier && tierOrder.indexOf(newTier) > tierOrder.indexOf(oldTier)) {
+    if (oldTier !== newTier) {
       this.passionData[`${sessionId}_transition`] = newTier;
-    }
-    if (oldTier !== newTier && tierOrder.indexOf(newTier) < tierOrder.indexOf(oldTier)) {
-      this.passionData[`${sessionId}_transition_down`] = newTier;
     }
 
     this.passionData[sessionId] = newLevel;
     this.trackHistory(sessionId, newLevel);
     this.savePassionData();
-
     return newLevel;
   }
-
-
-
-
 
   /**
    * Directly set passion level for a session
@@ -201,22 +175,17 @@ class PassionManager {
     const clamped = Math.round(Math.max(0, Math.min(100, level)));
     const oldTier = getTierKey(oldLevel);
     const newTier = getTierKey(clamped);
-    const tierOrder = ['shy', 'curious', 'flirty', 'heated', 'passionate', 'primal'];
-    if (oldTier !== newTier && tierOrder.indexOf(newTier) > tierOrder.indexOf(oldTier)) {
+    if (oldTier !== newTier) {
       this.passionData[`${sessionId}_transition`] = newTier;
     }
-    if (oldTier !== newTier && tierOrder.indexOf(newTier) < tierOrder.indexOf(oldTier)) {
-      this.passionData[`${sessionId}_transition_down`] = newTier;
-    }
     this.passionData[sessionId] = clamped;
-    delete this.passionData[`${sessionId}_streak`];
     this.trackHistory(sessionId, clamped);
     this.savePassionData();
     return clamped;
   }
 
   /**
-   * Adjust passion level with tier transition detection (no streak reset)
+   * Adjust passion level with tier transition detection
    * @param {string} sessionId - Session identifier
    * @param {number} level - Target passion level (0-100)
    * @returns {number} Clamped level that was set
@@ -226,12 +195,8 @@ class PassionManager {
     const clamped = Math.round(Math.max(0, Math.min(100, level)));
     const oldTier = getTierKey(oldLevel);
     const newTier = getTierKey(clamped);
-    const tierOrder = ['shy', 'curious', 'flirty', 'heated', 'passionate', 'primal'];
-    if (oldTier !== newTier && tierOrder.indexOf(newTier) > tierOrder.indexOf(oldTier)) {
+    if (oldTier !== newTier) {
       this.passionData[`${sessionId}_transition`] = newTier;
-    }
-    if (oldTier !== newTier && tierOrder.indexOf(newTier) < tierOrder.indexOf(oldTier)) {
-      this.passionData[`${sessionId}_transition_down`] = newTier;
     }
     this.passionData[sessionId] = clamped;
     this.trackHistory(sessionId, clamped);
@@ -282,15 +247,13 @@ class PassionManager {
   }
 
   /**
-   * Reset passion level for a session (clears streak and records reset in history)
+   * Reset passion level for a session
    * @param {string} sessionId - Session identifier
    * @returns {number} 0
    */
   resetPassion(sessionId) {
     this.passionData[sessionId] = 0;
-    delete this.passionData[`${sessionId}_streak`];
     delete this.passionData[`${sessionId}_transition`];
-    delete this.passionData[`${sessionId}_transition_down`];
     delete this.passionData[`${sessionId}_lastUpdate`];
     this.trackHistory(sessionId, 0);
     this.savePassionData();
@@ -298,13 +261,13 @@ class PassionManager {
   }
 
   /**
-   * Get all passion levels (excludes internal keys like history/streak)
+   * Get all passion levels (excludes internal keys like history/transition)
    * @returns {Object} Map of sessionId to passion level
    */
   getAllPassionLevels() {
     const levels = {};
     Object.keys(this.passionData).forEach(key => {
-      if (key.endsWith('_history') || key.endsWith('_streak') || key.endsWith('_transition') || key.endsWith('_transition_down') || key.endsWith('_lastUpdate')) return;
+      if (key.endsWith('_history') || key.endsWith('_transition') || key.endsWith('_lastUpdate')) return;
       const val = this.passionData[key];
       if (typeof val !== 'number' || isNaN(val)) return;
       levels[key] = Math.round(val);
@@ -319,9 +282,7 @@ class PassionManager {
   deleteCharacterPassion(sessionId) {
     delete this.passionData[sessionId];
     delete this.passionData[`${sessionId}_history`];
-    delete this.passionData[`${sessionId}_streak`];
     delete this.passionData[`${sessionId}_transition`];
-    delete this.passionData[`${sessionId}_transition_down`];
     delete this.passionData[`${sessionId}_lastUpdate`];
     this.savePassionData();
   }
@@ -408,26 +369,6 @@ class PassionManager {
       console.error('[PassionManager] Error loading character memory:', error);
       return null;
     }
-  }
-
-  /**
-   * Calculate momentum (slope) from last 5 history entries via linear regression
-   * @param {string} sessionId - Session identifier
-   * @returns {number} Slope value (positive = rising, negative = falling, 0 = insufficient data)
-   */
-  getMomentum(sessionId) {
-    const history = this.getHistory(sessionId);
-    if (history.length < 5) return 0;
-    const recent = history.slice(-5);
-    const n = recent.length;
-    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-    for (let i = 0; i < n; i++) {
-      sumX += i;
-      sumY += recent[i];
-      sumXY += i * recent[i];
-      sumX2 += i * i;
-    }
-    return (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
   }
 }
 

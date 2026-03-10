@@ -153,72 +153,6 @@ export function detectLanguage(text) {
 }
 
 /**
- * Analyzes the last N messages to determine the conversation language
- */
-export function analyzeConversationLanguage(conversationHistory, lookback = 7) {
-  if (!conversationHistory || conversationHistory.length === 0) {
-    return { language: 'en', confidence: 100, name: 'English', switchDetected: false };
-  }
-  
-  const recentUserMessages = conversationHistory
-    .filter(msg => msg.role === 'user')
-    .slice(-lookback);
-  
-  if (recentUserMessages.length === 0) {
-    return { language: 'en', confidence: 100, name: 'English', switchDetected: false };
-  }
-  
-  const languageVotes = {};
-  
-  for (const message of recentUserMessages) {
-    const detection = detectLanguage(message.content);
-    
-    if (!languageVotes[detection.language]) {
-      languageVotes[detection.language] = 0;
-    }
-    
-    const recencyMultiplier = 1 + (recentUserMessages.indexOf(message) / recentUserMessages.length);
-    languageVotes[detection.language] += detection.confidence * recencyMultiplier;
-  }
-  
-  let dominantLang = 'en';
-  let maxVotes = 0;
-  
-  for (const [langCode, votes] of Object.entries(languageVotes)) {
-    if (votes > maxVotes) {
-      maxVotes = votes;
-      dominantLang = langCode;
-    }
-  }
-  
-  const totalVotes = Object.values(languageVotes).reduce((a, b) => a + b, 0);
-  const confidence = totalVotes > 0 ? Math.round((maxVotes / totalVotes) * 100) : 0;
-  
-  const previousMessages = conversationHistory
-    .filter(msg => msg.role === 'user')
-    .slice(-lookback * 2, -lookback);
-  
-  let switchDetected = false;
-  
-  if (previousMessages.length > 0) {
-    const previousLang = analyzeConversationLanguage(
-      conversationHistory.slice(0, -lookback),
-      lookback
-    ).language;
-    
-    switchDetected = previousLang !== dominantLang && confidence > 60;
-  }
-  
-  return {
-    language: dominantLang,
-    confidence: confidence,
-    name: SUPPORTED_LANGUAGES[dominantLang].name,
-    switchDetected: switchDetected,
-    votes: languageVotes
-  };
-}
-
-/**
  * Generates language instruction for the system prompt
  * CRITICAL: NO meta-talk about language switching
  */
@@ -243,37 +177,8 @@ ABSOLUTE RULES:
 You are ${characterName} speaking fluent ${langName}. Respond naturally and stay in character.`;
 }
 
-/**
- * Get all available languages for settings dropdown
- */
-export function getAvailableLanguages() {
-  return Object.entries(SUPPORTED_LANGUAGES).map(([code, data]) => ({
-    code: code,
-    name: data.name
-  }));
-}
-
-/**
- * Validates if assistant's response matches the required language
- */
-export function validateResponseLanguage(responseText, expectedLanguage) {
-  const detection = detectLanguage(responseText);
-  
-  return {
-    matches: detection.language === expectedLanguage,
-    detected: detection.language,
-    expected: expectedLanguage,
-    confidence: detection.confidence,
-    issue: detection.language !== expectedLanguage ? 
-      `Response in ${detection.name} but should be in ${SUPPORTED_LANGUAGES[expectedLanguage]?.name || expectedLanguage}` : null
-  };
-}
-
 export default {
   detectLanguage,
-  analyzeConversationLanguage,
   generateLanguageInstruction,
-  getAvailableLanguages,
-  validateResponseLanguage,
   SUPPORTED_LANGUAGES
 };

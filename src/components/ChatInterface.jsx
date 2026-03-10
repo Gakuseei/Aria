@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSmartSuggestions, scorePassionBackground, resolveTemplates, unloadOllamaModel } from '../lib/api';
-import { passionManager, getTierKey, PASSION_TIERS } from '../lib/PassionManager';
+import { passionManager, getTierKey, getSpeedMultiplier, PASSION_TIERS } from '../lib/PassionManager';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
 import { generateImage, cleanContextForImage, extractConversationContext } from '../lib/imageGen';
@@ -993,10 +993,14 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         model: settings.ollamaModel || 'unknown',
         messages: messages,
         passionLevel: passionLevel,
+        passionTier: getTierKey(passionLevel),
+        passionSpeed: character.passionSpeed || (character.passionProfile !== undefined ? getSpeedMultiplier(character.passionProfile) + 'x' : 'normal'),
+        passionEnabled: character.passionEnabled !== false,
+        unchainedMode: isUnchainedMode,
         passionHistory: passionManager.getHistory(sessionId),
         sessionId: sessionId,
         exportedAt: new Date().toISOString(),
-        version: '0.2.5'
+        version: '0.2.6'
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });

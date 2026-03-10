@@ -15,7 +15,8 @@ function CharacterCreator({ onSave, onBack }) {
     themeColor: '#ef4444',
     avatarBase64: '',
     startingMessage: '',
-    passionProfile: 0.7,
+    passionEnabled: true,
+    passionSpeed: 'normal',
   });
 
   const [errors, setErrors] = useState({});
@@ -127,7 +128,8 @@ function CharacterCreator({ onSave, onBack }) {
       themeColor: formData.themeColor,
       avatarBase64: formData.avatarBase64 || null,
       startingMessage: formData.startingMessage.trim(),
-      passionProfile: formData.passionProfile,
+      passionEnabled: formData.passionEnabled,
+      passionSpeed: formData.passionSpeed,
       isCustom: true,
     };
 
@@ -159,7 +161,8 @@ function CharacterCreator({ onSave, onBack }) {
         themeColor: '#ef4444',
         avatarBase64: '',
         startingMessage: '[Friendly] Hello! How can I help you today?',
-        passionProfile: 0.7,
+        passionEnabled: true,
+        passionSpeed: 'normal',
       },
     },
     {
@@ -179,7 +182,8 @@ function CharacterCreator({ onSave, onBack }) {
         themeColor: '#dc2626',
         avatarBase64: '',
         startingMessage: '[Flirty] Hey there... what brings you here?',
-        passionProfile: 0.9,
+        passionEnabled: true,
+        passionSpeed: 'fast',
       },
     },
   ];
@@ -519,34 +523,50 @@ function CharacterCreator({ onSave, onBack }) {
                 </p>
               </div>
 
+              {/* Passion System */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t.characterCreator.passionProfileLabel || 'Passion Personality'}
-                </label>
-                <div className="flex items-center gap-4">
-                  <span className="text-xs text-zinc-500 w-16">{t.characterCreator.passionProfileShy || 'Reserved'}</span>
-                  <input
-                    type="range"
-                    min="0.3"
-                    max="1.0"
-                    step="0.1"
-                    value={formData.passionProfile}
-                    onChange={(e) => handleChange('passionProfile', parseFloat(e.target.value))}
-                    className="flex-1 accent-rose-500"
-                  />
-                  <span className="text-xs text-zinc-500 w-16 text-right">{t.characterCreator.passionProfileBold || 'Bold'}</span>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-zinc-300">
+                    {t.characterCreator.passionSystem || 'Passion System'}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleChange('passionEnabled', !formData.passionEnabled)}
+                    className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${
+                      formData.passionEnabled ? 'bg-rose-500' : 'bg-zinc-700'
+                    }`}
+                  >
+                    <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                      formData.passionEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`} />
+                  </button>
                 </div>
-                <div className="text-center mt-1">
-                  <span className="text-xs text-zinc-400">
-                    {formData.passionProfile <= 0.5
-                      ? (t.characterCreator.passionProfileShy || 'Reserved')
-                      : formData.passionProfile <= 0.8
-                        ? (t.characterCreator.passionProfileBalanced || 'Balanced')
-                        : (t.characterCreator.passionProfileBold || 'Bold')
-                    } ({formData.passionProfile})
-                  </span>
-                </div>
-                <p className="text-xs text-zinc-600 mt-1">{t.characterCreator.passionProfileTooltip || 'Controls how the character responds to advances.'}</p>
+                {formData.passionEnabled && (
+                  <div>
+                    <label className="text-xs text-zinc-500 mb-1.5 block">
+                      {t.characterCreator.passionSpeedLabel || 'Passion Speed'}
+                    </label>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {['slow', 'normal', 'fast', 'extreme'].map(speed => (
+                        <button
+                          key={speed}
+                          type="button"
+                          onClick={() => handleChange('passionSpeed', speed)}
+                          className={`px-2 py-1.5 text-xs rounded-lg transition-colors cursor-pointer ${
+                            formData.passionSpeed === speed
+                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border border-transparent'
+                          }`}
+                        >
+                          {t.characterCreator[`passionSpeed_${speed}`] || speed.charAt(0).toUpperCase() + speed.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-zinc-600 mt-1.5">
+                      {t.characterCreator.passionSpeedTooltip || 'Controls how quickly passion rises during conversation.'}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

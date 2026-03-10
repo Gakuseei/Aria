@@ -201,6 +201,19 @@ export const translations = {
       sendError: "Failed to get a response. Please try again.",
       noOllamaResponse: "Model returned empty response (think-mode). Retried automatically — please send again."
     },
+    commands: {
+      helpTitle: "── Commands ──",
+      helpDesc: "Show available commands",
+      summaryDesc: "Today's session summary",
+      summaryTitle: "── Today's Summary ──",
+      character: "Character",
+      model: "Model",
+      passion: "Passion",
+      messagesSent: "Messages",
+      tokensUsed: "Tokens",
+      avgResponse: "Avg response",
+      unknownCommand: "Unknown command: {cmd}. Type /help for available commands."
+    },
     tutorials: {
       download: "Download",
       next: "Next",
@@ -881,6 +894,19 @@ export const translations = {
       sendError: "Antwort fehlgeschlagen. Bitte erneut versuchen.",
       noOllamaResponse: "Modell hat leere Antwort erzeugt (Think-Modus). Automatisch erneut versucht — bitte erneut senden."
     },
+    commands: {
+      helpTitle: "── Befehle ──",
+      helpDesc: "Verfügbare Befehle anzeigen",
+      summaryDesc: "Zusammenfassung der heutigen Sitzung",
+      summaryTitle: "── Zusammenfassung heute ──",
+      character: "Charakter",
+      model: "Modell",
+      passion: "Leidenschaft",
+      messagesSent: "Nachrichten",
+      tokensUsed: "Tokens",
+      avgResponse: "Ø Antwortzeit",
+      unknownCommand: "Unbekannter Befehl: {cmd}. Tippe /help für verfügbare Befehle."
+    },
     tutorials: {
       download: "Herunterladen",
       next: "Weiter",
@@ -1559,6 +1585,19 @@ export const translations = {
       sendError: "Error al obtener respuesta. Por favor, inténtalo de nuevo.",
       noOllamaResponse: "El modelo devolvió respuesta vacía (modo think). Reintentado automáticamente — por favor envía de nuevo."
     },
+    commands: {
+      helpTitle: "── Comandos ──",
+      helpDesc: "Mostrar comandos disponibles",
+      summaryDesc: "Resumen de la sesión de hoy",
+      summaryTitle: "── Resumen de hoy ──",
+      character: "Personaje",
+      model: "Modelo",
+      passion: "Pasión",
+      messagesSent: "Mensajes",
+      tokensUsed: "Tokens",
+      avgResponse: "Resp. promedio",
+      unknownCommand: "Comando desconocido: {cmd}. Escribe /help para ver los comandos."
+    },
     tutorials: {
       download: "Descargar",
       next: "Siguiente",
@@ -2195,6 +2234,19 @@ export const translations = {
       sendError: "获取回复失败，请重试。",
       noOllamaResponse: "模型返回空响应（思考模式）。已自动重试 — 请再次发送。"
     },
+    commands: {
+      helpTitle: "── 命令 ──",
+      helpDesc: "显示可用命令",
+      summaryDesc: "今日会话摘要",
+      summaryTitle: "── 今日摘要 ──",
+      character: "角色",
+      model: "模型",
+      passion: "激情",
+      messagesSent: "消息",
+      tokensUsed: "令牌",
+      avgResponse: "平均响应",
+      unknownCommand: "未知命令：{cmd}。输入 /help 查看可用命令。"
+    },
     tutorials: {
       download: "下载",
       next: "下一步",
@@ -2829,6 +2881,19 @@ export const translations = {
       timeout: "Délai dépassé. Ollama est peut-être surchargé — réessayez.",
       sendError: "Échec de la réponse. Veuillez réessayer.",
       noOllamaResponse: "Le modèle a renvoyé une réponse vide (mode think). Réessayé automatiquement — veuillez renvoyer."
+    },
+    commands: {
+      helpTitle: "── Commandes ──",
+      helpDesc: "Afficher les commandes disponibles",
+      summaryDesc: "Résumé de la session d'aujourd'hui",
+      summaryTitle: "── Résumé du jour ──",
+      character: "Personnage",
+      model: "Modèle",
+      passion: "Passion",
+      messagesSent: "Messages",
+      tokensUsed: "Tokens",
+      avgResponse: "Réponse moy.",
+      unknownCommand: "Commande inconnue : {cmd}. Tapez /help pour voir les commandes."
     },
     tutorials: {
       download: "Télécharger",
@@ -3465,6 +3530,19 @@ export const translations = {
       sendError: "Impossibile ottenere risposta. Per favore riprova.",
       noOllamaResponse: "Il modello ha restituito risposta vuota (modalità think). Riprovato automaticamente — invia di nuovo."
     },
+    commands: {
+      helpTitle: "── Comandi ──",
+      helpDesc: "Mostra comandi disponibili",
+      summaryDesc: "Riepilogo sessione di oggi",
+      summaryTitle: "── Riepilogo di oggi ──",
+      character: "Personaggio",
+      model: "Modello",
+      passion: "Passione",
+      messagesSent: "Messaggi",
+      tokensUsed: "Token",
+      avgResponse: "Risposta media",
+      unknownCommand: "Comando sconosciuto: {cmd}. Digita /help per i comandi disponibili."
+    },
     tutorials: {
       download: "Scarica",
       next: "Avanti",
@@ -4093,6 +4171,19 @@ export const translations = {
       timeout: "Tempo esgotado. Ollama pode estar sobrecarregado — tente novamente.",
       sendError: "Falha ao obter resposta. Por favor, tente novamente.",
       noOllamaResponse: "Modelo retornou resposta vazia (modo think). Tentado novamente automaticamente — envie novamente."
+    },
+    commands: {
+      helpTitle: "── Comandos ──",
+      helpDesc: "Mostrar comandos disponíveis",
+      summaryDesc: "Resumo da sessão de hoje",
+      summaryTitle: "── Resumo de hoje ──",
+      character: "Personagem",
+      model: "Modelo",
+      passion: "Paixão",
+      messagesSent: "Mensagens",
+      tokensUsed: "Tokens",
+      avgResponse: "Resp. média",
+      unknownCommand: "Comando desconhecido: {cmd}. Digite /help para ver os comandos."
     },
     tutorials: {
       download: "Baixar",
@@ -4729,6 +4820,19 @@ export const translations = {
       sendError: "Не удалось получить ответ. Попробуйте снова.",
       noOllamaResponse: "Модель вернула пустой ответ (режим думания). Автоматически повторено — отправьте снова."
     },
+    commands: {
+      helpTitle: "── Команды ──",
+      helpDesc: "Показать доступные команды",
+      summaryDesc: "Сводка за сегодня",
+      summaryTitle: "── Сводка за сегодня ──",
+      character: "Персонаж",
+      model: "Модель",
+      passion: "Страсть",
+      messagesSent: "Сообщения",
+      tokensUsed: "Токены",
+      avgResponse: "Ср. ответ",
+      unknownCommand: "Неизвестная команда: {cmd}. Введите /help для списка команд."
+    },
     tutorials: {
       download: "Скачать",
       next: "Далее",
@@ -5363,6 +5467,19 @@ export const translations = {
       timeout: "タイムアウト。Ollamaが過負荷かもしれません — 再試行してください。",
       sendError: "応答の取得に失敗しました。再試行してください。",
       noOllamaResponse: "モデルが空の応答を返しました（思考モード）。自動再試行済み — 再送信してください。"
+    },
+    commands: {
+      helpTitle: "── コマンド ──",
+      helpDesc: "利用可能なコマンドを表示",
+      summaryDesc: "今日のセッション概要",
+      summaryTitle: "── 今日の概要 ──",
+      character: "キャラクター",
+      model: "モデル",
+      passion: "パッション",
+      messagesSent: "メッセージ",
+      tokensUsed: "トークン",
+      avgResponse: "平均応答",
+      unknownCommand: "不明なコマンド：{cmd}。/help で利用可能なコマンドを確認。"
     },
     tutorials: {
       download: "DL",
@@ -5999,6 +6116,19 @@ export const translations = {
       sendError: "응답을 가져오지 못했습니다. 다시 시도해 주세요.",
       noOllamaResponse: "모델이 빈 응답을 반환했습니다(생각 모드). 자동으로 재시도됨 — 다시 보내주세요."
     },
+    commands: {
+      helpTitle: "── 명령어 ──",
+      helpDesc: "사용 가능한 명령어 표시",
+      summaryDesc: "오늘 세션 요약",
+      summaryTitle: "── 오늘의 요약 ──",
+      character: "캐릭터",
+      model: "모델",
+      passion: "열정",
+      messagesSent: "메시지",
+      tokensUsed: "토큰",
+      avgResponse: "평균 응답",
+      unknownCommand: "알 수 없는 명령어: {cmd}. /help를 입력하여 명령어를 확인하세요."
+    },
     tutorials: {
       download: "다운로드",
       next: "다음",
@@ -6628,6 +6758,19 @@ export const translations = {
       timeout: "انتهت مهلة الطلب. قد يكون Ollama مثقلاً — حاول مرة أخرى.",
       sendError: "فشل الحصول على رد. يرجى المحاولة مرة أخرى.",
       noOllamaResponse: "أعاد النموذج استجابة فارغة (وضع التفكير). تمت إعادة المحاولة تلقائياً — أرسل مرة أخرى."
+    },
+    commands: {
+      helpTitle: "── الأوامر ──",
+      helpDesc: "عرض الأوامر المتاحة",
+      summaryDesc: "ملخص جلسة اليوم",
+      summaryTitle: "── ملخص اليوم ──",
+      character: "الشخصية",
+      model: "النموذج",
+      passion: "الشغف",
+      messagesSent: "الرسائل",
+      tokensUsed: "الرموز",
+      avgResponse: "متوسط الاستجابة",
+      unknownCommand: "أمر غير معروف: {cmd}. اكتب /help لعرض الأوامر المتاحة."
     },
     tutorials: {
       download: "تحميل",
@@ -7265,6 +7408,19 @@ export const translations = {
       sendError: "प्रतिक्रिया प्राप्त करने में विफल। कृपया पुनः प्रयास करें।",
       noOllamaResponse: "मॉडल ने खाली प्रतिक्रिया दी (थिंक मोड)। स्वचालित रूप से पुनः प्रयास किया — कृपया फिर से भेजें।"
     },
+    commands: {
+      helpTitle: "── कमांड ──",
+      helpDesc: "उपलब्ध कमांड दिखाएँ",
+      summaryDesc: "आज के सत्र का सारांश",
+      summaryTitle: "── आज का सारांश ──",
+      character: "चरित्र",
+      model: "मॉडल",
+      passion: "जुनून",
+      messagesSent: "संदेश",
+      tokensUsed: "टोकन",
+      avgResponse: "औसत प्रतिक्रिया",
+      unknownCommand: "अज्ञात कमांड: {cmd}। उपलब्ध कमांड देखने के लिए /help टाइप करें।"
+    },
     tutorials: {
       download: "डाउनलोड",
       next: "अगला",
@@ -7900,6 +8056,19 @@ export const translations = {
       timeout: "İstek zaman aşımına uğradı. Ollama aşırı yüklenmiş olabilir — tekrar deneyin.",
       sendError: "Yanıt alınamadı. Lütfen tekrar deneyin.",
       noOllamaResponse: "Model boş yanıt döndürdü (düşünme modu). Otomatik olarak yeniden denendi — lütfen tekrar gönderin."
+    },
+    commands: {
+      helpTitle: "── Komutlar ──",
+      helpDesc: "Kullanılabilir komutları göster",
+      summaryDesc: "Bugünün oturum özeti",
+      summaryTitle: "── Bugünün Özeti ──",
+      character: "Karakter",
+      model: "Model",
+      passion: "Tutku",
+      messagesSent: "Mesajlar",
+      tokensUsed: "Token",
+      avgResponse: "Ort. yanıt",
+      unknownCommand: "Bilinmeyen komut: {cmd}. Komutları görmek için /help yazın."
     },
     tutorials: {
       download: "İndir",

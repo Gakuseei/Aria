@@ -7,6 +7,7 @@ import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Se
 import toast from 'react-hot-toast';
 import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSmartSuggestions, scorePassionBackground, resolveTemplates, unloadOllamaModel } from '../lib/api';
 import { passionManager, getTierKey } from '../lib/PassionManager';
+import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
 import { generateImage, cleanContextForImage, extractConversationContext } from '../lib/imageGen';
 import TutorialModal from './tutorials/TutorialModal';
@@ -763,6 +764,15 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const handleSend = async (messageText = input) => {
     const safeMessageText = (messageText || '').trim();
     if (!safeMessageText || isLoading) return;
+
+    if (isCommand(safeMessageText)) {
+      const result = executeCommand(safeMessageText, { messages, t, settings, character, passionLevel });
+      if (result.handled && result.message) {
+        setMessages(prev => [...prev, result.message]);
+      }
+      setInput('');
+      return;
+    }
 
     // Cancel any previous pending request
     if (abortRef.current) abortRef.current.abort();
@@ -1626,19 +1636,31 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       >
         <div className="max-w-5xl mx-auto">
           {messages.map((message, index) => (
-            <MessageBubble
-              key={`${message.timestamp || index}-${message.role}`}
-              message={message}
-              isUser={message.role === 'user'}
-              character={character}
-              userName={userName}
-              onCopy={copyMessageToClipboard}
-              onSpeak={handleSpeak}
-              voiceEnabled={voiceEnabled}
-              fontSize={fontSize}
-              isGoldMode={isGoldMode}
-              isSupporter={isSupporter}
-            />
+            message.role === 'system' ? (
+              <div key={`${message.timestamp || index}-system`} className="flex justify-center mb-4 message-slide-in">
+                <div className={`max-w-[85%] rounded-xl px-5 py-3 text-sm whitespace-pre-wrap font-mono ${
+                  isGoldMode
+                    ? 'bg-amber-950/40 border border-amber-500/20 text-amber-200/90'
+                    : 'bg-zinc-900/80 border border-rose-500/20 text-zinc-300'
+                }`}>
+                  {message.content}
+                </div>
+              </div>
+            ) : (
+              <MessageBubble
+                key={`${message.timestamp || index}-${message.role}`}
+                message={message}
+                isUser={message.role === 'user'}
+                character={character}
+                userName={userName}
+                onCopy={copyMessageToClipboard}
+                onSpeak={handleSpeak}
+                voiceEnabled={voiceEnabled}
+                fontSize={fontSize}
+                isGoldMode={isGoldMode}
+                isSupporter={isSupporter}
+              />
+            )
           ))}
 
           {isLoading && (

@@ -216,7 +216,6 @@ const DEFAULT_SETTINGS = {
   soundEnabled: true,
   animationsEnabled: true,
   oledMode: false,
-  passionSystemEnabled: true,
   preferredLanguage: 'en',
   userName: 'User',
   userGender: 'male',
@@ -224,8 +223,7 @@ const DEFAULT_SETTINGS = {
   imageGenUrl: 'http://127.0.0.1:7860',
   voiceEnabled: false,
   voiceUrl: 'http://127.0.0.1:5000',
-  maxResponseTokens: 256,
-  passionSpeedMultiplier: 1.0
+  maxResponseTokens: 256
 };
 
 const PASSION_SCORING_TIMEOUT_MS = 30000;
@@ -1431,12 +1429,12 @@ Format: 4 lines of pure text.`;
     } else {
       const tierKey = getTierKey(passionLevel);
       const tierGuidance = {
-        shy: 'Suggestions should be conversational, curious, slightly teasing. No explicit or sexual content. Focus on getting to know the character.',
-        curious: 'Include one slightly flirty option, one that tests a boundary gently, and two conversational options.',
-        flirty: 'Include two flirty options and one that escalates physical closeness. Light teasing encouraged.',
-        heated: 'Include at least two explicitly intimate options. Be direct about physical desire.',
-        passionate: 'All suggestions should be sexually charged. No small talk. Direct physical commands.',
-        primal: 'Raw, aggressive, dominant commands. Pure physical intensity. No conversation.'
+        surface: 'Suggestions should be conversational, curious, slightly teasing. No explicit or sexual content. Focus on getting to know the character.',
+        aware: 'Include one slightly flirty option, one that tests a boundary gently, and two conversational options.',
+        vivid: 'Include two flirty options and one that escalates physical closeness. Light teasing encouraged.',
+        immersive: 'Include at least two explicitly intimate options. Be direct about physical desire.',
+        consuming: 'All suggestions should be sexually charged. No small talk. Direct physical commands.',
+        transcendent: 'Raw, aggressive, dominant commands. Pure physical intensity. No conversation.'
       };
       const passionProfileValue = character?.passionProfile ?? 0.7;
       let personalityGuidance = '';
@@ -1450,7 +1448,7 @@ Format: 4 lines of pure text.`;
       suggestionPrompt = `Character said: "${characterMessage.substring(0, 150)}"
 Passion level: ${passionLevel}/100 (${PASSION_TIERS[tierKey].label}).
 
-${tierGuidance[tierKey] || tierGuidance.shy}${personalityGuidance}
+${tierGuidance[tierKey] || tierGuidance.surface}${personalityGuidance}
 
 Generate 4 short user responses (max 5 words each).
 

@@ -78,8 +78,6 @@ function App() {
     voiceEnabled: false,
     voiceUrl: 'http://127.0.0.1:5000',
     voiceTier: 'standard', // 'standard' (Piper) or 'premium' (Zonos)
-    passionSystemEnabled: true,
-    passionSpeedMultiplier: 1.0,
     contextSize: 'medium',
     fontSize: 'medium',
     autoSave: true,
@@ -122,8 +120,6 @@ function App() {
             voiceEnabled: loadedSettings.voiceEnabled ?? false,
             voiceUrl: loadedSettings.voiceUrl || 'http://127.0.0.1:5000',
             voiceTier: loadedSettings.voiceTier || 'standard',
-            passionSystemEnabled: loadedSettings.passionSystemEnabled ?? true,
-            passionSpeedMultiplier: loadedSettings.passionSpeedMultiplier ?? 1.0,
             contextSize: loadedSettings.contextSize || 'medium',
             fontSize: loadedSettings.fontSize || 'medium',
             autoSave: loadedSettings.autoSave ?? true,

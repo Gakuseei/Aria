@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSmartSuggestions, scorePassionBackground, resolveTemplates, unloadOllamaModel } from '../lib/api';
-import { passionManager, getTierKey } from '../lib/PassionManager';
+import { passionManager, getTierKey, PASSION_TIERS } from '../lib/PassionManager';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
 import { generateImage, cleanContextForImage, extractConversationContext } from '../lib/imageGen';
@@ -359,6 +359,17 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     };
   }, [showChatOptions, showVoiceSettings]);
 
+  useEffect(() => {
+    if (!showPassionPopover) return;
+    const handler = (e) => {
+      if (!e.target.closest('[data-passion-popover]')) {
+        setShowPassionPopover(false);
+      }
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [showPassionPopover]);
+
   // ============================================================================
   // v0.2.5 RESTORED: LOAD SETTINGS FROM LOCALSTORAGE + IPC
   // ============================================================================
@@ -492,7 +503,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   useEffect(() => {
     const currentTier = getTierKey(passionLevel);
-    if (currentTier !== previousTierRef.current) {
+    if (currentTier !== previousTierRef.current && passionLevel > 0) {
       setTierTransitioning(true);
       const timer = setTimeout(() => setTierTransitioning(false), 600);
       const tierOrder = ['surface', 'aware', 'vivid', 'immersive', 'consuming', 'transcendent'];
@@ -506,6 +517,17 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         setTierToast(template.replace('{from}', fromLabel).replace('{to}', toLabel));
         toastTimer = setTimeout(() => setTierToast(null), 3000);
       }
+
+      if (newIdx > oldIdx) {
+        const tierLabel = PASSION_TIERS[currentTier]?.label || currentTier;
+        setMessages(prev => [...prev, {
+          role: 'system',
+          content: tierLabel,
+          isTierEvent: true,
+          timestamp: Date.now()
+        }]);
+      }
+
       previousTierRef.current = currentTier;
       return () => { clearTimeout(timer); if (toastTimer) clearTimeout(toastTimer); };
     }
@@ -768,11 +790,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         }
       };
 
+      const historyForApi = newMessages.filter(m => !m.isTierEvent);
       const response = await sendMessage(
         safeMessageText,
         character,
         '',
-        newMessages,
+        historyForApi,
         sessionId,
         isUnchainedMode,
         handleApiStats,
@@ -1083,11 +1106,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         }
       };
 
+      const regenHistoryForApi = messagesUpToLastUser.filter(m => !m.isTierEvent);
       const response = await sendMessage(
         lastUserMessage,
         character,
         '',
-        messagesUpToLastUser,
+        regenHistoryForApi,
         sessionId,
         isUnchainedMode,
         null,
@@ -1198,6 +1222,14 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   return (
     <div className="relative flex flex-col h-screen overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-900 to-black text-white">
+      {passionLevel > 15 && (
+        <div
+          className="pointer-events-none fixed inset-0 z-10 transition-opacity duration-[2000ms]"
+          style={{
+            background: `radial-gradient(ellipse at center, transparent 50%, rgba(244, 63, 94, ${Math.min((passionLevel - 15) * 0.003, 0.25)}) 100%)`
+          }}
+        />
+      )}
       {tierToast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[300] px-4 py-2 bg-zinc-900/95 border border-zinc-700 rounded-full text-sm text-zinc-200 shadow-xl backdrop-blur-sm animate-pulse">
           {tierToast}
@@ -1241,7 +1273,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           </div>
 
           {/* Name & Passion Badge */}
-          <div>
+          <div className="relative">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-white">
                 {character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name)}
@@ -1254,9 +1286,66 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 <Info size={18} strokeWidth={1.5} />
               </button>
             </div>
-            <p className="text-sm text-zinc-500">
-              {character.isCustom ? character.subtitle || character.role : (t.characters?.[character.id]?.subtitle || character.subtitle || character.role)}
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm text-zinc-500">
+                {character.isCustom ? character.subtitle || character.role : (t.characters?.[character.id]?.subtitle || character.subtitle || character.role)}
+              </p>
+              {passionLevel > 0 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowPassionPopover(prev => !prev); }}
+                  className="text-xs px-2 py-0.5 rounded-full bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700/60 transition-colors cursor-pointer"
+                  data-passion-popover
+                >
+                  · {PASSION_TIERS[getTierKey(passionLevel)]?.label}
+                </button>
+              )}
+            </div>
+            {showPassionPopover && (
+              <div
+                className="absolute top-full left-0 mt-2 bg-zinc-900 border border-zinc-700/50 rounded-xl shadow-2xl z-50 p-4 min-w-[200px]"
+                data-passion-popover
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-zinc-300">
+                    {PASSION_TIERS[getTierKey(passionLevel)]?.label}
+                  </span>
+                  <span className="text-sm text-zinc-500">{passionLevel}/100</span>
+                </div>
+                <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden mb-3">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${passionLevel}%`,
+                      background: 'linear-gradient(90deg, #71717a, #f43f5e)'
+                    }}
+                  />
+                </div>
+                <div className="text-xs text-zinc-500 mb-3">
+                  Speed: {(() => {
+                    const sp = character?.passionSpeed || character?.passionProfile;
+                    if (typeof sp === 'string') return sp.charAt(0).toUpperCase() + sp.slice(1);
+                    if (typeof sp === 'number') {
+                      if (sp <= 0.3) return 'Slow';
+                      if (sp <= 0.7) return 'Normal';
+                      if (sp <= 0.9) return 'Fast';
+                      return 'Extreme';
+                    }
+                    return 'Normal';
+                  })()}
+                </div>
+                <button
+                  onClick={() => {
+                    passionManager.resetPassion(sessionId);
+                    if (character?.id) passionManager.clearCharacterMemory(character.id);
+                    setPassionLevel(0);
+                    setShowPassionPopover(false);
+                  }}
+                  className="w-full text-xs text-zinc-500 hover:text-rose-400 py-1.5 transition-colors cursor-pointer"
+                >
+                  Reset Passion
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1508,7 +1597,15 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       >
         <div className="max-w-5xl mx-auto">
           {messages.map((message, index) => (
-            message.role === 'system' ? (
+            message.isTierEvent ? (
+              <div key={message.timestamp} className="flex items-center justify-center gap-3 py-4 select-none">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-rose-500/30" />
+                <span className="text-[11px] font-medium text-rose-400/60 tracking-[0.2em] uppercase">
+                  ✦ {message.content} ✦
+                </span>
+                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-rose-500/30" />
+              </div>
+            ) : message.role === 'system' ? (
               <div key={`${message.timestamp || index}-system`} className="flex justify-center mb-4 message-slide-in">
                 <div className={`max-w-[85%] rounded-xl px-5 py-3 text-sm whitespace-pre-wrap font-mono ${
                   isGoldMode

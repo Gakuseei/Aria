@@ -833,10 +833,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         await generateSuggestions(updatedMessages, freshPassion);
       }
 
-      // Passion scoring — DISABLED FOR TESTING
-      // if (settings.passionSystemEnabled && sessionId) {
-      //   scorePassionBackground(safeMessageText, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
-      // }
+      const passionEnabled = character.passionEnabled !== false;
+      if (passionEnabled && sessionId) {
+        scorePassionBackground(safeMessageText, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
+        setTimeout(() => {
+          setPassionLevel(passionManager.getPassionLevel(sessionId));
+        }, 6000);
+      }
 
       if (imageGenEnabled && freshPassion > 60) {
         handleAutoImageGen();
@@ -1149,10 +1152,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         await generateSuggestions(updatedMessages, freshPassion);
       }
 
-      // Passion scoring after regeneration — DISABLED FOR TESTING
-      // if (settings.passionSystemEnabled && sessionId) {
-      //   scorePassionBackground(lastUserMessage, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
-      // }
+      const passionEnabled = character.passionEnabled !== false;
+      if (passionEnabled && sessionId) {
+        scorePassionBackground(lastUserMessage, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
+        setTimeout(() => {
+          setPassionLevel(passionManager.getPassionLevel(sessionId));
+        }, 6000);
+      }
     } catch (error) {
       console.error('[ChatInterface] Regeneration error:', error);
       toast.error(t.chat?.sendError || 'Failed to regenerate response');

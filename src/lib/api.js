@@ -114,10 +114,6 @@ function cleanTranscriptArtifacts(text, charName = '') {
     cleaned = cleaned.substring(0, specialTokenIdx).trim();
   }
 
-  // Strip <think>...</think> blocks (thinking-model artifacts)
-  cleaned = cleaned.replace(/^<think>[\s\S]*?<\/think>\s*/i, '');
-  cleaned = cleaned.replace(/<\/?think>/gi, '');
-
   // Remove any occurrence of "User:", "Human:", "Assistant:" etc.
   // If found, cut everything from that point onwards
   const stopPatterns = [
@@ -461,7 +457,7 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male' }
   }
 
   // Rules — conciseness, reactivity, anti-AI (critical for small models)
-  prompt += `\nRules:\n- Always respond directly to what ${userName} said or did\n- Keep responses to 1-3 short paragraphs\n- Do not break character with AI-assistant speech, numbered lists, markdown headers, or meta-commentary\n`;
+  prompt += `\nRules:\n- Always respond directly to what ${userName} said or did\n- Keep responses to 1-3 short paragraphs\n- Write all actions in third person (e.g. *She smiles* not *I smile*)\n- Do not break character with AI-assistant speech, numbered lists, markdown headers, or meta-commentary\n`;
 
   return prompt;
 }
@@ -507,7 +503,7 @@ export const sendMessage = async (
     const model = settings.ollamaModel || 'llama3';
     const modelCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
     const profile = getModelProfile(model);
-    const historyToUse = Array.isArray(conversationHistory) ? conversationHistory : [];
+    const historyToUse = (Array.isArray(conversationHistory) ? conversationHistory : []).filter(m => m.role !== 'system');
 
     console.log(`[API] Model: ${model} (${profile.family}), ctx: ${modelCtx}`);
 
@@ -556,7 +552,6 @@ export const sendMessage = async (
           model: model,
           messages: messages,
           stream: false,
-          think: profile.flags?.think ?? false,
           options: {
             temperature: settings.temperature ?? profile.temperature,
             num_predict: numPredict,
@@ -582,30 +577,18 @@ export const sendMessage = async (
 
     let data = await response.json();
 
-    // Thinking-model fallback: some models put content in message.thinking instead of message.content
-    if (data.message && !data.message.content && data.message.thinking) {
-      data.message.content = data.message.thinking;
-    }
-
-    // Pre-clean: strip think tags and detect broken responses before retry logic
+    // Check for empty response
     if (data.message?.content) {
-      const thinkMatch = data.message.content.match(/^<think>([\s\S]*?)<\/think>/i);
-      data.message.content = data.message.content.replace(/^<think>[\s\S]*?<\/think>\s*/i, '');
-      data.message.content = data.message.content.replace(/<\/?think>/gi, '').trim();
       const stripped = data.message.content.replace(/[*\s\n_~`]/g, '');
       if (stripped.length < 3) {
-        console.warn(`[API] Broken/think-only response — scheduling retry`);
+        console.warn('[API] Empty/broken response — scheduling retry');
         data.message.content = '';
-        // Preserve think content for last-resort fallback
-        if (!data.message.thinking && thinkMatch?.[1]?.trim().length > 20) {
-          data.message.thinking = thinkMatch[1].trim();
-        }
       }
     }
 
     if (!data.message || !data.message.content) {
       console.warn(`[API] Empty response — retrying (history: ${trimmedHistory.length} msgs)`);
-      const retrySystemPrompt = finalSystemPrompt + '\nIMPORTANT: Respond directly as the character. Do NOT use <think> tags.';
+      const retrySystemPrompt = finalSystemPrompt + '\nIMPORTANT: Respond directly as the character.';
       const retryMessages = [
         { role: 'system', content: retrySystemPrompt },
         ...trimmedHistory.slice(-2).map(m => ({ role: m.role, content: m.content }))
@@ -618,20 +601,14 @@ export const sendMessage = async (
           headers: { 'Content-Type': 'application/json' },
           signal: retryCtrl.signal,
           body: JSON.stringify({
-            model, messages: retryMessages, stream: false, think: profile.flags?.think ?? false,
+            model, messages: retryMessages, stream: false,
             options: { temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx, top_k: settings.topK ?? profile.topK, top_p: settings.topP ?? profile.topP, min_p: settings.minP ?? profile.minP, repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty, repeat_last_n: settings.repeatLastN ?? profile.repeatLastN, penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline },
             stop: ['\nUser:', '\nHuman:', `\n${userName}:`, `\n${character.name}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>', '<|start_header_id|>']
           })
         });
         if (retryRes.ok) {
           const retryData = await retryRes.json();
-          if (retryData.message && !retryData.message.content && retryData.message.thinking) {
-            retryData.message.content = retryData.message.thinking;
-          }
           if (retryData.message?.content) {
-            // Pre-clean retry response too
-            retryData.message.content = retryData.message.content.replace(/^<think>[\s\S]*?<\/think>\s*/i, '');
-            retryData.message.content = retryData.message.content.replace(/<\/?think>/gi, '').trim();
             if (retryData.message.content.replace(/[*\s\n_~`]/g, '').length >= 3) {
               data = retryData;
             }
@@ -640,11 +617,6 @@ export const sendMessage = async (
       } catch { /* retry failed, fall through */ }
       finally { clearTimeout(retryTimer); }
 
-      if (!data.message?.content && data.message?.thinking) {
-        // Last resort: use think content from original response
-        console.warn('[API] Using think-content as last-resort fallback');
-        data.message.content = data.message.thinking;
-      }
       if (!data.message || !data.message.content) {
         throw new Error('No response from Ollama');
       }

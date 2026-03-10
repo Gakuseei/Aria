@@ -230,6 +230,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingContent, setStreamingContent] = useState('');
   const [passionLevel, setPassionLevel] = useState(0);
   const previousTierRef = useRef('shy');
   const [tierTransitioning, setTierTransitioning] = useState(false);
@@ -670,6 +672,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     return () => clearTimeout(timer);
   }, [messages]);
 
+  useEffect(() => {
+    if (isStreaming) scrollToBottom();
+  }, [streamingContent, isStreaming]);
+
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
       // Force scroll to absolute bottom of container
@@ -763,7 +769,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   const handleSend = async (messageText = input) => {
     const safeMessageText = (messageText || '').trim();
-    if (!safeMessageText || isLoading) return;
+    if (!safeMessageText || isLoading || isStreaming) return;
 
     if (isCommand(safeMessageText)) {
       const result = executeCommand(safeMessageText, { messages, t, settings, character, passionLevel });
@@ -793,6 +799,16 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         window.dispatchEvent(new CustomEvent('aria-api-stats', { detail: stats }));
       };
 
+      let firstToken = true;
+      const handleToken = (token) => {
+        if (firstToken) {
+          firstToken = false;
+          setIsLoading(false);
+          setIsStreaming(true);
+        }
+        setStreamingContent(prev => prev + token);
+      };
+
       const response = await sendMessage(
         safeMessageText,
         character,
@@ -802,8 +818,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         isUnchainedMode,
         handleApiStats,
         settings,
-        false
+        false,
+        handleToken
       );
+
+      setIsStreaming(false);
+      setStreamingContent('');
 
       if (!response.success) {
         throw new Error(response.error || 'Failed to get response');
@@ -854,6 +874,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       toast.error(errorMsg);
     } finally {
       setIsLoading(false);
+      setIsStreaming(false);
+      setStreamingContent('');
       inputRef.current?.focus();
     }
   };
@@ -1068,7 +1090,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   };
 
   const regenerateLastResponse = async () => {
-    if (messages.length < 2 || isLoading) return;
+    if (messages.length < 2 || isLoading || isStreaming) return;
 
     const lastUserMessageIndex = messages.map((msg, idx) => ({ msg, idx }))
       .reverse()
@@ -1083,6 +1105,16 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     setIsLoading(true);
 
     try {
+      let firstToken = true;
+      const handleToken = (token) => {
+        if (firstToken) {
+          firstToken = false;
+          setIsLoading(false);
+          setIsStreaming(true);
+        }
+        setStreamingContent(prev => prev + token);
+      };
+
       const response = await sendMessage(
         lastUserMessage,
         character,
@@ -1092,8 +1124,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         isUnchainedMode,
         null,
         settings,
-        true
+        true,
+        handleToken
       );
+
+      setIsStreaming(false);
+      setStreamingContent('');
 
       if (!response.success) {
         throw new Error(response.error || 'Failed to regenerate');
@@ -1129,6 +1165,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       toast.error(t.chat?.sendError || 'Failed to regenerate response');
     } finally {
       setIsLoading(false);
+      setIsStreaming(false);
+      setStreamingContent('');
     }
   };
 
@@ -1550,7 +1588,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           {/* Regenerate Last Response */}
           <button
             onClick={regenerateLastResponse}
-            disabled={isLoading || messages.length < 2}
+            disabled={isLoading || isStreaming || messages.length < 2}
             className="p-3 hover:bg-white/10 active:scale-95 rounded-xl transition-all duration-200 text-zinc-500 hover:text-rose-400 disabled:opacity-30 disabled:cursor-not-allowed"
             title={t.chat.regenerateResponse}
           >
@@ -1663,7 +1701,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             )
           ))}
 
-          {isLoading && (
+          {(isLoading || isStreaming) && (
             <div className="flex justify-start mb-4">
               <div className="relative mr-3 flex-shrink-0">
                 <div
@@ -1675,17 +1713,37 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                   {character.name.charAt(0)}
                 </div>
               </div>
-              <div className="glass rounded-2xl px-5 py-3.5">
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-1.5">
-                    <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="glass rounded-2xl px-5 py-3.5 max-w-[75%]">
+                {isLoading && !isStreaming ? (
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-1.5">
+                      <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                    <span className="text-zinc-500 text-sm">
+                      {t.chat.isTyping.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
+                    </span>
                   </div>
-                  <span className="text-zinc-500 text-sm">
-                    {t.chat.isTyping.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
-                  </span>
-                </div>
+                ) : (
+                  <>
+                    <div className="text-xs text-zinc-400 mb-1.5 font-medium">{character.name}</div>
+                    <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
+                      {(() => {
+                        const formattedParts = formatMessageText(streamingContent || '', false);
+                        return formattedParts.map((part, i) => {
+                          if (part.type === 'action') {
+                            return <span key={i} className="text-zinc-400 italic">{part.text}</span>;
+                          } else if (part.type === 'dialogue') {
+                            return <span key={i} className="text-white font-normal">{part.text}</span>;
+                          } else {
+                            return <span key={i} className="text-zinc-200">{part.text}</span>;
+                          }
+                        });
+                      })()}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -1703,7 +1761,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
               <button
                 key={`suggestion-${suggestion.slice(0, 20)}-${i}`}
                 onClick={() => handleSuggestionClick(suggestion)}
-                disabled={isLoading}
+                disabled={isLoading || isStreaming}
                 className={`px-4 py-2 bg-zinc-900/95 backdrop-blur-2xl border rounded-full text-sm transition-all duration-200 disabled:opacity-50 flex items-center gap-2 shadow-lg ${
                   isGoldMode
                     ? 'border-amber-500/40 text-amber-100 hover:bg-amber-500/10 hover:shadow-[0_0_15px_-3px_rgba(245,158,11,0.3)] hover:border-amber-400'
@@ -1734,12 +1792,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
               }
             }}
             placeholder={t.chat.messageCharacter.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
-            disabled={isLoading}
+            disabled={isLoading || isStreaming}
             className="chat-input flex-1 bg-transparent border-none outline-none ring-0 text-white text-lg placeholder-zinc-500 focus:outline-none focus:ring-0 disabled:opacity-50 px-2"
           />
           <button
             onClick={() => handleSend()}
-            disabled={isLoading || !input.trim()}
+            disabled={isLoading || isStreaming || !input.trim()}
             className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-30 shadow-lg flex-shrink-0 ${
               isGoldMode
                 ? 'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-black font-bold shadow-amber-900/20 disabled:from-zinc-600 disabled:to-zinc-700'

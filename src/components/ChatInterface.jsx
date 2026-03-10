@@ -336,6 +336,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const audioRef = useRef(null);
   const saveTimerRef = useRef(null);
   const abortRef = useRef(null);
+  const streamBufferRef = useRef('');
+  const rafRef = useRef(null);
 
   // Cleanup: abort pending requests + unload model on unmount (character switch)
   useEffect(() => {
@@ -800,13 +802,21 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       };
 
       let firstToken = true;
+      streamBufferRef.current = '';
+      const flushBuffer = () => {
+        setStreamingContent(streamBufferRef.current);
+        rafRef.current = null;
+      };
       const handleToken = (token) => {
         if (firstToken) {
           firstToken = false;
           setIsLoading(false);
           setIsStreaming(true);
         }
-        setStreamingContent(prev => prev + token);
+        streamBufferRef.current += token;
+        if (!rafRef.current) {
+          rafRef.current = requestAnimationFrame(flushBuffer);
+        }
       };
 
       const response = await sendMessage(
@@ -822,6 +832,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         handleToken
       );
 
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       setIsStreaming(false);
       setStreamingContent('');
 
@@ -1106,13 +1117,21 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
     try {
       let firstToken = true;
+      streamBufferRef.current = '';
+      const flushBuffer = () => {
+        setStreamingContent(streamBufferRef.current);
+        rafRef.current = null;
+      };
       const handleToken = (token) => {
         if (firstToken) {
           firstToken = false;
           setIsLoading(false);
           setIsStreaming(true);
         }
-        setStreamingContent(prev => prev + token);
+        streamBufferRef.current += token;
+        if (!rafRef.current) {
+          rafRef.current = requestAnimationFrame(flushBuffer);
+        }
       };
 
       const response = await sendMessage(
@@ -1128,6 +1147,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         handleToken
       );
 
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       setIsStreaming(false);
       setStreamingContent('');
 

@@ -170,7 +170,7 @@ class PassionManager {
    * @param {number} level - Target passion level (0-100)
    * @returns {number} Clamped level that was set
    */
-  setPassion(sessionId, level) {
+  setPassion(sessionId, level, skipHistory = false) {
     const oldLevel = this.passionData[sessionId] || 0;
     const clamped = Math.round(Math.max(0, Math.min(100, level)));
     const oldTier = getTierKey(oldLevel);
@@ -179,7 +179,7 @@ class PassionManager {
       this.passionData[`${sessionId}_transition`] = newTier;
     }
     this.passionData[sessionId] = clamped;
-    this.trackHistory(sessionId, clamped);
+    if (!skipHistory) this.trackHistory(sessionId, clamped);
     this.savePassionData();
     return clamped;
   }

@@ -978,8 +978,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         character: { name: character.name, description: character.description },
         model: settings.ollamaModel || 'unknown',
         messages: messages,
-        passionLevel: passionLevel,
-        passionTier: getTierKey(passionLevel),
+        passionLevel: passionManager.getPassionLevel(sessionId) || passionLevel,
+        passionTier: getTierKey(passionManager.getPassionLevel(sessionId) || passionLevel),
         passionSpeed: character.passionSpeed || (character.passionProfile !== undefined ? getSpeedMultiplier(character.passionProfile) + 'x' : 'normal'),
         passionEnabled: character.passionEnabled !== false,
         unchainedMode: isUnchainedMode,
@@ -1144,6 +1144,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       const passionEnabled = character.passionEnabled !== false;
       if (passionEnabled && sessionId) {
+        passionManager.revertLastScore(sessionId);
         scorePassionBackground(lastUserMessage, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
         setTimeout(() => {
           setPassionLevel(passionManager.getPassionLevel(sessionId));

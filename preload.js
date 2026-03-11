@@ -36,21 +36,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   loadSettings: () => ipcRenderer.invoke('load-settings'),
   
-  // FIX 3: Voice status change listener
+  // Voice status change listener
   onVoiceStatusChanged: (callback) => {
-    ipcRenderer.on('voice-status-changed', (event, value) => callback(value));
-    // Return cleanup function
+    const handler = (_event, value) => callback(value);
+    ipcRenderer.on('voice-status-changed', handler);
     return () => {
-      ipcRenderer.removeAllListeners('voice-status-changed');
+      ipcRenderer.removeListener('voice-status-changed', handler);
     };
   },
-  
-  // FIX 1: Settings updated listener
+
+  // Settings updated listener
   onSettingsUpdated: (callback) => {
-    ipcRenderer.on('settings-updated', (event, settings) => callback(settings));
-    // Return cleanup function
+    const handler = (_event, settings) => callback(settings);
+    ipcRenderer.on('settings-updated', handler);
     return () => {
-      ipcRenderer.removeAllListeners('settings-updated');
+      ipcRenderer.removeListener('settings-updated', handler);
     };
   },
   

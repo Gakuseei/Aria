@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSmartSuggestions, scorePassionBackground, resolveTemplates, unloadOllamaModel } from '../lib/api';
+import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, resolveTemplates, unloadOllamaModel, FALLBACK_SUGGESTIONS } from '../lib/api';
 import { passionManager, getTierKey, getSpeedMultiplier, PASSION_TIERS } from '../lib/PassionManager';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
@@ -271,7 +271,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   // v0.2.5: Smart Suggestions
   const [smartSuggestions, setSmartSuggestions] = useState([]);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [smartSuggestionsEnabled, setSmartSuggestionsEnabled] = useState(true);
 
   // v0.2.5: Image Generation Modal
@@ -417,10 +416,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           console.warn('[v8.2 ChatInterface] ⚠️ No models found. User needs to install a model.');
         }
 
-        // v0.2.5: Generate initial suggestions (chat starters)
         const mergedSmartSuggestions = loadedSettings.smartSuggestionsEnabled ?? backendSettings.smartSuggestionsEnabled ?? true;
         if (mergedSmartSuggestions !== false) {
-          generateSuggestions([]);
+          const lang = loadedSettings.preferredLanguage || 'en';
+          const fb = FALLBACK_SUGGESTIONS[lang] || FALLBACK_SUGGESTIONS['en'];
+          setSmartSuggestions(fb.normal);
         }
       } catch (error) {
         console.error('[v8.1 ChatInterface] ❌ Error loading settings:', error);
@@ -648,27 +648,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     }
   };
 
-  // ============================================================================
-  // v0.2.5: SMART SUGGESTIONS GENERATOR
-  // ============================================================================
-
-  const generateSuggestions = async (currentMessages, currentPassion) => {
-    return; // DISABLED FOR TESTING
-    if (!smartSuggestionsEnabled) return;
-
-    setLoadingSuggestions(true);
-    try {
-      const currentLanguage = settings.preferredLanguage || localStorage.getItem('language') || 'en';
-      const level = currentPassion !== undefined ? currentPassion : passionLevel;
-      const suggestions = await generateSmartSuggestions(currentMessages, character, currentLanguage, level, sessionId, isUnchainedMode);
-      setSmartSuggestions(suggestions);
-    } catch (error) {
-      console.error('[v1.0 Suggestions] Error:', error);
-    } finally {
-      setLoadingSuggestions(false);
-    }
-  };
-
   const handleSuggestionClick = (suggestion) => {
     setInput(suggestion);
     handleSend(suggestion);
@@ -814,9 +793,14 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         setPassionLevel(response.passionLevel);
       }
 
-      // Sequential: suggestions first, then scoring (Ollama handles 1 request at a time)
       if (smartSuggestionsEnabled) {
-        await generateSuggestions(updatedMessages, freshPassion);
+        if (response.suggestions?.length > 0) {
+          setSmartSuggestions(response.suggestions);
+        } else {
+          const lang = settings.preferredLanguage || 'en';
+          const fb = FALLBACK_SUGGESTIONS[lang] || FALLBACK_SUGGESTIONS['en'];
+          setSmartSuggestions(isUnchainedMode ? fb.unchained : freshPassion > 75 ? fb.nsfw : fb.normal);
+        }
       }
 
       const passionEnabled = character.passionEnabled !== false;
@@ -1137,9 +1121,14 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         setPassionLevel(response.passionLevel);
       }
 
-      // Re-generate suggestions after regeneration
       if (smartSuggestionsEnabled) {
-        await generateSuggestions(updatedMessages, freshPassion);
+        if (response.suggestions?.length > 0) {
+          setSmartSuggestions(response.suggestions);
+        } else {
+          const lang = settings.preferredLanguage || 'en';
+          const fb = FALLBACK_SUGGESTIONS[lang] || FALLBACK_SUGGESTIONS['en'];
+          setSmartSuggestions(isUnchainedMode ? fb.unchained : freshPassion > 75 ? fb.nsfw : fb.normal);
+        }
       }
 
       const passionEnabled = character.passionEnabled !== false;
@@ -1658,7 +1647,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                     <div className="text-xs text-zinc-400 mb-1.5 font-medium flex items-center gap-1.5"><span>{character.name}</span></div>
                     <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
                       {(() => {
-                        const formattedParts = formatMessageText(streamingContent || '', false);
+                        const formattedParts = formatMessageText((streamingContent || '').replace(/\n?\[SUGGEST\].*$/s, ''), false);
                         return formattedParts.map((part, i) => {
                           if (part.type === 'action') {
                             return <span key={i} className="text-zinc-400 italic">{part.text}</span>;

@@ -91,10 +91,6 @@ function CharacterCreator({ onSave, onBack }) {
       newErrors.name = t.characterCreator.nameRequired;
     }
 
-    if (!formData.subtitle.trim()) {
-      newErrors.subtitle = t.characterCreator.subtitleRequired;
-    }
-
     if (!formData.systemPrompt.trim()) {
       newErrors.systemPrompt = t.characterCreator.systemPromptRequired;
     }

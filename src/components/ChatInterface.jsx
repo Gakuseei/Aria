@@ -1631,7 +1631,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                     <div className="text-xs text-zinc-400 mb-1.5 font-medium flex items-center gap-1.5"><span>{character.name}</span></div>
                     <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
                       {(() => {
-                        const formattedParts = formatMessageText((streamingContent || '').replace(/\n?\[SUGGEST\].*$/s, ''), false);
+                        const formattedParts = formatMessageText((streamingContent || '').replace(/\n?\[SUGGEST[^\n]*$/s, ''), false);
                         return formattedParts.map((part, i) => {
                           if (part.type === 'action') {
                             return <span key={i} className="text-zinc-400 italic">{part.text}</span>;

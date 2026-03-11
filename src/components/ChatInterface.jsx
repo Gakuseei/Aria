@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, resolveTemplates, unloadOllamaModel, FALLBACK_SUGGESTIONS } from '../lib/api';
+import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, resolveTemplates, unloadOllamaModel } from '../lib/api';
 import { passionManager, getTierKey, getSpeedMultiplier, PASSION_TIERS } from '../lib/PassionManager';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
@@ -402,8 +402,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         // STEP 2 FIX: Use voiceEnabled from IPC/backend settings (explicit boolean check)
         const savedVoiceEnabled = loadedSettings.voiceEnabled === true;
         setVoiceEnabled(savedVoiceEnabled);
-        setSmartSuggestionsEnabled(loadedSettings.smartSuggestionsEnabled !== false);  // Default ON
-
         // Load font size preference
         const savedFontSize = localStorage.getItem('chatFontSize') || 'base';
         setFontSize(savedFontSize);
@@ -417,11 +415,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         }
 
         const mergedSmartSuggestions = loadedSettings.smartSuggestionsEnabled ?? backendSettings.smartSuggestionsEnabled ?? true;
-        if (mergedSmartSuggestions !== false) {
-          const lang = loadedSettings.preferredLanguage || 'en';
-          const fb = FALLBACK_SUGGESTIONS[lang] || FALLBACK_SUGGESTIONS['en'];
-          setSmartSuggestions(fb.normal);
-        }
+        setSmartSuggestionsEnabled(mergedSmartSuggestions !== false);
       } catch (error) {
         console.error('[v8.1 ChatInterface] ❌ Error loading settings:', error);
       }
@@ -781,18 +775,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       const freshPassion = response.passionLevel !== undefined ? response.passionLevel : passionLevel;
 
-      // Resolve suggestions (AI-generated or fallback)
-      let activeSuggestions = [];
-      if (smartSuggestionsEnabled) {
-        if (response.suggestions?.length > 0) {
-          activeSuggestions = response.suggestions;
-        } else {
-          const lang = settings.preferredLanguage || 'en';
-          const fb = FALLBACK_SUGGESTIONS[lang] || FALLBACK_SUGGESTIONS['en'];
-          activeSuggestions = isUnchainedMode ? fb.unchained : freshPassion > 75 ? fb.nsfw : fb.normal;
-        }
-        setSmartSuggestions(activeSuggestions);
-      }
+      // Resolve suggestions (AI-generated only, no fallbacks)
+      let activeSuggestions = smartSuggestionsEnabled && response.suggestions?.length > 0 ? response.suggestions : [];
+      setSmartSuggestions(activeSuggestions);
 
       const assistantMessage = {
         role: 'assistant',
@@ -1113,17 +1098,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const safeResponse = (response.message || '').trim();
       const freshPassion = response.passionLevel !== undefined ? response.passionLevel : passionLevel;
 
-      let activeSuggestions = [];
-      if (smartSuggestionsEnabled) {
-        if (response.suggestions?.length > 0) {
-          activeSuggestions = response.suggestions;
-        } else {
-          const lang = settings.preferredLanguage || 'en';
-          const fb = FALLBACK_SUGGESTIONS[lang] || FALLBACK_SUGGESTIONS['en'];
-          activeSuggestions = isUnchainedMode ? fb.unchained : freshPassion > 75 ? fb.nsfw : fb.normal;
-        }
-        setSmartSuggestions(activeSuggestions);
-      }
+      let activeSuggestions = smartSuggestionsEnabled && response.suggestions?.length > 0 ? response.suggestions : [];
+      setSmartSuggestions(activeSuggestions);
 
       const assistantMessage = {
         role: 'assistant',

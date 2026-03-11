@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, resolveTemplates, unloadOllamaModel } from '../lib/api';
+import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, resolveTemplates, unloadOllamaModel } from '../lib/api';
 import { passionManager, getTierKey, getSpeedMultiplier, PASSION_TIERS } from '../lib/PassionManager';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
@@ -294,7 +294,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const abortRef = useRef(null);
   const streamBufferRef = useRef('');
   const rafRef = useRef(null);
-  const suggestPhaseRef = useRef(false);
 
   // Cleanup: abort pending requests + unload model on unmount (character switch)
   useEffect(() => {
@@ -739,7 +738,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       let firstToken = true;
       streamBufferRef.current = '';
-      suggestPhaseRef.current = false;
       const flushBuffer = () => {
         setStreamingContent(streamBufferRef.current);
         rafRef.current = null;
@@ -751,10 +749,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           setIsStreaming(true);
         }
         streamBufferRef.current += token;
-        // Detect [SUGGEST] phase — visible response done, suggestions generating
-        if (!suggestPhaseRef.current && streamBufferRef.current.includes('\n[S')) {
-          suggestPhaseRef.current = true;
-        }
         if (!rafRef.current) {
           rafRef.current = requestAnimationFrame(flushBuffer);
         }
@@ -786,23 +780,34 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       const freshPassion = response.passionLevel !== undefined ? response.passionLevel : passionLevel;
 
-      // Resolve suggestions (AI-generated only, no fallbacks)
-      let activeSuggestions = smartSuggestionsEnabled && response.suggestions?.length > 0 ? response.suggestions : [];
-
       const assistantMessage = {
         role: 'assistant',
         content: safeResponse,
         timestamp: Date.now(),
-        ...(response.stats && { stats: response.stats }),
-        ...(activeSuggestions.length > 0 && { suggestions: activeSuggestions })
+        ...(response.stats && { stats: response.stats })
       };
       const updatedMessages = [...newMessages, assistantMessage];
 
-      // Set final message + suggestions BEFORE clearing streaming → no flash
+      // Set final message BEFORE clearing streaming → no flash
       setMessages(updatedMessages);
-      setSmartSuggestions(activeSuggestions);
       setIsStreaming(false);
       setStreamingContent('');
+
+      // Generate suggestions in background (separate call, ~2-3s)
+      if (smartSuggestionsEnabled) {
+        generateSuggestionsBackground(safeMessageText, safeResponse, settings, (suggestions) => {
+          if (suggestions) {
+            setSmartSuggestions(suggestions);
+            // Store on the assistant message for export
+            setMessages(prev => {
+              const updated = [...prev];
+              const lastAssistant = updated.findLast(m => m.role === 'assistant');
+              if (lastAssistant) lastAssistant.suggestions = suggestions;
+              return updated;
+            });
+          }
+        });
+      }
 
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
@@ -1074,7 +1079,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     try {
       let firstToken = true;
       streamBufferRef.current = '';
-      suggestPhaseRef.current = false;
       const flushBuffer = () => {
         setStreamingContent(streamBufferRef.current);
         rafRef.current = null;
@@ -1086,9 +1090,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           setIsStreaming(true);
         }
         streamBufferRef.current += token;
-        if (!suggestPhaseRef.current && streamBufferRef.current.includes('\n[S')) {
-          suggestPhaseRef.current = true;
-        }
         if (!rafRef.current) {
           rafRef.current = requestAnimationFrame(flushBuffer);
         }
@@ -1119,22 +1120,34 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const safeResponse = (response.message || '').trim();
       const freshPassion = response.passionLevel !== undefined ? response.passionLevel : passionLevel;
 
-      let activeSuggestions = smartSuggestionsEnabled && response.suggestions?.length > 0 ? response.suggestions : [];
-
       const assistantMessage = {
         role: 'assistant',
         content: safeResponse,
         timestamp: Date.now(),
-        ...(response.stats && { stats: response.stats }),
-        ...(activeSuggestions.length > 0 && { suggestions: activeSuggestions })
+        ...(response.stats && { stats: response.stats })
       };
       const updatedMessages = [...messagesUpToLastUser, assistantMessage];
 
-      // Set final message + suggestions BEFORE clearing streaming → no flash
+      // Set final message BEFORE clearing streaming → no flash
       setMessages(updatedMessages);
-      setSmartSuggestions(activeSuggestions);
       setIsStreaming(false);
       setStreamingContent('');
+
+      // Generate suggestions in background
+      if (smartSuggestionsEnabled) {
+        const lastUserMsg = messagesUpToLastUser.findLast(m => m.role === 'user');
+        generateSuggestionsBackground(lastUserMsg?.content || '', safeResponse, settings, (suggestions) => {
+          if (suggestions) {
+            setSmartSuggestions(suggestions);
+            setMessages(prev => {
+              const updated = [...prev];
+              const lastAssistant = updated.findLast(m => m.role === 'assistant');
+              if (lastAssistant) lastAssistant.suggestions = suggestions;
+              return updated;
+            });
+          }
+        });
+      }
 
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
@@ -1657,7 +1670,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                     <div className="text-xs text-zinc-400 mb-1.5 font-medium flex items-center gap-1.5"><span>{character.name}</span></div>
                     <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
                       {(() => {
-                        const formattedParts = formatMessageText((streamingContent || '').replace(/\n?\[S(?:UGGEST)?[^\n]*$/s, ''), false);
+                        const formattedParts = formatMessageText(streamingContent || '', false);
                         return formattedParts.map((part, i) => {
                           if (part.type === 'action') {
                             return <span key={i} className="text-zinc-400 italic">{part.text}</span>;
@@ -1702,13 +1715,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             ))}
           </div>
         )}
-        {/* Generating suggestions indicator */}
-        {smartSuggestionsEnabled && isStreaming && suggestPhaseRef.current && (
-          <div className="flex justify-center mb-4">
-            <span className="text-xs text-zinc-500 animate-pulse">{t.chat?.generatingSuggestions || 'Generating suggestions...'}</span>
-          </div>
-        )}
-
         {/* Floating Input Bar - Premium Glass Cockpit */}
         <div className={`bg-zinc-900/95 backdrop-blur-2xl rounded-3xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)] px-5 py-4 flex items-center gap-3 transition-all duration-200 ${
           isGoldMode ? 'border border-amber-500/30 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50' : 'border border-rose-500/30 focus-within:border-rose-500'

@@ -89,6 +89,9 @@ function cleanTranscriptArtifacts(text, charName = '') {
     }
   }
 
+  // Strip leading dots/slashes before asterisks (model outputs ".*action*" or "/*action*")
+  cleaned = cleaned.replace(/^[./]+(?=\*)/gm, '');
+
   // Clean up excessive blank lines left after removals
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
 
@@ -358,7 +361,7 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male', 
 
   // Smart Suggestions — piggyback on response (skip if disabled to save ~20 tokens)
   if (smartSuggestionsEnabled) {
-    prompt += `\nALWAYS end your reply with a [SUGGEST] line: 4 short user replies separated by |.\nExample: *she waves* Welcome!\n[SUGGEST] Hi | How are you | Come closer | Tell me more\n`;
+    prompt += `\nALWAYS end with [SUGGEST]: 3 short replies the user might type, separated by |. Match the user's style — use *actions* and casual speech like them.\nBAD: Guide her hand | Praise her effort\nGOOD: Show me more | *moves closer* | That feels nice\nExample: *she waves* Welcome!\n[SUGGEST] Hey there | *waves back* | What's your name\n`;
   }
 
   return prompt;
@@ -386,8 +389,8 @@ function parseSuggestions(text) {
   const suggestLine = lines[suggestIdx].replace('[SUGGEST]', '').trim();
   const suggestions = suggestLine.split('|')
     .map(s => s.trim().replace(/^["']|["']$/g, ''))
-    .filter(s => s.length > 0 && s.split(' ').length <= 8)
-    .slice(0, 4);
+    .filter(s => s.length > 0 && s.length <= 50 && s.split(' ').length <= 8)
+    .slice(0, 3);
 
   const cleanedMessage = lines.slice(0, suggestIdx).join('\n').trimEnd();
 
@@ -470,13 +473,15 @@ export const sendMessage = async (
     const smartSuggestionsOn = settings.smartSuggestionsEnabled !== false;
     const messages = [
       { role: 'system', content: finalSystemPrompt },
-      ...trimmedHistory.map(msg => {
+      ...trimmedHistory.map((msg, idx) => {
         let content = msg.content;
-        // Inject [SUGGEST] into ALL assistant messages so model consistently learns the format
-        if (smartSuggestionsOn && msg.role === 'assistant' && !content.includes('[SUGGEST]')) {
+        // Inject [SUGGEST] into assistant messages so model learns the format
+        // Skip the first assistant message (greeting) — it has no user context for meaningful suggestions
+        const isFirstAssistant = msg.role === 'assistant' && !trimmedHistory.slice(0, idx).some(m => m.role === 'assistant');
+        if (smartSuggestionsOn && msg.role === 'assistant' && !isFirstAssistant && !content.includes('[SUGGEST]')) {
           const hints = msg.suggestions?.length > 0
             ? msg.suggestions.join(' | ')
-            : 'Yes | Tell me more | Come closer | What happens next';
+            : 'Yes | Tell me more | Come closer';
           content += `\n[SUGGEST] ${hints}`;
         }
         return { role: msg.role, content };

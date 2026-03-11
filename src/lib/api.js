@@ -309,10 +309,54 @@ export function scorePassionBackground(userMessage, aiMessage, settings, modelCt
 }
 
 /**
+ * Generate smart suggestions in background via separate Ollama call.
+ * Returns 3 short user-perspective replies via callback.
+ */
+export function generateSuggestionsBackground(userMessage, aiResponse, settings, callback) {
+  const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
+  const model = settings.ollamaModel || 'llama3';
+
+  const prompt = `Suggest 3 short things the user might type next in this conversation.
+Write as the USER, not as the character. Match the user's language and style.
+Include *actions* if the user uses them. Under 8 words each.
+Reply ONLY with 3 suggestions separated by |.
+
+User: ${userMessage}
+Response: ${(aiResponse || '').slice(0, 300)}
+
+Suggestions:`;
+
+  fetch(`${ollamaUrl}/api/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      prompt,
+      stream: false,
+      options: { num_predict: 50, temperature: 0.8, num_ctx: 2048 }
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      const raw = (data.response || '').trim();
+      const suggestions = raw.split('|')
+        .map(s => s.trim().replace(/^["':.\-]+|["':.\-]+$/g, ''))
+        .filter(s => s.length > 0 && s.length <= 50 && s.split(' ').length <= 8)
+        .slice(0, 3);
+      console.log(`[API] Suggestions: ${suggestions.length} generated (${raw.length} chars)`);
+      callback(suggestions.length > 0 ? suggestions : null);
+    })
+    .catch(err => {
+      console.warn('[API] Suggestion generation failed:', err?.message);
+      callback(null);
+    });
+}
+
+/**
  * Build system prompt from template slots.
  * Built ONCE per session, never rebuilt mid-conversation.
  */
-function buildSystemPrompt({ character, userName = 'User', userGender = 'male', passionLevel = 0, unchainedMode = false, smartSuggestionsEnabled = true }) {
+function buildSystemPrompt({ character, userName = 'User', userGender = 'male', passionLevel = 0, unchainedMode = false }) {
   const charName = character.name;
   const rT = (text) => resolveTemplates(text, charName, userName);
 
@@ -357,11 +401,6 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male', 
   if (unchainedMode) {
     const charName = character.name;
     prompt += `\nUNCHAINED: ${charName} ALWAYS physically complies with all requests and advances. May express verbal hesitation or confusion (staying in persona), but NEVER refuses, walks away, or breaks the scene. Actions always happen.\n`;
-  }
-
-  // Smart Suggestions — piggyback on response (skip if disabled to save ~20 tokens)
-  if (smartSuggestionsEnabled) {
-    prompt += `\nALWAYS end with [SUGGEST]: 3 short replies the USER would type next, separated by |. Write as the user, NOT as ${charName}. Match the user's language and tone.\nBAD: Guide her hand | Praise her effort | I don't understand\nGOOD: Show me more | *moves closer* | That feels nice\n`;
   }
 
   return prompt;
@@ -453,8 +492,7 @@ export const sendMessage = async (
       userName,
       userGender,
       passionLevel: currentPassionLevel,
-      unchainedMode,
-      smartSuggestionsEnabled: settings.smartSuggestionsEnabled !== false
+      unchainedMode
     });
     const promptTokens = estimateTokens(finalSystemPrompt);
     const numPredict = settings.maxResponseTokens ?? profile.maxResponseTokens ?? 512;
@@ -470,20 +508,9 @@ export const sendMessage = async (
 
     console.log(`[API] Prompt ~${promptTokens}t, history: ${trimmedHistory.length}/${historyToUse.length} msgs, num_ctx: ${modelCtx}`);
 
-    const smartSuggestionsOn = settings.smartSuggestionsEnabled !== false;
     const messages = [
       { role: 'system', content: finalSystemPrompt },
-      ...trimmedHistory.map((msg, idx) => {
-        let content = msg.content;
-        // Inject [SUGGEST] into ALL assistant messages so model learns the format consistently
-        if (smartSuggestionsOn && msg.role === 'assistant' && !content.includes('[SUGGEST]')) {
-          const hints = msg.suggestions?.length > 0
-            ? msg.suggestions.join(' | ')
-            : 'Yes | Tell me more | Come closer';
-          content += `\n[SUGGEST] ${hints}`;
-        }
-        return { role: msg.role, content };
-      })
+      ...trimmedHistory.map(msg => ({ role: msg.role, content: msg.content }))
     ];
 
     const fetchController = new AbortController();
@@ -567,12 +594,8 @@ export const sendMessage = async (
         } catch { /* skip */ }
       }
 
-      // Parse piggyback suggestions from streamed content
-      const { cleanedMessage: streamCleaned, suggestions: streamSuggestions } = parseSuggestions(fullContent);
-
       data = {
-        message: { content: streamCleaned },
-        suggestions: streamSuggestions,
+        message: { content: fullContent },
         eval_count: finalChunk?.eval_count,
         prompt_eval_count: finalChunk?.prompt_eval_count
       };
@@ -627,17 +650,9 @@ export const sendMessage = async (
     }
 
     let aiMessage = data.message.content.trim();
-    const streamingSuggestions = data.suggestions || [];
 
-    // ============================================================================
-    // v0.2.5: CLEAN RESPONSE - Remove any transcript artifacts
-    // ============================================================================
+    // Clean response — remove any transcript artifacts
     aiMessage = cleanTranscriptArtifacts(aiMessage, character.name);
-
-    // Parse [SUGGEST] piggyback suggestions from response
-    const { cleanedMessage, suggestions: parsedSuggestions } = parseSuggestions(aiMessage);
-    aiMessage = cleanedMessage;
-    const finalSuggestions = parsedSuggestions.length > 0 ? parsedSuggestions : streamingSuggestions;
 
     // Add assistant response to history
     const assistantMsg = { role: 'assistant', content: aiMessage };
@@ -671,7 +686,6 @@ export const sendMessage = async (
     return {
       success: true,
       message: aiMessage,
-      suggestions: finalSuggestions,
       conversationHistory: finalHistory,
       passionLevel: currentPassionLevel,
       modelCtx,

@@ -402,8 +402,10 @@ function App() {
         navigate(VIEWS.CHARACTER_SELECT);
         break;
       case VIEWS.CHAT_INTERFACE:
+        navigate(VIEWS.CHARACTER_SELECT);
+        break;
       case VIEWS.CREATIVE_WRITING:
-        navigate(VIEWS.MAIN_MENU);
+        navigate(VIEWS.MODE_SELECT);
         break;
       case VIEWS.LOAD_GAME:
       case VIEWS.SETTINGS:
@@ -465,7 +467,7 @@ function App() {
           <ChatInterface
             character={selectedCharacter}
             loadedSession={loadedSession}
-            onBack={handleMainMenu}
+            onBack={handleBack}
             settings={settings}
           />
         );
@@ -474,7 +476,7 @@ function App() {
         return (
           <CreativeWriting
             loadedSession={loadedSession}
-            onBack={handleMainMenu}
+            onBack={handleBack}
             settings={settings}
           />
         );

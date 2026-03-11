@@ -294,6 +294,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const abortRef = useRef(null);
   const streamBufferRef = useRef('');
   const rafRef = useRef(null);
+  const suggestPhaseRef = useRef(false);
 
   // Cleanup: abort pending requests + unload model on unmount (character switch)
   useEffect(() => {
@@ -738,6 +739,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       let firstToken = true;
       streamBufferRef.current = '';
+      suggestPhaseRef.current = false;
       const flushBuffer = () => {
         setStreamingContent(streamBufferRef.current);
         rafRef.current = null;
@@ -749,6 +751,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           setIsStreaming(true);
         }
         streamBufferRef.current += token;
+        // Detect [SUGGEST] phase — visible response done, suggestions generating
+        if (!suggestPhaseRef.current && streamBufferRef.current.includes('\n[S')) {
+          suggestPhaseRef.current = true;
+        }
         if (!rafRef.current) {
           rafRef.current = requestAnimationFrame(flushBuffer);
         }
@@ -769,10 +775,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       );
 
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      setIsStreaming(false);
-      setStreamingContent('');
 
       if (!response.success) {
+        setIsStreaming(false);
+        setStreamingContent('');
         throw new Error(response.error || 'Failed to get response');
       }
 
@@ -782,7 +788,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       // Resolve suggestions (AI-generated only, no fallbacks)
       let activeSuggestions = smartSuggestionsEnabled && response.suggestions?.length > 0 ? response.suggestions : [];
-      setSmartSuggestions(activeSuggestions);
 
       const assistantMessage = {
         role: 'assistant',
@@ -792,7 +797,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         ...(activeSuggestions.length > 0 && { suggestions: activeSuggestions })
       };
       const updatedMessages = [...newMessages, assistantMessage];
+
+      // Set final message + suggestions BEFORE clearing streaming → no flash
       setMessages(updatedMessages);
+      setSmartSuggestions(activeSuggestions);
+      setIsStreaming(false);
+      setStreamingContent('');
 
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
@@ -915,15 +925,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   const handleClearChat = async (skipConfirmation = false) => {
     const doReset = async () => {
-
-      initializeGreeting();
-      setCurrentEnvironment(null);
-      setCurrentState(null);
-
       try {
         await deleteSession(sessionId);
       } catch (error) {
-        console.error('[v9.2 ChatInterface] ❌ Error during hard reset:', error);
+        console.error('[v9.2 ChatInterface] Error during session delete:', error);
       }
 
       if (sessionId) {
@@ -932,7 +937,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       if (character?.id) {
         passionManager.clearCharacterMemory(character.id);
       }
+
+      const newSid = generateSessionId();
+      setSessionId(newSid);
       setPassionLevel(0);
+      setSmartSuggestions([]);
+      previousTierRef.current = 'surface';
+      initializeGreeting();
     };
 
     if (skipConfirmation) {
@@ -1063,6 +1074,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     try {
       let firstToken = true;
       streamBufferRef.current = '';
+      suggestPhaseRef.current = false;
       const flushBuffer = () => {
         setStreamingContent(streamBufferRef.current);
         rafRef.current = null;
@@ -1074,6 +1086,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           setIsStreaming(true);
         }
         streamBufferRef.current += token;
+        if (!suggestPhaseRef.current && streamBufferRef.current.includes('\n[S')) {
+          suggestPhaseRef.current = true;
+        }
         if (!rafRef.current) {
           rafRef.current = requestAnimationFrame(flushBuffer);
         }
@@ -1094,10 +1109,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       );
 
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      setIsStreaming(false);
-      setStreamingContent('');
 
       if (!response.success) {
+        setIsStreaming(false);
+        setStreamingContent('');
         throw new Error(response.error || 'Failed to regenerate');
       }
 
@@ -1105,7 +1120,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const freshPassion = response.passionLevel !== undefined ? response.passionLevel : passionLevel;
 
       let activeSuggestions = smartSuggestionsEnabled && response.suggestions?.length > 0 ? response.suggestions : [];
-      setSmartSuggestions(activeSuggestions);
 
       const assistantMessage = {
         role: 'assistant',
@@ -1115,7 +1129,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         ...(activeSuggestions.length > 0 && { suggestions: activeSuggestions })
       };
       const updatedMessages = [...messagesUpToLastUser, assistantMessage];
+
+      // Set final message + suggestions BEFORE clearing streaming → no flash
       setMessages(updatedMessages);
+      setSmartSuggestions(activeSuggestions);
+      setIsStreaming(false);
+      setStreamingContent('');
 
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
@@ -1663,24 +1682,30 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       {/* v1.0 ROSE NOIR: Floating Input "Cockpit" - BLOCK 6.7: Detached, premium styling */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl z-50">
         {/* Smart Suggestions - Rose Noir Pills */}
-        {smartSuggestionsEnabled && smartSuggestions.length > 0 && (
+        {smartSuggestionsEnabled && smartSuggestions.length > 0 && !isStreaming && (
           <div className="flex gap-2.5 mb-4 flex-wrap justify-center">
             {smartSuggestions.map((suggestion, i) => (
               <button
                 key={`suggestion-${suggestion.slice(0, 20)}-${i}`}
                 onClick={() => handleSuggestionClick(suggestion)}
-                disabled={isLoading || isStreaming}
+                disabled={isLoading}
                 className={`px-4 py-2 bg-zinc-900/95 backdrop-blur-2xl border rounded-full text-sm transition-all duration-200 disabled:opacity-50 flex items-center gap-2 shadow-lg ${
                   isGoldMode
                     ? 'border-amber-500/40 text-amber-100 hover:bg-amber-500/10 hover:shadow-[0_0_15px_-3px_rgba(245,158,11,0.3)] hover:border-amber-400'
                     : 'border-zinc-700/50 hover:border-rose-500/30 text-zinc-400 hover:text-rose-300 hover:bg-rose-500/10'
                 }`}
-                title="Click to send"
+                title={suggestion}
               >
                 <Sparkles size={12} className="text-rose-400/70" />
-                <span>{suggestion}</span>
+                <span className="truncate max-w-[300px]">{suggestion}</span>
               </button>
             ))}
+          </div>
+        )}
+        {/* Generating suggestions indicator */}
+        {smartSuggestionsEnabled && isStreaming && suggestPhaseRef.current && (
+          <div className="flex justify-center mb-4">
+            <span className="text-xs text-zinc-500 animate-pulse">{t.chat?.generatingSuggestions || 'Generating suggestions...'}</span>
           </div>
         )}
 
@@ -1694,13 +1719,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === 'Enter' && !e.shiftKey && !isStreaming) {
                 e.preventDefault();
                 handleSend();
               }
             }}
             placeholder={t.chat.messageCharacter.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
-            disabled={isLoading || isStreaming}
+            disabled={isLoading}
             className="chat-input flex-1 bg-transparent border-none outline-none ring-0 text-white text-lg placeholder-zinc-500 focus:outline-none focus:ring-0 disabled:opacity-50 px-2"
           />
           <button

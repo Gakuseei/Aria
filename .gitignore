@@ -45,6 +45,7 @@ docs/plans/
 Discord/
 tools/Zonos
 testsprite_tests
+tests/
 .todos/
 .sidecar/
 .sidecar-agent

@@ -290,6 +290,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const importFileRef = useRef(null);
   const audioRef = useRef(null);
   const saveTimerRef = useRef(null);
+  const passionTimerRef = useRef(null);
   const abortRef = useRef(null);
   const streamBufferRef = useRef('');
   const rafRef = useRef(null);
@@ -300,6 +301,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       if (abortRef.current) {
         abortRef.current.abort();
         abortRef.current = null;
+      }
+      if (passionTimerRef.current) {
+        clearTimeout(passionTimerRef.current);
+        passionTimerRef.current = null;
       }
       unloadOllamaModel(parentSettings);
     };
@@ -796,7 +801,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const passionEnabled = character.passionEnabled !== false;
       if (passionEnabled && sessionId) {
         scorePassionBackground(safeMessageText, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
-        setTimeout(() => {
+        if (passionTimerRef.current) clearTimeout(passionTimerRef.current);
+        passionTimerRef.current = setTimeout(() => {
           setPassionLevel(passionManager.getPassionLevel(sessionId));
         }, 6000);
       }
@@ -1119,7 +1125,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       if (passionEnabled && sessionId) {
         passionManager.revertLastScore(sessionId);
         scorePassionBackground(lastUserMessage, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
-        setTimeout(() => {
+        if (passionTimerRef.current) clearTimeout(passionTimerRef.current);
+        passionTimerRef.current = setTimeout(() => {
           setPassionLevel(passionManager.getPassionLevel(sessionId));
         }, 6000);
       }

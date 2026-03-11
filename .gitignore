@@ -37,6 +37,9 @@ characters/*.json
 # AI-related and hidden files (keep local only)
 /.*
 !/.gitignore
+!/.claude/
+/.claude/*
+!/.claude/skills/
 AGENTS.md
 CLAUDE.md
 PROJECT_STRUCTURE.md

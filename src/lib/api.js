@@ -223,7 +223,7 @@ const DEFAULT_SETTINGS = {
   imageGenUrl: 'http://127.0.0.1:7860',
   voiceEnabled: false,
   voiceUrl: 'http://127.0.0.1:5000',
-  maxResponseTokens: 256
+  maxResponseTokens: 512
 };
 
 const PASSION_SCORING_TIMEOUT_MS = 30000;
@@ -529,7 +529,7 @@ export const sendMessage = async (
       userLanguage
     });
     const promptTokens = estimateTokens(finalSystemPrompt);
-    const numPredict = settings.maxResponseTokens ?? profile.maxResponseTokens ?? 256;
+    const numPredict = settings.maxResponseTokens ?? profile.maxResponseTokens ?? 512;
     let availableForHistory = modelCtx - promptTokens - numPredict - 128;
 
     // Dynamic sliding window — keep as many recent messages as fit

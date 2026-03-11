@@ -402,14 +402,14 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   <label className="text-sm font-medium text-zinc-400">{t.settings.maxResponseTokens}</label>
                   <span className={`text-sm font-mono px-2 py-0.5 rounded ${
                     isGoldMode ? 'text-amber-300 bg-amber-500/10' : 'text-rose-300 bg-rose-500/10'
-                  }`}>{settings.maxResponseTokens ?? 256}</span>
+                  }`}>{settings.maxResponseTokens ?? 512}</span>
                 </div>
                 <input
                   type="range"
                   min="64"
                   max="2048"
                   step="32"
-                  value={settings.maxResponseTokens ?? 256}
+                  value={settings.maxResponseTokens ?? 512}
                   onChange={(e) => onSettingChange('maxResponseTokens', parseInt(e.target.value))}
                   className={`w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer ${
                     isGoldMode ? 'accent-amber-500' : 'accent-rose-500'

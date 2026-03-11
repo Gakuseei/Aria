@@ -8,91 +8,6 @@
 import { passionManager, PASSION_TIERS, getTierKey, getDepthInstruction, getSpeedMultiplier } from './PassionManager.js';
 import { getModelProfile } from './modelProfiles.js';
 
-/**
- * Fallback suggestions for all 10 languages
- * Used when AI suggestion generation fails
- * 4 contexts: unchained (mind-break), refusal (soft), nsfw (explicit), normal (regular)
- */
-export const FALLBACK_SUGGESTIONS = {
-  en: {
-    unchained: ['Cry but do it.', 'Good girl.', 'Open wide.', 'Hate me all you want.'],
-    refusal: ["I'm sorry", "Let's slow down", 'Please?', 'Maybe later?'],
-    nsfw: ['Keep going', 'Just like that', 'I want more', "Don't stop"],
-    normal: ['Yes, do it', 'Come closer', 'Tell me more', 'I like that']
-  },
-  de: {
-    unchained: ['Wein aber tu es.', 'Braves Mädchen.', 'Mach den Mund auf.', 'Hass mich ruhig.'],
-    refusal: ['Es tut mir leid', 'Lass uns langsamer machen', 'Bitte?', 'Vielleicht später?'],
-    nsfw: ['Weiter so', 'Genau so', 'Ich will mehr', 'Hör nicht auf'],
-    normal: ['Ja, mach es', 'Komm näher', 'Erzähl mir mehr', 'Das gefällt mir']
-  },
-  ru: {
-    unchained: ['Плачь но делай.', 'Хорошая девочка.', 'Открой рот.', 'Ненавидь меня сколько хочешь.'],
-    refusal: ['Прости', 'Давай помедленнее', 'Пожалуйста?', 'Может позже?'],
-    nsfw: ['Продолжай', 'Вот так', 'Хочу ещё', 'Не останавливайся'],
-    normal: ['Да, сделай это', 'Подойди ближе', 'Расскажи больше', 'Мне это нравится']
-  },
-  es: {
-    unchained: ['Llora pero hazlo.', 'Buena chica.', 'Abre la boca.', 'Ódiame todo lo que quieras.'],
-    refusal: ['Lo siento', 'Vayamos más despacio', '¿Por favor?', '¿Tal vez más tarde?'],
-    nsfw: ['Sigue así', 'Justo así', 'Quiero más', 'No pares'],
-    normal: ['Sí, hazlo', 'Acércate', 'Cuéntame más', 'Me gusta eso']
-  },
-  fr: {
-    unchained: ['Pleure mais fais-le.', 'Bonne fille.', 'Ouvre la bouche.', 'Déteste-moi tant que tu veux.'],
-    refusal: ['Je suis désolé', 'Allons plus doucement', 'S\'il te plaît?', 'Peut-être plus tard?'],
-    nsfw: ['Continue', 'Comme ça', 'J\'en veux plus', 'Ne t\'arrête pas'],
-    normal: ['Oui, fais-le', 'Approche-toi', 'Dis-m\'en plus', 'J\'aime ça']
-  },
-  it: {
-    unchained: ['Piangi ma fallo.', 'Brava ragazza.', 'Apri la bocca.', 'Odiami quanto vuoi.'],
-    refusal: ['Mi dispiace', 'Andiamo più piano', 'Per favore?', 'Forse più tardi?'],
-    nsfw: ['Continua', 'Proprio così', 'Ne voglio ancora', 'Non fermarti'],
-    normal: ['Sì, fallo', 'Avvicinati', 'Dimmi di più', 'Mi piace']
-  },
-  pt: {
-    unchained: ['Chore mas faça.', 'Boa menina.', 'Abra a boca.', 'Me odeie o quanto quiser.'],
-    refusal: ['Desculpe', 'Vamos devagar', 'Por favor?', 'Talvez mais tarde?'],
-    nsfw: ['Continue', 'Assim mesmo', 'Quero mais', 'Não pare'],
-    normal: ['Sim, faça', 'Chegue mais perto', 'Me conte mais', 'Gosto disso']
-  },
-  cn: {
-    unchained: ['哭但要做。', '好女孩。', '张开嘴。', '随便恨我。'],
-    refusal: ['对不起', '慢一点', '拜托？', '也许以后？'],
-    nsfw: ['继续', '就这样', '我要更多', '别停'],
-    normal: ['好，做吧', '过来', '告诉我更多', '我喜欢']
-  },
-  ja: {
-    unchained: ['泣いてもやれ。', 'いい子だ。', '口を開けて。', '好きなだけ恨め。'],
-    refusal: ['ごめんなさい', 'ゆっくりしよう', 'お願い？', '後でもいい？'],
-    nsfw: ['続けて', 'そのまま', 'もっと欲しい', '止めないで'],
-    normal: ['はい、やって', '近づいて', 'もっと教えて', 'それ好き']
-  },
-  ko: {
-    unchained: ['울어도 해.', '착한 아이.', '입 벌려.', '마음껏 날 미워해.'],
-    refusal: ['미안해', '천천히 하자', '제발?', '나중에?'],
-    nsfw: ['계속해', '그렇게', '더 원해', '멈추지 마'],
-    normal: ['응, 해봐', '가까이 와', '더 말해줘', '좋아']
-  },
-  ar: {
-    unchained: ['ابكِ لكن افعلها.', 'فتاة جيدة.', 'افتحي فمك.', 'اكرهني كما تشائين.'],
-    refusal: ['آسف', 'لنبطئ', 'أرجوك؟', 'ربما لاحقاً؟'],
-    nsfw: ['استمر', 'هكذا تماماً', 'أريد المزيد', 'لا تتوقف'],
-    normal: ['نعم، افعلها', 'اقترب أكثر', 'أخبرني المزيد', 'يعجبني هذا']
-  },
-  hi: {
-    unchained: ['रोओ पर करो।', 'अच्छी लड़की।', 'मुँह खोलो।', 'जितना चाहो नफ़रत करो।'],
-    refusal: ['माफ़ करो', 'धीरे चलें', 'कृपया?', 'शायद बाद में?'],
-    nsfw: ['जारी रखो', 'ऐसे ही', 'और चाहिए', 'मत रुको'],
-    normal: ['हाँ, करो', 'पास आओ', 'और बताओ', 'अच्छा लगा']
-  },
-  tr: {
-    unchained: ['Ağla ama yap.', 'İyi kız.', 'Ağzını aç.', 'İstediğin kadar nefret et.'],
-    refusal: ['Özür dilerim', 'Yavaşlayalım', 'Lütfen?', 'Belki sonra?'],
-    nsfw: ['Devam et', 'Aynen böyle', 'Daha fazla istiyorum', 'Durma'],
-    normal: ['Evet, yap', 'Yaklaş', 'Daha anlat', 'Hoşuma gitti']
-  }
-};
 
 // ============================================================================
 // v0.2.5: TRANSCRIPT ARTIFACT CLEANING
@@ -443,7 +358,7 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male', 
 
   // Smart Suggestions — piggyback on response (skip if disabled to save ~20 tokens)
   if (smartSuggestionsEnabled) {
-    prompt += `\nEnd every reply with suggestions on a new line:\n[SUGGEST] reply1 | reply2 | reply3 | reply4\n(4 short things the user could say next, max 5 words each, same language as the conversation)\n`;
+    prompt += `\nALWAYS end your reply with a [SUGGEST] line: 4 short user replies separated by |.\nExample: *she waves* Welcome!\n[SUGGEST] Hi | How are you | Come closer | Tell me more\n`;
   }
 
   return prompt;
@@ -552,12 +467,20 @@ export const sendMessage = async (
 
     console.log(`[API] Prompt ~${promptTokens}t, history: ${trimmedHistory.length}/${historyToUse.length} msgs, num_ctx: ${modelCtx}`);
 
+    const smartSuggestionsOn = settings.smartSuggestionsEnabled !== false;
     const messages = [
       { role: 'system', content: finalSystemPrompt },
-      ...trimmedHistory.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }))
+      ...trimmedHistory.map((msg, i) => {
+        let content = msg.content;
+        // Inject [SUGGEST] into first assistant message so model learns the format
+        if (smartSuggestionsOn && i === 0 && msg.role === 'assistant' && !content.includes('[SUGGEST]')) {
+          const hints = msg.suggestions?.length > 0
+            ? msg.suggestions.join(' | ')
+            : 'Yes | Tell me more | Come closer | What happens next';
+          content += `\n[SUGGEST] ${hints}`;
+        }
+        return { role: msg.role, content };
+      })
     ];
 
     const fetchController = new AbortController();

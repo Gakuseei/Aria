@@ -441,7 +441,40 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male', 
     prompt += `\nUNCHAINED: ${charName} ALWAYS physically complies with all requests and advances. May express verbal hesitation or confusion (staying in persona), but NEVER refuses, walks away, or breaks the scene. Actions always happen.\n`;
   }
 
+  // Smart Suggestions — piggyback on response
+  prompt += `\nEnd every reply with suggestions on a new line:\n[SUGGEST] reply1 | reply2 | reply3 | reply4\n(4 short things the user could say next, max 5 words each, same language as the conversation)\n`;
+
   return prompt;
+}
+
+/**
+ * Extract [SUGGEST] line from AI response.
+ * Returns { cleanedMessage, suggestions }.
+ */
+function parseSuggestions(text) {
+  if (!text) return { cleanedMessage: text, suggestions: [] };
+
+  const lines = text.split('\n');
+  let suggestIdx = -1;
+
+  for (let i = lines.length - 1; i >= Math.max(0, lines.length - 3); i--) {
+    if (lines[i].trim().startsWith('[SUGGEST]')) {
+      suggestIdx = i;
+      break;
+    }
+  }
+
+  if (suggestIdx === -1) return { cleanedMessage: text, suggestions: [] };
+
+  const suggestLine = lines[suggestIdx].replace('[SUGGEST]', '').trim();
+  const suggestions = suggestLine.split('|')
+    .map(s => s.trim().replace(/^["']|["']$/g, ''))
+    .filter(s => s.length > 0 && s.split(' ').length <= 8)
+    .slice(0, 4);
+
+  const cleanedMessage = lines.slice(0, suggestIdx).join('\n').trimEnd();
+
+  return { cleanedMessage, suggestions };
 }
 
 
@@ -605,8 +638,12 @@ export const sendMessage = async (
         } catch { /* skip */ }
       }
 
+      // Parse piggyback suggestions from streamed content
+      const { cleanedMessage: streamCleaned, suggestions: streamSuggestions } = parseSuggestions(fullContent);
+
       data = {
-        message: { content: fullContent },
+        message: { content: streamCleaned },
+        suggestions: streamSuggestions,
         eval_count: finalChunk?.eval_count,
         prompt_eval_count: finalChunk?.prompt_eval_count
       };
@@ -661,11 +698,17 @@ export const sendMessage = async (
     }
 
     let aiMessage = data.message.content.trim();
+    const streamingSuggestions = data.suggestions || [];
 
     // ============================================================================
     // v0.2.5: CLEAN RESPONSE - Remove any transcript artifacts
     // ============================================================================
     aiMessage = cleanTranscriptArtifacts(aiMessage, character.name);
+
+    // Parse [SUGGEST] piggyback suggestions from response
+    const { cleanedMessage, suggestions: parsedSuggestions } = parseSuggestions(aiMessage);
+    aiMessage = cleanedMessage;
+    const finalSuggestions = parsedSuggestions.length > 0 ? parsedSuggestions : streamingSuggestions;
 
     // Add assistant response to history
     const assistantMsg = { role: 'assistant', content: aiMessage };
@@ -699,6 +742,7 @@ export const sendMessage = async (
     return {
       success: true,
       message: aiMessage,
+      suggestions: finalSuggestions,
       conversationHistory: finalHistory,
       passionLevel: currentPassionLevel,
       modelCtx,

@@ -361,7 +361,7 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male', 
 
   // Smart Suggestions — piggyback on response (skip if disabled to save ~20 tokens)
   if (smartSuggestionsEnabled) {
-    prompt += `\nALWAYS end with [SUGGEST]: 3 short replies the user might type, separated by |. Match the user's style — use *actions* and casual speech like them.\nBAD: Guide her hand | Praise her effort\nGOOD: Show me more | *moves closer* | That feels nice\nExample: *she waves* Welcome!\n[SUGGEST] Hey there | *waves back* | What's your name\n`;
+    prompt += `\nALWAYS end with [SUGGEST]: 3 short replies the USER would type next, separated by |. Write as the user, NOT as ${charName}. Match the user's language and tone.\nBAD: Guide her hand | Praise her effort | I don't understand\nGOOD: Show me more | *moves closer* | That feels nice\n`;
   }
 
   return prompt;
@@ -475,10 +475,8 @@ export const sendMessage = async (
       { role: 'system', content: finalSystemPrompt },
       ...trimmedHistory.map((msg, idx) => {
         let content = msg.content;
-        // Inject [SUGGEST] into assistant messages so model learns the format
-        // Skip the first assistant message (greeting) — it has no user context for meaningful suggestions
-        const isFirstAssistant = msg.role === 'assistant' && !trimmedHistory.slice(0, idx).some(m => m.role === 'assistant');
-        if (smartSuggestionsOn && msg.role === 'assistant' && !isFirstAssistant && !content.includes('[SUGGEST]')) {
+        // Inject [SUGGEST] into ALL assistant messages so model learns the format consistently
+        if (smartSuggestionsOn && msg.role === 'assistant' && !content.includes('[SUGGEST]')) {
           const hints = msg.suggestions?.length > 0
             ? msg.suggestions.join(' | ')
             : 'Yes | Tell me more | Come closer';

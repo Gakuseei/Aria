@@ -779,28 +779,33 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       const safeResponse = (response.message || '').trim();
 
+      const freshPassion = response.passionLevel !== undefined ? response.passionLevel : passionLevel;
+
+      // Resolve suggestions (AI-generated or fallback)
+      let activeSuggestions = [];
+      if (smartSuggestionsEnabled) {
+        if (response.suggestions?.length > 0) {
+          activeSuggestions = response.suggestions;
+        } else {
+          const lang = settings.preferredLanguage || 'en';
+          const fb = FALLBACK_SUGGESTIONS[lang] || FALLBACK_SUGGESTIONS['en'];
+          activeSuggestions = isUnchainedMode ? fb.unchained : freshPassion > 75 ? fb.nsfw : fb.normal;
+        }
+        setSmartSuggestions(activeSuggestions);
+      }
+
       const assistantMessage = {
         role: 'assistant',
         content: safeResponse,
         timestamp: Date.now(),
-        ...(response.stats && { stats: response.stats })
+        ...(response.stats && { stats: response.stats }),
+        ...(activeSuggestions.length > 0 && { suggestions: activeSuggestions })
       };
       const updatedMessages = [...newMessages, assistantMessage];
       setMessages(updatedMessages);
 
-      const freshPassion = response.passionLevel !== undefined ? response.passionLevel : passionLevel;
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
-      }
-
-      if (smartSuggestionsEnabled) {
-        if (response.suggestions?.length > 0) {
-          setSmartSuggestions(response.suggestions);
-        } else {
-          const lang = settings.preferredLanguage || 'en';
-          const fb = FALLBACK_SUGGESTIONS[lang] || FALLBACK_SUGGESTIONS['en'];
-          setSmartSuggestions(isUnchainedMode ? fb.unchained : freshPassion > 75 ? fb.nsfw : fb.normal);
-        }
       }
 
       const passionEnabled = character.passionEnabled !== false;
@@ -1106,29 +1111,32 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       }
 
       const safeResponse = (response.message || '').trim();
+      const freshPassion = response.passionLevel !== undefined ? response.passionLevel : passionLevel;
+
+      let activeSuggestions = [];
+      if (smartSuggestionsEnabled) {
+        if (response.suggestions?.length > 0) {
+          activeSuggestions = response.suggestions;
+        } else {
+          const lang = settings.preferredLanguage || 'en';
+          const fb = FALLBACK_SUGGESTIONS[lang] || FALLBACK_SUGGESTIONS['en'];
+          activeSuggestions = isUnchainedMode ? fb.unchained : freshPassion > 75 ? fb.nsfw : fb.normal;
+        }
+        setSmartSuggestions(activeSuggestions);
+      }
 
       const assistantMessage = {
         role: 'assistant',
         content: safeResponse,
         timestamp: Date.now(),
-        ...(response.stats && { stats: response.stats })
+        ...(response.stats && { stats: response.stats }),
+        ...(activeSuggestions.length > 0 && { suggestions: activeSuggestions })
       };
       const updatedMessages = [...messagesUpToLastUser, assistantMessage];
       setMessages(updatedMessages);
 
-      const freshPassion = response.passionLevel !== undefined ? response.passionLevel : passionLevel;
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
-      }
-
-      if (smartSuggestionsEnabled) {
-        if (response.suggestions?.length > 0) {
-          setSmartSuggestions(response.suggestions);
-        } else {
-          const lang = settings.preferredLanguage || 'en';
-          const fb = FALLBACK_SUGGESTIONS[lang] || FALLBACK_SUGGESTIONS['en'];
-          setSmartSuggestions(isUnchainedMode ? fb.unchained : freshPassion > 75 ? fb.nsfw : fb.normal);
-        }
       }
 
       const passionEnabled = character.passionEnabled !== false;

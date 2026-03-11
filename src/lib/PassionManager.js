@@ -231,6 +231,20 @@ class PassionManager {
   }
 
   /**
+   * Revert last passion score (for regenerate — removes old score before re-scoring)
+   * @param {string} sessionId - Session identifier
+   */
+  revertLastScore(sessionId) {
+    const historyKey = `${sessionId}_history`;
+    const history = this.passionData[historyKey];
+    if (!Array.isArray(history) || history.length < 2) return;
+    const previousLevel = history[history.length - 2];
+    history.pop();
+    this.passionData[sessionId] = previousLevel;
+    this.savePassionData();
+  }
+
+  /**
    * Restore passion history from an imported array
    * @param {string} sessionId - Session identifier
    * @param {number[]} historyArray - Array of passion levels to restore

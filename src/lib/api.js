@@ -470,10 +470,10 @@ export const sendMessage = async (
     const smartSuggestionsOn = settings.smartSuggestionsEnabled !== false;
     const messages = [
       { role: 'system', content: finalSystemPrompt },
-      ...trimmedHistory.map((msg, i) => {
+      ...trimmedHistory.map(msg => {
         let content = msg.content;
-        // Inject [SUGGEST] into first assistant message so model learns the format
-        if (smartSuggestionsOn && i === 0 && msg.role === 'assistant' && !content.includes('[SUGGEST]')) {
+        // Inject [SUGGEST] into ALL assistant messages so model consistently learns the format
+        if (smartSuggestionsOn && msg.role === 'assistant' && !content.includes('[SUGGEST]')) {
           const hints = msg.suggestions?.length > 0
             ? msg.suggestions.join(' | ')
             : 'Yes | Tell me more | Come closer | What happens next';

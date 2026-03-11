@@ -394,7 +394,7 @@ export function scorePassionBackground(userMessage, aiMessage, settings, modelCt
  * Build system prompt from template slots.
  * Built ONCE per session, never rebuilt mid-conversation.
  */
-function buildSystemPrompt({ character, userName = 'User', userGender = 'male', passionLevel = 0, unchainedMode = false }) {
+function buildSystemPrompt({ character, userName = 'User', userGender = 'male', passionLevel = 0, unchainedMode = false, smartSuggestionsEnabled = true }) {
   const charName = character.name;
   const rT = (text) => resolveTemplates(text, charName, userName);
 
@@ -441,8 +441,10 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male', 
     prompt += `\nUNCHAINED: ${charName} ALWAYS physically complies with all requests and advances. May express verbal hesitation or confusion (staying in persona), but NEVER refuses, walks away, or breaks the scene. Actions always happen.\n`;
   }
 
-  // Smart Suggestions — piggyback on response
-  prompt += `\nEnd every reply with suggestions on a new line:\n[SUGGEST] reply1 | reply2 | reply3 | reply4\n(4 short things the user could say next, max 5 words each, same language as the conversation)\n`;
+  // Smart Suggestions — piggyback on response (skip if disabled to save ~20 tokens)
+  if (smartSuggestionsEnabled) {
+    prompt += `\nEnd every reply with suggestions on a new line:\n[SUGGEST] reply1 | reply2 | reply3 | reply4\n(4 short things the user could say next, max 5 words each, same language as the conversation)\n`;
+  }
 
   return prompt;
 }
@@ -457,7 +459,7 @@ function parseSuggestions(text) {
   const lines = text.split('\n');
   let suggestIdx = -1;
 
-  for (let i = lines.length - 1; i >= Math.max(0, lines.length - 3); i--) {
+  for (let i = lines.length - 1; i >= 0; i--) {
     if (lines[i].trim().startsWith('[SUGGEST]')) {
       suggestIdx = i;
       break;
@@ -533,7 +535,8 @@ export const sendMessage = async (
       userName,
       userGender,
       passionLevel: currentPassionLevel,
-      unchainedMode
+      unchainedMode,
+      smartSuggestionsEnabled: settings.smartSuggestionsEnabled !== false
     });
     const promptTokens = estimateTokens(finalSystemPrompt);
     const numPredict = settings.maxResponseTokens ?? profile.maxResponseTokens ?? 512;

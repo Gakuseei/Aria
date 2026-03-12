@@ -272,6 +272,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // v0.2.5: Smart Suggestions
   const [smartSuggestions, setSmartSuggestions] = useState([]);
   const [smartSuggestionsEnabled, setSmartSuggestionsEnabled] = useState(true);
+  const lastGoodSuggestionsRef = useRef([]);
 
   // v0.2.6: Impersonate (Write for me)
   const [isImpersonating, setIsImpersonating] = useState(false);
@@ -829,13 +830,14 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       // Generate suggestions in background (separate call, ~2-3s)
       if (smartSuggestionsEnabled) {
         generateSuggestionsBackground(updatedMessages, character.name, userName, passionLevel, settings, (suggestions) => {
-          if (suggestions) {
-            setSmartSuggestions(suggestions);
-            // Store on the assistant message for export
+          const effective = (suggestions && suggestions.length > 0) ? suggestions : lastGoodSuggestionsRef.current;
+          if (suggestions && suggestions.length > 0) lastGoodSuggestionsRef.current = suggestions;
+          if (effective.length > 0) {
+            setSmartSuggestions(effective);
             setMessages(prev => {
               const updated = [...prev];
               const lastAssistant = updated.findLast(m => m.role === 'assistant');
-              if (lastAssistant) lastAssistant.suggestions = suggestions;
+              if (lastAssistant) lastAssistant.suggestions = effective;
               return updated;
             });
           }
@@ -980,6 +982,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       setSessionId(newSid);
       setPassionLevel(0);
       setSmartSuggestions([]);
+      lastGoodSuggestionsRef.current = [];
       previousTierRef.current = 'surface';
       initializeGreeting();
     };
@@ -1172,12 +1175,14 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       // Generate suggestions in background
       if (smartSuggestionsEnabled) {
         generateSuggestionsBackground(updatedMessages, character.name, userName, passionLevel, settings, (suggestions) => {
-          if (suggestions) {
-            setSmartSuggestions(suggestions);
+          const effective = (suggestions && suggestions.length > 0) ? suggestions : lastGoodSuggestionsRef.current;
+          if (suggestions && suggestions.length > 0) lastGoodSuggestionsRef.current = suggestions;
+          if (effective.length > 0) {
+            setSmartSuggestions(effective);
             setMessages(prev => {
               const updated = [...prev];
               const lastAssistant = updated.findLast(m => m.role === 'assistant');
-              if (lastAssistant) lastAssistant.suggestions = suggestions;
+              if (lastAssistant) lastAssistant.suggestions = effective;
               return updated;
             });
           }

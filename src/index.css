@@ -443,7 +443,10 @@ input, textarea, select {
 
 input.chat-input,
 input.chat-input:hover,
-input.chat-input:focus {
+input.chat-input:focus,
+textarea.chat-input,
+textarea.chat-input:hover,
+textarea.chat-input:focus {
   background-color: transparent;
   border: none;
   border-radius: 0;
@@ -463,7 +466,10 @@ body.oled-mode select {
 
 body.oled-mode input.chat-input,
 body.oled-mode input.chat-input:hover,
-body.oled-mode input.chat-input:focus {
+body.oled-mode input.chat-input:focus,
+body.oled-mode textarea.chat-input,
+body.oled-mode textarea.chat-input:hover,
+body.oled-mode textarea.chat-input:focus {
   background-color: transparent;
   border: none;
   box-shadow: none;

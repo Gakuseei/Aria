@@ -659,8 +659,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const handleImpersonate = async () => {
     if (isLoading || isStreaming || isImpersonating) return;
     setIsImpersonating(true);
+    setInput('');
     try {
-      await impersonateUser(
+      const cleaned = await impersonateUser(
         messages.filter(m => !m.isTierEvent),
         character.name,
         userName,
@@ -668,6 +669,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         settings,
         (token) => setInput(prev => prev + token)
       );
+      if (cleaned) {
+        setInput(cleaned);
+      }
     } catch (err) {
       if (err?.name !== 'AbortError') {
         console.warn('[ChatInterface] Impersonate failed:', err?.message);
@@ -675,7 +679,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       }
     } finally {
       setIsImpersonating(false);
-      inputRef.current?.focus();
+      if (inputRef.current) {
+        inputRef.current.style.height = 'auto';
+        inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 120) + 'px';
+        inputRef.current.focus();
+      }
     }
   };
 
@@ -1718,16 +1726,18 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         <div className={`bg-zinc-900/95 backdrop-blur-2xl rounded-3xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)] px-5 py-4 flex items-center gap-3 transition-all duration-200 ${
           isGoldMode ? 'border border-amber-500/30 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50' : 'border border-rose-500/30 focus-within:border-rose-500'
         }`}>
-          <input
+          <textarea
             ref={inputRef}
-            type="text"
             value={input}
+            rows={1}
             onChange={(e) => {
               if (isImpersonating) {
                 abortImpersonateCall();
                 setIsImpersonating(false);
               }
               setInput(e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey && !isStreaming) {
@@ -1737,7 +1747,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             }}
             placeholder={t.chat.messageCharacter.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
             disabled={isLoading}
-            className="chat-input flex-1 min-w-0 bg-transparent border-none outline-none ring-0 text-white text-lg placeholder-zinc-500 focus:outline-none focus:ring-0 disabled:opacity-50 px-2"
+            className="chat-input flex-1 min-w-0 bg-transparent border-none outline-none ring-0 text-white text-lg placeholder-zinc-500 focus:outline-none focus:ring-0 disabled:opacity-50 px-2 resize-none overflow-hidden"
           />
           <button
             onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}

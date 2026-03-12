@@ -309,26 +309,53 @@ export function scorePassionBackground(userMessage, aiMessage, settings, modelCt
 }
 
 /**
+ * Abort controller for the current suggestion call.
+ * Exported so callers can cancel before starting a new chat request.
+ */
+let suggestionAbortController = null;
+
+/**
+ * Abort any in-flight suggestion generation.
+ * Call before sendMessage/regenerate so Ollama is free for the chat stream.
+ */
+export function abortSuggestionCall() {
+  if (suggestionAbortController) {
+    suggestionAbortController.abort();
+    suggestionAbortController = null;
+  }
+}
+
+/**
  * Generate smart suggestions in background via separate Ollama call.
  * Returns 3 short user-perspective replies via callback.
+ * @param {string} userMessage - Last user message
+ * @param {string} aiResponse - Last AI response
+ * @param {string} charName - Character name (for perspective clarity)
+ * @param {object} settings - App settings
+ * @param {function} callback - Receives string[] or null
  */
-export function generateSuggestionsBackground(userMessage, aiResponse, settings, callback) {
+export function generateSuggestionsBackground(userMessage, aiResponse, charName, settings, callback) {
+  // Abort any previous suggestion call
+  abortSuggestionCall();
+
   const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
   const model = settings.ollamaModel || 'llama3';
 
-  const prompt = `Suggest 3 short things the user might type next in this conversation.
-Write as the USER, not as the character. Match the user's language and style.
-Include *actions* if the user uses them. Under 8 words each.
-Reply ONLY with 3 suggestions separated by |.
+  const prompt = `${charName} is the AI character. You are the USER talking TO ${charName}.
+Suggest 3 short things the USER might say or do next. Match the user's language.
+Under 8 words each. Reply ONLY with 3 suggestions separated by |.
 
-User: ${userMessage}
-Response: ${(aiResponse || '').slice(0, 300)}
+User said: ${userMessage}
+${charName} replied: ${(aiResponse || '').slice(0, 300)}
 
 Suggestions:`;
+
+  suggestionAbortController = new AbortController();
 
   fetch(`${ollamaUrl}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    signal: suggestionAbortController.signal,
     body: JSON.stringify({
       model,
       prompt,
@@ -338,6 +365,7 @@ Suggestions:`;
   })
     .then(res => res.json())
     .then(data => {
+      suggestionAbortController = null;
       const raw = (data.response || '').trim();
       const suggestions = raw.split('|')
         .map(s => s.trim().replace(/^["':.\-]+|["':.\-]+$/g, ''))
@@ -347,6 +375,11 @@ Suggestions:`;
       callback(suggestions.length > 0 ? suggestions : null);
     })
     .catch(err => {
+      suggestionAbortController = null;
+      if (err?.name === 'AbortError') {
+        console.log('[API] Suggestion call aborted (new chat request)');
+        return;
+      }
       console.warn('[API] Suggestion generation failed:', err?.message);
       callback(null);
     });

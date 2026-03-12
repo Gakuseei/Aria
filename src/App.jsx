@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun } from 'lucide-react';
 import TitleBar from './components/TitleBar';
 import MainMenu from './components/MainMenu';
 import ModeSelection from './components/ModeSelection';
@@ -9,11 +8,9 @@ import CreativeWriting from './components/CreativeWriting';
 import LoadGame from './components/LoadGame';
 import Settings from './components/Settings';
 import CharacterCreator from './components/CharacterCreator';
-import DebugConsole from './components/DebugConsole'; // v0.2.5
-import CustomDropdown from './components/CustomDropdown';
+import DebugConsole from './components/DebugConsole';
 import OledToggleButton from './components/OledToggleButton';
-import { useLanguage } from './context/LanguageContext';
-import { loadSettings, testOllamaConnection, autoDetectAndSetModel, fetchOllamaModels } from './lib/api';
+import { testOllamaConnection, autoDetectAndSetModel } from './lib/api';
 import OllamaSetup from './components/tutorials/OllamaSetup';
 
 // App views

@@ -798,7 +798,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       // Generate suggestions in background (separate call, ~2-3s)
       if (smartSuggestionsEnabled) {
-        generateSuggestionsBackground(safeMessageText, safeResponse, character.name, settings, (suggestions) => {
+        generateSuggestionsBackground(updatedMessages, character.name, userName, passionLevel, settings, (suggestions) => {
           if (suggestions) {
             setSmartSuggestions(suggestions);
             // Store on the assistant message for export
@@ -1141,8 +1141,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       // Generate suggestions in background
       if (smartSuggestionsEnabled) {
-        const lastUserMsg = messagesUpToLastUser.findLast(m => m.role === 'user');
-        generateSuggestionsBackground(lastUserMsg?.content || '', safeResponse, character.name, settings, (suggestions) => {
+        generateSuggestionsBackground(updatedMessages, character.name, userName, passionLevel, settings, (suggestions) => {
           if (suggestions) {
             setSmartSuggestions(suggestions);
             setMessages(prev => {

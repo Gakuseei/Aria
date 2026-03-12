@@ -11,6 +11,7 @@ import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
 import { generateImage, cleanContextForImage, extractConversationContext } from '../lib/imageGen';
 import TutorialModal from './tutorials/TutorialModal';
+import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
 
 // ============================================================================
@@ -687,21 +688,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // v0.2.5: IMAGE GENERATION (AUTO & MANUAL)
   // ============================================================================
 
-  const handleAutoImageGen = async () => {
-    if (!imageGenEnabled || passionLevel <= 60) return;
-    
-    const messagesSinceLastImage = messages.length - lastImageGenMessage;
-    if (messagesSinceLastImage < 5) return;  // Wait at least 5 messages
-
-    setLastImageGenMessage(messages.length);
-    
-    // Extract visual context from last 3 messages
-    const recentContext = messages.slice(-3).map(m => m.content).join(' ');
-    const visualPrompt = `NSFW, intimate scene, ${character.name}, ${recentContext.substring(0, 200)}`;
-    
-    // TODO: Call IPC handler for image generation
-  };
-
   const handleManualImageGen = async () => {
     if (!imagePrompt.trim()) return;
 
@@ -859,10 +845,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         }, 6000);
       }
 
-      if (imageGenEnabled && freshPassion > 60) {
-        handleAutoImageGen();
-      }
-
       // Voice output (if enabled and auto-read enabled)
       if (voiceEnabled === true && autoReadEnabled) {
         handleSpeak(safeResponse);
@@ -1014,13 +996,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         messages: messages,
         passionLevel: passionManager.getPassionLevel(sessionId) || passionLevel,
         passionTier: getTierKey(passionManager.getPassionLevel(sessionId) || passionLevel),
-        passionSpeed: character.passionSpeed || (character.passionProfile !== undefined ? getSpeedMultiplier(character.passionProfile) + 'x' : 'normal'),
+        passionSpeed: character.passionSpeed || 'normal',
         passionEnabled: character.passionEnabled !== false,
         unchainedMode: isUnchainedMode,
         passionHistory: passionManager.getHistory(sessionId),
         sessionId: sessionId,
         exportedAt: new Date().toISOString(),
-        version: '0.2.6'
+        version: appVersion
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -1375,15 +1357,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 </div>
                 <div className="text-xs text-zinc-500 mb-3">
                   Speed: {(() => {
-                    const sp = character?.passionSpeed || character?.passionProfile;
-                    if (typeof sp === 'string') return sp.charAt(0).toUpperCase() + sp.slice(1);
-                    if (typeof sp === 'number') {
-                      if (sp <= 0.3) return 'Slow';
-                      if (sp <= 0.7) return 'Normal';
-                      if (sp <= 0.9) return 'Fast';
-                      return 'Extreme';
-                    }
-                    return 'Normal';
+                    const sp = character?.passionSpeed || 'normal';
+                    return sp.charAt(0).toUpperCase() + sp.slice(1);
                   })()}
                 </div>
                 <button

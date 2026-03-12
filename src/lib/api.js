@@ -293,7 +293,7 @@ function isElectron() {
  * Called after the AI response is already returned to the user.
  */
 export function scorePassionBackground(userMessage, aiMessage, settings, modelCtx, sessionId, character) {
-  const speedMultiplier = getSpeedMultiplier(character?.passionSpeed || character?.passionProfile);
+  const speedMultiplier = getSpeedMultiplier(character?.passionSpeed);
 
   scorePassionLLM(userMessage, aiMessage, settings, modelCtx)
     .then(rawScore => {

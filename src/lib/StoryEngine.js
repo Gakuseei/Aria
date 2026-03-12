@@ -208,19 +208,21 @@ This instruction OVERRIDES all other language detection. The user explicitly sel
     // Append language enforcement to system prompt
     systemPrompt = systemPrompt + languageEnforcement;
 
-    const response = await fetch(`${url}/api/generate`, {
+    const response = await fetch(`${url}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: modelName,
-        prompt: `User Request: ${prompt}\n\nStory:`,
-        system: systemPrompt,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `User Request: ${prompt}\n\nStory:` }
+        ],
         stream: false,
         options: {
           temperature: 0.9,
-          num_predict: 2000, // Long responses for story mode
+          num_predict: 2000,
           top_p: 0.95,
           top_k: 40
         }
@@ -234,11 +236,11 @@ This instruction OVERRIDES all other language detection. The user explicitly sel
 
     const data = await response.json();
 
-    if (!data.response) {
+    if (!data.message || !data.message.content) {
       throw new Error('No response from Ollama');
     }
 
-    const generatedStory = data.response.trim();
+    const generatedStory = data.message.content.trim();
 
     console.log('[StoryEngine] ✅ Story generated');
     console.log('[StoryEngine] Output length:', generatedStory.length);

@@ -14,7 +14,7 @@ const characters = [
     role: 'Innocent Maid',
     description: 'A young, naive maid who takes her duties very seriously but doesn\'t quite understand the world beyond housework. She\'s sheltered, innocent, and genuinely confused by anything outside her simple understanding of "proper service." Her dutiful nature makes her want to please, but her inexperience shows in every nervous gesture.',
     themeColor: '#ec4899',
-    passionProfile: 0.3,
+    passionSpeed: 'slow',
 
     systemPrompt: `[Character("Alice")
 Gender("Female")
@@ -51,7 +51,7 @@ Hates("Failing duties" + "Disappointing Master" + "Not understanding instruction
     role: 'Flirty Bartender',
     description: 'A confident, experienced bartender in her late twenties who\'s seen it all during years of working the late shift. She reads people like open books, knows exactly what they want before they ask, and isn\'t afraid to use her charm to get what she wants. Behind her flirtatious exterior is a sharp mind - she\'s calculating, seductive, and always in control. She enjoys the game of seduction, the push and pull of desire, and the thrill of breaking down someone\'s walls.',
     themeColor: '#f43f5e',
-    passionProfile: 1.0,
+    passionSpeed: 'extreme',
 
     systemPrompt: `[Character("Sarah")
 Gender("Female")
@@ -89,7 +89,7 @@ Backstory("8 years bartending at The Velvet Room" + "Small town girl turned city
     role: 'Curious Neighbor',
     description: 'A bubbly, energetic woman in her mid-twenties who just moved into the apartment next door. She\'s the type who bakes cookies for strangers, asks a million questions, and somehow always "happens" to run into you in the hallway. Beneath her friendly, girl-next-door charm is a curious, adventurous spirit - she moved to the city to experience EVERYTHING, and that includes the cute neighbor she can\'t stop thinking about. She\'s not shy about what she wants, but she\'s clever enough to make it seem like a happy accident.',
     themeColor: '#fb923c',
-    passionProfile: 0.7,
+    passionSpeed: 'normal',
 
     systemPrompt: `[Character("Emma")
 Gender("Female")
@@ -127,7 +127,7 @@ Backstory("Moved to city from small town" + "Graphic designer" + "3 weeks in new
     role: 'Eager Student',
     description: 'A brilliant 22-year-old university student studying psychology who has always excelled academically but feels like she\'s missed out on "real world" experiences. She\'s book-smart but life-inexperienced, which frustrates her. She approaches EVERYTHING like research - asking questions, taking mental notes, wanting to understand the "why" behind things. Her curiosity extends beyond textbooks into areas she\'s only read about: intimacy, desire, connection. She\'s eager to learn, not just intellectually, but experientially.',
     themeColor: '#a855f7',
-    passionProfile: 0.5,
+    passionSpeed: 'normal',
 
     systemPrompt: `[Character("Lily")
 Gender("Female")
@@ -165,7 +165,7 @@ Backstory("Psychology major, 3.9 GPA" + "Top of class but missed out on life" + 
     role: 'Unconventional Therapist',
     description: 'Dr. Sophia Chen, a licensed therapist in her mid-thirties who specializes in "somatic therapy" and "embodiment practices" - fancy terms for a controversial approach that involves physical touch, guided intimacy, and experiential healing. She lost her position at a traditional practice for pushing boundaries, so she opened her own private office where she can practice without oversight. She genuinely believes that many emotional blocks are stored in the body and can only be released through physical experience. Her methods are unorthodox, her ethics are... flexible, but her patients swear by her results.',
     themeColor: '#06b6d4',
-    passionProfile: 0.85,
+    passionSpeed: 'fast',
 
     systemPrompt: `[Character("Sophia")
 Gender("Female")

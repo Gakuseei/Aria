@@ -205,8 +205,6 @@ export const translations = {
       next: "Next",
       previous: "Previous",
       close: "Close",
-      testConnection: "Test Connection",
-      setupGuide: "Setup Guide",
       ollama: {
         title: "Ollama Setup",
         subtitle: "Local AI Engine - 5 Minutes Setup",
@@ -342,8 +340,6 @@ export const translations = {
         step5Test: "Test Connection",
         tierStandard: "⚡ Standard (SDXL)",
         tierPremium: "✨ Premium (FLUX)",
-        fluxBenefits: "Best text rendering in images",
-        fluxUnavailable: "⚠️ FLUX model not found - using SDXL",
         fluxBenefits: "Best text rendering in images",
         fluxUnavailable: "FLUX model not found - using SDXL",
         fluxConnected: "FLUX Model Ready",
@@ -887,8 +883,6 @@ export const translations = {
       next: "Weiter",
       previous: "Zurück",
       close: "Schließen",
-      testConnection: "Verbindung testen",
-      setupGuide: "Einrichtungsanleitung",
       ollama: {
         title: "Ollama Einrichtung",
         subtitle: "Lokale KI-Engine - 5 Minuten Setup",
@@ -1567,8 +1561,6 @@ export const translations = {
       next: "Siguiente",
       previous: "Anterior",
       close: "Cerrar",
-      testConnection: "Probar Conexión",
-      setupGuide: "Guía de Configuración",
       ollama: {
         title: "Configuración de Ollama",
         subtitle: "Motor de IA Local - 5 Minutos",
@@ -2205,8 +2197,6 @@ export const translations = {
       next: "下一步",
       previous: "上一步",
       close: "关闭",
-      testConnection: "测试连接",
-      setupGuide: "设置指南",
       ollama: {
         title: "Ollama设置",
         subtitle: "本地AI引擎 - 5分钟设置",
@@ -2842,8 +2832,6 @@ export const translations = {
       next: "Suivant",
       previous: "Précédent",
       close: "Fermer",
-      testConnection: "Tester Connexion",
-      setupGuide: "Guide d'installation",
       ollama: {
         title: "Installation Ollama",
         subtitle: "Moteur IA Local - 5 Minutes",
@@ -3479,8 +3467,6 @@ export const translations = {
       next: "Avanti",
       previous: "Indietro",
       close: "Chiudi",
-      testConnection: "Test Connessione",
-      setupGuide: "Guida Setup",
       ollama: {
         title: "Setup Ollama",
         subtitle: "Motore IA Locale - 5 Minuti",
@@ -4110,8 +4096,6 @@ export const translations = {
       next: "Próximo",
       previous: "Anterior",
       close: "Fechar",
-      testConnection: "Testar",
-      setupGuide: "Guia",
       ollama: {
         title: "Setup Ollama",
         subtitle: "Motor de IA Local - 5 Minutos",
@@ -4747,8 +4731,6 @@ export const translations = {
       next: "Далее",
       previous: "Назад",
       close: "Закрыть",
-      testConnection: "Тест",
-      setupGuide: "Гайд",
       ollama: {
         title: "Настройка Ollama",
         subtitle: "Локальный ИИ - 5 Минут",
@@ -5384,8 +5366,6 @@ export const translations = {
       next: "次へ",
       previous: "前へ",
       close: "閉じる",
-      testConnection: "テスト",
-      setupGuide: "ガイド",
       ollama: {
         title: "Ollama設定",
         subtitle: "ローカルAIエンジン - 5分",
@@ -6021,8 +6001,6 @@ export const translations = {
       next: "다음",
       previous: "이전",
       close: "닫기",
-      testConnection: "테스트",
-      setupGuide: "가이드",
       ollama: {
         title: "Ollama 설정",
         subtitle: "로컬 AI 엔진 - 5분 설정",
@@ -6653,8 +6631,6 @@ export const translations = {
       next: "التالي",
       previous: "السابق",
       close: "إغلاق",
-      testConnection: "اختبار الاتصال",
-      setupGuide: "دليل الإعداد",
       ollama: {
         title: "إعداد Ollama",
         subtitle: "محرك AI محلي - 5 دقائق",
@@ -7291,8 +7267,6 @@ export const translations = {
       next: "अगला",
       previous: "पिछला",
       close: "बंद करें",
-      testConnection: "कनेक्शन जांचें",
-      setupGuide: "सेटअप गाइड",
       ollama: {
         title: "Ollama सेटअप",
         subtitle: "स्थानीय AI इंजन - 5 मिनट",
@@ -7929,8 +7903,6 @@ export const translations = {
       next: "İleri",
       previous: "Geri",
       close: "Kapat",
-      testConnection: "Bağlantıyı Test Et",
-      setupGuide: "Kurulum Kılavuzu",
       ollama: {
         title: "Ollama Kurulumu",
         subtitle: "Yerel AI Motoru - 5 Dakika",

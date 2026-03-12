@@ -21,7 +21,7 @@ function LoadGame({ onLoad, onBack }) {
 
   // Load sessions on mount
   useEffect(() => {
-    loadSessions();
+    loadSessions(); // eslint-disable-line react-hooks/immutability
   }, []);
 
   // v0.2.5 ROSE NOIR: Entrance animation

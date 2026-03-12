@@ -8,7 +8,7 @@ export default function OledToggleButton({ oledMode, onToggle, currentView }) {
   const [isAnimating, setIsAnimating] = useState(false)
 
   useEffect(() => {
-    setIsVisible(false)
+    setIsVisible(false) // eslint-disable-line react-hooks/set-state-in-effect
     const timer = setTimeout(() => setIsVisible(true), 100)
     return () => clearTimeout(timer)
   }, [currentView])

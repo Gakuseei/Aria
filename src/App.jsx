@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun } from 'lucide-react';
 import TitleBar from './components/TitleBar';
 import MainMenu from './components/MainMenu';
 import ModeSelection from './components/ModeSelection';
@@ -10,10 +9,8 @@ import LoadGame from './components/LoadGame';
 import Settings from './components/Settings';
 import CharacterCreator from './components/CharacterCreator';
 import DebugConsole from './components/DebugConsole'; // v0.2.5
-import CustomDropdown from './components/CustomDropdown';
 import OledToggleButton from './components/OledToggleButton';
-import { useLanguage } from './context/LanguageContext';
-import { loadSettings, testOllamaConnection, autoDetectAndSetModel, fetchOllamaModels } from './lib/api';
+import { testOllamaConnection, autoDetectAndSetModel } from './lib/api';
 import OllamaSetup from './components/tutorials/OllamaSetup';
 
 // App views
@@ -38,7 +35,7 @@ export const GAME_MODES = {
 
 function App() {
   const [currentView, setCurrentView] = useState(VIEWS.MAIN_MENU);
-  const [selectedMode, setSelectedMode] = useState(null);
+  const [_selectedMode, setSelectedMode] = useState(null);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [loadedSession, setLoadedSession] = useState(null);
 
@@ -97,6 +94,38 @@ function App() {
     setEventLog(prev => [newEvent, ...prev].slice(0, 10));
   };
 
+  // v0.2.5: Apply GLOBAL UI SCALING via REM-based font-size
+  const applyUIScale = (scale) => {
+    const root = document.documentElement;
+    const scaleMap = {
+      'small': '14px',
+      'medium': '16px',
+      'large': '20px'
+    };
+    const fontSize = scaleMap[scale] || '16px';
+    root.style.fontSize = fontSize;
+    const percentageMap = { 'small': '87.5%', 'medium': '100%', 'large': '125%' };
+    root.style.setProperty('--app-scale', percentageMap[scale] || '100%');
+  };
+
+  // v0.2.5: Apply OLED mode to body element
+  const applyOledMode = (enabled) => {
+    if (enabled) {
+      document.body.classList.add('oled-mode');
+    } else {
+      document.body.classList.remove('oled-mode');
+    }
+  };
+
+  // v0.2.5: Apply/remove animations globally
+  const applyAnimations = (enabled) => {
+    if (!enabled) {
+      document.body.classList.add('no-animations');
+    } else {
+      document.body.classList.remove('no-animations');
+    }
+  };
+
   // v0.2.5: CRITICAL FIX - Load settings from localStorage on startup
   useEffect(() => {
     async function initializeApp() {
@@ -146,7 +175,6 @@ function App() {
             }
           }
 
-        } else {
         }
       } catch (error) {
         console.error('[v9.5 App Init] ❌ Error loading settings:', error);
@@ -262,44 +290,6 @@ function App() {
       applyAnimations(value);
     }
 
-  };
-
-  // v0.2.5: Apply GLOBAL UI SCALING via REM-based font-size
-  const applyUIScale = (scale) => {
-    const root = document.documentElement;
-
-    // Map scale names to font-size values (REM-based)
-    const scaleMap = {
-      'small': '14px',   // 87.5% of default 16px
-      'medium': '16px',  // 100% default
-      'large': '20px'    // 125% of default 16px
-    };
-
-    const fontSize = scaleMap[scale] || '16px';
-    root.style.fontSize = fontSize;
-
-    // Also keep --app-scale for Debug Console display
-    const percentageMap = { 'small': '87.5%', 'medium': '100%', 'large': '125%' };
-    root.style.setProperty('--app-scale', percentageMap[scale] || '100%');
-
-  };
-
-  // v0.2.5: Apply OLED mode to body element
-  const applyOledMode = (enabled) => {
-    if (enabled) {
-      document.body.classList.add('oled-mode');
-    } else {
-      document.body.classList.remove('oled-mode');
-    }
-  };
-
-  // v0.2.5: Apply/remove animations globally
-  const applyAnimations = (enabled) => {
-    if (!enabled) {
-      document.body.classList.add('no-animations');
-    } else {
-      document.body.classList.remove('no-animations');
-    }
   };
 
 

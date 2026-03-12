@@ -418,8 +418,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         // v0.2.5: AUTO-DETECT MODEL WHEN OPENING CHAT
         const autoDetectResult = await autoDetectAndSetModel();
 
-        if (autoDetectResult.success) {
-        } else {
+        if (!autoDetectResult.success) {
           console.warn('[v8.2 ChatInterface] ⚠️ No models found. User needs to install a model.');
         }
 

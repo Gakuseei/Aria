@@ -20,8 +20,8 @@ export const LanguageProvider = ({ children }) => {
   // Load language from localStorage on mount
   useEffect(() => {
     const savedLanguage = localStorage.getItem('language') || 'en';
-    setLanguageState(savedLanguage);
-    setT(getTranslations(savedLanguage));
+    setLanguageState(savedLanguage); // eslint-disable-line react-hooks/set-state-in-effect
+    setT(getTranslations(savedLanguage));  
   }, []);
 
   const setLanguage = (lang) => {

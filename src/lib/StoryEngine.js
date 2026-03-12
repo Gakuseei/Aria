@@ -251,8 +251,8 @@ This instruction OVERRIDES all other language detection. The user explicitly sel
   } catch (error) {
     console.error('[StoryEngine] ❌ Error:', error);
     
-    let userFriendlyError = 'Failed to generate story';
-    
+    let userFriendlyError;
+
     if (error.message.includes('Failed to fetch') || error.message.includes('ECONNREFUSED')) {
       userFriendlyError = 'Cannot connect to Ollama. Make sure Ollama is running at ' + (ollamaUrl || DEFAULT_OLLAMA_URL);
     } else if (error.message.includes('timeout')) {

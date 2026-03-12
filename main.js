@@ -2,8 +2,8 @@
 // Deep Immersion with Passion Manager, Image Generation & Voice/TTS
 // AGGRESSIVE CSP: Only 'self', '127.0.0.1', 'localhost'
 
-const { app, BrowserWindow, ipcMain, shell, dialog, net } = require('electron');
-const { exec, spawn } = require('child_process');
+const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
@@ -230,7 +230,7 @@ function createWindow() {
   });
 
   // TOOLS FOLDER HANDLER
-  ipcMain.on('open-tools-folder', (event) => {
+  ipcMain.on('open-tools-folder', (_event) => {
     const toolsPath = path.join(__dirname, 'tools');
     shell.openPath(toolsPath).then((err) => {
       if (err) console.error('Failed to open tools folder:', err);
@@ -479,7 +479,7 @@ ipcMain.handle('test-image-gen', async (event, url) => {
  * Test Voice/TTS - CLI check with model validation
  * CRITICAL FIX: Validate both Piper executable and model JSON config
  */
-ipcMain.handle('test-voice', async (event, url) => {
+ipcMain.handle('test-voice', async (_event, _url) => {
   try {
     // Load settings
     const settingsPath = path.join(app.getPath('userData'), 'settings.json');

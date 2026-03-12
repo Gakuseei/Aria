@@ -63,7 +63,7 @@ export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', im
   } catch (error) {
     if (error.name === 'AbortError') {
       console.error('[Image Gen] Request timed out after 600s');
-      throw new Error('Image generation timed out (10m). Check if AUTOMATIC1111 is running with GPU acceleration.');
+      throw new Error('Image generation timed out (10m). Check if AUTOMATIC1111 is running with GPU acceleration.', { cause: error });
     }
     console.error('[Image Gen] Error:', error);
     throw error;
@@ -125,12 +125,12 @@ const NSFW_TRANSLATIONS = {
   'coño': 'pussy', 'verga': 'cock', 'cabalgar': 'ride', 'trío': 'threesome',
   
   // FRENCH
-  'embrasser': 'kiss', 'baiser': 'kiss', 'gémir': 'moan', 'gémissement': 'moan',
+  'embrasser': 'kiss', 'gémir': 'moan', 'gémissement': 'moan',
   'nue': 'nude', 'nu': 'nude', 'seins': 'breasts', 'poitrine': 'chest', 'nichons': 'tits',
   'cul': 'ass', 'fesses': 'butt', 'derrière': 'butt', 'baiser': 'fuck', 'niquer': 'fuck',
   'sucer': 'suck', 'pipe': 'blowjob', 'lécher': 'lick', 'orgasme': 'orgasm', 'jouir': 'cum',
   'mouillée': 'wet', 'excitée': 'aroused', 'dur': 'hard', 'bandé': 'erect', 'sperme': 'cum',
-  'foutre': 'cum', 'caresser': 'caress', 'toucher': 'touch', 'dominante': 'dominant',
+  'foutre': 'cum', 'caresser': 'caress', 'toucher': 'touch',
   'soumise': 'submissive', 'attacher': 'tie', 'attachée': 'tied', 'ligotée': 'bound',
   'fouetter': 'whip', 'fessée': 'spank', 'esclave': 'slave', 'maîtresse': 'mistress',
   'soubrette': 'maid', 'bonne': 'maid', 'infirmière': 'nurse', 'écolière': 'schoolgirl',
@@ -139,25 +139,25 @@ const NSFW_TRANSLATIONS = {
   // ITALIAN
   'baciare': 'kiss', 'bacio': 'kiss', 'gemere': 'moan', 'gemito': 'moan',
   'nuda': 'nude', 'nudo': 'nude', 'tette': 'tits', 'seno': 'breasts', 'petto': 'chest',
-  'culo': 'ass', 'sedere': 'butt', 'chiappe': 'butt', 'scopare': 'fuck', 'fottere': 'fuck',
-  'succhiare': 'suck', 'pompino': 'blowjob', 'leccare': 'lick', 'orgasmo': 'orgasm',
-  'venire': 'cum', 'godere': 'cum', 'bagnata': 'wet', 'eccitata': 'aroused', 'duro': 'hard',
-  'sperma': 'cum', 'sborra': 'cum', 'accarezzare': 'caress', 'toccare': 'touch',
-  'dominante': 'dominant', 'sottomessa': 'submissive', 'legata': 'tied', 'incatenata': 'chained',
+  'sedere': 'butt', 'chiappe': 'butt', 'scopare': 'fuck', 'fottere': 'fuck',
+  'succhiare': 'suck', 'pompino': 'blowjob', 'leccare': 'lick',
+  'venire': 'cum', 'godere': 'cum', 'bagnata': 'wet', 'eccitata': 'aroused',
+  'sborra': 'cum', 'accarezzare': 'caress', 'toccare': 'touch',
+  'sottomessa': 'submissive', 'legata': 'tied', 'incatenata': 'chained',
   'frustata': 'whipped', 'sculacciata': 'spanked', 'schiava': 'slave', 'padrona': 'mistress',
   'cameriera': 'maid', 'domestica': 'maid', 'infermiera': 'nurse', 'studentessa': 'student',
   'scolara': 'schoolgirl', 'professoressa': 'teacher', 'cazzo': 'cock', 'figa': 'pussy',
   
   // PORTUGUESE
-  'beijar': 'kiss', 'beijo': 'kiss', 'gemer': 'moan', 'gemido': 'moan',
-  'nua': 'nude', 'nu': 'nude', 'pelada': 'nude', 'peitos': 'breasts', 'seios': 'boobs',
+  'beijar': 'kiss', 'beijo': 'kiss', 'gemer': 'moan',
+  'nua': 'nude', 'pelada': 'nude', 'peitos': 'breasts', 'seios': 'boobs',
   'mamas': 'tits', 'bunda': 'ass', 'rabo': 'butt', 'traseiro': 'butt', 'foder': 'fuck',
-  'trepar': 'fuck', 'chupar': 'suck', 'mamar': 'suck', 'lamber': 'lick', 'orgasmo': 'orgasm',
-  'gozar': 'cum', 'molhada': 'wet', 'excitada': 'aroused', 'duro': 'hard', 'porra': 'cum',
-  'esperma': 'cum', 'acariciar': 'caress', 'tocar': 'touch', 'dominante': 'dominant',
-  'submissa': 'submissive', 'amarrada': 'tied', 'atada': 'bound', 'chicote': 'whip',
+  'trepar': 'fuck', 'lamber': 'lick',
+  'gozar': 'cum', 'molhada': 'wet', 'porra': 'cum',
+  'esperma': 'cum',
+  'submissa': 'submissive', 'amarrada': 'tied', 'chicote': 'whip',
   'palmada': 'spank', 'escrava': 'slave', 'mestra': 'mistress', 'empregada': 'maid',
-  'criada': 'maid', 'enfermeira': 'nurse', 'estudante': 'student', 'aluna': 'schoolgirl',
+  'enfermeira': 'nurse', 'estudante': 'student', 'aluna': 'schoolgirl',
   'professora': 'teacher', 'pau': 'cock', 'pica': 'cock', 'buceta': 'pussy', 'xoxota': 'pussy',
   
   // RUSSIAN (transliterated)
@@ -180,7 +180,7 @@ const NSFW_TRANSLATIONS = {
   'emmek': 'suck', 'sakso': 'blowjob', 'yalamak': 'lick', 'orgazm': 'orgasm',
   'boşalmak': 'cum', 'ıslak': 'wet', 'tahrik': 'aroused', 'sert': 'hard', 'kalkmış': 'erect',
   'döl': 'cum', 'meni': 'semen', 'okşamak': 'caress', 'dokunmak': 'touch',
-  'dominant': 'dominant', 'itaatkar': 'submissive', 'bağlı': 'tied', 'zincirli': 'chained',
+  'itaatkar': 'submissive', 'bağlı': 'tied', 'zincirli': 'chained',
   'kırbaç': 'whip', 'tokat': 'slap', 'köle': 'slave', 'efendi': 'master', 'sahip': 'owner',
   'hizmetçi': 'maid', 'hemşire': 'nurse', 'öğrenci': 'student', 'öğretmen': 'teacher',
   'yarrak': 'cock', 'sik': 'cock', 'am': 'pussy', 'amcık': 'pussy',

@@ -139,7 +139,7 @@ export default function ImageGenSetup({ onClose, onVerified }) {
              <div className="w-10 h-10 rounded-full bg-purple-500/20 text-purple-300 font-bold flex items-center justify-center">3</div>
              <div className="flex-1">
                  <h3 className="font-bold text-white mb-2">Launch & Verify</h3>
-                 <p className="text-sm text-zinc-400 mb-4">Click "Launch" in Stability Matrix. Wait for the browser to open.</p>
+                 <p className="text-sm text-zinc-400 mb-4">Click &quot;Launch&quot; in Stability Matrix. Wait for the browser to open.</p>
                  
                  <button 
                     onClick={testConnection}

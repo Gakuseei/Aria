@@ -228,8 +228,8 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
             const isSelected = selectedId === character.id;
             
             // Determine Border & Shadow Classes based on state
-            let borderClass = "";
-            
+            let borderClass;
+
             if (isSelected) {
               borderClass = isGoldMode 
                 ? "border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.2)]" 
@@ -407,7 +407,7 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
                   </p>
                 </div>
                 <div className="ml-8 text-zinc-400 text-sm max-w-md">
-                  "{character.startingMessage.replace(/^\[[^\]]+\]\s*/, '').substring(0, 80)}..."
+                  &quot;{character.startingMessage.replace(/^\[[^\]]+\]\s*/, '').substring(0, 80)}&quot;...
                 </div>
               </div>
             ))}

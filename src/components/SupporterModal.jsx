@@ -86,12 +86,14 @@ export default function SupporterModal({ onClose }) {
   const sliderPercentage = ((donationAmount - 5) / (50 - 5)) * 100;
 
   // Generate Minimalist Rose Particles (8 particles)
+  /* eslint-disable react-hooks/purity */
   const particles = Array.from({ length: 8 }, (_, i) => ({
     id: i,
     left: `${Math.random() * 100}%`,
     delay: `${Math.random() * 10}s`,
     duration: `${15 + Math.random() * 10}s`
   }));
+  /* eslint-enable react-hooks/purity */
 
   // Theme based on Gold Mode toggle
   const useGoldTheme = showGoldTheme && isPremium;

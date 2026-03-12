@@ -567,7 +567,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
                         onClick={() => setPrompt(example)}
                         className="text-left p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/30 hover:border-red-500/30 text-zinc-400 hover:text-zinc-200 text-sm transition-all"
                       >
-                        "{example}"
+                        &quot;{example}&quot;
                       </button>
                     ))}
                   </div>

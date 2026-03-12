@@ -497,7 +497,7 @@ export default function VoiceSetup({ onClose, onVerified }) {
                                <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded">
                                   <p className="text-sm font-bold text-amber-300">⚠️ RESTART REQUIRED</p>
                                   <p className="text-xs text-amber-200/70 mt-1">
-                                    Please restart your computer, then click "Install & Start" again.
+                                    Please restart your computer, then click &quot;Install &amp; Start&quot; again.
                                   </p>
                                </div>
                             )}

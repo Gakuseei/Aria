@@ -3,6 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { Heart, Check, X, Sparkles, Crown } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
+const SUPPORTER_KEY_HASH = '5e1d239e997aef44d55780a6a104abfcc49ee886276b6e4a84248cd825242e19';
+
+async function hashKey(key) {
+  const encoded = new TextEncoder().encode(key);
+  const buffer = await crypto.subtle.digest('SHA-256', encoded);
+  return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export default function SupporterModal({ onClose }) {
   const { t } = useLanguage();
   const [donationAmount, setDonationAmount] = useState(15);
@@ -23,8 +31,9 @@ export default function SupporterModal({ onClose }) {
     }
   }, []);
 
-  const validateKey = () => {
-    if (supporterKey.trim() === 'ARIA-SUP-2025-GOLD') {
+  const validateKey = async () => {
+    const inputHash = await hashKey(supporterKey.trim());
+    if (inputHash === SUPPORTER_KEY_HASH) {
       localStorage.setItem('isSupporter', 'true');
       setIsPremium(true);
       setValidationMessage({ type: 'success', text: t.supporter.goldModeActivated });

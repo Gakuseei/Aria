@@ -54,3 +54,12 @@ tests/
 .sidecar-start.sh
 .sidecar-base
 .td-root
+
+# Credentials & data dumps
+*.pem
+*.key
+credentials.*
+secrets.*
+*.sql
+*.csv
+*.xlsx

@@ -387,6 +387,91 @@ export function generateSuggestionsBackground(history, charName, userName, passi
     });
 }
 
+/** @type {AbortController|null} */
+let impersonateAbortController = null;
+
+/**
+ * Cancel any in-flight impersonation request.
+ */
+export function abortImpersonateCall() {
+  if (impersonateAbortController) {
+    impersonateAbortController.abort();
+    impersonateAbortController = null;
+  }
+}
+
+/**
+ * Generate a user-perspective reply using the AI model.
+ * Streams tokens into `onToken` callback so the input field fills live.
+ * @param {Array} history - Conversation history
+ * @param {string} charName - Character name
+ * @param {string} userName - User name
+ * @param {number} passionLevel - Current passion level 0-100
+ * @param {object} settings - App settings (ollamaUrl, ollamaModel)
+ * @param {function} onToken - Called with each streamed token
+ * @returns {Promise<string>} Full generated text
+ */
+export async function impersonateUser(history, charName, userName, passionLevel, settings, onToken) {
+  abortImpersonateCall();
+
+  const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
+  const model = settings.ollamaModel || 'llama3';
+  const tier = getTierKey(passionLevel);
+
+  const last6 = (history || [])
+    .filter(m => m.role === 'user' || m.role === 'assistant')
+    .slice(-6)
+    .map(m => ({ role: m.role, content: (m.content || '').slice(0, 500) }));
+
+  const messages = [
+    ...last6,
+    {
+      role: 'system',
+      content: `Write the next reply from ${userName}'s perspective.\nMatch ${userName}'s writing style from the chat history.\nDon't write as ${charName} or system. Don't describe ${charName}'s actions.\nCurrent intimacy: ${tier}. Write 1-3 sentences only.`
+    }
+  ];
+
+  impersonateAbortController = new AbortController();
+
+  const res = await fetch(`${ollamaUrl}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal: impersonateAbortController.signal,
+    body: JSON.stringify({
+      model,
+      messages,
+      stream: true,
+      options: { num_predict: 150, temperature: 0.8, num_ctx: 2048 }
+    })
+  });
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let fullText = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      for (const line of chunk.split('\n').filter(Boolean)) {
+        try {
+          const parsed = JSON.parse(line);
+          const token = parsed.message?.content || '';
+          if (token) {
+            fullText += token;
+            onToken(token);
+          }
+        } catch { /* skip malformed lines */ }
+      }
+    }
+  } finally {
+    impersonateAbortController = null;
+  }
+
+  return fullText.trim();
+}
+
 /**
  * Build system prompt from template slots.
  * Built ONCE per session, never rebuilt mid-conversation.

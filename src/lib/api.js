@@ -326,50 +326,52 @@ export function abortSuggestionCall() {
 }
 
 /**
- * Generate smart suggestions in background via separate Ollama call.
- * Returns 3 short user-perspective replies via callback.
- * @param {string} userMessage - Last user message
- * @param {string} aiResponse - Last AI response
- * @param {string} charName - Character name (for perspective clarity)
+ * Generate smart suggestions in background via /api/chat impersonate.
+ * Sends last 4 messages + system impersonate prompt so the model
+ * writes AS the user, not as the character.
+ * @param {Array} history - Full conversation messages array
+ * @param {string} charName - Character name
+ * @param {string} userName - User display name
+ * @param {number} passionLevel - Current passion level (0-100)
  * @param {object} settings - App settings
  * @param {function} callback - Receives string[] or null
  */
-export function generateSuggestionsBackground(userMessage, aiResponse, charName, settings, callback) {
-  // Abort any previous suggestion call
+export function generateSuggestionsBackground(history, charName, userName, passionLevel, settings, callback) {
   abortSuggestionCall();
 
   const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
   const model = settings.ollamaModel || 'llama3';
+  const tier = getTierKey(passionLevel);
 
-  const prompt = `${charName} is the AI character. You are the USER talking TO ${charName}.
-Suggest 3 short things the USER might say or do next. Match the user's language.
-Under 8 words each. Reply ONLY with 3 suggestions separated by |.
+  const last4 = history
+    .filter(m => m.role === 'user' || m.role === 'assistant')
+    .slice(-4)
+    .map(m => ({ role: m.role, content: (m.content || '').slice(0, 400) }));
 
-User said: ${userMessage}
-${charName} replied: ${(aiResponse || '').slice(0, 300)}
+  const impersonatePrompt = `You are now ${userName}, the user talking to ${charName}. Passion tier: ${tier}. Write 3 short things ${userName} might say or do next. Under 6 words each. Separate with |. Do NOT write as ${charName}. Match the user's language.`;
 
-Suggestions:`;
+  const messages = [...last4, { role: 'system', content: impersonatePrompt }];
 
   suggestionAbortController = new AbortController();
 
-  fetch(`${ollamaUrl}/api/generate`, {
+  fetch(`${ollamaUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     signal: suggestionAbortController.signal,
     body: JSON.stringify({
       model,
-      prompt,
+      messages,
       stream: false,
-      options: { num_predict: 50, temperature: 0.8, num_ctx: 2048 }
+      options: { num_predict: 60, temperature: 0.8, num_ctx: 2048 }
     })
   })
     .then(res => res.json())
     .then(data => {
       suggestionAbortController = null;
-      const raw = (data.response || '').trim();
+      const raw = (data.message?.content || '').trim();
       const suggestions = raw.split('|')
-        .map(s => s.trim().replace(/^["':.\-]+|["':.\-]+$/g, ''))
-        .filter(s => s.length > 0 && s.length <= 50 && s.split(' ').length <= 8)
+        .map(s => s.trim().replace(/^["':.\-*]+|["':.\-*]+$/g, ''))
+        .filter(s => s.length > 0 && s.length <= 50 && s.split(' ').length <= 6)
         .slice(0, 3);
       console.log(`[API] Suggestions: ${suggestions.length} generated (${raw.length} chars)`);
       callback(suggestions.length > 0 ? suggestions : null);

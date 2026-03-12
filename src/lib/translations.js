@@ -2001,7 +2001,7 @@ export const translations = {
       }
     }
   },
-  cn: {
+  zh: {
     meta: { label: "中文", flag: "🇨🇳" },
     mainMenu: {
       newGame: "新游戏",

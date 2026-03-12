@@ -64,24 +64,17 @@ export function getDepthInstruction(passionLevel) {
 }
 
 /**
- * Returns a speed multiplier based on passion profile or speed string
- * @param {string|number} passionProfileOrSpeed - Speed string ('slow'|'fast'|'extreme') or numeric profile (0-1)
+ * Returns a speed multiplier based on passion speed string
+ * @param {string} passionSpeed - Speed string ('slow'|'normal'|'fast'|'extreme')
  * @returns {number} Multiplier value
  */
-export function getSpeedMultiplier(passionProfileOrSpeed) {
-  if (typeof passionProfileOrSpeed === 'string') {
-    switch (passionProfileOrSpeed) {
-      case 'slow': return 0.5;
-      case 'fast': return 1.5;
-      case 'extreme': return 2.5;
-      default: return 1.0;
-    }
+export function getSpeedMultiplier(passionSpeed) {
+  switch (passionSpeed) {
+    case 'slow': return 0.5;
+    case 'fast': return 1.5;
+    case 'extreme': return 2.5;
+    default: return 1.0;
   }
-  const p = passionProfileOrSpeed ?? 0.7;
-  if (p <= 0.3) return 0.5;
-  if (p <= 0.7) return 1.0;
-  if (p <= 0.9) return 1.5;
-  return 2.5;
 }
 
 class PassionManager {

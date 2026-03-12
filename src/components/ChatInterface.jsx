@@ -273,7 +273,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // v0.2.5: Smart Suggestions
   const [smartSuggestions, setSmartSuggestions] = useState([]);
 
-  const lastGoodSuggestionsRef = useRef([]);
+
 
   // v0.2.6: Impersonate (Write for me)
   const [isImpersonating, setIsImpersonating] = useState(false);
@@ -724,19 +724,14 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const triggerSuggestions = (updatedMessages) => {
     if (!settings.smartSuggestionsEnabled) return;
     generateSuggestionsBackground(updatedMessages, character.name, userName, passionLevel, settings, (suggestions) => {
-      if (suggestions && suggestions.length >= 2) {
-        lastGoodSuggestionsRef.current = suggestions;
-      }
-      const effective = (suggestions && suggestions.length > 0) ? suggestions : lastGoodSuggestionsRef.current;
-      if (effective.length > 0) {
-        setSmartSuggestions(effective);
-        setMessages(prev => {
-          const updated = [...prev];
-          const lastAssistant = updated.findLast(m => m.role === 'assistant');
-          if (lastAssistant) lastAssistant.suggestions = effective;
-          return updated;
-        });
-      }
+      const result = (suggestions && suggestions.length > 0) ? suggestions : [];
+      setSmartSuggestions(result);
+      setMessages(prev => {
+        const updated = [...prev];
+        const lastAssistant = updated.findLast(m => m.role === 'assistant');
+        if (lastAssistant) lastAssistant.suggestions = result.length > 0 ? result : undefined;
+        return updated;
+      });
     });
   };
 
@@ -968,7 +963,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       setSessionId(newSid);
       setPassionLevel(0);
       setSmartSuggestions([]);
-      lastGoodSuggestionsRef.current = [];
       previousTierRef.current = 'surface';
       initializeGreeting();
     };

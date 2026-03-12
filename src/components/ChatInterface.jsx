@@ -830,8 +830,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       // Generate suggestions in background (separate call, ~2-3s)
       if (smartSuggestionsEnabled) {
         generateSuggestionsBackground(updatedMessages, character.name, userName, passionLevel, settings, (suggestions) => {
+          if (suggestions && suggestions.length >= 2) {
+            lastGoodSuggestionsRef.current = suggestions;
+          }
           const effective = (suggestions && suggestions.length > 0) ? suggestions : lastGoodSuggestionsRef.current;
-          if (suggestions && suggestions.length > 0) lastGoodSuggestionsRef.current = suggestions;
           if (effective.length > 0) {
             setSmartSuggestions(effective);
             setMessages(prev => {
@@ -1175,8 +1177,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       // Generate suggestions in background
       if (smartSuggestionsEnabled) {
         generateSuggestionsBackground(updatedMessages, character.name, userName, passionLevel, settings, (suggestions) => {
+          if (suggestions && suggestions.length >= 2) {
+            lastGoodSuggestionsRef.current = suggestions;
+          }
           const effective = (suggestions && suggestions.length > 0) ? suggestions : lastGoodSuggestionsRef.current;
-          if (suggestions && suggestions.length > 0) lastGoodSuggestionsRef.current = suggestions;
           if (effective.length > 0) {
             setSmartSuggestions(effective);
             setMessages(prev => {
@@ -1778,7 +1782,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             }}
             placeholder={t.chat.messageCharacter.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
             disabled={isLoading}
-            className="chat-input flex-1 bg-transparent border-none outline-none ring-0 text-white text-lg placeholder-zinc-500 focus:outline-none focus:ring-0 disabled:opacity-50 px-2"
+            className="chat-input flex-1 min-w-0 bg-transparent border-none outline-none ring-0 text-white text-lg placeholder-zinc-500 focus:outline-none focus:ring-0 disabled:opacity-50 px-2"
           />
           <button
             onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}

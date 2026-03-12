@@ -176,7 +176,7 @@ FORMATTING:
       'en': 'English',
       'de': 'German',
       'es': 'Spanish',
-      'cn': 'Chinese',
+      'zh': 'Chinese',
       'fr': 'French',
       'it': 'Italian',
       'pt': 'Portuguese',

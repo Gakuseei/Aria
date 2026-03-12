@@ -340,7 +340,7 @@ export function generateSuggestionsBackground(history, charName, userName, passi
   abortSuggestionCall();
 
   const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
-  const model = settings.ollamaModel || 'llama3';
+  const model = settings.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M';
   const tier = getTierKey(passionLevel);
 
   const last4 = history
@@ -423,7 +423,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   abortImpersonateCall();
 
   const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
-  const model = settings.ollamaModel || 'llama3';
+  const model = settings.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M';
   const tier = getTierKey(passionLevel);
 
   const last6 = (history || [])
@@ -455,6 +455,10 @@ Match the language from the conversation.`
       options: { num_predict: 60, temperature: 0.8, num_ctx: 2048 }
     })
   });
+
+  if (!res.ok || !res.body) {
+    throw new Error(`Ollama request failed: ${res.status}`);
+  }
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
@@ -536,35 +540,6 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male', 
   return prompt;
 }
 
-/**
- * Extract [SUGGEST] line from AI response.
- * Returns { cleanedMessage, suggestions }.
- */
-function parseSuggestions(text) {
-  if (!text) return { cleanedMessage: text, suggestions: [] };
-
-  const lines = text.split('\n');
-  let suggestIdx = -1;
-
-  for (let i = lines.length - 1; i >= 0; i--) {
-    if (lines[i].trim().startsWith('[SUGGEST]')) {
-      suggestIdx = i;
-      break;
-    }
-  }
-
-  if (suggestIdx === -1) return { cleanedMessage: text, suggestions: [] };
-
-  const suggestLine = lines[suggestIdx].replace('[SUGGEST]', '').trim();
-  const suggestions = suggestLine.split('|')
-    .map(s => s.trim().replace(/^["']|["']$/g, ''))
-    .filter(s => s.length > 0 && s.length <= 50 && s.split(' ').length <= 8)
-    .slice(0, 3);
-
-  const cleanedMessage = lines.slice(0, suggestIdx).join('\n').trimEnd();
-
-  return { cleanedMessage, suggestions };
-}
 
 
 // CORE API - MESSAGE SENDING (OLLAMA ONLY)
@@ -605,7 +580,7 @@ export const sendMessage = async (
     const settings = { ...(settingsOverride || await loadSettings()) };
 
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
-    const model = settings.ollamaModel || 'llama3';
+    const model = settings.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M';
     const modelCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
     const profile = getModelProfile(model);
     const historyToUse = (Array.isArray(conversationHistory) ? conversationHistory : []).filter(m => m.role !== 'system');

@@ -3,9 +3,9 @@
 // ============================================================================
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft } from 'lucide-react';
+import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, resolveTemplates, unloadOllamaModel } from '../lib/api';
+import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel } from '../lib/api';
 import { passionManager, getTierKey, getSpeedMultiplier, PASSION_TIERS } from '../lib/PassionManager';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
@@ -272,6 +272,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // v0.2.5: Smart Suggestions
   const [smartSuggestions, setSmartSuggestions] = useState([]);
   const [smartSuggestionsEnabled, setSmartSuggestionsEnabled] = useState(true);
+
+  // v0.2.6: Impersonate (Write for me)
+  const [isImpersonating, setIsImpersonating] = useState(false);
 
   // v0.2.5: Image Generation Modal
   const [showImageModal, setShowImageModal] = useState(false);
@@ -650,6 +653,33 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const handleSuggestionClick = (suggestion) => {
     setInput(suggestion);
     handleSend(suggestion);
+  };
+
+  const handleImpersonate = async () => {
+    if (isLoading || isStreaming || isImpersonating) return;
+    setIsImpersonating(true);
+    try {
+      await impersonateUser(
+        messages.filter(m => !m.isTierEvent),
+        character.name,
+        userName,
+        passionLevel,
+        settings,
+        (token) => setInput(prev => prev + token)
+      );
+    } catch (err) {
+      if (err?.name !== 'AbortError') {
+        console.warn('[ChatInterface] Impersonate failed:', err?.message);
+      }
+    } finally {
+      setIsImpersonating(false);
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleCancelImpersonate = () => {
+    abortImpersonateCall();
+    setIsImpersonating(false);
   };
 
   // ============================================================================
@@ -1728,7 +1758,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             ref={inputRef}
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              if (isImpersonating) {
+                abortImpersonateCall();
+                setIsImpersonating(false);
+              }
+              setInput(e.target.value);
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey && !isStreaming) {
                 e.preventDefault();
@@ -1739,6 +1775,20 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             disabled={isLoading}
             className="chat-input flex-1 bg-transparent border-none outline-none ring-0 text-white text-lg placeholder-zinc-500 focus:outline-none focus:ring-0 disabled:opacity-50 px-2"
           />
+          <button
+            onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}
+            disabled={isLoading || isStreaming}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-30 flex-shrink-0 ${
+              isImpersonating
+                ? 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                : isGoldMode
+                  ? 'bg-zinc-800 hover:bg-amber-500/20 text-amber-400/70 hover:text-amber-300'
+                  : 'bg-zinc-800 hover:bg-rose-500/20 text-rose-400/70 hover:text-rose-300'
+            }`}
+            title={isImpersonating ? 'Cancel' : (t.chat.impersonate || 'Write for me')}
+          >
+            {isImpersonating ? <X size={16} /> : <PenLine size={16} />}
+          </button>
           <button
             onClick={() => handleSend()}
             disabled={isLoading || isStreaming || !input.trim()}

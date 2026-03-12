@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import characters from '../config/characters';
+import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
 
 function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
@@ -101,7 +102,7 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
         avatarBase64: character.avatarBase64 || null,
         startingMessage: character.startingMessage,
         exportedAt: new Date().toISOString(),
-        version: '0.2.5',
+        version: appVersion,
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });

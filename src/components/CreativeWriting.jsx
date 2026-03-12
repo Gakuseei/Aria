@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { generateCreativeWriting, continueStory } from '../lib/StoryEngine';
 import { saveSession, loadSession, generateSessionId, autoDetectAndSetModel } from '../lib/api';
 import { GAME_MODES } from '../App';
+import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
 
 // ============================================================================
@@ -280,7 +281,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
         wordCount: wordCount,
         charCount: charCount,
         exportedAt: new Date().toISOString(),
-        version: '0.2.5'
+        version: appVersion
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });

@@ -272,7 +272,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   // v0.2.5: Smart Suggestions
   const [smartSuggestions, setSmartSuggestions] = useState([]);
-  const [smartSuggestionsEnabled, setSmartSuggestionsEnabled] = useState(true);
+
   const lastGoodSuggestionsRef = useRef([]);
 
   // v0.2.6: Impersonate (Write for me)
@@ -300,7 +300,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const streamBufferRef = useRef('');
   const rafRef = useRef(null);
 
-  // Cleanup: abort pending requests + unload model on unmount (character switch)
   useEffect(() => {
     return () => {
       if (abortRef.current) {
@@ -311,6 +310,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         clearTimeout(passionTimerRef.current);
         passionTimerRef.current = null;
       }
+      abortSuggestionCall();
+      abortImpersonateCall();
       unloadOllamaModel(parentSettings);
     };
   }, []);
@@ -424,8 +425,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           console.warn('[v8.2 ChatInterface] ⚠️ No models found. User needs to install a model.');
         }
 
-        const mergedSmartSuggestions = loadedSettings.smartSuggestionsEnabled ?? backendSettings.smartSuggestionsEnabled ?? true;
-        setSmartSuggestionsEnabled(mergedSmartSuggestions !== false);
       } catch (error) {
         console.error('[v8.1 ChatInterface] ❌ Error loading settings:', error);
       }
@@ -721,6 +720,25 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // MESSAGE SENDING
   // ============================================================================
 
+  const triggerSuggestions = (updatedMessages) => {
+    if (!settings.smartSuggestionsEnabled) return;
+    generateSuggestionsBackground(updatedMessages, character.name, userName, passionLevel, settings, (suggestions) => {
+      if (suggestions && suggestions.length >= 2) {
+        lastGoodSuggestionsRef.current = suggestions;
+      }
+      const effective = (suggestions && suggestions.length > 0) ? suggestions : lastGoodSuggestionsRef.current;
+      if (effective.length > 0) {
+        setSmartSuggestions(effective);
+        setMessages(prev => {
+          const updated = [...prev];
+          const lastAssistant = updated.findLast(m => m.role === 'assistant');
+          if (lastAssistant) lastAssistant.suggestions = effective;
+          return updated;
+        });
+      }
+    });
+  };
+
   const handleSend = async (messageText = input) => {
     const safeMessageText = (messageText || '').trim();
     if (!safeMessageText || isLoading || isStreaming) return;
@@ -734,10 +752,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       return;
     }
 
-    // Cancel any in-flight suggestion call so Ollama is free for streaming
     abortSuggestionCall();
+    abortImpersonateCall();
+    setIsImpersonating(false);
 
-    // Cancel any previous pending request
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
 
@@ -813,24 +831,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       setIsStreaming(false);
       setStreamingContent('');
 
-      // Generate suggestions in background (separate call, ~2-3s)
-      if (smartSuggestionsEnabled) {
-        generateSuggestionsBackground(updatedMessages, character.name, userName, passionLevel, settings, (suggestions) => {
-          if (suggestions && suggestions.length >= 2) {
-            lastGoodSuggestionsRef.current = suggestions;
-          }
-          const effective = (suggestions && suggestions.length > 0) ? suggestions : lastGoodSuggestionsRef.current;
-          if (effective.length > 0) {
-            setSmartSuggestions(effective);
-            setMessages(prev => {
-              const updated = [...prev];
-              const lastAssistant = updated.findLast(m => m.role === 'assistant');
-              if (lastAssistant) lastAssistant.suggestions = effective;
-              return updated;
-            });
-          }
-        });
-      }
+      triggerSuggestions(updatedMessages);
 
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
@@ -1093,8 +1094,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     const messagesUpToLastUser = messages.slice(0, lastUserMessageIndex + 1);
     const lastUserMessage = (messages[lastUserMessageIndex].content || '').trim();
 
-    // Cancel any in-flight suggestion call so Ollama is free for streaming
     abortSuggestionCall();
+    abortImpersonateCall();
+    setIsImpersonating(false);
 
     setMessages(messagesUpToLastUser);
     setIsLoading(true);
@@ -1156,24 +1158,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       setIsStreaming(false);
       setStreamingContent('');
 
-      // Generate suggestions in background
-      if (smartSuggestionsEnabled) {
-        generateSuggestionsBackground(updatedMessages, character.name, userName, passionLevel, settings, (suggestions) => {
-          if (suggestions && suggestions.length >= 2) {
-            lastGoodSuggestionsRef.current = suggestions;
-          }
-          const effective = (suggestions && suggestions.length > 0) ? suggestions : lastGoodSuggestionsRef.current;
-          if (effective.length > 0) {
-            setSmartSuggestions(effective);
-            setMessages(prev => {
-              const updated = [...prev];
-              const lastAssistant = updated.findLast(m => m.role === 'assistant');
-              if (lastAssistant) lastAssistant.suggestions = effective;
-              return updated;
-            });
-          }
-        });
-      }
+      triggerSuggestions(updatedMessages);
 
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
@@ -1714,8 +1699,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       {/* v1.0 ROSE NOIR: Floating Input "Cockpit" - BLOCK 6.7: Detached, premium styling */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl z-50">
         {/* Smart Suggestions - Rose Noir Pills */}
-        {smartSuggestionsEnabled && smartSuggestions.length > 0 && !isStreaming && (
-          <div className="flex gap-2.5 mb-4 flex-wrap justify-center">
+        {settings.smartSuggestionsEnabled && smartSuggestions.length > 0 && !isStreaming && (
+          <div className="flex gap-2.5 mb-4 flex-wrap justify-center" role="group" aria-label={t.settings?.smartSuggestions || 'Suggestions'}>
             {smartSuggestions.map((suggestion, i) => (
               <button
                 key={`suggestion-${suggestion.slice(0, 20)}-${i}`}
@@ -1769,19 +1754,21 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                   ? 'bg-zinc-800 hover:bg-amber-500/20 text-amber-400/70 hover:text-amber-300'
                   : 'bg-zinc-800 hover:bg-rose-500/20 text-rose-400/70 hover:text-rose-300'
             }`}
-            title={isImpersonating ? 'Cancel' : (t.chat.impersonate || 'Write for me')}
+            title={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
+            aria-label={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
           >
             {isImpersonating ? <X size={16} /> : <PenLine size={16} />}
           </button>
           <button
             onClick={() => handleSend()}
-            disabled={isLoading || isStreaming || !input.trim()}
+            disabled={isLoading || isStreaming || isImpersonating || !input.trim()}
             className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-30 shadow-lg flex-shrink-0 ${
               isGoldMode
                 ? 'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-black font-bold shadow-amber-900/20 disabled:from-zinc-600 disabled:to-zinc-700'
                 : 'bg-gradient-to-br from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white shadow-rose-500/30 disabled:from-zinc-600 disabled:to-zinc-700'
             }`}
             title={t.chat.send}
+            aria-label={t.chat.send}
           >
             <Send size={18} strokeWidth={1.5} />
           </button>

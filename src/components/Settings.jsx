@@ -915,6 +915,9 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   </div>
                   <button
                     onClick={() => onSettingChange('smartSuggestionsEnabled', !settings.smartSuggestionsEnabled)}
+                    role="switch"
+                    aria-checked={settings.smartSuggestionsEnabled}
+                    aria-label={t.settings.smartSuggestions}
                     className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
                       settings.smartSuggestionsEnabled
                         ? (isGoldMode ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30')

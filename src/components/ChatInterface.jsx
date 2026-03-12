@@ -652,7 +652,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   };
 
   const handleSuggestionClick = (suggestion) => {
-    setInput(suggestion);
+    setSmartSuggestions([]);
     handleSend(suggestion);
   };
 
@@ -671,6 +671,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     } catch (err) {
       if (err?.name !== 'AbortError') {
         console.warn('[ChatInterface] Impersonate failed:', err?.message);
+        toast.error(t.chat?.sendError || 'Failed to get a response');
       }
     } finally {
       setIsImpersonating(false);
@@ -1713,7 +1714,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 }`}
                 title={suggestion}
               >
-                <Sparkles size={12} className="text-rose-400/70" />
+                <Sparkles size={12} className={isGoldMode ? 'text-amber-400/70' : 'text-rose-400/70'} />
                 <span className="truncate max-w-[300px]">{suggestion}</span>
               </button>
             ))}

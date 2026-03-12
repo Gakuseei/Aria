@@ -349,12 +349,11 @@ export async function generateSuggestionsBackground(history, charName, userName,
     .slice(-4)
     .map(m => ({ role: m.role, content: (m.content || '').slice(0, 400) }));
 
-  const impersonatePrompt = `You are ${userName} (the human user), NOT ${charName}.
-Write exactly 3 short actions or dialogue ${userName} could say/do next.
-Rules: first-person "I" perspective, max 6 words each, mix actions with dialogue.
-Intimacy: ${tier}.
-Format: option1 | option2 | option3
-Example: I kiss her softly | "You look beautiful" | I pull her closer`;
+  const impersonatePrompt = `ROLE SWITCH — you are ${userName}, the player. NOT ${charName}.
+3 things ${userName} could say or do next. First person "I" only.
+Each MUST be different: one action, one dialogue, one different action.
+NEVER repeat themes from the last messages. Max 6 words each. Intimacy: ${tier}.
+Format: option1 | option2 | option3`;
 
   const messages = [...last4, { role: 'system', content: impersonatePrompt }];
 
@@ -437,10 +436,10 @@ export async function impersonateUser(history, charName, userName, passionLevel,
     ...last6,
     {
       role: 'system',
-      content: `You are ${userName}, the human user. Write what ${userName} says or does next.
-Keep it short: 1 sentence, casual tone, like a real person typing in chat.
-Use "I" perspective. Do NOT write as ${charName}. Intimacy: ${tier}.
-Match the language from the conversation.`
+      content: `ROLE SWITCH — you are now ${userName}, the player.
+Write ONLY what ${userName} says or does. First person "I" only.
+NEVER write ${charName}'s actions, words, or reactions. NEVER narrate for ${charName}.
+1-2 short sentences. Casual, like a real person typing. Intimacy: ${tier}.`
     }
   ];
 

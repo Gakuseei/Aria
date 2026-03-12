@@ -348,7 +348,12 @@ export function generateSuggestionsBackground(history, charName, userName, passi
     .slice(-4)
     .map(m => ({ role: m.role, content: (m.content || '').slice(0, 400) }));
 
-  const impersonatePrompt = `You are now ${userName}, the user talking to ${charName}. Passion tier: ${tier}. Write 3 short things ${userName} might say or do next. Under 6 words each. Separate with |. Do NOT write as ${charName}. Match the user's language.`;
+  const impersonatePrompt = `You are ${userName} (the human user), NOT ${charName}.
+Write exactly 3 short actions or dialogue ${userName} could say/do next.
+Rules: first-person "I" perspective, max 6 words each, mix actions with dialogue.
+Intimacy: ${tier}.
+Format: option1 | option2 | option3
+Example: I kiss her softly | "You look beautiful" | I pull her closer`;
 
   const messages = [...last4, { role: 'system', content: impersonatePrompt }];
 
@@ -362,18 +367,21 @@ export function generateSuggestionsBackground(history, charName, userName, passi
       model,
       messages,
       stream: false,
-      options: { num_predict: 60, temperature: 0.8, num_ctx: 2048 }
+      options: { num_predict: 80, temperature: 0.9, num_ctx: 2048 }
     })
   })
     .then(res => res.json())
     .then(data => {
       suggestionAbortController = null;
       const raw = (data.message?.content || '').trim();
-      const suggestions = raw.split('|')
-        .map(s => s.trim().replace(/^["':.\-*]+|["':.\-*]+$/g, ''))
-        .filter(s => s.length > 0 && s.length <= 50 && s.split(' ').length <= 6)
+      let parts = raw.split('|');
+      if (parts.length < 2) parts = raw.split('\n').filter(Boolean);
+      if (parts.length < 2) parts = raw.split(/\d+[.)]\s*/);
+      const suggestions = parts
+        .map(s => s.trim().replace(/^["':.\-*\d)+]+|["':.\-*]+$/g, '').trim())
+        .filter(s => s.length > 0 && s.length <= 60 && s.split(/\s+/).length <= 8)
         .slice(0, 3);
-      console.log(`[API] Suggestions: ${suggestions.length} generated (${raw.length} chars)`);
+      console.log(`[API] Suggestions: ${suggestions.length} from "${raw.slice(0, 120)}"`);
       callback(suggestions.length > 0 ? suggestions : null);
     })
     .catch(err => {
@@ -427,7 +435,10 @@ export async function impersonateUser(history, charName, userName, passionLevel,
     ...last6,
     {
       role: 'system',
-      content: `Write the next reply from ${userName}'s perspective.\nMatch ${userName}'s writing style from the chat history.\nDon't write as ${charName} or system. Don't describe ${charName}'s actions.\nCurrent intimacy: ${tier}. Write 1-3 sentences only.`
+      content: `You are ${userName}, the human user. Write what ${userName} says or does next.
+Keep it short: 1 sentence, casual tone, like a real person typing in chat.
+Use "I" perspective. Do NOT write as ${charName}. Intimacy: ${tier}.
+Match the language from the conversation.`
     }
   ];
 
@@ -441,7 +452,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
       model,
       messages,
       stream: true,
-      options: { num_predict: 150, temperature: 0.8, num_ctx: 2048 }
+      options: { num_predict: 60, temperature: 0.8, num_ctx: 2048 }
     })
   });
 

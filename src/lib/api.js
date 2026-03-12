@@ -336,12 +336,13 @@ export function abortSuggestionCall() {
  * @param {object} settings - App settings
  * @param {function} callback - Receives string[] or null
  */
-export function generateSuggestionsBackground(history, charName, userName, passionLevel, settings, callback) {
+export async function generateSuggestionsBackground(history, charName, userName, passionLevel, settings, callback) {
   abortSuggestionCall();
 
   const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
   const model = settings.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M';
   const tier = getTierKey(passionLevel);
+  const numCtx = Math.min(await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium'), 2048);
 
   const last4 = history
     .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -367,7 +368,7 @@ Example: I kiss her softly | "You look beautiful" | I pull her closer`;
       model,
       messages,
       stream: false,
-      options: { num_predict: 80, temperature: 0.9, num_ctx: 2048 }
+      options: { num_predict: 80, temperature: 0.9, num_ctx: numCtx }
     })
   })
     .then(res => res.json())
@@ -425,6 +426,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
   const model = settings.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M';
   const tier = getTierKey(passionLevel);
+  const numCtx = Math.min(await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium'), 2048);
 
   const last6 = (history || [])
     .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -452,7 +454,7 @@ Match the language from the conversation.`
       model,
       messages,
       stream: true,
-      options: { num_predict: 60, temperature: 0.8, num_ctx: 2048 }
+      options: { num_predict: 60, temperature: 0.8, num_ctx: numCtx }
     })
   });
 

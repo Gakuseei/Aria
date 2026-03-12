@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, resolveTemplates, unloadOllamaModel } from '../lib/api';
+import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, resolveTemplates, unloadOllamaModel } from '../lib/api';
 import { passionManager, getTierKey, getSpeedMultiplier, PASSION_TIERS } from '../lib/PassionManager';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
@@ -717,6 +717,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       return;
     }
 
+    // Cancel any in-flight suggestion call so Ollama is free for streaming
+    abortSuggestionCall();
+
     // Cancel any previous pending request
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
@@ -795,7 +798,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       // Generate suggestions in background (separate call, ~2-3s)
       if (smartSuggestionsEnabled) {
-        generateSuggestionsBackground(safeMessageText, safeResponse, settings, (suggestions) => {
+        generateSuggestionsBackground(safeMessageText, safeResponse, character.name, settings, (suggestions) => {
           if (suggestions) {
             setSmartSuggestions(suggestions);
             // Store on the assistant message for export
@@ -1073,6 +1076,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     const messagesUpToLastUser = messages.slice(0, lastUserMessageIndex + 1);
     const lastUserMessage = (messages[lastUserMessageIndex].content || '').trim();
 
+    // Cancel any in-flight suggestion call so Ollama is free for streaming
+    abortSuggestionCall();
+
     setMessages(messagesUpToLastUser);
     setIsLoading(true);
 
@@ -1136,7 +1142,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       // Generate suggestions in background
       if (smartSuggestionsEnabled) {
         const lastUserMsg = messagesUpToLastUser.findLast(m => m.role === 'user');
-        generateSuggestionsBackground(lastUserMsg?.content || '', safeResponse, settings, (suggestions) => {
+        generateSuggestionsBackground(lastUserMsg?.content || '', safeResponse, character.name, settings, (suggestions) => {
           if (suggestions) {
             setSmartSuggestions(suggestions);
             setMessages(prev => {

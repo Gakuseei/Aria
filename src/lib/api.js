@@ -349,11 +349,14 @@ export async function generateSuggestionsBackground(history, charName, userName,
     .slice(-4)
     .map(m => ({ role: m.role, content: (m.content || '').slice(0, 400) }));
 
-  const impersonatePrompt = `ROLE SWITCH — you are ${userName}, the player. NOT ${charName}.
-3 things ${userName} could say or do next. First person "I" only.
-Each MUST be different: one action, one dialogue, one different action.
-NEVER repeat themes from the last messages. Max 6 words each. Intimacy: ${tier}.
-Format: option1 | option2 | option3`;
+  const impersonatePrompt = `ROLE SWITCH — you are ${userName}, NOT ${charName}.
+Write 3 things ${userName} could say or do next. First person "I" only.
+Each must be a DIFFERENT type: one action, one spoken line, one bold move.
+Max 6 words each. Intimacy: ${tier}.
+Wrap each in <s> tags:
+<s>first suggestion</s>
+<s>second suggestion</s>
+<s>third suggestion</s>`;
 
   const messages = [...last4, { role: 'system', content: impersonatePrompt }];
 
@@ -367,18 +370,26 @@ Format: option1 | option2 | option3`;
       model,
       messages,
       stream: false,
-      options: { num_predict: 80, temperature: 0.9, num_ctx: numCtx }
+      options: {
+        num_predict: 80,
+        temperature: 0.9,
+        num_ctx: numCtx,
+        stop: [`\n${charName}:`, `${charName}:`]
+      }
     })
   })
     .then(res => res.json())
     .then(data => {
       suggestionAbortController = null;
       const raw = (data.message?.content || '').trim();
-      let parts = raw.split('|');
+      // Primary: XML <s> tags (most reliable)
+      const tagMatches = [...raw.matchAll(/<s>(.+?)<\/s>/gi)].map(m => m[1].trim());
+      // Fallback: pipe separator, then numbered list, then newlines
+      let parts = tagMatches.length >= 2 ? tagMatches : raw.split('|');
+      if (parts.length < 2) parts = raw.split(/\d+[.)]\s*/).filter(Boolean);
       if (parts.length < 2) parts = raw.split('\n').filter(Boolean);
-      if (parts.length < 2) parts = raw.split(/\d+[.)]\s*/);
       const suggestions = parts
-        .map(s => s.trim().replace(/^["':.\-*\d)+]+|["':.\-*]+$/g, '').trim())
+        .map(s => s.trim().replace(/^["':.\-*\d)+<s>]+|["':.\-*<\/s>]+$/gi, '').trim())
         .filter(s => s.length > 0 && s.length <= 60 && s.split(/\s+/).length <= 8)
         .slice(0, 3);
       console.log(`[API] Suggestions: ${suggestions.length} from "${raw.slice(0, 120)}"`);
@@ -436,10 +447,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
     ...last6,
     {
       role: 'system',
-      content: `ROLE SWITCH — you are now ${userName}, the player.
-Write ONLY what ${userName} says or does. First person "I" only.
-NEVER write ${charName}'s actions, words, or reactions. NEVER narrate for ${charName}.
-1-2 short sentences. Casual, like a real person typing. Intimacy: ${tier}.`
+      content: `[Write the next reply from the point of view of ${userName}, using the chat history as a guideline for ${userName}'s writing style. Don't write as ${charName} or system. Don't describe actions of ${charName}. Write 1-2 short sentences in first person. Intimacy: ${tier}.]`
     }
   ];
 
@@ -453,7 +461,12 @@ NEVER write ${charName}'s actions, words, or reactions. NEVER narrate for ${char
       model,
       messages,
       stream: true,
-      options: { num_predict: 60, temperature: 0.8, num_ctx: numCtx }
+      options: {
+        num_predict: 150,
+        temperature: 0.85,
+        num_ctx: numCtx,
+        stop: [`\n${charName}:`, `\n${charName} :`, `${charName}:`]
+      }
     })
   });
 
@@ -485,7 +498,25 @@ NEVER write ${charName}'s actions, words, or reactions. NEVER narrate for ${char
     impersonateAbortController = null;
   }
 
-  return fullText.trim();
+  let cleaned = fullText.trim();
+
+  // SillyTavern technique: if response starts with charName, it's writing as the character — trash it
+  if (cleaned.startsWith(`${charName}:`) || cleaned.startsWith(`${charName} :`)) {
+    cleaned = '';
+  }
+
+  // If charName appears mid-text as a new speaker, truncate everything from that point
+  const charSpeakIdx = cleaned.indexOf(`\n${charName}:`);
+  if (charSpeakIdx >= 0) {
+    cleaned = cleaned.substring(0, charSpeakIdx).trim();
+  }
+
+  // Strip any leading "userName:" prefix the model might add
+  if (cleaned.startsWith(`${userName}:`) || cleaned.startsWith(`${userName} :`)) {
+    cleaned = cleaned.replace(/^\S+:\s*/, '');
+  }
+
+  return cleaned;
 }
 
 /**

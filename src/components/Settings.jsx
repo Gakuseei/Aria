@@ -28,7 +28,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
 
   // v0.2.5: HARD SYNC FIX - Force localStorage update on EVERY setting change
   useEffect(() => {
-    console.log('[v1.0 Settings Hard Sync] Writing ALL settings to localStorage:', settings);
     localStorage.setItem('settings', JSON.stringify(settings));
   }, [settings]);
 

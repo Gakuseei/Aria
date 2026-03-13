@@ -384,34 +384,38 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
       {hoveredCharacter && (
         <div className="fixed bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-zinc-950 via-zinc-950/95 to-transparent pointer-events-none">
           <div className="h-full max-w-4xl mx-auto flex items-center justify-center px-8">
-            {allCharacters.filter(c => c.id === hoveredCharacter).map(character => (
-              <div key={character.id} className="flex items-center gap-4 animate-fade-in">
-                <div 
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white"
-                  style={{ backgroundColor: character.themeColor }}
-                >
-                  {character.name.charAt(0)}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-white font-medium">
-                      {character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name)}
-                    </p>
-                    {character.isCustom && (
-                      <span className="px-2 py-0.5 rounded-full bg-purple-600/80 text-white text-xs">
-                        {t.characterSelect.custom}
-                      </span>
-                    )}
+            {(() => {
+              const character = allCharacters.find(c => c.id === hoveredCharacter);
+              if (!character) return null;
+              return (
+                <div key={character.id} className="flex items-center gap-4 animate-fade-in">
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white"
+                    style={{ backgroundColor: character.themeColor }}
+                  >
+                    {character.name.charAt(0)}
                   </div>
-                  <p className="text-zinc-500 text-sm">
-                    {character.isCustom ? character.subtitle : (t.characters?.[character.id]?.subtitle || character.subtitle)}
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-white font-medium">
+                        {character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name)}
+                      </p>
+                      {character.isCustom && (
+                        <span className="px-2 py-0.5 rounded-full bg-purple-600/80 text-white text-xs">
+                          {t.characterSelect.custom}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-zinc-500 text-sm">
+                      {character.isCustom ? character.subtitle : (t.characters?.[character.id]?.subtitle || character.subtitle)}
+                    </p>
+                  </div>
+                  <div className="ml-8 text-zinc-400 text-sm max-w-md">
+                    "{character.startingMessage.replace(/^\[[^\]]+\]\s*/, '').substring(0, 80)}..."
+                  </div>
                 </div>
-                <div className="ml-8 text-zinc-400 text-sm max-w-md">
-                  "{character.startingMessage.replace(/^\[[^\]]+\]\s*/, '').substring(0, 80)}..."
-                </div>
-              </div>
-            ))}
+              );
+            })()}
           </div>
         </div>
       )}

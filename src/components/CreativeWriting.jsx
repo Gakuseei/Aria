@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { generateCreativeWriting, continueStory } from '../lib/StoryEngine';
 import { saveSession, loadSession, generateSessionId, autoDetectAndSetModel } from '../lib/api';
 import { GAME_MODES } from '../App';
@@ -369,14 +369,14 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   // ============================================================================
   // TEXT FORMATTING - BLOCK 4 FIX: Apostroph-Bug behoben
   // ============================================================================
-  function formatStoryText(text) {
-    if (!text || typeof text !== 'string') return null;
+  const formattedStoryContent = useMemo(() => {
+    if (!generatedContent || typeof generatedContent !== 'string') return null;
 
     if (!currentModel) {
       return <p className="text-zinc-500 italic">{t.common.loading}</p>;
     }
 
-    const paragraphs = text.split('\n').filter(p => p.trim());
+    const paragraphs = generatedContent.split('\n').filter(p => p.trim());
 
     return paragraphs.map((paragraph, pIndex) => {
       // BLOCK 4 FIX: Match ONLY complete quote pairs, ignore apostrophes
@@ -412,7 +412,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
         </p>
       );
     });
-  }
+  }, [generatedContent, currentModel, t.common.loading]);
 
   // ============================================================================
   // RENDER UI
@@ -542,7 +542,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
                     - Generous spacing for comfortable long-form reading
                     ============================================================ */}
                 <div className={`font-sans text-${fontSize} leading-loose`}>
-                  {formatStoryText(generatedContent)}
+                  {formattedStoryContent}
                 </div>
               </div>
             ) : (

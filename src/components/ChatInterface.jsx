@@ -2,7 +2,7 @@
 // ARIA v1.0 RELEASE - ChatInterface
 // ============================================================================
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, memo, useCallback } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel } from '../lib/api';
@@ -69,13 +69,18 @@ function formatMessageText(text, isGoldMode = false) {
 // MESSAGE BUBBLE COMPONENT
 // ============================================================================
 
-function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false, isSupporter = false }) {
+const MessageBubble = memo(function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false, isSupporter = false }) {
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Memoize regex processing — only re-run when content or gold mode changes
+  const formattedParts = useMemo(
+    () => formatMessageText(message.content || '', isGoldMode && !isUser),
+    [message.content, isGoldMode, isUser]
+  );
 
   // v0.2.5 ROSE NOIR: Avatar styling
   const avatarLetter = isUser ? (userName?.[0] || 'U') : (character?.name?.[0] || 'A');
@@ -131,20 +136,17 @@ function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, 
         )}
 
         <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
-          {(() => {
-            const formattedParts = formatMessageText(message.content || '', isGoldMode && !isUser);
-            return formattedParts.map((part, i) => {
-              if (part.type === 'action') {
-                return <span key={i} className="text-zinc-400 italic">{part.text}</span>;
-              } else if (part.type === 'dialogue') {
-                return <span key={i} className="text-white font-normal">{part.text}</span>;
-              } else if (part.type === 'bold' && isGoldMode && !isUser) {
-                return <span key={i} className="text-amber-400 font-bold drop-shadow-sm">{part.text}</span>;
-              } else {
-                return <span key={i} className="text-zinc-200">{part.text}</span>;
-              }
-            });
-          })()}
+          {formattedParts.map((part, i) => {
+            if (part.type === 'action') {
+              return <span key={i} className="text-zinc-400 italic">{part.text}</span>;
+            } else if (part.type === 'dialogue') {
+              return <span key={i} className="text-white font-normal">{part.text}</span>;
+            } else if (part.type === 'bold' && isGoldMode && !isUser) {
+              return <span key={i} className="text-amber-400 font-bold drop-shadow-sm">{part.text}</span>;
+            } else {
+              return <span key={i} className="text-zinc-200">{part.text}</span>;
+            }
+          })}
         </div>
 
         {message.timestamp && (
@@ -194,7 +196,7 @@ function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, 
       )}
     </div>
   );
-}
+});
 
 // ============================================================================
 // MAIN CHAT INTERFACE - v8.1 RESTORED
@@ -241,6 +243,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // Merge parent settings with local settings (memoized to prevent useEffect churn)
   const settings = useMemo(() => ({ ...localSettings, ...parentSettings }), [localSettings, parentSettings]);
   const isSupporter = useMemo(() => localStorage.getItem('isSupporter') === 'true', []);
+
+  // Memoize streaming content formatting to avoid regex on every rAF tick
+  const streamingFormattedParts = useMemo(
+    () => formatMessageText(streamingContent || '', false),
+    [streamingContent]
+  );
 
   // Voice Settings Popover State
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
@@ -623,15 +631,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // ============================================================================
 
   useEffect(() => {
-    // Scroll immediately when messages change
     scrollToBottom();
-    
-    // Additional delayed scroll to ensure DOM has fully rendered
-    const timer = setTimeout(() => {
-      scrollToBottom();
-    }, 100);
-    
-    return () => clearTimeout(timer);
   }, [messages]);
 
   useEffect(() => {
@@ -641,12 +641,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
       // Force scroll to absolute bottom of container
-      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-    }
-  };
-
-  const scrollToBottomInstant = () => {
-    if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
   };
@@ -1676,18 +1670,15 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                   <>
                     <div className="text-xs text-zinc-400 mb-1.5 font-medium flex items-center gap-1.5"><span>{character.name}</span></div>
                     <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
-                      {(() => {
-                        const formattedParts = formatMessageText(streamingContent || '', false);
-                        return formattedParts.map((part, i) => {
-                          if (part.type === 'action') {
-                            return <span key={i} className="text-zinc-400 italic">{part.text}</span>;
-                          } else if (part.type === 'dialogue') {
-                            return <span key={i} className="text-white font-normal">{part.text}</span>;
-                          } else {
-                            return <span key={i} className="text-zinc-200">{part.text}</span>;
-                          }
-                        });
-                      })()}
+                      {streamingFormattedParts.map((part, i) => {
+                        if (part.type === 'action') {
+                          return <span key={i} className="text-zinc-400 italic">{part.text}</span>;
+                        } else if (part.type === 'dialogue') {
+                          return <span key={i} className="text-white font-normal">{part.text}</span>;
+                        } else {
+                          return <span key={i} className="text-zinc-200">{part.text}</span>;
+                        }
+                      })}
                     </div>
                   </>
                 )}

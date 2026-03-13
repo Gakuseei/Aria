@@ -178,26 +178,6 @@ class PassionManager {
   }
 
   /**
-   * Adjust passion level with tier transition detection
-   * @param {string} sessionId - Session identifier
-   * @param {number} level - Target passion level (0-100)
-   * @returns {number} Clamped level that was set
-   */
-  adjustPassion(sessionId, level) {
-    const oldLevel = this.passionData[sessionId] || 0;
-    const clamped = Math.round(Math.max(0, Math.min(100, level)));
-    const oldTier = getTierKey(oldLevel);
-    const newTier = getTierKey(clamped);
-    if (oldTier !== newTier) {
-      this.passionData[`${sessionId}_transition`] = newTier;
-    }
-    this.passionData[sessionId] = clamped;
-    this.trackHistory(sessionId, clamped);
-    this.savePassionData();
-    return clamped;
-  }
-
-  /**
    * Track passion history for a session (last 50 values)
    * @param {string} sessionId - Session identifier
    * @param {number} level - Passion level to record

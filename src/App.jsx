@@ -35,7 +35,7 @@ export const GAME_MODES = {
 
 function App() {
   const [currentView, setCurrentView] = useState(VIEWS.MAIN_MENU);
-  const [selectedMode, setSelectedMode] = useState(null);
+  const [, setSelectedMode] = useState(null);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [loadedSession, setLoadedSession] = useState(null);
 
@@ -143,7 +143,6 @@ function App() {
             }
           }
 
-        } else {
         }
       } catch (error) {
         console.error('[v9.5 App Init] ❌ Error loading settings:', error);
@@ -411,14 +410,6 @@ function App() {
       default:
         navigate(VIEWS.MAIN_MENU);
     }
-  };
-
-  // Handle returning to main menu
-  const handleMainMenu = () => {
-    setSelectedMode(null);
-    setSelectedCharacter(null);
-    setLoadedSession(null);
-    navigate(VIEWS.MAIN_MENU);
   };
 
   // Render current view

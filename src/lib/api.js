@@ -184,8 +184,8 @@ export async function unloadOllamaModel(settings) {
       body: JSON.stringify({ model, messages: [], keep_alive: 0 })
     });
     console.log('[API] Model unloaded (keep_alive: 0)');
-  } catch {
-    // Ignore — model may already be unloaded
+  } catch (err) {
+    console.warn('[API] Model unload failed:', err?.message);
   }
 }
 
@@ -225,7 +225,8 @@ async function getModelCapabilities(ollamaUrl, modelName) {
     const paramRaw = info.details?.parameter_size || '7B';
     MODEL_CAPS_CACHE[cacheKey] = { contextLength, parameterSize: paramRaw };
     return MODEL_CAPS_CACHE[cacheKey];
-  } catch {
+  } catch (err) {
+    console.warn('[API] getModelCapabilities failed for', modelName, ':', err?.message);
     return defaults;
   }
 }
@@ -491,7 +492,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
             fullText += token;
             onToken(token);
           }
-        } catch { /* skip malformed lines */ }
+        } catch (err) { console.warn('[API] Impersonate stream: malformed JSON line:', err?.message); }
       }
     }
   } finally {
@@ -716,7 +717,7 @@ export const sendMessage = async (
             if (chunk.done) {
               finalChunk = chunk;
             }
-          } catch { /* skip malformed lines */ }
+          } catch (err) { console.warn('[API] Chat stream: malformed JSON line:', err?.message); }
         }
       }
 
@@ -729,7 +730,7 @@ export const sendMessage = async (
             onToken(chunk.message.content);
           }
           if (chunk.done) finalChunk = chunk;
-        } catch { /* skip */ }
+        } catch (err) { console.warn('[API] Chat stream: malformed final buffer:', err?.message); }
       }
 
       data = {
@@ -752,7 +753,7 @@ export const sendMessage = async (
     }
 
     if (!data.message || !data.message.content) {
-      console.warn(`[API] Empty response — retrying (history: ${trimmedHistory.length} msgs)`);
+      console.error(`[API] Empty response after all attempts (history: ${trimmedHistory.length} msgs)`);
       const retrySystemPrompt = finalSystemPrompt + '\nIMPORTANT: Respond directly as the character.';
       const retryMessages = [
         { role: 'system', content: retrySystemPrompt },
@@ -779,7 +780,7 @@ export const sendMessage = async (
             }
           }
         }
-      } catch { /* retry failed, fall through */ }
+      } catch (err) { console.warn('[API] Retry request failed:', err?.message); }
       finally { clearTimeout(retryTimer); }
 
       if (!data.message || !data.message.content) {
@@ -1111,7 +1112,7 @@ export const autoDetectAndSetModel = async (ollamaUrl = 'http://127.0.0.1:11434'
     const models = await fetchOllamaModels(ollamaUrl);
 
     if (!models || models.length === 0) {
-      console.warn('[v8.2 Auto-Detect] ⚠️ No models found! User needs to install a model.');
+      console.error('[API] No Ollama models found — user needs to install a model');
       return { success: false, error: 'No models installed', models: [] };
     }
 

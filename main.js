@@ -2,8 +2,8 @@
 // Deep Immersion with Passion Manager, Image Generation & Voice/TTS
 // AGGRESSIVE CSP: Only 'self', '127.0.0.1', 'localhost'
 
-const { app, BrowserWindow, ipcMain, shell, dialog, net } = require('electron');
-const { exec, spawn } = require('child_process');
+const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');

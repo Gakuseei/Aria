@@ -2,14 +2,14 @@
 // ARIA v1.0 RELEASE - ChatInterface
 // ============================================================================
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Send, RotateCcw, Trash2, Download, Upload, RefreshCw, MapPin, Shirt, Settings as SettingsIcon, Image as ImageIcon, Volume2, VolumeX, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, loadSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel } from '../lib/api';
-import { passionManager, getTierKey, getSpeedMultiplier, PASSION_TIERS } from '../lib/PassionManager';
+import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel } from '../lib/api';
+import { passionManager, getTierKey, PASSION_TIERS } from '../lib/PassionManager';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
-import { generateImage, cleanContextForImage, extractConversationContext } from '../lib/imageGen';
+import { generateImage, extractConversationContext } from '../lib/imageGen';
 import TutorialModal from './tutorials/TutorialModal';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
@@ -69,7 +69,7 @@ function formatMessageText(text, isGoldMode = false) {
 // MESSAGE BUBBLE COMPONENT
 // ============================================================================
 
-function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false, isSupporter = false }) {
+function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false }) {
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -201,7 +201,7 @@ function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, 
 // ============================================================================
 
 export default function ChatInterface({ character, loadedSession, onBack, settings: parentSettings }) {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -209,7 +209,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [streamingContent, setStreamingContent] = useState('');
   const [passionLevel, setPassionLevel] = useState(0);
   const previousTierRef = useRef('surface');
-  const [tierTransitioning, setTierTransitioning] = useState(false);
+  const [, setTierTransitioning] = useState(false);
   const [tierToast, setTierToast] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [showPassionPopover, setShowPassionPopover] = useState(false);
@@ -240,7 +240,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   
   // Merge parent settings with local settings (memoized to prevent useEffect churn)
   const settings = useMemo(() => ({ ...localSettings, ...parentSettings }), [localSettings, parentSettings]);
-  const isSupporter = useMemo(() => localStorage.getItem('isSupporter') === 'true', []);
 
   // Voice Settings Popover State
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
@@ -282,7 +281,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [showImageModal, setShowImageModal] = useState(false);
   const [imagePrompt, setImagePrompt] = useState('');
   const [generatingImage, setGeneratingImage] = useState(false);
-  const [lastImageGenMessage, setLastImageGenMessage] = useState(0);
 
   // v0.2.5: Tutorial Modal
   const [showTutorial, setShowTutorial] = useState(null);
@@ -820,7 +818,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       const safeResponse = (response.message || '').trim();
 
-      const freshPassion = response.passionLevel !== undefined ? response.passionLevel : passionLevel;
 
       const assistantMessage = {
         role: 'assistant',
@@ -937,21 +934,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // CHAT ACTIONS WITH HARD RESET
   // ============================================================================
 
-  const handleResetPassion = () => {
-    setConfirmModal({
-      message: t.chat.resetPassionConfirm,
-      onConfirm: () => {
-        if (sessionId) {
-          passionManager.resetPassion(sessionId);
-        }
-        if (character?.id) {
-          passionManager.clearCharacterMemory(character.id);
-        }
-        setPassionLevel(0);
-      }
-    });
-  };
-
   const handleClearChat = async (skipConfirmation = false) => {
     const doReset = async () => {
       try {
@@ -1022,10 +1004,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       console.error('Export error:', error);
       toast.error(t.chat.failedToExport);
     }
-  };
-
-  const handleImportClick = () => {
-    importFileRef.current?.click();
   };
 
   const handleImportChat = async (e) => {
@@ -1146,7 +1124,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       }
 
       const safeResponse = (response.message || '').trim();
-      const freshPassion = response.passionLevel !== undefined ? response.passionLevel : passionLevel;
 
       const assistantMessage = {
         role: 'assistant',
@@ -1196,15 +1173,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         console.error('Failed to copy:', err);
         toast.error('Copy failed');
       });
-  };
-
-  // v0.2.5 RESTORED: Image Generation Handler
-  const handleImageGen = () => {
-    if (!imageGenEnabled) {
-      toast.error(t.chat.imageGenDisabled);
-      return;
-    }
-    setShowImagePanel(!showImagePanel);
   };
 
   // Voice Settings Toggle Handler
@@ -1643,7 +1611,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 voiceEnabled={voiceEnabled}
                 fontSize={fontSize}
                 isGoldMode={isGoldMode}
-                isSupporter={isSupporter}
               />
             )
           ))}

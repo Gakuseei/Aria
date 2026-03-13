@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { fileToBase64, saveCustomCharacter } from '../lib/api';
 import { useLanguage } from '../context/LanguageContext';
 

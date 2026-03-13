@@ -1,6 +1,6 @@
 // ARIA v1.0 RELEASE - SupporterModal (Final Polish - Pay What You Want Slider)
-import React, { useState, useEffect } from 'react';
-import { Heart, Check, X, Sparkles, Crown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Heart, X, Sparkles, Crown } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 const SUPPORTER_KEY_HASH = '5e1d239e997aef44d55780a6a104abfcc49ee886276b6e4a84248cd825242e19';

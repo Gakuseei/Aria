@@ -266,6 +266,7 @@ npm run dev
 - [x] **Ko-fi Integration** — Direct supporter benefits
 - [x] **Windows Installer** — One-click setup, no terminal needed
 - [x] **OLED Toggle** — Quick-switch Moon/Sun button
+- [x] **Passion System v3** — 6-tier prose depth engine with speed multipliers
 
 </details>
 
@@ -278,7 +279,6 @@ npm run dev
 |:--------|:------------|
 | 📚 **Tutorial 2.0** | Model recommendations by hardware tier |
 | 💬 **Enhanced Chat** | Personas, auto-scroll, edit messages |
-| ❤️ **Passion 2.0** | Expanded relationship tiers |
 | 💾 **Auto Backup** | Automatic saves after each message |
 | 🖼️ **Profile Pictures** | Character backgrounds & info tab |
 | 🔊 **Sound Effects** | Rose-Noir audio feedback |

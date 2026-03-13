@@ -292,6 +292,35 @@ body.oled-mode ::-webkit-scrollbar-thumb:hover {
   animation: suggestionFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+.suggestion-skeleton {
+  opacity: 0;
+  animation: suggestionFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+             suggestionPulse 1.5s ease-in-out infinite 0.3s;
+}
+
+@keyframes suggestionPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.impersonate-pulse {
+  animation: impersonatePulse 1s ease-in-out infinite;
+}
+
+.impersonate-pulse-gold {
+  animation: impersonatePulseGold 1s ease-in-out infinite;
+}
+
+@keyframes impersonatePulse {
+  0%, 100% { background-color: rgb(63 63 70); }
+  50% { background-color: rgb(159 18 57 / 0.3); }
+}
+
+@keyframes impersonatePulseGold {
+  0%, 100% { background-color: rgb(63 63 70); }
+  50% { background-color: rgb(245 158 11 / 0.3); }
+}
+
 @keyframes slideDown {
   from {
     opacity: 0;

@@ -452,41 +452,41 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   useEffect(() => {
     const cleanup = window.electronAPI?.onVoiceStatusChanged?.((newValue) => {
-      // Update state when voice status changes via IPC
-      if (voiceEnabled !== newValue) {
-        setVoiceEnabled(newValue);
-        const updatedSettings = { ...settings, voiceEnabled: newValue };
-        setLocalSettings(updatedSettings);
-        localStorage.setItem('settings', JSON.stringify(updatedSettings));
-      }
+      setVoiceEnabled(prev => {
+        if (prev !== newValue) {
+          setLocalSettings(prevSettings => {
+            const updated = { ...prevSettings, voiceEnabled: newValue };
+            localStorage.setItem('settings', JSON.stringify(updated));
+            return updated;
+          });
+          return newValue;
+        }
+        return prev;
+      });
     });
     return () => { if (typeof cleanup === 'function') cleanup(); };
-  }, [voiceEnabled, settings]);
+  }, []);
 
   // FIX 3: Settings updated listener (sync from backend)
   useEffect(() => {
     const cleanup = window.electronAPI?.onSettingsUpdated?.((newSettings) => {
-      // Update local state when settings change via IPC
-      if (newSettings.voiceEnabled !== undefined && newSettings.voiceEnabled !== voiceEnabled) {
-        setVoiceEnabled(newSettings.voiceEnabled);
+      if (newSettings.voiceEnabled !== undefined) {
+        setVoiceEnabled(prev => newSettings.voiceEnabled !== prev ? newSettings.voiceEnabled : prev);
       }
-      // Image Generation sync
-      if (newSettings.imageGenEnabled !== undefined && newSettings.imageGenEnabled !== imageGenEnabled) {
-        setImageGenEnabled(newSettings.imageGenEnabled);
+      if (newSettings.imageGenEnabled !== undefined) {
+        setImageGenEnabled(prev => newSettings.imageGenEnabled !== prev ? newSettings.imageGenEnabled : prev);
       }
-      if (newSettings.imageGenUrl !== undefined) {
-        setLocalSettings(prev => ({ ...prev, imageGenUrl: newSettings.imageGenUrl }));
-      }
-      if (newSettings.modelPath !== undefined && newSettings.modelPath !== settings.modelPath) {
-        setLocalSettings(prev => ({ ...prev, modelPath: newSettings.modelPath }));
-      }
-      if (newSettings.piperPath !== undefined && newSettings.piperPath !== settings.piperPath) {
-        setLocalSettings(prev => ({ ...prev, piperPath: newSettings.piperPath }));
-      }
+      setLocalSettings(prev => {
+        const patch = {};
+        if (newSettings.imageGenUrl !== undefined) patch.imageGenUrl = newSettings.imageGenUrl;
+        if (newSettings.modelPath !== undefined) patch.modelPath = newSettings.modelPath;
+        if (newSettings.piperPath !== undefined) patch.piperPath = newSettings.piperPath;
+        return Object.keys(patch).length > 0 ? { ...prev, ...patch } : prev;
+      });
       localStorage.setItem('settings', JSON.stringify(newSettings));
     });
     return () => { if (typeof cleanup === 'function') cleanup(); };
-  }, [voiceEnabled, imageGenEnabled, settings]);
+  }, []);
 
   // ============================================================================
   // PERSIST FONT SIZE CHANGES
@@ -505,17 +505,18 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   }, [isUnchainedMode]);
 
   useEffect(() => {
+    let timer;
+    let toastTimer;
     const currentTier = getTierKey(passionLevel);
     if (currentTier !== previousTierRef.current && passionLevel > 0) {
       setTierTransitioning(true);
-      const timer = setTimeout(() => setTierTransitioning(false), 600);
+      timer = setTimeout(() => setTierTransitioning(false), 600);
       const tierOrder = ['surface', 'aware', 'vivid', 'immersive', 'consuming', 'transcendent'];
       const oldIdx = tierOrder.indexOf(previousTierRef.current);
       const newIdx = tierOrder.indexOf(currentTier);
       const fromLabel = t.chat[`passion${previousTierRef.current.charAt(0).toUpperCase() + previousTierRef.current.slice(1)}`] || previousTierRef.current;
       const toLabel = t.chat[`passion${currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}`] || currentTier;
       const template = newIdx > oldIdx ? t.chat.tierUp : t.chat.tierDown;
-      let toastTimer;
       if (template) {
         setTierToast(template.replace('{from}', fromLabel).replace('{to}', toLabel));
         toastTimer = setTimeout(() => setTierToast(null), 3000);
@@ -532,8 +533,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       }
 
       previousTierRef.current = currentTier;
-      return () => { clearTimeout(timer); if (toastTimer) clearTimeout(toastTimer); };
     }
+    return () => { if (timer) clearTimeout(timer); if (toastTimer) clearTimeout(toastTimer); };
   }, [passionLevel, t]);
 
   // ============================================================================

@@ -231,6 +231,7 @@ async function getModelCapabilities(ollamaUrl, modelName) {
 }
 
 function estimateTokens(text) {
+  if (!text) return 0;
   return Math.ceil(text.length / 3.5);
 }
 
@@ -799,7 +800,7 @@ export const sendMessage = async (
     // v0.2.5: CALCULATE API STATS FOR MONITOR
     const endTime = Date.now();
     const responseTime = endTime - startTime;
-    const wordCount = aiMessage.split(/\s+/).length;
+    const wordCount = aiMessage ? aiMessage.split(/\s+/).filter(Boolean).length : 0;
     const wordsPerSecond = (wordCount / (responseTime / 1000)).toFixed(2);
 
     // Use Ollama's actual token counts when available, fallback to estimation

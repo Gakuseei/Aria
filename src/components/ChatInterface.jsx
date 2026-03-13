@@ -535,6 +535,15 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           passionManager.setPassion(restoredSessionId, restoredLevel, true);
         }
 
+        // Restore suggestions from last assistant message
+        for (let i = loadedSession.messages.length - 1; i >= 0; i--) {
+          const msg = loadedSession.messages[i];
+          if (msg.role === 'assistant' && msg.suggestions?.length > 0) {
+            setSmartSuggestions(msg.suggestions);
+            break;
+          }
+        }
+
         return;
       }
 
@@ -703,6 +712,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   const triggerSuggestions = (updatedMessages) => {
     if (!settings.smartSuggestionsEnabled) return;
+    const prevSuggestions = [...smartSuggestions];
     generateSuggestionsBackground(updatedMessages, character.name, userName, passionLevel, settings, (suggestions) => {
       const result = (suggestions && suggestions.length > 0) ? suggestions : [];
       setSmartSuggestions(result);
@@ -716,7 +726,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         updated[lastIdx] = { ...updated[lastIdx], suggestions: result.length > 0 ? result : undefined };
         return updated;
       });
-    });
+    }, prevSuggestions);
   };
 
   const handleSend = async (messageText = input) => {
@@ -733,6 +743,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     }
 
     abortSuggestionCall();
+    setSmartSuggestions([]);
     abortImpersonateCall();
     setIsImpersonating(false);
 
@@ -1049,6 +1060,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     const lastUserMessage = (messages[lastUserMessageIndex].content || '').trim();
 
     abortSuggestionCall();
+    setSmartSuggestions([]);
     abortImpersonateCall();
     setIsImpersonating(false);
 
@@ -1650,11 +1662,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 key={`suggestion-${suggestion.slice(0, 20)}-${i}`}
                 onClick={() => handleSuggestionClick(suggestion)}
                 disabled={isLoading}
-                className={`px-4 py-2 bg-zinc-900/95 backdrop-blur-2xl border rounded-full text-sm transition-all duration-200 disabled:opacity-50 flex items-center gap-2 shadow-lg ${
+                className={`suggestion-pill px-4 py-2 bg-zinc-900/95 backdrop-blur-2xl border rounded-full text-sm transition-all duration-200 disabled:opacity-50 flex items-center gap-2 shadow-lg ${
                   isGoldMode
                     ? 'border-amber-500/40 text-amber-100 hover:bg-amber-500/10 hover:shadow-[0_0_15px_-3px_rgba(245,158,11,0.3)] hover:border-amber-400'
                     : 'border-zinc-700/50 hover:border-rose-500/30 text-zinc-400 hover:text-rose-300 hover:bg-rose-500/10'
                 }`}
+                style={{ animationDelay: `${i * 75}ms` }}
                 title={suggestion}
               >
                 <Sparkles size={12} className={isGoldMode ? 'text-amber-400/70' : 'text-rose-400/70'} />

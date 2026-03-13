@@ -275,6 +275,23 @@ body.oled-mode ::-webkit-scrollbar-thumb:hover {
   animation: messageSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+/* Suggestion pill entrance animation */
+@keyframes suggestionFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.suggestion-pill {
+  opacity: 0;
+  animation: suggestionFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
 @keyframes slideDown {
   from {
     opacity: 0;

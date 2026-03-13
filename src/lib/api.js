@@ -338,8 +338,9 @@ export function abortSuggestionCall() {
  * @param {number} passionLevel - Current passion level (0-100)
  * @param {object} settings - App settings
  * @param {function} callback - Receives string[] or null
+ * @param {string[]} [previousSuggestions] - Previous suggestions to avoid repeating
  */
-export async function generateSuggestionsBackground(history, charName, userName, passionLevel, settings, callback) {
+export async function generateSuggestionsBackground(history, charName, userName, passionLevel, settings, callback, previousSuggestions = []) {
   abortSuggestionCall();
 
   const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
@@ -352,10 +353,14 @@ export async function generateSuggestionsBackground(history, charName, userName,
     .slice(-4)
     .map(m => ({ role: m.role, content: (m.content || '').slice(0, 400) }));
 
+  const avoidLine = previousSuggestions.length > 0
+    ? `\nDo NOT repeat these: ${previousSuggestions.join(', ')}`
+    : '';
+
   const impersonatePrompt = `ROLE SWITCH — you are ${userName}, NOT ${charName}.
 Write 3 things ${userName} could say or do next. First person "I" only.
 Each must be a DIFFERENT type: one action, one spoken line, one bold move.
-Max 6 words each. Intimacy: ${tier}.
+Max 6 words each. Intimacy: ${tier}.${avoidLine}
 Wrap each in <s> tags:
 <s>first suggestion</s>
 <s>second suggestion</s>
@@ -393,7 +398,7 @@ Wrap each in <s> tags:
       if (parts.length < 2) parts = raw.split('\n').filter(Boolean);
       const suggestions = parts
         .map(s => s.trim().replace(/^["':.\-*\d)+<s>]+|["':.\-*<\/s>]+$/gi, '').trim())
-        .filter(s => s.length > 0 && s.length <= 60 && s.split(/\s+/).length <= 8)
+        .filter(s => s.length > 0 && s.length <= 80 && s.split(/\s+/).length <= 12)
         .slice(0, 3);
       console.log(`[API] Suggestions: ${suggestions.length} from "${raw.slice(0, 120)}"`);
       callback(suggestions.length > 0 ? suggestions : null);

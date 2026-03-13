@@ -17,7 +17,7 @@ import { getModelProfile } from './modelProfiles.js';
  * Removes any "User:" or "Assistant:" hallucinations from the AI response
  * This prevents the AI from speaking for the user or breaking immersion
  */
-function cleanTranscriptArtifacts(text, charName = '') {
+export function cleanTranscriptArtifacts(text, charName = '') {
   if (!text || typeof text !== 'string') return '';
 
   let cleaned = text;

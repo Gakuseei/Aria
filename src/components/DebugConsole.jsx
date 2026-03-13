@@ -225,7 +225,7 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}`;
         }
       });
     }).catch(() => {
-      toast.error('Failed to copy', { duration: 1500 });
+      toast.error(t.errors?.copyFailed || 'Copy failed', { duration: 1500 });
     });
   };
 
@@ -259,7 +259,7 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}
         }
       });
     }).catch(() => {
-      toast.error('Failed to copy', { duration: 1500 });
+      toast.error(t.errors?.copyFailed || 'Copy failed', { duration: 1500 });
     });
   };
 

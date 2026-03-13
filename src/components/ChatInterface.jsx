@@ -10,6 +10,7 @@ import { passionManager, getTierKey, getSpeedMultiplier, PASSION_TIERS } from '.
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
 import { generateImage, cleanContextForImage, extractConversationContext } from '../lib/imageGen';
+import { getUserErrorMessage } from '../lib/errorMessages';
 import TutorialModal from './tutorials/TutorialModal';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
@@ -719,7 +720,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
     } catch (error) {
       console.error('[BLOCK 8.1 Image Gen] ❌ Error:', error);
-      toast.error((t.chat.imageGenFailed || '').replace('{error}', error.message));
+      toast.error(getUserErrorMessage(error?.message, t, 'chat.imageGenFailed'));
     } finally {
       setGeneratingImage(false);
     }
@@ -857,12 +858,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     } catch (error) {
       if (abortRef.current?.signal?.aborted) return;
       console.error('[ChatInterface] Send error:', error);
-      const errorMsg = error?.message === 'The operation was aborted'
-        ? (t.chat?.timeout || 'Request timed out')
-        : error?.message === 'No response from Ollama'
-          ? (t.chat?.noOllamaResponse || 'Model returned empty response — please send again.')
-          : (t.chat?.sendError || error?.message || 'Failed to get response');
-      toast.error(errorMsg);
+      toast.error(getUserErrorMessage(error?.message, t, 'chat.sendError'));
     } finally {
       setIsLoading(false);
       setIsStreaming(false);
@@ -1194,7 +1190,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       .then(() => toast.success(t.chat?.copied || 'Copied'))
       .catch(err => {
         console.error('Failed to copy:', err);
-        toast.error('Copy failed');
+        toast.error(t.errors?.copyFailed || t.chat?.copyFailed || 'Copy failed');
       });
   };
 

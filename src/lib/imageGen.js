@@ -63,7 +63,7 @@ export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', im
   } catch (error) {
     if (error.name === 'AbortError') {
       console.error('[Image Gen] Request timed out after 600s');
-      throw new Error('Image generation timed out (10m). Check if AUTOMATIC1111 is running with GPU acceleration.');
+      throw new Error('timeout');
     }
     console.error('[Image Gen] Error:', error);
     throw error;

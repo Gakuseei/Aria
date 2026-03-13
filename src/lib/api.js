@@ -841,7 +841,7 @@ export const sendMessage = async (
     console.error('[v8.1 API] ❌ Fatal error:', error);
     return {
       success: false,
-      error: error.message || 'Connection to Ollama failed'
+      error: error.message || 'ECONNREFUSED'
     };
   }
 };

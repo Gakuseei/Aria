@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { fetchOllamaModels, testOllamaConnection } from '../lib/api';
+import { getUserErrorMessage } from '../lib/errorMessages';
 import { Globe, Zap, Moon, RefreshCw, Check, X, User, Image, Volume2, HelpCircle, FolderOpen } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import ImageGenSetup from './tutorials/ImageGenSetup';
@@ -752,12 +753,12 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                           const audio = new Audio(result.audioData);
                           audio.volume = settings.voiceVolume ?? 1.0;
                           await audio.play();
-                          alert('✅ Voice test successful! Audio playback started.');
+                          alert(t.errors?.voiceTestSuccess || 'Voice test successful!');
                         } else {
-                          alert('❌ Voice test failed.\n\nError: ' + (result?.error || 'Unknown error'));
+                          alert((t.errors?.voiceTestFailed || 'Voice test failed: {error}').replace('{error}', result?.error || 'Unknown'));
                         }
                       } catch (error) {
-                        alert('❌ Voice test failed.\n\nError: ' + error.message);
+                        alert((t.errors?.voiceTestFailed || 'Voice test failed: {error}').replace('{error}', error.message));
                       }
                     }}
                     className="w-full px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-sm text-blue-300 transition-all"
@@ -790,12 +791,12 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                           const audio = new Audio(result.audioData);
                           audio.volume = settings.voiceVolume ?? 1.0;
                           await audio.play();
-                          alert('✅ Zonos test successful!');
+                          alert(t.errors?.zonosTestSuccess || 'Zonos test successful!');
                         } else {
-                          alert('❌ Zonos test failed.\n\nError: ' + (result?.error || 'Unknown error') + '\n\nMake sure Zonos is running.');
+                          alert((t.errors?.zonosTestFailed || 'Zonos test failed: {error}').replace('{error}', result?.error || 'Unknown'));
                         }
                       } catch (error) {
-                        alert('❌ Zonos test failed.\n\nError: ' + error.message);
+                        alert((t.errors?.zonosTestFailed || 'Zonos test failed: {error}').replace('{error}', error.message));
                       }
                     }}
                     className="w-full px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-sm text-amber-300 transition-all"

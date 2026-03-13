@@ -456,21 +456,19 @@ ipcMain.handle('test-image-gen', async (event, url) => {
   } catch (error) {
     console.error('[V1.0 ImageGen Test] Error:', error);
     
-    let errorMessage = 'Verbindung fehlgeschlagen.\n\n';
-    
+    let errorCode = 'ECONNREFUSED';
+
     if (error.name === 'AbortError' || error.message.includes('timeout')) {
-      errorMessage += 'Zeitüberschreitung - Die API reagiert nicht.\n\n';
-      errorMessage += 'Prüfe:\n• Läuft Stability Matrix?\n• Ist die WebUI gestartet (Launch Button)?\n• Warte 30 Sekunden nach dem Start!';
+      errorCode = 'timeout';
     } else if (error.message.includes('Failed to fetch') || error.message.includes('ECONNREFUSED')) {
-      errorMessage += 'Kann nicht verbinden.\n\n';
-      errorMessage += 'Prüfe:\n• Ist Stability Matrix geöffnet?\n• Ist die WebUI gestartet?\n• Siehst du die WebUI im Browser (http://127.0.0.1:7860)?';
+      errorCode = 'ECONNREFUSED';
     } else {
-      errorMessage += error.message;
+      errorCode = error.message;
     }
-    
+
     return {
       success: false,
-      error: errorMessage,
+      error: errorCode,
     };
   }
 });

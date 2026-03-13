@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { generateCreativeWriting, continueStory } from '../lib/StoryEngine';
 import { saveSession, loadSession, generateSessionId, autoDetectAndSetModel } from '../lib/api';
+import { getUserErrorMessage } from '../lib/errorMessages';
 import { GAME_MODES } from '../App';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
@@ -199,10 +200,10 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
           });
         }, 100);
       } else {
-        setError(response.error || 'Failed to generate content');
+        setError(getUserErrorMessage(response.error, t, 'common.error'));
       }
     } catch (err) {
-      setError(err.message || 'An unexpected error occurred');
+      setError(getUserErrorMessage(err.message, t, 'common.error'));
     } finally {
       setIsLoading(false);
       promptRef.current?.focus();
@@ -236,10 +237,10 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
           });
         }, 100);
       } else {
-        setError(response.error || 'Failed to continue story');
+        setError(getUserErrorMessage(response.error, t, 'common.error'));
       }
     } catch (err) {
-      setError(err.message || 'An unexpected error occurred');
+      setError(getUserErrorMessage(err.message, t, 'common.error'));
     } finally {
       setIsLoading(false);
     }

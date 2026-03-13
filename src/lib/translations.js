@@ -169,7 +169,28 @@ export const translations = {
       failedToExport: "Failed to export chat",
       timeout: "Request timed out. Ollama may be overloaded — try again.",
       sendError: "Failed to get a response. Please try again.",
-      noOllamaResponse: "Model returned empty response (think-mode). Retried automatically — please send again."
+      noOllamaResponse: "Model returned empty response (think-mode). Retried automatically — please send again.",
+      copyFailed: "Failed to copy to clipboard",
+      copied: "Copied"
+    },
+    errors: {
+      connectionRefused: "Cannot connect to Ollama. Make sure Ollama is running on your machine.",
+      timeout: "Request timed out. The AI model may be overloaded — try again.",
+      noOllamaResponse: "Model returned empty response. Retried automatically — please send again.",
+      noModelsInstalled: "No AI models installed. Open a terminal and run: ollama pull hermes3",
+      http404: "Service not found. Check that the URL is correct.",
+      http429: "Too many requests. Please wait a moment and try again.",
+      http500: "The AI service encountered an internal error. Try restarting Ollama.",
+      http503: "The AI service is temporarily unavailable. It may be starting up — try again in a moment.",
+      imageGenTimeout: "Image generation timed out. Check if AUTOMATIC1111 is running with GPU acceleration.",
+      voiceTestFailed: "Voice test failed: {error}",
+      voiceTestSuccess: "Voice test successful! Audio playback started.",
+      zonosTestFailed: "Zonos test failed: {error}\n\nMake sure Zonos is running.",
+      zonosTestSuccess: "Zonos test successful!",
+      missingPaths: "Please configure both the Piper executable path and voice model path in Settings.",
+      imageGenConnection: "Cannot connect to image generation API. Make sure AUTOMATIC1111 / Stability Matrix is running.",
+      imageGenTimedOut: "Image generation API timed out. Make sure the WebUI is fully loaded before testing.",
+      copyFailed: "Failed to copy to clipboard"
     },
     commands: {
       helpTitle: "── Commands ──",
@@ -835,7 +856,28 @@ export const translations = {
       failedToExport: "Chat konnte nicht exportiert werden",
       timeout: "Zeitüberschreitung. Ollama ist möglicherweise überlastet — bitte erneut versuchen.",
       sendError: "Antwort fehlgeschlagen. Bitte erneut versuchen.",
-      noOllamaResponse: "Modell hat leere Antwort erzeugt (Think-Modus). Automatisch erneut versucht — bitte erneut senden."
+      noOllamaResponse: "Modell hat leere Antwort erzeugt (Think-Modus). Automatisch erneut versucht — bitte erneut senden.",
+      copyFailed: "Kopieren in Zwischenablage fehlgeschlagen",
+      copied: "Kopiert"
+    },
+    errors: {
+      connectionRefused: "Keine Verbindung zu Ollama möglich. Stelle sicher, dass Ollama auf deinem Rechner läuft.",
+      timeout: "Zeitüberschreitung. Das KI-Modell ist möglicherweise überlastet — bitte erneut versuchen.",
+      noOllamaResponse: "Modell hat leere Antwort erzeugt. Automatisch erneut versucht — bitte erneut senden.",
+      noModelsInstalled: "Keine KI-Modelle installiert. Öffne ein Terminal und führe aus: ollama pull hermes3",
+      http404: "Dienst nicht gefunden. Prüfe, ob die URL korrekt ist.",
+      http429: "Zu viele Anfragen. Bitte warte einen Moment und versuche es erneut.",
+      http500: "Der KI-Dienst hat einen internen Fehler. Versuche Ollama neu zu starten.",
+      http503: "Der KI-Dienst ist vorübergehend nicht verfügbar. Er startet möglicherweise gerade — versuche es gleich nochmal.",
+      imageGenTimeout: "Bildgenerierung Zeitüberschreitung. Prüfe, ob AUTOMATIC1111 mit GPU-Beschleunigung läuft.",
+      voiceTestFailed: "Sprachtest fehlgeschlagen: {error}",
+      voiceTestSuccess: "Sprachtest erfolgreich! Audiowiedergabe gestartet.",
+      zonosTestFailed: "Zonos-Test fehlgeschlagen: {error}\n\nStelle sicher, dass Zonos läuft.",
+      zonosTestSuccess: "Zonos-Test erfolgreich!",
+      missingPaths: "Bitte konfiguriere sowohl den Piper-Pfad als auch den Sprachmodell-Pfad in den Einstellungen.",
+      imageGenConnection: "Keine Verbindung zur Bildgenerierungs-API. Stelle sicher, dass AUTOMATIC1111 / Stability Matrix läuft.",
+      imageGenTimedOut: "Bildgenerierungs-API Zeitüberschreitung. Stelle sicher, dass die WebUI vollständig geladen ist.",
+      copyFailed: "Kopieren in Zwischenablage fehlgeschlagen"
     },
     commands: {
       helpTitle: "── Befehle ──",
@@ -1499,7 +1541,28 @@ export const translations = {
       failedToExport: "Error al exportar chat",
       timeout: "Tiempo de espera agotado. Ollama puede estar sobrecargado — inténtalo de nuevo.",
       sendError: "Error al obtener respuesta. Por favor, inténtalo de nuevo.",
-      noOllamaResponse: "El modelo devolvió respuesta vacía (modo think). Reintentado automáticamente — por favor envía de nuevo."
+      noOllamaResponse: "El modelo devolvió respuesta vacía (modo think). Reintentado automáticamente — por favor envía de nuevo.",
+      copyFailed: "Error al copiar al portapapeles",
+      copied: "Copiado"
+    },
+    errors: {
+      connectionRefused: "No se puede conectar a Ollama. Asegúrate de que Ollama esté ejecutándose.",
+      timeout: "Tiempo de espera agotado. El modelo de IA puede estar sobrecargado — inténtalo de nuevo.",
+      noOllamaResponse: "El modelo devolvió respuesta vacía. Reintentado automáticamente — envía de nuevo.",
+      noModelsInstalled: "No hay modelos de IA instalados. Abre una terminal y ejecuta: ollama pull hermes3",
+      http404: "Servicio no encontrado. Verifica que la URL sea correcta.",
+      http429: "Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.",
+      http500: "El servicio de IA encontró un error interno. Intenta reiniciar Ollama.",
+      http503: "El servicio de IA no está disponible temporalmente. Puede estar iniciándose — inténtalo en un momento.",
+      imageGenTimeout: "Generación de imagen agotó tiempo. Verifica que AUTOMATIC1111 esté ejecutándose con aceleración GPU.",
+      voiceTestFailed: "Prueba de voz fallida: {error}",
+      voiceTestSuccess: "¡Prueba de voz exitosa! Reproducción de audio iniciada.",
+      zonosTestFailed: "Prueba de Zonos fallida: {error}\n\nAsegúrate de que Zonos esté ejecutándose.",
+      zonosTestSuccess: "¡Prueba de Zonos exitosa!",
+      missingPaths: "Configura tanto la ruta del ejecutable Piper como la ruta del modelo de voz en Configuración.",
+      imageGenConnection: "No se puede conectar a la API de generación de imágenes. Asegúrate de que AUTOMATIC1111 / Stability Matrix esté ejecutándose.",
+      imageGenTimedOut: "API de generación de imágenes agotó tiempo. Asegúrate de que la WebUI esté completamente cargada.",
+      copyFailed: "Error al copiar al portapapeles"
     },
     commands: {
       helpTitle: "── Comandos ──",
@@ -2121,7 +2184,28 @@ export const translations = {
       failedToExport: "导出失败",
       timeout: "请求超时。Ollama 可能过载 — 请重试。",
       sendError: "获取回复失败，请重试。",
-      noOllamaResponse: "模型返回空响应（思考模式）。已自动重试 — 请再次发送。"
+      noOllamaResponse: "模型返回空响应（思考模式）。已自动重试 — 请再次发送。",
+      copyFailed: "复制到剪贴板失败",
+      copied: "已复制"
+    },
+    errors: {
+      connectionRefused: "无法连接到Ollama。请确保Ollama正在运行。",
+      timeout: "请求超时。AI模型可能过载 — 请重试。",
+      noOllamaResponse: "模型返回空响应。已自动重试 — 请再次发送。",
+      noModelsInstalled: "未安装AI模型。打开终端并运行：ollama pull hermes3",
+      http404: "未找到服务。请检查URL是否正确。",
+      http429: "请求过多。请稍等片刻再试。",
+      http500: "AI服务遇到内部错误。请尝试重启Ollama。",
+      http503: "AI服务暂时不可用。可能正在启动 — 请稍后再试。",
+      imageGenTimeout: "图像生成超时。请检查AUTOMATIC1111是否使用GPU加速运行。",
+      voiceTestFailed: "语音测试失败：{error}",
+      voiceTestSuccess: "语音测试成功！音频播放已开始。",
+      zonosTestFailed: "Zonos测试失败：{error}\n\n请确保Zonos正在运行。",
+      zonosTestSuccess: "Zonos测试成功！",
+      missingPaths: "请在设置中配置Piper可执行文件路径和语音模型路径。",
+      imageGenConnection: "无法连接到图像生成API。请确保AUTOMATIC1111 / Stability Matrix正在运行。",
+      imageGenTimedOut: "图像生成API超时。请确保WebUI已完全加载。",
+      copyFailed: "复制到剪贴板失败"
     },
     commands: {
       helpTitle: "── 命令 ──",
@@ -2742,7 +2826,28 @@ export const translations = {
       failedToExport: "Échec de l'exportation",
       timeout: "Délai dépassé. Ollama est peut-être surchargé — réessayez.",
       sendError: "Échec de la réponse. Veuillez réessayer.",
-      noOllamaResponse: "Le modèle a renvoyé une réponse vide (mode think). Réessayé automatiquement — veuillez renvoyer."
+      noOllamaResponse: "Le modèle a renvoyé une réponse vide (mode think). Réessayé automatiquement — veuillez renvoyer.",
+      copyFailed: "Échec de la copie dans le presse-papiers",
+      copied: "Copié"
+    },
+    errors: {
+      connectionRefused: "Impossible de se connecter à Ollama. Assurez-vous qu'Ollama fonctionne sur votre machine.",
+      timeout: "Délai dépassé. Le modèle IA est peut-être surchargé — réessayez.",
+      noOllamaResponse: "Le modèle a renvoyé une réponse vide. Réessayé automatiquement — veuillez renvoyer.",
+      noModelsInstalled: "Aucun modèle IA installé. Ouvrez un terminal et exécutez : ollama pull hermes3",
+      http404: "Service introuvable. Vérifiez que l'URL est correcte.",
+      http429: "Trop de requêtes. Veuillez patienter un instant et réessayer.",
+      http500: "Le service IA a rencontré une erreur interne. Essayez de redémarrer Ollama.",
+      http503: "Le service IA est temporairement indisponible. Il est peut-être en cours de démarrage — réessayez dans un instant.",
+      imageGenTimeout: "Génération d'image expirée. Vérifiez que AUTOMATIC1111 fonctionne avec accélération GPU.",
+      voiceTestFailed: "Test vocal échoué : {error}",
+      voiceTestSuccess: "Test vocal réussi ! Lecture audio démarrée.",
+      zonosTestFailed: "Test Zonos échoué : {error}\n\nAssurez-vous que Zonos fonctionne.",
+      zonosTestSuccess: "Test Zonos réussi !",
+      missingPaths: "Veuillez configurer le chemin de l'exécutable Piper et le chemin du modèle vocal dans les Paramètres.",
+      imageGenConnection: "Impossible de se connecter à l'API de génération d'images. Assurez-vous que AUTOMATIC1111 / Stability Matrix fonctionne.",
+      imageGenTimedOut: "API de génération d'images expirée. Assurez-vous que la WebUI est complètement chargée.",
+      copyFailed: "Échec de la copie dans le presse-papiers"
     },
     commands: {
       helpTitle: "── Commandes ──",
@@ -3363,7 +3468,28 @@ export const translations = {
       failedToExport: "Esportazione fallita",
       timeout: "Timeout della richiesta. Ollama potrebbe essere sovraccarico — riprova.",
       sendError: "Impossibile ottenere risposta. Per favore riprova.",
-      noOllamaResponse: "Il modello ha restituito risposta vuota (modalità think). Riprovato automaticamente — invia di nuovo."
+      noOllamaResponse: "Il modello ha restituito risposta vuota (modalità think). Riprovato automaticamente — invia di nuovo.",
+      copyFailed: "Copia negli appunti non riuscita",
+      copied: "Copiato"
+    },
+    errors: {
+      connectionRefused: "Impossibile connettersi a Ollama. Assicurati che Ollama sia in esecuzione.",
+      timeout: "Timeout della richiesta. Il modello IA potrebbe essere sovraccarico — riprova.",
+      noOllamaResponse: "Il modello ha restituito risposta vuota. Riprovato automaticamente — invia di nuovo.",
+      noModelsInstalled: "Nessun modello IA installato. Apri un terminale ed esegui: ollama pull hermes3",
+      http404: "Servizio non trovato. Verifica che l'URL sia corretto.",
+      http429: "Troppe richieste. Attendi un momento e riprova.",
+      http500: "Il servizio IA ha riscontrato un errore interno. Prova a riavviare Ollama.",
+      http503: "Il servizio IA è temporaneamente non disponibile. Potrebbe essere in fase di avvio — riprova tra un momento.",
+      imageGenTimeout: "Generazione immagine scaduta. Verifica che AUTOMATIC1111 sia in esecuzione con accelerazione GPU.",
+      voiceTestFailed: "Test vocale fallito: {error}",
+      voiceTestSuccess: "Test vocale riuscito! Riproduzione audio avviata.",
+      zonosTestFailed: "Test Zonos fallito: {error}\n\nAssicurati che Zonos sia in esecuzione.",
+      zonosTestSuccess: "Test Zonos riuscito!",
+      missingPaths: "Configura sia il percorso dell'eseguibile Piper che il percorso del modello vocale nelle Impostazioni.",
+      imageGenConnection: "Impossibile connettersi all'API di generazione immagini. Assicurati che AUTOMATIC1111 / Stability Matrix sia in esecuzione.",
+      imageGenTimedOut: "API di generazione immagini scaduta. Assicurati che la WebUI sia completamente caricata.",
+      copyFailed: "Copia negli appunti non riuscita"
     },
     commands: {
       helpTitle: "── Comandi ──",
@@ -3978,7 +4104,28 @@ export const translations = {
       failedToExport: "Falha ao exportar",
       timeout: "Tempo esgotado. Ollama pode estar sobrecarregado — tente novamente.",
       sendError: "Falha ao obter resposta. Por favor, tente novamente.",
-      noOllamaResponse: "Modelo retornou resposta vazia (modo think). Tentado novamente automaticamente — envie novamente."
+      noOllamaResponse: "Modelo retornou resposta vazia (modo think). Tentado novamente automaticamente — envie novamente.",
+      copyFailed: "Falha ao copiar para a área de transferência",
+      copied: "Copiado"
+    },
+    errors: {
+      connectionRefused: "Não é possível conectar ao Ollama. Certifique-se de que o Ollama está em execução.",
+      timeout: "Tempo esgotado. O modelo de IA pode estar sobrecarregado — tente novamente.",
+      noOllamaResponse: "Modelo retornou resposta vazia. Tentado novamente automaticamente — envie novamente.",
+      noModelsInstalled: "Nenhum modelo de IA instalado. Abra um terminal e execute: ollama pull hermes3",
+      http404: "Serviço não encontrado. Verifique se a URL está correta.",
+      http429: "Muitas solicitações. Aguarde um momento e tente novamente.",
+      http500: "O serviço de IA encontrou um erro interno. Tente reiniciar o Ollama.",
+      http503: "O serviço de IA está temporariamente indisponível. Pode estar iniciando — tente novamente em um momento.",
+      imageGenTimeout: "Geração de imagem expirou. Verifique se AUTOMATIC1111 está rodando com aceleração GPU.",
+      voiceTestFailed: "Teste de voz falhou: {error}",
+      voiceTestSuccess: "Teste de voz bem-sucedido! Reprodução de áudio iniciada.",
+      zonosTestFailed: "Teste Zonos falhou: {error}\n\nCertifique-se de que o Zonos está em execução.",
+      zonosTestSuccess: "Teste Zonos bem-sucedido!",
+      missingPaths: "Configure o caminho do executável Piper e o caminho do modelo de voz nas Configurações.",
+      imageGenConnection: "Não é possível conectar à API de geração de imagens. Certifique-se de que AUTOMATIC1111 / Stability Matrix está em execução.",
+      imageGenTimedOut: "API de geração de imagens expirou. Certifique-se de que a WebUI está completamente carregada.",
+      copyFailed: "Falha ao copiar para a área de transferência"
     },
     commands: {
       helpTitle: "── Comandos ──",
@@ -4599,7 +4746,28 @@ export const translations = {
       failedToExport: "Ошибка экспорта",
       timeout: "Превышено время ожидания. Ollama перегружен — попробуйте снова.",
       sendError: "Не удалось получить ответ. Попробуйте снова.",
-      noOllamaResponse: "Модель вернула пустой ответ (режим думания). Автоматически повторено — отправьте снова."
+      noOllamaResponse: "Модель вернула пустой ответ (режим думания). Автоматически повторено — отправьте снова.",
+      copyFailed: "Не удалось скопировать в буфер обмена",
+      copied: "Скопировано"
+    },
+    errors: {
+      connectionRefused: "Не удаётся подключиться к Ollama. Убедитесь, что Ollama запущена.",
+      timeout: "Превышено время ожидания. Модель ИИ может быть перегружена — попробуйте снова.",
+      noOllamaResponse: "Модель вернула пустой ответ. Автоматически повторено — отправьте снова.",
+      noModelsInstalled: "Модели ИИ не установлены. Откройте терминал и выполните: ollama pull hermes3",
+      http404: "Сервис не найден. Проверьте правильность URL.",
+      http429: "Слишком много запросов. Подождите немного и попробуйте снова.",
+      http500: "Сервис ИИ столкнулся с внутренней ошибкой. Попробуйте перезапустить Ollama.",
+      http503: "Сервис ИИ временно недоступен. Возможно, он запускается — попробуйте через минуту.",
+      imageGenTimeout: "Генерация изображения истекла. Проверьте, работает ли AUTOMATIC1111 с ускорением GPU.",
+      voiceTestFailed: "Тест голоса не пройден: {error}",
+      voiceTestSuccess: "Тест голоса пройден! Воспроизведение аудио начато.",
+      zonosTestFailed: "Тест Zonos не пройден: {error}\n\nУбедитесь, что Zonos запущен.",
+      zonosTestSuccess: "Тест Zonos пройден!",
+      missingPaths: "Настройте путь к исполняемому файлу Piper и путь к голосовой модели в Настройках.",
+      imageGenConnection: "Не удаётся подключиться к API генерации изображений. Убедитесь, что AUTOMATIC1111 / Stability Matrix запущен.",
+      imageGenTimedOut: "API генерации изображений истекло. Убедитесь, что WebUI полностью загружен.",
+      copyFailed: "Не удалось скопировать в буфер обмена"
     },
     commands: {
       helpTitle: "── Команды ──",
@@ -5220,7 +5388,28 @@ export const translations = {
       failedToExport: "失敗",
       timeout: "タイムアウト。Ollamaが過負荷かもしれません — 再試行してください。",
       sendError: "応答の取得に失敗しました。再試行してください。",
-      noOllamaResponse: "モデルが空の応答を返しました（思考モード）。自動再試行済み — 再送信してください。"
+      noOllamaResponse: "モデルが空の応答を返しました（思考モード）。自動再試行済み — 再送信してください。",
+      copyFailed: "クリップボードへのコピーに失敗しました",
+      copied: "コピーしました"
+    },
+    errors: {
+      connectionRefused: "Ollamaに接続できません。Ollamaが実行中であることを確認してください。",
+      timeout: "リクエストがタイムアウトしました。AIモデルが過負荷の可能性があります — 再試行してください。",
+      noOllamaResponse: "モデルが空の応答を返しました。自動再試行済み — 再送信してください。",
+      noModelsInstalled: "AIモデルがインストールされていません。ターミナルを開いて実行: ollama pull hermes3",
+      http404: "サービスが見つかりません。URLが正しいか確認してください。",
+      http429: "リクエストが多すぎます。しばらく待ってから再試行してください。",
+      http500: "AIサービスで内部エラーが発生しました。Ollamaの再起動をお試しください。",
+      http503: "AIサービスが一時的に利用できません。起動中の可能性があります — しばらくしてから再試行してください。",
+      imageGenTimeout: "画像生成がタイムアウトしました。AUTOMATIC1111がGPUアクセラレーションで実行されているか確認してください。",
+      voiceTestFailed: "音声テスト失敗: {error}",
+      voiceTestSuccess: "音声テスト成功！オーディオ再生が開始されました。",
+      zonosTestFailed: "Zonosテスト失敗: {error}\n\nZonosが実行中であることを確認してください。",
+      zonosTestSuccess: "Zonosテスト成功！",
+      missingPaths: "設定でPiper実行ファイルのパスと音声モデルのパスを設定してください。",
+      imageGenConnection: "画像生成APIに接続できません。AUTOMATIC1111 / Stability Matrixが実行中であることを確認してください。",
+      imageGenTimedOut: "画像生成APIがタイムアウトしました。WebUIが完全にロードされていることを確認してください。",
+      copyFailed: "クリップボードへのコピーに失敗しました"
     },
     commands: {
       helpTitle: "── コマンド ──",
@@ -5841,7 +6030,28 @@ export const translations = {
       failedToExport: "실패",
       timeout: "요청 시간 초과. Ollama가 과부하 상태일 수 있습니다 — 다시 시도하세요.",
       sendError: "응답을 가져오지 못했습니다. 다시 시도해 주세요.",
-      noOllamaResponse: "모델이 빈 응답을 반환했습니다(생각 모드). 자동으로 재시도됨 — 다시 보내주세요."
+      noOllamaResponse: "모델이 빈 응답을 반환했습니다(생각 모드). 자동으로 재시도됨 — 다시 보내주세요.",
+      copyFailed: "클립보드에 복사 실패",
+      copied: "복사됨"
+    },
+    errors: {
+      connectionRefused: "Ollama에 연결할 수 없습니다. Ollama가 실행 중인지 확인하세요.",
+      timeout: "요청 시간 초과. AI 모델이 과부하 상태일 수 있습니다 — 다시 시도하세요.",
+      noOllamaResponse: "모델이 빈 응답을 반환했습니다. 자동으로 재시도됨 — 다시 보내주세요.",
+      noModelsInstalled: "AI 모델이 설치되지 않았습니다. 터미널을 열고 실행: ollama pull hermes3",
+      http404: "서비스를 찾을 수 없습니다. URL이 올바른지 확인하세요.",
+      http429: "요청이 너무 많습니다. 잠시 기다린 후 다시 시도하세요.",
+      http500: "AI 서비스에서 내부 오류가 발생했습니다. Ollama를 재시작해 보세요.",
+      http503: "AI 서비스를 일시적으로 사용할 수 없습니다. 시작 중일 수 있습니다 — 잠시 후 다시 시도하세요.",
+      imageGenTimeout: "이미지 생성 시간 초과. AUTOMATIC1111이 GPU 가속으로 실행 중인지 확인하세요.",
+      voiceTestFailed: "음성 테스트 실패: {error}",
+      voiceTestSuccess: "음성 테스트 성공! 오디오 재생이 시작되었습니다.",
+      zonosTestFailed: "Zonos 테스트 실패: {error}\n\nZonos가 실행 중인지 확인하세요.",
+      zonosTestSuccess: "Zonos 테스트 성공!",
+      missingPaths: "설정에서 Piper 실행 파일 경로와 음성 모델 경로를 설정하세요.",
+      imageGenConnection: "이미지 생성 API에 연결할 수 없습니다. AUTOMATIC1111 / Stability Matrix가 실행 중인지 확인하세요.",
+      imageGenTimedOut: "이미지 생성 API 시간 초과. WebUI가 완전히 로드되었는지 확인하세요.",
+      copyFailed: "클립보드에 복사 실패"
     },
     commands: {
       helpTitle: "── 명령어 ──",
@@ -6457,7 +6667,28 @@ export const translations = {
       failedToExport: "فشل التصدير",
       timeout: "انتهت مهلة الطلب. قد يكون Ollama مثقلاً — حاول مرة أخرى.",
       sendError: "فشل الحصول على رد. يرجى المحاولة مرة أخرى.",
-      noOllamaResponse: "أعاد النموذج استجابة فارغة (وضع التفكير). تمت إعادة المحاولة تلقائياً — أرسل مرة أخرى."
+      noOllamaResponse: "أعاد النموذج استجابة فارغة (وضع التفكير). تمت إعادة المحاولة تلقائياً — أرسل مرة أخرى.",
+      copyFailed: "فشل النسخ إلى الحافظة",
+      copied: "تم النسخ"
+    },
+    errors: {
+      connectionRefused: "لا يمكن الاتصال بـ Ollama. تأكد من أن Ollama يعمل على جهازك.",
+      timeout: "انتهت مهلة الطلب. قد يكون نموذج الذكاء الاصطناعي مثقلاً — حاول مرة أخرى.",
+      noOllamaResponse: "أعاد النموذج استجابة فارغة. تمت إعادة المحاولة تلقائياً — أرسل مرة أخرى.",
+      noModelsInstalled: "لم يتم تثبيت نماذج ذكاء اصطناعي. افتح الطرفية ونفذ: ollama pull hermes3",
+      http404: "الخدمة غير موجودة. تحقق من صحة الرابط.",
+      http429: "طلبات كثيرة جداً. انتظر لحظة وحاول مرة أخرى.",
+      http500: "واجهت خدمة الذكاء الاصطناعي خطأ داخلياً. حاول إعادة تشغيل Ollama.",
+      http503: "خدمة الذكاء الاصطناعي غير متوفرة مؤقتاً. قد تكون قيد التشغيل — حاول بعد لحظة.",
+      imageGenTimeout: "انتهت مهلة توليد الصورة. تحقق من أن AUTOMATIC1111 يعمل مع تسريع GPU.",
+      voiceTestFailed: "فشل اختبار الصوت: {error}",
+      voiceTestSuccess: "نجح اختبار الصوت! بدأ تشغيل الصوت.",
+      zonosTestFailed: "فشل اختبار Zonos: {error}\n\nتأكد من أن Zonos يعمل.",
+      zonosTestSuccess: "نجح اختبار Zonos!",
+      missingPaths: "يرجى تكوين مسار ملف Piper التنفيذي ومسار نموذج الصوت في الإعدادات.",
+      imageGenConnection: "لا يمكن الاتصال بـ API توليد الصور. تأكد من أن AUTOMATIC1111 / Stability Matrix يعمل.",
+      imageGenTimedOut: "انتهت مهلة API توليد الصور. تأكد من أن WebUI محملة بالكامل.",
+      copyFailed: "فشل النسخ إلى الحافظة"
     },
     commands: {
       helpTitle: "── الأوامر ──",
@@ -7079,7 +7310,28 @@ export const translations = {
       failedToExport: "निर्यात विफल",
       timeout: "अनुरोध टाइम आउट। Ollama अधिभारित हो सकता है — पुनः प्रयास करें।",
       sendError: "प्रतिक्रिया प्राप्त करने में विफल। कृपया पुनः प्रयास करें।",
-      noOllamaResponse: "मॉडल ने खाली प्रतिक्रिया दी (थिंक मोड)। स्वचालित रूप से पुनः प्रयास किया — कृपया फिर से भेजें।"
+      noOllamaResponse: "मॉडल ने खाली प्रतिक्रिया दी (थिंक मोड)। स्वचालित रूप से पुनः प्रयास किया — कृपया फिर से भेजें।",
+      copyFailed: "क्लिपबोर्ड में कॉपी विफल",
+      copied: "कॉपी किया"
+    },
+    errors: {
+      connectionRefused: "Ollama से कनेक्ट नहीं हो सकता। सुनिश्चित करें कि Ollama चल रहा है।",
+      timeout: "अनुरोध टाइम आउट। AI मॉडल अधिभारित हो सकता है — पुनः प्रयास करें।",
+      noOllamaResponse: "मॉडल ने खाली प्रतिक्रिया दी। स्वचालित रूप से पुनः प्रयास किया — फिर से भेजें।",
+      noModelsInstalled: "कोई AI मॉडल इंस्टॉल नहीं है। टर्मिनल खोलें और चलाएं: ollama pull hermes3",
+      http404: "सेवा नहीं मिली। URL सही है या नहीं जांचें।",
+      http429: "बहुत अधिक अनुरोध। कृपया एक क्षण प्रतीक्षा करें और पुनः प्रयास करें।",
+      http500: "AI सेवा में आंतरिक त्रुटि आई। Ollama पुनः आरंभ करने का प्रयास करें।",
+      http503: "AI सेवा अस्थायी रूप से अनुपलब्ध है। यह शुरू हो रही हो सकती है — एक क्षण में पुनः प्रयास करें।",
+      imageGenTimeout: "छवि जनरेशन टाइम आउट। जांचें कि AUTOMATIC1111 GPU त्वरण के साथ चल रहा है।",
+      voiceTestFailed: "वॉयस टेस्ट विफल: {error}",
+      voiceTestSuccess: "वॉयस टेस्ट सफल! ऑडियो प्लेबैक शुरू हुआ।",
+      zonosTestFailed: "Zonos टेस्ट विफल: {error}\n\nसुनिश्चित करें कि Zonos चल रहा है।",
+      zonosTestSuccess: "Zonos टेस्ट सफल!",
+      missingPaths: "कृपया सेटिंग्स में Piper एक्जीक्यूटेबल पथ और वॉयस मॉडल पथ कॉन्फ़िगर करें।",
+      imageGenConnection: "छवि जनरेशन API से कनेक्ट नहीं हो सकता। सुनिश्चित करें कि AUTOMATIC1111 / Stability Matrix चल रहा है।",
+      imageGenTimedOut: "छवि जनरेशन API टाइम आउट। सुनिश्चित करें कि WebUI पूरी तरह लोड है।",
+      copyFailed: "क्लिपबोर्ड में कॉपी विफल"
     },
     commands: {
       helpTitle: "── कमांड ──",
@@ -7701,7 +7953,28 @@ export const translations = {
       failedToExport: "Dışa aktarma başarısız",
       timeout: "İstek zaman aşımına uğradı. Ollama aşırı yüklenmiş olabilir — tekrar deneyin.",
       sendError: "Yanıt alınamadı. Lütfen tekrar deneyin.",
-      noOllamaResponse: "Model boş yanıt döndürdü (düşünme modu). Otomatik olarak yeniden denendi — lütfen tekrar gönderin."
+      noOllamaResponse: "Model boş yanıt döndürdü (düşünme modu). Otomatik olarak yeniden denendi — lütfen tekrar gönderin.",
+      copyFailed: "Panoya kopyalama başarısız",
+      copied: "Kopyalandı"
+    },
+    errors: {
+      connectionRefused: "Ollama'ya bağlanılamıyor. Ollama'nın çalıştığından emin olun.",
+      timeout: "İstek zaman aşımına uğradı. AI modeli aşırı yüklenmiş olabilir — tekrar deneyin.",
+      noOllamaResponse: "Model boş yanıt döndürdü. Otomatik olarak yeniden denendi — tekrar gönderin.",
+      noModelsInstalled: "AI modeli yüklü değil. Terminal açın ve çalıştırın: ollama pull hermes3",
+      http404: "Hizmet bulunamadı. URL'nin doğru olup olmadığını kontrol edin.",
+      http429: "Çok fazla istek. Lütfen bir an bekleyip tekrar deneyin.",
+      http500: "AI hizmeti dahili bir hata ile karşılaştı. Ollama'yı yeniden başlatmayı deneyin.",
+      http503: "AI hizmeti geçici olarak kullanılamıyor. Başlatılıyor olabilir — bir an sonra tekrar deneyin.",
+      imageGenTimeout: "Görüntü oluşturma zaman aşımına uğradı. AUTOMATIC1111'in GPU hızlandırması ile çalıştığını kontrol edin.",
+      voiceTestFailed: "Ses testi başarısız: {error}",
+      voiceTestSuccess: "Ses testi başarılı! Ses çalma başladı.",
+      zonosTestFailed: "Zonos testi başarısız: {error}\n\nZonos'un çalıştığından emin olun.",
+      zonosTestSuccess: "Zonos testi başarılı!",
+      missingPaths: "Lütfen Ayarlar'da hem Piper yürütülebilir dosya yolunu hem de ses modeli yolunu yapılandırın.",
+      imageGenConnection: "Görüntü oluşturma API'sine bağlanılamıyor. AUTOMATIC1111 / Stability Matrix'in çalıştığından emin olun.",
+      imageGenTimedOut: "Görüntü oluşturma API'si zaman aşımına uğradı. WebUI'nin tamamen yüklendiğinden emin olun.",
+      copyFailed: "Panoya kopyalama başarısız"
     },
     commands: {
       helpTitle: "── Komutlar ──",

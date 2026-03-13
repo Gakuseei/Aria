@@ -283,6 +283,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // v0.2.6: Impersonate (Write for me)
   const [isImpersonating, setIsImpersonating] = useState(false);
 
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 120) + 'px';
+    }
+  }, [input]);
+
   // v0.2.5: Image Generation Modal
   const [showImageModal, setShowImageModal] = useState(false);
   const [imagePrompt, setImagePrompt] = useState('');
@@ -648,11 +655,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       }
     } finally {
       setIsImpersonating(false);
-      if (inputRef.current) {
-        inputRef.current.style.height = 'auto';
-        inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 120) + 'px';
-        inputRef.current.focus();
-      }
+      inputRef.current?.focus();
     }
   };
 
@@ -1685,7 +1688,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             }}
             placeholder={t.chat.messageCharacter.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
             disabled={isLoading}
-            className="chat-input flex-1 min-w-0 bg-transparent border-none outline-none ring-0 text-white text-lg placeholder-zinc-500 focus:outline-none focus:ring-0 disabled:opacity-50 px-2 resize-none overflow-hidden"
+            className="chat-input flex-1 min-w-0 bg-transparent border-none outline-none ring-0 text-white text-lg placeholder-zinc-500 focus:outline-none focus:ring-0 disabled:opacity-50 px-2 resize-none overflow-y-auto"
           />
           <button
             onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}

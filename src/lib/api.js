@@ -173,6 +173,10 @@ async function getModelCtx(ollamaUrl, model, contextPreset = 'medium') {
 /**
  * Unload model from Ollama to fully clear KV cache.
  * Call this when switching characters / leaving chat.
+ * @param {Object} settings - App settings
+ * @param {string} [settings.ollamaUrl] - Ollama server URL
+ * @param {string} [settings.ollamaModel] - Model name to unload
+ * @returns {Promise<void>}
  */
 export async function unloadOllamaModel(settings) {
   try {
@@ -521,7 +525,16 @@ export async function impersonateUser(history, charName, userName, passionLevel,
 
 /**
  * Build system prompt from template slots.
+ * Assembles W++ character definition, instructions, scenario, example dialogue,
+ * author's note, rules, passion depth injection, and unchained mode into a single prompt.
  * Built ONCE per session, never rebuilt mid-conversation.
+ * @param {Object} options
+ * @param {Object} options.character - Character object with name, systemPrompt, instructions, scenario, etc.
+ * @param {string} [options.userName='User'] - User's display name for template resolution
+ * @param {string} [options.userGender='male'] - User's gender for pronoun context
+ * @param {number} [options.passionLevel=0] - Current passion level (0-100), controls depth injection
+ * @param {boolean} [options.unchainedMode=false] - Whether unchained mode is active
+ * @returns {string} Complete system prompt string
  */
 function buildSystemPrompt({ character, userName = 'User', userGender = 'male', passionLevel = 0, unchainedMode = false }) {
   const charName = character.name;
@@ -577,6 +590,22 @@ function buildSystemPrompt({ character, userName = 'User', userGender = 'male', 
 // CORE API - MESSAGE SENDING (OLLAMA ONLY)
 // ============================================================================
 
+/**
+ * Send a chat message to Ollama and return the AI response.
+ * Handles system prompt construction, context windowing, streaming, retry on empty response,
+ * transcript artifact cleaning, and API stats reporting.
+ * @param {string} userMessage - User's message text
+ * @param {Object} character - Character object (name, systemPrompt, instructions, etc.)
+ * @param {Object} characterContext - Character context (unused, kept for API compat)
+ * @param {Array} [conversationHistory=[]] - Message history array ({role, content})
+ * @param {string|null} [sessionId=null] - Session ID for passion level tracking
+ * @param {boolean} [unchainedMode=false] - Whether unchained mode is active
+ * @param {Function|null} [onApiStats=null] - Callback receiving {model, responseTime, wordCount, wordsPerSecond, tokens, promptTokens, passionLevel}
+ * @param {Object|null} [settingsOverride=null] - Settings object to use instead of loading from storage
+ * @param {boolean} [skipPassionUpdate=false] - Skip passion scoring for this message
+ * @param {Function|null} [onToken=null] - Streaming callback, receives each token chunk as string
+ * @returns {Promise<{success: boolean, message?: string, conversationHistory?: Array, passionLevel?: number, modelCtx?: number, stats?: Object, error?: string}>}
+ */
 export const sendMessage = async (
   userMessage,
   character,
@@ -584,10 +613,10 @@ export const sendMessage = async (
   conversationHistory = [],
   sessionId = null,
   unchainedMode = false,
-  onApiStats = null,  // v0.2.5: NEW - Callback for API Monitor stats
-  settingsOverride = null,  // v0.2.5: FIX - Accept settings directly to avoid race conditions
+  onApiStats = null,
+  settingsOverride = null,
   skipPassionUpdate = false,
-  onToken = null  // Streaming callback — receives each token chunk as string
+  onToken = null
 ) => {
   const startTime = Date.now();  // v0.2.5: Track response time
   
@@ -850,6 +879,12 @@ export const sendMessage = async (
 // SETTINGS MANAGEMENT
 // ============================================================================
 
+/**
+ * Persist app settings via Electron IPC or localStorage fallback.
+ * Merges provided settings with DEFAULT_SETTINGS before saving.
+ * @param {Object} settings - Partial or complete settings object
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
 export const saveSettings = async (settings) => {
   try {
     if (!settings || typeof settings !== 'object') {
@@ -879,6 +914,11 @@ export const saveSettings = async (settings) => {
   }
 };
 
+/**
+ * Load app settings from Electron IPC or localStorage fallback.
+ * Returns DEFAULT_SETTINGS merged with stored values; never returns null.
+ * @returns {Promise<Object>} Complete settings object
+ */
 export const loadSettings = async () => {
   try {
     if (isElectron()) {
@@ -914,6 +954,13 @@ export const loadSettings = async () => {
 // SESSION MANAGEMENT WITH HARD RESET
 // ============================================================================
 
+/**
+ * Save a chat session to persistent storage via Electron IPC or localStorage.
+ * Ensures required fields (characterName, conversationHistory, passionLevel, timestamps) are present.
+ * @param {string} sessionId - Unique session identifier
+ * @param {Object} sessionData - Session data including conversationHistory, characterName, passionLevel
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
 export const saveSession = async (sessionId, sessionData) => {
   try {
     if (!sessionId) throw new Error('Session ID required');
@@ -948,6 +995,11 @@ export const saveSession = async (sessionId, sessionData) => {
   }
 };
 
+/**
+ * Load a chat session from persistent storage.
+ * @param {string} sessionId - Unique session identifier
+ * @returns {Promise<{success: boolean, session?: Object, error?: string}>}
+ */
 export const loadSession = async (sessionId) => {
   try {
     if (!sessionId) throw new Error('Session ID required');
@@ -974,6 +1026,11 @@ export const loadSession = async (sessionId) => {
   }
 };
 
+/**
+ * Delete a chat session from persistent storage.
+ * @param {string} sessionId - Unique session identifier
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
 export const deleteSession = async (sessionId) => {
   try {
     if (!sessionId) throw new Error('Session ID required');
@@ -999,6 +1056,10 @@ export const deleteSession = async (sessionId) => {
   }
 };
 
+/**
+ * List all saved chat sessions.
+ * @returns {Promise<{success: boolean, sessions: Array<Object>, error?: string}>}
+ */
 export const listSessions = async () => {
   try {
     if (isElectron()) {
@@ -1029,8 +1090,9 @@ export const listSessions = async () => {
 // ============================================================================
 
 /**
- * Test Ollama connection
- * v8.1: RE-EXPORTED for Settings auto-detect
+ * Test Ollama connection by fetching the model list endpoint.
+ * @param {string} [url='http://127.0.0.1:11434'] - Ollama server URL
+ * @returns {Promise<{success: boolean, message: string}>}
  */
 export const testOllamaConnection = async (url = 'http://127.0.0.1:11434') => {
   try {
@@ -1059,9 +1121,9 @@ export const testOllamaConnection = async (url = 'http://127.0.0.1:11434') => {
 };
 
 /**
- * Fetch available Ollama models
- * v8.1: RE-EXPORTED for Settings auto-detect dropdown
- * v1.1: STRICT FILTER - Blacklist embedding models (nomic-embed-text, BERT, etc.)
+ * Fetch available chat models from Ollama, filtering out embedding/BERT models.
+ * @param {string} [ollamaUrl='http://127.0.0.1:11434'] - Ollama server URL
+ * @returns {Promise<string[]>} Array of model name strings
  */
 export const fetchOllamaModels = async (ollamaUrl = 'http://127.0.0.1:11434') => {
   try {
@@ -1103,8 +1165,10 @@ export const fetchOllamaModels = async (ollamaUrl = 'http://127.0.0.1:11434') =>
 };
 
 /**
- * Auto-detect and set the first available Ollama model
- * This ensures the app always has a valid model configured
+ * Auto-detect and set the first available Ollama model if the current one is missing.
+ * Checks if the configured model exists; if not, selects the first available and saves settings.
+ * @param {string} [ollamaUrl='http://127.0.0.1:11434'] - Ollama server URL
+ * @returns {Promise<{success: boolean, model?: string, models?: string[], changed?: boolean, message?: string, error?: string}>}
  */
 export const autoDetectAndSetModel = async (ollamaUrl = 'http://127.0.0.1:11434') => {
   try {
@@ -1168,10 +1232,19 @@ export const autoDetectAndSetModel = async (ollamaUrl = 'http://127.0.0.1:11434'
 // UTILITY FUNCTIONS
 // ============================================================================
 
+/**
+ * Generate a unique session ID using timestamp and random suffix.
+ * @returns {string} Session ID in format "session_{timestamp}_{random}"
+ */
 export const generateSessionId = () => {
   return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
+/**
+ * Convert an image File object to a base64 data URL string.
+ * @param {File} file - Image file to convert (must have type starting with 'image/')
+ * @returns {Promise<string>} Base64-encoded data URL
+ */
 export const fileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     if (!file) {
@@ -1195,6 +1268,14 @@ export const fileToBase64 = (file) => {
 // CHARACTER MANAGEMENT (PRESERVED)
 // ============================================================================
 
+/**
+ * Save or update a custom character in localStorage.
+ * Generates an ID if not present; updates existing character if ID matches.
+ * @param {Object} characterData - Character data object (must include name)
+ * @param {string} [characterData.id] - Character ID (auto-generated if missing)
+ * @param {string} characterData.name - Character display name
+ * @returns {{success: boolean, character?: Object, error?: string}}
+ */
 export const saveCustomCharacter = (characterData) => {
   try {
     if (!characterData || !characterData.name) {
@@ -1231,6 +1312,10 @@ export const saveCustomCharacter = (characterData) => {
   }
 };
 
+/**
+ * Load all custom characters from localStorage.
+ * @returns {{success: boolean, characters: Array<Object>, error?: string}}
+ */
 export const loadCustomCharacters = () => {
   try {
     const characters = JSON.parse(localStorage.getItem('customCharacters') || '[]');

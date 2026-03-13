@@ -2,7 +2,7 @@
 // ARIA v1.0 RELEASE - ChatInterface
 // ============================================================================
 
-import { useState, useEffect, useRef, useMemo, memo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel } from '../lib/api';
@@ -279,6 +279,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [smartSuggestions, setSmartSuggestions] = useState([]);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
 
+  const clearSuggestionsState = useCallback(() => {
+    abortSuggestionCall();
+    setSmartSuggestions([]);
+    setIsGeneratingSuggestions(false);
+  }, []);
 
 
   // v0.2.6: Impersonate (Write for me)
@@ -663,9 +668,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   const handleImpersonate = async () => {
     if (isLoading || isStreaming || isImpersonating) return;
-    abortSuggestionCall();
-    setSmartSuggestions([]);
-    setIsGeneratingSuggestions(false);
+    clearSuggestionsState();
     setIsImpersonating(true);
     setInput('');
     try {
@@ -767,9 +770,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       return;
     }
 
-    abortSuggestionCall();
-    setSmartSuggestions([]);
-    setIsGeneratingSuggestions(false);
+    clearSuggestionsState();
     abortImpersonateCall();
     setIsImpersonating(false);
 
@@ -968,9 +969,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const newSid = generateSessionId();
       setSessionId(newSid);
       setPassionLevel(0);
-      abortSuggestionCall();
-      setSmartSuggestions([]);
-      setIsGeneratingSuggestions(false);
+      clearSuggestionsState();
       previousTierRef.current = 'surface';
       initializeGreeting();
     };
@@ -1087,9 +1086,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     const messagesUpToLastUser = messages.slice(0, lastUserMessageIndex + 1);
     const lastUserMessage = (messages[lastUserMessageIndex].content || '').trim();
 
-    abortSuggestionCall();
-    setSmartSuggestions([]);
-    setIsGeneratingSuggestions(false);
+    clearSuggestionsState();
     abortImpersonateCall();
     setIsImpersonating(false);
 

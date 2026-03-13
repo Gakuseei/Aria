@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+#
+# commit-msg hook — normalizes commit messages to a consistent format:
+#   - lowercase first letter (unless type prefix)
+#   - max 72 char subject line
+#   - no trailing period on subject
+#   - optional conventional prefix: fix/feat/refactor/chore/docs
+#   - preserves body and trailers
+
+set -euo pipefail
+
+MSG_FILE="$1"
+
+# Read the raw message, strip comment lines (lines starting with #)
+SUBJECT=""
+BODY=""
+IN_BODY=false
+
+while IFS= read -r line; do
+  # Skip git comment lines
+  [[ "$line" =~ ^# ]] && continue
+
+  if ! $IN_BODY; then
+    if [ -z "$SUBJECT" ]; then
+      SUBJECT="$line"
+    elif [ -z "$line" ]; then
+      IN_BODY=true
+      BODY=$'\n'
+    else
+      # No blank line separator — treat as continuation of subject
+      SUBJECT="$SUBJECT $line"
+    fi
+  else
+    BODY="${BODY}${line}"$'\n'
+  fi
+done < "$MSG_FILE"
+
+# Trim whitespace from subject
+SUBJECT="$(echo "$SUBJECT" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
+# Reject empty messages
+if [ -z "$SUBJECT" ]; then
+  echo "commit-msg hook: empty commit message, aborting." >&2
+  exit 1
+fi
+
+# Extract optional type prefix (fix/feat/refactor/chore/docs)
+PREFIX=""
+REST="$SUBJECT"
+if [[ "$SUBJECT" =~ ^(fix|feat|refactor|chore|docs)[:\(] ]]; then
+  TYPE="${BASH_REMATCH[1]}"
+  # Normalize: ensure "type: " format (lowercase type, colon, space)
+  REST="${SUBJECT#"$TYPE"}"
+  # Strip leading colon, parens, spaces
+  REST="$(echo "$REST" | sed 's/^[:([:space:]]*//;s/^)//')"
+  # Remove closing paren if scope was used: feat(scope): msg -> feat: msg
+  REST="$(echo "$REST" | sed 's/)[[:space:]]*:[[:space:]]*/: /;s/^[[:space:]]*//')"
+  # If REST still starts with ": " strip it
+  REST="$(echo "$REST" | sed 's/^:[[:space:]]*//')"
+  PREFIX="${TYPE}: "
+fi
+
+# Lowercase the first character of the rest
+if [ -n "$REST" ]; then
+  FIRST="$(echo "${REST:0:1}" | tr '[:upper:]' '[:lower:]')"
+  REST="${FIRST}${REST:1}"
+fi
+
+# Remove trailing period from subject
+REST="$(echo "$REST" | sed 's/\.$//')"
+
+# Reassemble subject
+SUBJECT="${PREFIX}${REST}"
+
+# Enforce max 72 char subject line
+if [ ${#SUBJECT} -gt 72 ]; then
+  SUBJECT="${SUBJECT:0:72}"
+fi
+
+# Write normalized message back
+{
+  echo "$SUBJECT"
+  if [ -n "$BODY" ]; then
+    printf '%s' "$BODY"
+  fi
+} > "$MSG_FILE"

@@ -37,6 +37,7 @@ characters/*.json
 # AI-related and hidden files (keep local only)
 /.*
 !/.gitignore
+!/.githooks
 AGENTS.md
 CLAUDE.md
 PROJECT_STRUCTURE.md

@@ -1384,19 +1384,17 @@ ipcMain.handle('save-session', async (event, { sessionId, data }) => {
       return { success: false, error: 'Invalid session ID' };
     }
     const sessionsDir = getSessionsPath();
-    
-    if (!fs.existsSync(sessionsDir)) {
-      fs.mkdirSync(sessionsDir, { recursive: true });
-    }
+
+    await fs.promises.mkdir(sessionsDir, { recursive: true });
 
     const sessionPath = path.join(sessionsDir, `${sessionId}.json`);
-    
+
     const sessionData = {
       ...data,
       savedAt: new Date().toISOString(),
     };
 
-    fs.writeFileSync(sessionPath, JSON.stringify(sessionData, null, 2));
+    await fs.promises.writeFile(sessionPath, JSON.stringify(sessionData, null, 2));
 
     return { success: true };
   } catch (error) {
@@ -1411,14 +1409,15 @@ ipcMain.handle('load-session', async (event, { sessionId }) => {
       return { success: false, error: 'Invalid session ID' };
     }
     const sessionPath = path.join(getSessionsPath(), `${sessionId}.json`);
-    
-    if (!fs.existsSync(sessionPath)) {
-      return { success: false, error: 'Session not found' };
+
+    try {
+      const raw = await fs.promises.readFile(sessionPath, 'utf-8');
+      const data = JSON.parse(raw);
+      return { success: true, data };
+    } catch (err) {
+      if (err.code === 'ENOENT') return { success: false, error: 'Session not found' };
+      throw err;
     }
-
-    const data = JSON.parse(fs.readFileSync(sessionPath, 'utf-8'));
-
-    return { success: true, data };
   } catch (error) {
     console.error('Load session error:', error);
     return { success: false, error: error.message };
@@ -1428,45 +1427,40 @@ ipcMain.handle('load-session', async (event, { sessionId }) => {
 ipcMain.handle('list-sessions', async () => {
   try {
     const sessionsDir = getSessionsPath();
-    
-    if (!fs.existsSync(sessionsDir)) {
-      return { success: true, sessions: [] };
+
+    let dirFiles;
+    try {
+      dirFiles = await fs.promises.readdir(sessionsDir);
+    } catch (err) {
+      if (err.code === 'ENOENT') return { success: true, sessions: [] };
+      throw err;
     }
 
     // Clean up ghost session from old preload.js bug
     const ghostFile = path.join(sessionsDir, 'undefined.json');
-    if (fs.existsSync(ghostFile)) {
-      try {
-        fs.unlinkSync(ghostFile);
-      } catch (e) {
-        console.warn('[Session Cleanup] Could not delete undefined.json:', e.message);
-      }
-    }
+    try { await fs.promises.unlink(ghostFile); } catch { /* ignore if missing */ }
 
-    const files = fs.readdirSync(sessionsDir)
+    const jsonFiles = dirFiles
       .filter(file => file.endsWith('.json'))
       .filter(file => {
-        // Skip sessions with invalid IDs (leftover from bugs)
         const id = file.replace('.json', '');
         return id && id !== 'undefined' && id !== 'null';
-      })
-      .map(file => {
-        const sessionPath = path.join(sessionsDir, file);
-        try {
-          const data = JSON.parse(fs.readFileSync(sessionPath, 'utf-8'));
-          const sessionId = file.replace('.json', '');
-          return {
-            id: sessionId,
-            ...data,
-          };
-        } catch {
-          console.warn(`[Main] Skipping corrupt session file: ${file}`);
-          return null;
-        }
-      })
-      .filter(Boolean);
+      });
 
-    return { success: true, sessions: files };
+    const sessions = await Promise.all(jsonFiles.map(async (file) => {
+      const sessionPath = path.join(sessionsDir, file);
+      try {
+        const raw = await fs.promises.readFile(sessionPath, 'utf-8');
+        const data = JSON.parse(raw);
+        const sessionId = file.replace('.json', '');
+        return { id: sessionId, ...data };
+      } catch {
+        console.warn(`[Main] Skipping corrupt session file: ${file}`);
+        return null;
+      }
+    }));
+
+    return { success: true, sessions: sessions.filter(Boolean) };
   } catch (error) {
     console.error('List sessions error:', error);
     return { success: false, sessions: [], error: error.message };
@@ -1479,9 +1473,9 @@ ipcMain.handle('delete-session', async (event, { sessionId }) => {
       return { success: false, error: 'Invalid session ID' };
     }
     const sessionPath = path.join(getSessionsPath(), `${sessionId}.json`);
-    
-    if (fs.existsSync(sessionPath)) {
-      fs.unlinkSync(sessionPath);
+
+    try { await fs.promises.unlink(sessionPath); } catch (err) {
+      if (err.code !== 'ENOENT') throw err;
     }
 
     return { success: true };
@@ -1558,29 +1552,31 @@ const getSettingsPath = () => path.join(app.getPath('userData'), 'settings.json'
 ipcMain.handle('save-settings', async (event, newSettings) => {
   try {
     const settingsPath = getSettingsPath();
-    
+
     // Merge with existing settings to preserve all values
     let existingSettings = {};
-    if (fs.existsSync(settingsPath)) {
-      const data = fs.readFileSync(settingsPath, 'utf-8');
-      existingSettings = JSON.parse(data);
+    try {
+      const raw = await fs.promises.readFile(settingsPath, 'utf-8');
+      existingSettings = JSON.parse(raw);
+    } catch (err) {
+      if (err.code !== 'ENOENT') throw err;
     }
-    
+
     const mergedSettings = { ...existingSettings, ...newSettings };
-    fs.writeFileSync(settingsPath, JSON.stringify(mergedSettings, null, 2));
-    
+    await fs.promises.writeFile(settingsPath, JSON.stringify(mergedSettings, null, 2));
+
     // FIX 3: Broadcast voice status changes to all renderers
     if ('voiceEnabled' in newSettings && newSettings.voiceEnabled !== existingSettings.voiceEnabled) {
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('voice-status-changed', newSettings.voiceEnabled);
       }
     }
-    
+
     // FIX 1: Broadcast settings-updated event to all renderers
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('settings-updated', mergedSettings);
     }
-    
+
     return { success: true };
   } catch (error) {
     console.error('Save settings error:', error);
@@ -1591,18 +1587,18 @@ ipcMain.handle('save-settings', async (event, newSettings) => {
 ipcMain.handle('load-settings', async () => {
   try {
     const settingsPath = getSettingsPath();
-    
-    if (!fs.existsSync(settingsPath)) {
+
+    try {
+      const raw = await fs.promises.readFile(settingsPath, 'utf-8');
+      const settings = JSON.parse(raw);
+      return { success: true, settings };
+    } catch (err) {
+      if (err.code === 'ENOENT') return { success: true, settings: {} };
+      console.warn('[Main] Settings corrupt, using defaults:', err.message);
       return { success: true, settings: {} };
     }
-
-    const data = fs.readFileSync(settingsPath, 'utf-8');
-    const settings = JSON.parse(data);
-
-    return { success: true, settings };
   } catch (error) {
     console.error('Load settings error:', error);
-    console.warn('[Main] Settings corrupt, using defaults:', error.message);
     return { success: true, settings: {} };
   }
 });

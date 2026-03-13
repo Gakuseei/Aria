@@ -2,7 +2,7 @@
 // ARIA v1.0 RELEASE - ChatInterface
 // ============================================================================
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, memo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel } from '../lib/api';
@@ -69,12 +69,17 @@ function formatMessageText(text, isGoldMode = false) {
 // MESSAGE BUBBLE COMPONENT
 // ============================================================================
 
-function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false }) {
-  const formatTimestamp = (timestamp) => {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  };
+function formatTimestamp(timestamp) {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+const MessageBubble = memo(function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false }) {
+  const formattedParts = useMemo(
+    () => formatMessageText(message.content || '', isGoldMode && !isUser),
+    [message.content, isGoldMode, isUser]
+  );
 
 
   // v0.2.5 ROSE NOIR: Avatar styling
@@ -131,20 +136,17 @@ function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, 
         )}
 
         <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
-          {(() => {
-            const formattedParts = formatMessageText(message.content || '', isGoldMode && !isUser);
-            return formattedParts.map((part, i) => {
-              if (part.type === 'action') {
-                return <span key={i} className="text-zinc-400 italic">{part.text}</span>;
-              } else if (part.type === 'dialogue') {
-                return <span key={i} className="text-white font-normal">{part.text}</span>;
-              } else if (part.type === 'bold' && isGoldMode && !isUser) {
-                return <span key={i} className="text-amber-400 font-bold drop-shadow-sm">{part.text}</span>;
-              } else {
-                return <span key={i} className="text-zinc-200">{part.text}</span>;
-              }
-            });
-          })()}
+          {formattedParts.map((part, i) => {
+            if (part.type === 'action') {
+              return <span key={i} className="text-zinc-400 italic">{part.text}</span>;
+            } else if (part.type === 'dialogue') {
+              return <span key={i} className="text-white font-normal">{part.text}</span>;
+            } else if (part.type === 'bold' && isGoldMode && !isUser) {
+              return <span key={i} className="text-amber-400 font-bold drop-shadow-sm">{part.text}</span>;
+            } else {
+              return <span key={i} className="text-zinc-200">{part.text}</span>;
+            }
+          })}
         </div>
 
         {message.timestamp && (
@@ -194,7 +196,7 @@ function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, 
       )}
     </div>
   );
-}
+});
 
 // ============================================================================
 // MAIN CHAT INTERFACE - v8.1 RESTORED
@@ -731,9 +733,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const result = (suggestions && suggestions.length > 0) ? suggestions : [];
       setSmartSuggestions(result);
       setMessages(prev => {
+        let lastIdx = -1;
+        for (let i = prev.length - 1; i >= 0; i--) {
+          if (prev[i].role === 'assistant') { lastIdx = i; break; }
+        }
+        if (lastIdx === -1) return prev;
         const updated = [...prev];
-        const lastAssistant = updated.findLast(m => m.role === 'assistant');
-        if (lastAssistant) lastAssistant.suggestions = result.length > 0 ? result : undefined;
+        updated[lastIdx] = { ...updated[lastIdx], suggestions: result.length > 0 ? result : undefined };
         return updated;
       });
     });
@@ -1066,10 +1072,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const regenerateLastResponse = async () => {
     if (messages.length < 2 || isLoading || isStreaming) return;
 
-    const lastUserMessageIndex = messages.map((msg, idx) => ({ msg, idx }))
-      .reverse()
-      .find(({ msg }) => msg && msg.role === 'user')?.idx;
-
+    let lastUserMessageIndex;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i] && messages[i].role === 'user') { lastUserMessageIndex = i; break; }
+    }
     if (lastUserMessageIndex === undefined) return;
 
     const messagesUpToLastUser = messages.slice(0, lastUserMessageIndex + 1);

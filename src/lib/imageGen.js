@@ -65,7 +65,7 @@ export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', im
       console.error('[Image Gen] Request timed out after 600s');
       throw new Error('Image generation timed out (10m). Check if AUTOMATIC1111 is running with GPU acceleration.');
     }
-    console.error('[Image Gen] Error:', error);
+    console.error(`[Image Gen] txt2img failed (url=${apiUrl}, tier=${imageGenTier}):`, error?.message || error);
     throw error;
   }
 }

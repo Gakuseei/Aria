@@ -4,6 +4,9 @@ import { saveSession, loadSession, generateSessionId, autoDetectAndSetModel } fr
 import { GAME_MODES } from '../App';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
+import useEntranceAnimation from '../hooks/useEntranceAnimation';
+import downloadBlob from '../utils/downloadBlob';
+import { OLLAMA_DEFAULT_URL } from '../lib/defaults';
 
 // ============================================================================
 // ARIA v1.0 RELEASE - CreativeWriting
@@ -20,7 +23,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   const [charCount, setCharCount] = useState(0);
   const [error, setError] = useState(null);
   const [currentModel, setCurrentModel] = useState(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const isVisible = useEntranceAnimation(50);
 
   // Text Zoom State
   const [fontSize, setFontSize] = useState('base');
@@ -44,11 +47,6 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     localStorage.setItem('storyFontSize', fontSize);
   }, [fontSize]);
 
-  // v0.2.5 ROSE NOIR: Entrance animation
-  useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 50);
-    return () => clearTimeout(timer);
-  }, []);
 
   // ============================================================================
   // FIX #1: MODE INFECTION PREVENTION (CRITICAL)
@@ -176,7 +174,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     try {
       // v0.2.5: Get language from settings
       const selectedLanguage = localStorage.getItem('language') || 'en';
-      const ollamaUrl = parentSettings?.ollamaUrl || 'http://127.0.0.1:11434';
+      const ollamaUrl = parentSettings?.ollamaUrl || OLLAMA_DEFAULT_URL;
       const model = parentSettings?.ollamaModel || 'hermes3';
       const response = await generateCreativeWriting(prompt.trim(), ollamaUrl, model, false, 0, selectedLanguage);
 
@@ -221,7 +219,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     try {
       // v0.2.5: Get language from settings
       const selectedLanguage = localStorage.getItem('language') || 'en';
-      const ollamaUrl = parentSettings?.ollamaUrl || 'http://127.0.0.1:11434';
+      const ollamaUrl = parentSettings?.ollamaUrl || OLLAMA_DEFAULT_URL;
       const model = parentSettings?.ollamaModel || 'hermes3';
       const response = await continueStory(generatedContent, ollamaUrl, model, false, 0, selectedLanguage);
 
@@ -285,14 +283,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `story-${Date.now()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, `story-${Date.now()}.json`);
     } catch (error) {
       console.error('Export error:', error);
       alert(t.creative.failedToExportStory);

@@ -1,39 +1,17 @@
 // ARIA v1.0 RELEASE - MainMenu (Rose Noir Theme)
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Heart } from 'lucide-react';
 import SupporterModal from './SupporterModal';
 import { useLanguage } from '../context/LanguageContext';
+import useGoldMode from '../hooks/useGoldMode';
+import useEntranceAnimation from '../hooks/useEntranceAnimation';
 
 function MainMenu({ onNewGame, onLoadGame, onSettings }) {
   const { t } = useLanguage();
-  const [isVisible, setIsVisible] = useState(false);
+  const isVisible = useEntranceAnimation(100);
   const [showSupporterModal, setShowSupporterModal] = useState(false);
-  const [isSupporter, setIsSupporter] = useState(false);
-  const [isGoldMode, setIsGoldMode] = useState(false);
-
-  useEffect(() => {
-    // Trigger entrance animation
-    const timer = setTimeout(() => setIsVisible(true), 100);
-    
-    // Check Gold Mode function
-    const checkGoldMode = () => {
-      const isSupporter = localStorage.getItem('isSupporter') === 'true';
-      const goldTheme = localStorage.getItem('goldThemeEnabled') === 'true';
-      setIsSupporter(isSupporter);
-      setIsGoldMode(isSupporter && goldTheme);
-    };
-    
-    // Initial check
-    checkGoldMode();
-    
-    // Listen for changes
-    window.addEventListener('gold-theme-changed', checkGoldMode);
-    
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('gold-theme-changed', checkGoldMode);
-    };
-  }, []);
+  const isSupporter = useMemo(() => localStorage.getItem('isSupporter') === 'true', []);
+  const isGoldMode = useGoldMode();
 
   return (
     <div className="h-full w-full flex flex-col items-center justify-center p-8 relative overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-900 to-black">

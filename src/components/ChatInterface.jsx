@@ -13,6 +13,10 @@ import { generateImage, cleanContextForImage, extractConversationContext } from 
 import TutorialModal from './tutorials/TutorialModal';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
+import useGoldMode from '../hooks/useGoldMode';
+import useEntranceAnimation from '../hooks/useEntranceAnimation';
+import downloadBlob from '../utils/downloadBlob';
+import { OLLAMA_DEFAULT_URL } from '../lib/defaults';
 
 // ============================================================================
 // TEXT FORMATTING - BLOCK 4 FIX: Apostroph-Bug behoben
@@ -216,10 +220,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [showChatOptions, setShowChatOptions] = useState(false);
 
   // BLOCK 6.9: Entrance Animation
-  const [isVisible, setIsVisible] = useState(false);
-  
+  const isVisible = useEntranceAnimation(100);
+
   // v0.2.5: Gold Mode State
-  const [isGoldMode, setIsGoldMode] = useState(false);
+  const isGoldMode = useGoldMode();
   
   // v0.2.5 RESTORED: Feature states from localStorage
   const [userName, setUserName] = useState('User');
@@ -231,7 +235,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [localSettings, setLocalSettings] = useState({
     imageGenUrl: 'http://127.0.0.1:7860',
     voiceUrl: 'http://127.0.0.1:5000',
-    ollamaUrl: 'http://127.0.0.1:11434',
+    ollamaUrl: OLLAMA_DEFAULT_URL,
     piperPath: '',
     modelPath: '',
     voiceVolume: 1.0,
@@ -316,38 +320,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     };
   }, []);
 
-  // BLOCK 6.9: Trigger entrance animation
-  useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // v0.2.5: Check Gold Mode on mount and when localStorage changes
-  useEffect(() => {
-    const checkGoldMode = () => {
-      const isSupporter = localStorage.getItem('isSupporter') === 'true';
-      const goldTheme = localStorage.getItem('goldThemeEnabled') === 'true';
-      const isGold = isSupporter && goldTheme;
-      setIsGoldMode(isGold);
-      
-      // Apply gold-mode class to body for global styles
-      if (isGold) {
-        document.body.classList.add('gold-mode');
-      } else {
-        document.body.classList.remove('gold-mode');
-      }
-    };
-    
-    // Initial check
-    checkGoldMode();
-    
-    // Listen for gold-theme-changed event
-    window.addEventListener('gold-theme-changed', checkGoldMode);
-    
-    return () => {
-      window.removeEventListener('gold-theme-changed', checkGoldMode);
-    };
-  }, []);
 
   // BLOCK 6.9.2: Close Chat Options when clicking outside
   useEffect(() => {
@@ -400,7 +372,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         setLocalSettings({
           imageGenUrl: loadedSettings.imageGenUrl || 'http://127.0.0.1:7860',
           voiceUrl: loadedSettings.voiceUrl || 'http://127.0.0.1:5000',
-          ollamaUrl: loadedSettings.ollamaUrl || 'http://127.0.0.1:11434',
+          ollamaUrl: loadedSettings.ollamaUrl || OLLAMA_DEFAULT_URL,
           ollamaModel: loadedSettings.ollamaModel || 'hermes3',
           piperPath: loadedSettings.piperPath || '',
           modelPath: loadedSettings.modelPath || '',
@@ -1010,14 +982,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `chat-${character.name}-${Date.now()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, `chat-${character.name}-${Date.now()}.json`);
     } catch (error) {
       console.error('Export error:', error);
       toast.error(t.chat.failedToExport);

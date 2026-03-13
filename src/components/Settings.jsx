@@ -1,6 +1,6 @@
 // ARIA v1.0 RELEASE - Settings (Rose Noir Theme)
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { fetchOllamaModels, testOllamaConnection } from '../lib/api';
 import { Globe, Zap, Moon, RefreshCw, Check, X, User, Image, Volume2, HelpCircle, FolderOpen } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
@@ -12,6 +12,11 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const { t, language, setLanguage } = useLanguage();
 
   // v0.2.5: All settings now come from props, no local state
+  // Refs to avoid re-registering IPC listeners when props change
+  const settingsRef = useRef(settings);
+  const onSettingChangeRef = useRef(onSettingChange);
+  useEffect(() => { settingsRef.current = settings; }, [settings]);
+  useEffect(() => { onSettingChangeRef.current = onSettingChange; }, [onSettingChange]);
 
   // UI State
   const [availableModels, setAvailableModels] = useState([]);
@@ -54,29 +59,27 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   // FIX 3: IPC-based voice status listener
   useEffect(() => {
     const cleanup = window.electronAPI?.onVoiceStatusChanged?.((newValue) => {
-      // Update settings when voice status changes via IPC
-      if (settings.voiceEnabled !== newValue) {
-        const updatedSettings = { ...settings, voiceEnabled: newValue };
+      if (settingsRef.current.voiceEnabled !== newValue) {
+        const updatedSettings = { ...settingsRef.current, voiceEnabled: newValue };
         localStorage.setItem('settings', JSON.stringify(updatedSettings));
-        onSettingChange('voiceEnabled', newValue);
+        onSettingChangeRef.current('voiceEnabled', newValue);
       }
     });
-    return cleanup;
-  }, [settings, onSettingChange]);
+    return () => { if (typeof cleanup === 'function') cleanup(); };
+  }, []);
 
   // FIX 2: Settings updated listener (sync from backend)
   useEffect(() => {
     const cleanup = window.electronAPI?.onSettingsUpdated?.((newSettings) => {
-      // Update local state when settings change via IPC
       Object.keys(newSettings).forEach(key => {
-        if (settings[key] !== newSettings[key]) {
-          onSettingChange(key, newSettings[key]);
+        if (settingsRef.current[key] !== newSettings[key]) {
+          onSettingChangeRef.current(key, newSettings[key]);
         }
       });
       localStorage.setItem('settings', JSON.stringify(newSettings));
     });
-    return cleanup;
-  }, [settings, onSettingChange]);
+    return () => { if (typeof cleanup === 'function') cleanup(); };
+  }, []);
 
   // Language options
   const availableLanguages = [

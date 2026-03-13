@@ -70,30 +70,6 @@ export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', im
   }
 }
 
-/**
- * Test connection to AUTOMATIC1111 API
- * @param {string} apiUrl - The API URL to test
- * @returns {Promise<{success: boolean, message: string}>}
- */
-export async function testImageGenConnection(apiUrl = 'http://127.0.0.1:7860') {
-  try {
-    const response = await fetch(`${apiUrl}/sdapi/v1/options`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (response.ok) {
-      return { success: true, message: '✅ Connected to AUTOMATIC1111 WebUI' };
-    } else {
-      return { success: false, message: `❌ API returned ${response.status}` };
-    }
-  } catch (error) {
-    return { success: false, message: `❌ Connection failed: ${error.message}` };
-  }
-}
-
 // ============ MULTILINGUAL TRANSLATION PREPROCESSOR ============
 // Translates foreign NSFW terms to English for pattern matching
 const NSFW_TRANSLATIONS = {

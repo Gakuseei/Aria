@@ -297,7 +297,3 @@ export async function continueStory(existingStory, ollamaUrl = null, model = nul
   return generateCreativeWriting(continuePrompt, ollamaUrl, model, passionSystemEnabled, passionLevel, language);
 }
 
-export default {
-  generateCreativeWriting,
-  continueStory
-};

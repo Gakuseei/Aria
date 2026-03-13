@@ -34,6 +34,14 @@ function isValidSessionId(id) {
   return typeof id === 'string' && (UUID_REGEX.test(id) || /^session_\d+_[a-z0-9]+$/i.test(id));
 }
 
+/** Reject path components containing traversal sequences or null bytes */
+function sanitizePathComponent(component) {
+  if (typeof component !== 'string') return false;
+  if (component.includes('..') || component.includes('\0') || component.includes('/') || component.includes('\\')) return false;
+  if (component.length === 0 || component.length > 255) return false;
+  return true;
+}
+
 // v0.2.5: AGGRESSIVE Content Security Policy
 // CRITICAL: Only allow localhost/127.0.0.1 for Ollama + local services
 const CSP_DIRECTIVES = [
@@ -675,6 +683,11 @@ ipcMain.handle('generate-image', async (event, params) => {
  */
 ipcMain.handle('generate-speech', async (event, params) => {
   const { text, piperPath, modelPath, voiceTier } = params;
+
+  const MAX_TTS_LENGTH = 10000;
+  if (typeof text === 'string' && text.length > MAX_TTS_LENGTH) {
+    return { success: false, error: `Text exceeds maximum length of ${MAX_TTS_LENGTH} characters` };
+  }
 
   // PREMIUM MODE: Use Zonos API (Gradio via /gradio_api/)
   if (voiceTier === 'premium') {
@@ -1396,7 +1409,7 @@ ipcMain.handle('save-session', async (event, { sessionId, data }) => {
       savedAt: new Date().toISOString(),
     };
 
-    fs.writeFileSync(sessionPath, JSON.stringify(sessionData, null, 2));
+    fs.writeFileSync(sessionPath, JSON.stringify(sessionData, null, 2), { mode: 0o600 });
 
     return { success: true };
   } catch (error) {
@@ -1502,13 +1515,16 @@ ipcMain.handle('save-character-memory', async (event, { characterId, sessionId, 
     if (!characterId || !sessionId) {
       return { success: false, error: 'Character ID and session ID required' };
     }
+    if (!sanitizePathComponent(characterId) || !sanitizePathComponent(sessionId)) {
+      return { success: false, error: 'Invalid character or session ID' };
+    }
     const memoriesDir = getMemoriesPath();
     if (!fs.existsSync(memoriesDir)) {
       fs.mkdirSync(memoriesDir, { recursive: true });
     }
     const memoryPath = path.join(memoriesDir, `${characterId}_${sessionId}.json`);
     const memoryData = { ...data, savedAt: new Date().toISOString() };
-    fs.writeFileSync(memoryPath, JSON.stringify(memoryData, null, 2));
+    fs.writeFileSync(memoryPath, JSON.stringify(memoryData, null, 2), { mode: 0o600 });
     return { success: true };
   } catch (error) {
     console.error('Save character memory error:', error);
@@ -1520,6 +1536,9 @@ ipcMain.handle('load-character-memory', async (event, { characterId, sessionId }
   try {
     if (!characterId || !sessionId) {
       return { success: false, error: 'Character ID and session ID required' };
+    }
+    if (!sanitizePathComponent(characterId) || !sanitizePathComponent(sessionId)) {
+      return { success: false, error: 'Invalid character or session ID' };
     }
     const memoryPath = path.join(getMemoriesPath(), `${characterId}_${sessionId}.json`);
     if (!fs.existsSync(memoryPath)) {
@@ -1537,6 +1556,9 @@ ipcMain.handle('delete-character-memory', async (event, { characterId, sessionId
   try {
     if (!characterId || !sessionId) {
       return { success: false, error: 'Character ID and session ID required' };
+    }
+    if (!sanitizePathComponent(characterId) || !sanitizePathComponent(sessionId)) {
+      return { success: false, error: 'Invalid character or session ID' };
     }
     const memoryPath = path.join(getMemoriesPath(), `${characterId}_${sessionId}.json`);
     if (fs.existsSync(memoryPath)) {
@@ -1558,16 +1580,21 @@ const getSettingsPath = () => path.join(app.getPath('userData'), 'settings.json'
 ipcMain.handle('save-settings', async (event, newSettings) => {
   try {
     const settingsPath = getSettingsPath();
-    
+
+    // Strip prototype-pollution keys
+    delete newSettings.__proto__;
+    delete newSettings.constructor;
+    delete newSettings.prototype;
+
     // Merge with existing settings to preserve all values
     let existingSettings = {};
     if (fs.existsSync(settingsPath)) {
       const data = fs.readFileSync(settingsPath, 'utf-8');
       existingSettings = JSON.parse(data);
     }
-    
+
     const mergedSettings = { ...existingSettings, ...newSettings };
-    fs.writeFileSync(settingsPath, JSON.stringify(mergedSettings, null, 2));
+    fs.writeFileSync(settingsPath, JSON.stringify(mergedSettings, null, 2), { mode: 0o600 });
     
     // FIX 3: Broadcast voice status changes to all renderers
     if ('voiceEnabled' in newSettings && newSettings.voiceEnabled !== existingSettings.voiceEnabled) {

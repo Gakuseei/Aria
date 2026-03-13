@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import characters from '../config/characters';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
+import useGoldMode from '../hooks/useGoldMode';
+import useEntranceAnimation from '../hooks/useEntranceAnimation';
+import downloadBlob from '../utils/downloadBlob';
 
 function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
   const { t } = useLanguage();
@@ -9,38 +12,13 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
   const [selectedId, setSelectedId] = useState(null);
   const [customCharacters, setCustomCharacters] = useState([]);
   const [allCharacters, setAllCharacters] = useState([]);
-  const [isVisible, setIsVisible] = useState(false);
-  const [isGoldMode, setIsGoldMode] = useState(false);
+  const isVisible = useEntranceAnimation(50);
+  const isGoldMode = useGoldMode();
   const importFileRef = useRef(null);
 
   // Load custom characters from localStorage
   useEffect(() => {
     loadCustomCharacters();
-  }, []);
-
-  // v0.2.5 ROSE NOIR: Entrance animation
-  useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 50);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // v0.2.5: Check Gold Mode on mount and when theme changes
-  useEffect(() => {
-    const checkGoldMode = () => {
-      const isSupporter = localStorage.getItem('isSupporter') === 'true';
-      const goldTheme = localStorage.getItem('goldThemeEnabled') === 'true';
-      setIsGoldMode(isSupporter && goldTheme);
-    };
-    
-    // Initial check
-    checkGoldMode();
-    
-    // Listen for gold-theme-changed event
-    window.addEventListener('gold-theme-changed', checkGoldMode);
-    
-    return () => {
-      window.removeEventListener('gold-theme-changed', checkGoldMode);
-    };
   }, []);
 
   const loadCustomCharacters = () => {
@@ -106,14 +84,7 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${character.name.replace(/\s+/g, '_')}_character.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, `${character.name.replace(/\s+/g, '_')}_character.json`);
     } catch (error) {
       console.error('Export error:', error);
       alert(t.characterSelect.failedToExport);

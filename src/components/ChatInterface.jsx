@@ -2,7 +2,7 @@
 // ARIA v1.0 RELEASE - ChatInterface
 // ============================================================================
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel } from '../lib/api';
@@ -69,7 +69,7 @@ function formatMessageText(text, isGoldMode = false) {
 // MESSAGE BUBBLE COMPONENT
 // ============================================================================
 
-function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false, isSupporter = false }) {
+function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false }) {
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -201,7 +201,7 @@ function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, 
 // ============================================================================
 
 export default function ChatInterface({ character, loadedSession, onBack, settings: parentSettings }) {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -209,7 +209,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [streamingContent, setStreamingContent] = useState('');
   const [passionLevel, setPassionLevel] = useState(0);
   const previousTierRef = useRef('surface');
-  const [tierTransitioning, setTierTransitioning] = useState(false);
+  const [, setTierTransitioning] = useState(false);
   const [tierToast, setTierToast] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [showPassionPopover, setShowPassionPopover] = useState(false);

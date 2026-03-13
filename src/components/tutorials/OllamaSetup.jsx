@@ -1,5 +1,5 @@
 // ARIA v1.0 - Ollama Setup Tutorial (Refactored Premium)
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, Check, RefreshCw, Copy, ExternalLink, HardDrive, Cpu, Zap } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import TutorialLayout from './TutorialLayout';

@@ -1,5 +1,5 @@
 // ARIA v1.0 - Voice Setup Tutorial (Refactored Premium)
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Download, Check, RefreshCw, Play, Volume2, FolderOpen, Zap, Star, Loader2, AlertCircle, Power, XCircle, FileText } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import TutorialLayout from './TutorialLayout';

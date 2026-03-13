@@ -1,5 +1,4 @@
 // ARIA v1.0 RELEASE - TitleBar (Rose Noir Theme)
-import React from 'react';
 
 function TitleBar() {
   const handleMinimize = () => {

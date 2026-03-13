@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import characters from '../config/characters';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';

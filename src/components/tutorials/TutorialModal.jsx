@@ -2,7 +2,6 @@
 // This component routes to the correct tutorial based on type
 // The actual tutorial logic is in OllamaSetup, ImageGenSetup, VoiceSetup
 
-import React from 'react';
 import OllamaSetup from './OllamaSetup';
 import ImageGenSetup from './ImageGenSetup';
 import VoiceSetup from './VoiceSetup';

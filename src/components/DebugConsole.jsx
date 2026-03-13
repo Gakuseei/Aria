@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Activity, Database, FileText, Gauge, Cpu, HardDrive, AlertTriangle, Copy, Trash2, CheckCircle2, Download, Filter } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import toast, { Toaster } from 'react-hot-toast';
+import downloadBlob from '../utils/downloadBlob';
 
 export default function DebugConsole({
   isVisible,
@@ -313,14 +314,7 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}
 `).join('\n' + '='.repeat(80) + '\n')}`;
 
     const blob = new Blob([logContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `aria-errors-${Date.now()}.log`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `aria-errors-${Date.now()}.log`);
 
     toast.success('Log exported!', {
       duration: 1500,

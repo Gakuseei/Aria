@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { listSessions, deleteSession } from '../lib/api';
 import { GAME_MODES } from '../App';
 import { useLanguage } from '../context/LanguageContext';
+import useEntranceAnimation from '../hooks/useEntranceAnimation';
 
 const LOCALE_MAP = {
   en: 'en-US', de: 'de-DE', es: 'es-ES', zh: 'zh-CN', fr: 'fr-FR',
@@ -17,17 +18,11 @@ function LoadGame({ onLoad, onBack }) {
   const [filter, setFilter] = useState('all');
   const [characterFilter, setCharacterFilter] = useState('all');
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const isVisible = useEntranceAnimation(50);
 
   // Load sessions on mount
   useEffect(() => {
     loadSessions();
-  }, []);
-
-  // v0.2.5 ROSE NOIR: Entrance animation
-  useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 50);
-    return () => clearTimeout(timer);
   }, []);
 
   const loadSessions = async () => {

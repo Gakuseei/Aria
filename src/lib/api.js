@@ -7,6 +7,7 @@
 
 import { passionManager, getTierKey, getDepthInstruction, getSpeedMultiplier } from './PassionManager.js';
 import { getModelProfile } from './modelProfiles.js';
+import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from './defaults.js';
 
 
 // ============================================================================
@@ -118,8 +119,8 @@ export function resolveTemplates(text, charName, userName) {
 // ============================================================================
 
 const DEFAULT_SETTINGS = {
-  ollamaUrl: 'http://127.0.0.1:11434',
-  ollamaModel: 'HammerAI/mn-mag-mell-r1:12b-q4_K_M',
+  ollamaUrl: OLLAMA_DEFAULT_URL,
+  ollamaModel: DEFAULT_MODEL_NAME,
   temperature: 0.8,
   topK: 30,
   topP: 0.9,
@@ -176,8 +177,8 @@ async function getModelCtx(ollamaUrl, model, contextPreset = 'medium') {
  */
 export async function unloadOllamaModel(settings) {
   try {
-    const ollamaUrl = settings?.ollamaUrl || 'http://127.0.0.1:11434';
-    const model = settings?.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M';
+    const ollamaUrl = settings?.ollamaUrl || OLLAMA_DEFAULT_URL;
+    const model = settings?.ollamaModel || DEFAULT_MODEL_NAME;
     await fetch(`${ollamaUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -247,12 +248,12 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), PASSION_SCORING_TIMEOUT_MS);
   try {
-    const response = await fetch(`${settings.ollamaUrl || 'http://127.0.0.1:11434'}/api/chat`, {
+    const response = await fetch(`${settings.ollamaUrl || OLLAMA_DEFAULT_URL}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: abort.signal,
       body: JSON.stringify({
-        model: settings.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M',
+        model: settings.ollamaModel || DEFAULT_MODEL_NAME,
         messages: [{
           role: 'user',
           content: `Rate closeness 0-10. Number only.\n0=casual 3=building 5=personal 7=intense 10=peak\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`
@@ -341,8 +342,8 @@ export function abortSuggestionCall() {
 export async function generateSuggestionsBackground(history, charName, userName, passionLevel, settings, callback) {
   abortSuggestionCall();
 
-  const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
-  const model = settings.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M';
+  const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
+  const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
   const tier = getTierKey(passionLevel);
   const numCtx = Math.min(await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium'), 2048);
 
@@ -435,8 +436,8 @@ export function abortImpersonateCall() {
 export async function impersonateUser(history, charName, userName, passionLevel, settings, onToken) {
   abortImpersonateCall();
 
-  const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
-  const model = settings.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M';
+  const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
+  const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
   const tier = getTierKey(passionLevel);
   const numCtx = Math.min(await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium'), 2048);
 
@@ -613,8 +614,8 @@ export const sendMessage = async (
   try {
     const settings = { ...(settingsOverride || await loadSettings()) };
 
-    const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
-    const model = settings.ollamaModel || 'HammerAI/mn-mag-mell-r1:12b-q4_K_M';
+    const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
+    const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
     const modelCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
     const profile = getModelProfile(model);
     const historyToUse = (Array.isArray(conversationHistory) ? conversationHistory : []).filter(m => m.role !== 'system');
@@ -1005,7 +1006,7 @@ export const listSessions = async () => {
  * Test Ollama connection
  * v8.1: RE-EXPORTED for Settings auto-detect
  */
-export const testOllamaConnection = async (url = 'http://127.0.0.1:11434') => {
+export const testOllamaConnection = async (url = OLLAMA_DEFAULT_URL) => {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
@@ -1036,7 +1037,7 @@ export const testOllamaConnection = async (url = 'http://127.0.0.1:11434') => {
  * v8.1: RE-EXPORTED for Settings auto-detect dropdown
  * v1.1: STRICT FILTER - Blacklist embedding models (nomic-embed-text, BERT, etc.)
  */
-export const fetchOllamaModels = async (ollamaUrl = 'http://127.0.0.1:11434') => {
+export const fetchOllamaModels = async (ollamaUrl = OLLAMA_DEFAULT_URL) => {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
@@ -1079,7 +1080,7 @@ export const fetchOllamaModels = async (ollamaUrl = 'http://127.0.0.1:11434') =>
  * Auto-detect and set the first available Ollama model
  * This ensures the app always has a valid model configured
  */
-export const autoDetectAndSetModel = async (ollamaUrl = 'http://127.0.0.1:11434') => {
+export const autoDetectAndSetModel = async (ollamaUrl = OLLAMA_DEFAULT_URL) => {
   try {
     const models = await fetchOllamaModels(ollamaUrl);
 

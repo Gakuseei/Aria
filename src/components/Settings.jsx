@@ -7,9 +7,11 @@ import CustomDropdown from './CustomDropdown';
 import ImageGenSetup from './tutorials/ImageGenSetup';
 import VoiceSetup from './tutorials/VoiceSetup';
 import { useLanguage } from '../context/LanguageContext';
+import useGoldMode from '../hooks/useGoldMode';
 
 export default function Settings({ settings, onSettingChange, onClose }) {
   const { t, language, setLanguage } = useLanguage();
+  const isGoldMode = useGoldMode();
 
   // v0.2.5: All settings now come from props, no local state
   // Refs to avoid re-registering IPC listeners when props change
@@ -25,8 +27,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const [testResult, setTestResult] = useState(null);
   const [showTutorial, setShowTutorial] = useState(null);
   const [availableVoiceModels, setAvailableVoiceModels] = useState([]);
-  const [isGoldMode, setIsGoldMode] = useState(false);
-
   // v0.2.5 FIX: Feature activation states (only activate after successful test)
   const [imageGenVerified, setImageGenVerified] = useState(false);
   const [voiceVerified, setVoiceVerified] = useState(false);
@@ -36,25 +36,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
     console.log('[v1.0 Settings Hard Sync] Writing ALL settings to localStorage:', settings);
     localStorage.setItem('settings', JSON.stringify(settings));
   }, [settings]);
-
-  // v0.2.5: Check Gold Mode on mount and when theme changes
-  useEffect(() => {
-    const checkGoldMode = () => {
-      const isSupporter = localStorage.getItem('isSupporter') === 'true';
-      const goldTheme = localStorage.getItem('goldThemeEnabled') === 'true';
-      setIsGoldMode(isSupporter && goldTheme);
-    };
-    
-    // Initial check
-    checkGoldMode();
-    
-    // Listen for gold-theme-changed event
-    window.addEventListener('gold-theme-changed', checkGoldMode);
-    
-    return () => {
-      window.removeEventListener('gold-theme-changed', checkGoldMode);
-    };
-  }, []);
 
   // FIX 3: IPC-based voice status listener
   useEffect(() => {

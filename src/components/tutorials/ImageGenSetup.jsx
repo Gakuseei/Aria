@@ -149,7 +149,7 @@ export default function ImageGenSetup({ onClose, onVerified }) {
                        : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                     }`}
                  >
-                    {connectionStatus === 'connected' ? "Connected! ✅" : "Test Connection 🔄"}
+                    {connectionStatus === 'connected' ? (t.chat?.imageGenConnected || "Connected!") + " ✅" : (t.chat?.imageGenTestConnection || "Test Connection") + " 🔄"}
                  </button>
 
                  {connectionStatus === 'connected' && tierMode === 'premium' && (

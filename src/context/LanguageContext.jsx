@@ -29,7 +29,8 @@ export const LanguageProvider = ({ children }) => {
     setT(getTranslations(lang));
     localStorage.setItem('language', lang);
 
-    const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+    let settings = {};
+    try { settings = JSON.parse(localStorage.getItem('settings') || '{}'); } catch { /* corrupted */ }
     if (settings.preferredLanguage !== lang) {
       settings.preferredLanguage = lang;
       localStorage.setItem('settings', JSON.stringify(settings));

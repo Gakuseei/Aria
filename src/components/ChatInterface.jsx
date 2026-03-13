@@ -247,7 +247,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [availableVoiceModels, setAvailableVoiceModels] = useState([]);
   const [autoReadEnabled, setAutoReadEnabled] = useState(() => {
     const saved = localStorage.getItem('autoReadEnabled');
-    return saved !== null ? JSON.parse(saved) : true;  // Default: ON
+    try { return saved !== null ? JSON.parse(saved) : true; } catch { return true; }
   });
 
   // Persist autoReadEnabled
@@ -267,7 +267,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // v0.2.5: Passion System Toggle (OFF = Unchained Mode, ON = Gatekeeping)
   const [isUnchainedMode, setIsUnchainedMode] = useState(() => {
     const saved = localStorage.getItem('passionGatekeepingEnabled');
-    return saved !== null ? !JSON.parse(saved) : false;
+    try { return saved !== null ? !JSON.parse(saved) : false; } catch { return false; }
   });
 
   // v0.2.5: Smart Suggestions
@@ -392,9 +392,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         const backendSettings = ipcSettings?.success ? ipcSettings.settings : {};
         
         // Fallback to localStorage if IPC fails
-        const loadedSettings = Object.keys(backendSettings).length > 0 
-          ? backendSettings 
-          : JSON.parse(localStorage.getItem('settings') || '{}');
+        let fallbackSettings = {};
+        try { fallbackSettings = JSON.parse(localStorage.getItem('settings') || '{}'); } catch { /* corrupted */ }
+        const loadedSettings = Object.keys(backendSettings).length > 0
+          ? backendSettings
+          : fallbackSettings;
 
         // BLOCK 8.2: Store full settings object (including ollamaModel)
         setLocalSettings({
@@ -1808,7 +1810,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                     onClick={async () => {
                       setImageGenEnabled(true);
                       // Persist to localStorage and IPC
-                      const currentSettings = JSON.parse(localStorage.getItem('settings') || '{}');
+                      let currentSettings = {};
+                      try { currentSettings = JSON.parse(localStorage.getItem('settings') || '{}'); } catch { /* corrupted */ }
                       currentSettings.imageGenEnabled = true;
                       localStorage.setItem('settings', JSON.stringify(currentSettings));
                       await window.electronAPI?.saveSettings?.(currentSettings);

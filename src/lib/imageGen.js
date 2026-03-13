@@ -51,7 +51,7 @@ export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', im
 
     const data = await response.json();
 
-    if (!data.images || data.images.length === 0) {
+    if (!data.images || data.images.length === 0 || !data.images[0]) {
       throw new Error('No images returned from API');
     }
 

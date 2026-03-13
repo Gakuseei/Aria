@@ -277,6 +277,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   // v0.2.5: Smart Suggestions
   const [smartSuggestions, setSmartSuggestions] = useState([]);
+  const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
 
 
 
@@ -569,7 +570,26 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     }
 
     greeting = resolveTemplates(greeting, character.name, userName);
-    setMessages([{ role: 'assistant', content: greeting.trim(), timestamp: Date.now() }]);
+    const greetingMsg = { role: 'assistant', content: greeting.trim(), timestamp: Date.now() };
+    setMessages([greetingMsg]);
+
+    if (settings.smartSuggestionsEnabled) {
+      setIsGeneratingSuggestions(true);
+      generateSuggestionsBackground([greetingMsg], character.name, userName, 0, settings, (suggestions) => {
+        const result = (suggestions && suggestions.length > 0) ? suggestions : [];
+        setSmartSuggestions(result);
+        setIsGeneratingSuggestions(false);
+        if (result.length > 0) {
+          setMessages(prev => {
+            const updated = [...prev];
+            if (updated.length > 0 && updated[0].role === 'assistant') {
+              updated[0] = { ...updated[0], suggestions: result };
+            }
+            return updated;
+          });
+        }
+      });
+    }
   };
 
   // ============================================================================
@@ -643,6 +663,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   const handleImpersonate = async () => {
     if (isLoading || isStreaming || isImpersonating) return;
+    abortSuggestionCall();
+    setSmartSuggestions([]);
+    setIsGeneratingSuggestions(false);
     setIsImpersonating(true);
     setInput('');
     try {
@@ -713,7 +736,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const triggerSuggestions = (updatedMessages) => {
     if (!settings.smartSuggestionsEnabled) return;
     const prevSuggestions = [...smartSuggestions];
+    setIsGeneratingSuggestions(true);
     generateSuggestionsBackground(updatedMessages, character.name, userName, passionLevel, settings, (suggestions) => {
+      setIsGeneratingSuggestions(false);
       const result = (suggestions && suggestions.length > 0) ? suggestions : [];
       setSmartSuggestions(result);
       setMessages(prev => {
@@ -744,6 +769,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
     abortSuggestionCall();
     setSmartSuggestions([]);
+    setIsGeneratingSuggestions(false);
     abortImpersonateCall();
     setIsImpersonating(false);
 
@@ -942,7 +968,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const newSid = generateSessionId();
       setSessionId(newSid);
       setPassionLevel(0);
+      abortSuggestionCall();
       setSmartSuggestions([]);
+      setIsGeneratingSuggestions(false);
       previousTierRef.current = 'surface';
       initializeGreeting();
     };
@@ -1061,6 +1089,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
     abortSuggestionCall();
     setSmartSuggestions([]);
+    setIsGeneratingSuggestions(false);
     abortImpersonateCall();
     setIsImpersonating(false);
 
@@ -1654,8 +1683,25 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       {/* v1.0 ROSE NOIR: Floating Input "Cockpit" - BLOCK 6.7: Detached, premium styling */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl z-50">
+        {/* Suggestion Skeleton Loading */}
+        {settings.smartSuggestionsEnabled && isGeneratingSuggestions && smartSuggestions.length === 0 && !isStreaming && !isImpersonating && (
+          <div className="flex gap-2.5 mb-4 flex-wrap justify-center">
+            {[0, 1, 2].map(i => (
+              <div
+                key={`skeleton-${i}`}
+                className={`suggestion-skeleton px-4 py-2 rounded-full flex items-center gap-2 ${
+                  isGoldMode ? 'bg-amber-500/5 border border-amber-500/20' : 'bg-rose-500/5 border border-zinc-700/30'
+                }`}
+                style={{ animationDelay: `${i * 100}ms` }}
+              >
+                <div className={`w-3 h-3 rounded-full ${isGoldMode ? 'bg-amber-500/20' : 'bg-rose-500/20'}`} />
+                <div className={`h-3 rounded-full ${isGoldMode ? 'bg-amber-500/15' : 'bg-zinc-700/40'}`} style={{ width: `${60 + i * 20}px` }} />
+              </div>
+            ))}
+          </div>
+        )}
         {/* Smart Suggestions - Rose Noir Pills */}
-        {settings.smartSuggestionsEnabled && smartSuggestions.length > 0 && !isStreaming && (
+        {settings.smartSuggestionsEnabled && smartSuggestions.length > 0 && !isStreaming && !isImpersonating && (
           <div className="flex gap-2.5 mb-4 flex-wrap justify-center" role="group" aria-label={t.settings?.smartSuggestions || 'Suggestions'}>
             {smartSuggestions.map((suggestion, i) => (
               <button
@@ -1708,7 +1754,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             disabled={isLoading || isStreaming}
             className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-30 flex-shrink-0 ${
               isImpersonating
-                ? 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                ? `text-zinc-300 ${!input.trim() ? (isGoldMode ? 'impersonate-pulse-gold' : 'impersonate-pulse') : 'bg-zinc-700 hover:bg-zinc-600'}`
                 : isGoldMode
                   ? 'bg-zinc-800 hover:bg-amber-500/20 text-amber-400/70 hover:text-amber-300'
                   : 'bg-zinc-800 hover:bg-rose-500/20 text-rose-400/70 hover:text-rose-300'

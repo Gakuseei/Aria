@@ -12,7 +12,6 @@
 const PASSION_STORAGE_KEY = 'aria_passion_data';
 const PASSION_MEMORY_KEY = 'aria_passion_memory';
 const HISTORY_LIMIT = 50;
-const KNOWN_SUFFIXES = ['_history', '_transition', '_lastUpdate'];
 
 /** Unified passion tier definitions (6-tier v3.0) */
 export const PASSION_TIERS = {
@@ -268,63 +267,6 @@ class PassionManager {
   }
 
   /**
-   * Get all passion levels (excludes internal keys like history/transition)
-   * @returns {Object} Map of sessionId to passion level
-   */
-  getAllPassionLevels() {
-    const levels = {};
-    Object.keys(this.passionData).forEach(key => {
-      if (key.endsWith('_history') || key.endsWith('_transition') || key.endsWith('_lastUpdate')) return;
-      const val = this.passionData[key];
-      if (typeof val !== 'number' || isNaN(val)) return;
-      levels[key] = Math.round(val);
-    });
-    return levels;
-  }
-
-  /**
-   * Delete all passion data for a session (hard reset)
-   * @param {string} sessionId - Session identifier
-   */
-  deleteCharacterPassion(sessionId) {
-    delete this.passionData[sessionId];
-    delete this.passionData[`${sessionId}_history`];
-    delete this.passionData[`${sessionId}_transition`];
-    delete this.passionData[`${sessionId}_lastUpdate`];
-    this.savePassionData();
-  }
-
-  /**
-   * Remove passion data for sessions that are no longer active
-   * @param {string[]} activeSessionIds - Array of currently active session IDs
-   */
-  cleanupStaleSessions(activeSessionIds) {
-    const activeSet = new Set(activeSessionIds);
-    const keysToDelete = [];
-
-    Object.keys(this.passionData).forEach(key => {
-      let baseKey = key;
-      for (const suffix of KNOWN_SUFFIXES) {
-        if (key.endsWith(suffix)) {
-          baseKey = key.slice(0, -suffix.length);
-          break;
-        }
-      }
-      if (!activeSet.has(baseKey)) {
-        keysToDelete.push(key);
-      }
-    });
-
-    keysToDelete.forEach(key => {
-      delete this.passionData[key];
-    });
-
-    if (keysToDelete.length > 0) {
-      this.savePassionData();
-    }
-  }
-
-  /**
    * Save passion memory for a character across sessions
    * @param {string} characterId - Character identifier
    * @param {number} level - Passion level to remember (0-100)
@@ -361,24 +303,6 @@ class PassionManager {
     }
   }
 
-  /**
-   * Retrieve passion memory for a character
-   * @param {string} characterId - Character identifier
-   * @returns {Object|null} Memory object with lastLevel and timestamp, or null
-   */
-  getCharacterMemory(characterId) {
-    try {
-      const stored = localStorage.getItem(PASSION_MEMORY_KEY);
-      if (!stored) return null;
-      const memory = JSON.parse(stored);
-      return memory[characterId] || null;
-    } catch (error) {
-      console.error('[PassionManager] Error loading character memory:', error);
-      return null;
-    }
-  }
 }
 
 export const passionManager = new PassionManager();
-
-export default passionManager;

@@ -852,35 +852,6 @@ export const sendMessage = async (
 // SETTINGS MANAGEMENT
 // ============================================================================
 
-export const saveSettings = async (settings) => {
-  try {
-    if (!settings || typeof settings !== 'object') {
-      throw new Error('Invalid settings object');
-    }
-
-    const completeSettings = {
-      ...DEFAULT_SETTINGS,
-      ...settings
-    };
-
-    if (isElectron()) {
-      const result = await window.electronAPI.saveSettings(completeSettings);
-
-      if (result && result.success) {
-        return { success: true };
-      } else {
-        throw new Error(result?.error || 'IPC save failed');
-      }
-    } else {
-      localStorage.setItem('settings', JSON.stringify(completeSettings));
-      return { success: true };
-    }
-  } catch (error) {
-    console.error('[v8.1 Settings] ❌ Save error:', error);
-    return { success: false, error: error.message };
-  }
-};
-
 export const loadSettings = async () => {
   try {
     if (isElectron()) {
@@ -1233,12 +1204,3 @@ export const saveCustomCharacter = (characterData) => {
   }
 };
 
-export const loadCustomCharacters = () => {
-  try {
-    const characters = JSON.parse(localStorage.getItem('customCharacters') || '[]');
-    return { success: true, characters };
-  } catch (error) {
-    console.error('[v8.1 Character] Error loading:', error);
-    return { success: false, characters: [], error: error.message };
-  }
-};

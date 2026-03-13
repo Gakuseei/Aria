@@ -79,7 +79,7 @@ function App() {
     contextSize: 'medium',
     fontSize: 'medium',
     autoSave: true,
-    smartSuggestionsEnabled: false, // AUFGABE 2: Replaced soundEnabled
+    smartSuggestionsEnabled: true,
     animationsEnabled: true,
     oledMode: false,
     preferredLanguage: 'en'
@@ -121,8 +121,7 @@ function App() {
             contextSize: loadedSettings.contextSize || 'medium',
             fontSize: loadedSettings.fontSize || 'medium',
             autoSave: loadedSettings.autoSave ?? true,
-            // AUFGABE 2: Migrate soundEnabled to smartSuggestionsEnabled
-            smartSuggestionsEnabled: loadedSettings.smartSuggestionsEnabled ?? false,
+            smartSuggestionsEnabled: loadedSettings.smartSuggestionsEnabled ?? true,
             animationsEnabled: loadedSettings.animationsEnabled ?? true,
             oledMode: loadedSettings.oledMode ?? false,
             preferredLanguage: loadedSettings.preferredLanguage || 'en'

@@ -752,12 +752,12 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                           const audio = new Audio(result.audioData);
                           audio.volume = settings.voiceVolume ?? 1.0;
                           await audio.play();
-                          alert('✅ Voice test successful! Audio playback started.');
+                          alert('✅ ' + t.settings.voiceTestSuccessAlert);
                         } else {
-                          alert('❌ Voice test failed.\n\nError: ' + (result?.error || 'Unknown error'));
+                          alert('❌ ' + t.settings.voiceTestFailedAlert + '\n\n' + (result?.error || t.settings.unknownError));
                         }
                       } catch (error) {
-                        alert('❌ Voice test failed.\n\nError: ' + error.message);
+                        alert('❌ ' + t.settings.voiceTestFailedAlert + '\n\n' + error.message);
                       }
                     }}
                     className="w-full px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-sm text-blue-300 transition-all"
@@ -790,12 +790,12 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                           const audio = new Audio(result.audioData);
                           audio.volume = settings.voiceVolume ?? 1.0;
                           await audio.play();
-                          alert('✅ Zonos test successful!');
+                          alert('✅ ' + t.settings.zonosTestSuccessAlert);
                         } else {
-                          alert('❌ Zonos test failed.\n\nError: ' + (result?.error || 'Unknown error') + '\n\nMake sure Zonos is running.');
+                          alert('❌ ' + t.settings.zonosTestFailedAlert + '\n\n' + (result?.error || t.settings.unknownError) + '\n\n' + t.settings.makeSureZonosRunning);
                         }
                       } catch (error) {
-                        alert('❌ Zonos test failed.\n\nError: ' + error.message);
+                        alert('❌ ' + t.settings.zonosTestFailedAlert + '\n\n' + error.message);
                       }
                     }}
                     className="w-full px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-sm text-amber-300 transition-all"

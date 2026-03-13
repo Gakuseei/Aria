@@ -54,18 +54,18 @@ export const translations = {
       contextMedium: "Medium (12GB VRAM)",
       contextHigh: "High (16GB VRAM)",
       contextMax: "Max (24GB+ VRAM)",
-      contextSizeDesc: "More context = longer conversations in memory. Requires more VRAM.",
+      contextSizeDesc: "How many messages the AI remembers. Higher values need more VRAM.",
       samplingParams: 'Sampling Parameters',
       readOnly: 'Auto-configured for this model',
-      lowerMoreFocused: "Lower = More focused, Higher = More creative",
+      lowerMoreFocused: "Low = precise and predictable, High = creative and varied",
       maxResponseTokens: 'Max Response Length',
-      maxResponseTokensDesc: 'Maximum tokens per AI response. Lower = faster, shorter replies.',
+      maxResponseTokensDesc: 'How long the AI can write per reply. Lower = faster, higher = more detailed.',
       enableImageGen: "Enable Image Generation",
-      clickOffForTutorial: "💡 Click OFF to start setup tutorial",
+      clickOffForTutorial: "💡 Not set up yet? See tutorial below",
       imageGenApiUrl: "Image Generation API URL",
       automatic1111Endpoint: "AUTOMATIC1111 or StabilityMatrix API endpoint",
       enableVoice: "Enable Voice Output",
-      clickOnToConfigure: "💡 Click ON to configure Piper paths",
+      clickOnToConfigure: "💡 Turn on, then set file paths below",
       openSetupTutorial: "Open Setup Tutorial",
       piperExePath: "Piper Executable Path (.exe)",
       browseForPiper: "Browse for piper.exe",
@@ -76,7 +76,7 @@ export const translations = {
       requiredPaths: "⚠ Required: Path to piper.exe and the .onnx model file.",
       testPiperConfig: "Test Piper Configuration",
       uiLanguage: "UI Language",
-      changesUiText: "Changes all UI text. AI responses will auto-detect your language.",
+      changesUiText: "Changes menus and buttons. The AI automatically responds in your language.",
       globalUIScale: "Global UI Scale",
       autoSave: "Auto-Save",
       passionSpeed: "Passion Speed",
@@ -86,7 +86,13 @@ export const translations = {
       allChangesAutoSaved: "All changes are automatically saved",
       close: "Close",
       yourNameDisplayed: "This name will be displayed in chat messages",
-      definesAnatomy: "Defines your anatomical features for accurate roleplay"
+      definesAnatomy: "Tells the AI your body type for immersive roleplay",
+      voiceTestSuccessAlert: "Voice test successful! Audio playback started.",
+      voiceTestFailedAlert: "Voice test failed.",
+      zonosTestSuccessAlert: "Zonos test successful!",
+      zonosTestFailedAlert: "Zonos test failed.",
+      unknownError: "Unknown error",
+      makeSureZonosRunning: "Make sure Zonos is running on localhost:7860."
     },
     chat: {
       passion: "Passion",
@@ -98,11 +104,11 @@ export const translations = {
       passionImmersive: "Immersive",
       passionConsuming: "Consuming",
       passionTranscendent: "Transcendent",
-      passionTooltip: "Passion controls the depth and immersion of responses. Higher passion = richer, more detailed writing.",
+      passionTooltip: "Controls how detailed and immersive the AI writes. Builds up as you interact.",
       tierUp: "Passion: {from} → {to}",
       tierDown: "Cooled: {from} → {to}",
-      enableUnchainedConfirm: "Enable Unchained Mode? The character will always comply with advances while staying in persona.",
-      disableUnchainedConfirm: "Disable Unchained Mode? The character may hesitate or refuse advances again.",
+      enableUnchainedConfirm: "Enable Unchained Mode? The character will always go along with your advances while staying in character.",
+      disableUnchainedConfirm: "Disable Unchained Mode? The character may push back or deflect advances again.",
       sendMessage: "Send message",
       regenerate: "Regenerate",
       export: "Export Chat",
@@ -142,13 +148,13 @@ export const translations = {
         mute: "Mute"
       },
       customNsfwPrompt: "Custom NSFW image prompt",
-      imageGenDisabled: "Image Generation is disabled. Enable it in Settings.",
+      imageGenDisabled: "Image generation is off. Enable it in Settings → Image Generation.",
       imageGenFailed: "Image generation failed: {error}",
       imageGenTestSuccess: "Image Generation connection successful!",
       imageGenTestFailed: "Connection failed. Make sure AUTOMATIC1111 is running.",
       voiceTestSuccess: "Voice/TTS connection successful!",
       voiceTestFailed: "Connection failed. Make sure your TTS server is running.",
-      testError: "Error testing connection",
+      testError: "Connection test failed. Is Ollama running?",
       showSetupTutorial: "Show Setup Tutorial",
       imagePrompt: "Image Prompt",
       nsfwIntimateScene: "NSFW, intimate scene, detailed description...",
@@ -166,9 +172,9 @@ export const translations = {
       chatImported: "Chat imported successfully",
       invalidChatFile: "Invalid chat file: missing messages",
       failedToImport: "Failed to import chat. Please check the file format.",
-      failedToExport: "Failed to export chat",
-      timeout: "Request timed out. Ollama may be overloaded — try again.",
-      sendError: "Failed to get a response. Please try again.",
+      failedToExport: "Failed to export chat. Check disk space and try again.",
+      timeout: "Request timed out. Ollama may be busy — try again or restart Ollama.",
+      sendError: "No response from Ollama. Check that it is running and try again.",
       noOllamaResponse: "Model returned empty response (think-mode). Retried automatically — please send again."
     },
     commands: {
@@ -334,7 +340,9 @@ export const translations = {
         fluxStep3Title: "🤖 Install WebUI Forge",
         fluxStep3Desc: "In Stability Matrix:\n1. Click 'Add Package'\n2. Select **Stable Diffusion WebUI Forge**\n3. Click 'Install'",
         fluxStep4Title: "🚀 Download Flux & Launch",
-        fluxStep4Desc: "1. Model Browser -> Search 'flux1-dev-bnb-nf4' -> Download.\n2. Launch Forge -> Wait for browser."
+        fluxStep4Desc: "1. Model Browser -> Search 'flux1-dev-bnb-nf4' -> Download.\n2. Launch Forge -> Wait for browser.",
+        connectionSuccess: "Connected!",
+        testConnectionBtn: "Test Connection"
       },
       setupGuide: "Setup Guide",
       status: "Status",
@@ -720,18 +728,18 @@ export const translations = {
       contextMedium: "Mittel (12GB VRAM)",
       contextHigh: "Hoch (16GB VRAM)",
       contextMax: "Maximum (24GB+ VRAM)",
-      contextSizeDesc: "Mehr Kontext = längere Gespräche im Gedächtnis. Benötigt mehr VRAM.",
+      contextSizeDesc: "Wie viele Nachrichten die KI sich merkt. Höhere Werte brauchen mehr VRAM.",
       samplingParams: 'Sampling-Parameter',
       readOnly: 'Automatisch für dieses Modell konfiguriert',
-      lowerMoreFocused: "Niedriger = Fokussierter, Höher = Kreativer",
+      lowerMoreFocused: "Niedrig = präzise und berechenbar, Hoch = kreativ und abwechslungsreich",
       maxResponseTokens: 'Max Antwortlänge',
-      maxResponseTokensDesc: 'Maximale Tokens pro KI-Antwort. Niedriger = schneller, kürzere Antworten.',
+      maxResponseTokensDesc: 'Wie lang die KI pro Antwort schreiben darf. Niedriger = schneller, höher = detaillierter.',
       enableImageGen: "Bildgenerierung aktivieren",
-      clickOffForTutorial: "💡 Klicke auf OFF um das Setup-Tutorial zu starten",
+      clickOffForTutorial: "💡 Noch nicht eingerichtet? Siehe Tutorial unten",
       imageGenApiUrl: "Bildgenerierungs-API URL",
       automatic1111Endpoint: "AUTOMATIC1111 oder StabilityMatrix API Endpunkt",
       enableVoice: "Sprachausgabe aktivieren",
-      clickOnToConfigure: "💡 Klicke auf ON um Piper-Pfade zu konfigurieren",
+      clickOnToConfigure: "💡 Einschalten, dann Dateipfade unten setzen",
       openSetupTutorial: "Setup-Tutorial öffnen",
       piperExePath: "Piper-Executable-Pfad (.exe)",
       browseForPiper: "Nach piper.exe suchen",
@@ -742,7 +750,7 @@ export const translations = {
       requiredPaths: "⚠ Erforderlich: Pfad zu piper.exe und der .onnx Modell-Datei.",
       testPiperConfig: "Piper-Konfiguration testen",
       uiLanguage: "UI-Sprache",
-      changesUiText: "Ändert alle UI-Texte. KI-Antworten erkennen deine Sprache automatisch.",
+      changesUiText: "Ändert Menüs und Buttons. Die KI antwortet automatisch in deiner Sprache.",
       globalUIScale: "Globale UI-Skalierung",
       autoSave: "Auto-Speichern",
       passionSpeed: "Leidenschafts-Tempo",
@@ -752,7 +760,13 @@ export const translations = {
       allChangesAutoSaved: "Alle Änderungen werden automatisch gespeichert",
       close: "Schließen",
       yourNameDisplayed: "Dieser Name wird in Chat-Nachrichten angezeigt",
-      definesAnatomy: "Definiert deine anatomischen Merkmale für genaues Roleplay"
+      definesAnatomy: "Sagt der KI deinen Körpertyp für immersives Roleplay",
+      voiceTestSuccessAlert: "Stimmtest erfolgreich! Audiowiedergabe gestartet.",
+      voiceTestFailedAlert: "Stimmtest fehlgeschlagen.",
+      zonosTestSuccessAlert: "Zonos-Test erfolgreich!",
+      zonosTestFailedAlert: "Zonos-Test fehlgeschlagen.",
+      unknownError: "Unbekannter Fehler",
+      makeSureZonosRunning: "Stelle sicher, dass Zonos auf localhost:7860 läuft."
     },
     chat: {
       passion: "Leidenschaft",
@@ -764,11 +778,11 @@ export const translations = {
       passionImmersive: "Immersive",
       passionConsuming: "Consuming",
       passionTranscendent: "Transcendent",
-      passionTooltip: "Leidenschaft steuert Tiefe und Immersion der Antworten. Höhere Leidenschaft = reichere, detailliertere Texte.",
+      passionTooltip: "Steuert, wie detailliert und immersiv die KI schreibt. Steigt durch Interaktion.",
       tierUp: "Leidenschaft: {from} → {to}",
       tierDown: "Abgekühlt: {from} → {to}",
-      enableUnchainedConfirm: "Entfesselten Modus aktivieren? Der Charakter wird Annäherungen immer erwidern und dabei in seiner Rolle bleiben.",
-      disableUnchainedConfirm: "Entfesselten Modus deaktivieren? Der Charakter kann bei Annäherungen wieder zögern oder ablehnen.",
+      enableUnchainedConfirm: "Entfesselten Modus aktivieren? Der Charakter geht immer auf deine Annäherungen ein und bleibt dabei in seiner Rolle.",
+      disableUnchainedConfirm: "Entfesselten Modus deaktivieren? Der Charakter kann Annäherungen wieder abwehren oder ausweichen.",
       sendMessage: "Nachricht senden",
       regenerate: "Neu generieren",
       export: "Chat exportieren",
@@ -808,13 +822,13 @@ export const translations = {
         mute: "Stumm"
       },
       customNsfwPrompt: "Benutzerdefinierter NSFW-Bild-Prompt",
-      imageGenDisabled: "Bildgenerierung ist deaktiviert. Aktiviere sie in den Einstellungen.",
+      imageGenDisabled: "Bildgenerierung ist aus. Aktiviere sie unter Einstellungen → Bildgenerierung.",
       imageGenFailed: "Bildgenerierung fehlgeschlagen: {error}",
       imageGenTestSuccess: "Bildgenerierung-Verbindung erfolgreich!",
       imageGenTestFailed: "Verbindung fehlgeschlagen. Stelle sicher, dass AUTOMATIC1111 läuft.",
       voiceTestSuccess: "Sprach-/TTS-Verbindung erfolgreich!",
       voiceTestFailed: "Verbindung fehlgeschlagen. Stelle sicher, dass dein TTS-Server läuft.",
-      testError: "Fehler beim Testen der Verbindung",
+      testError: "Verbindungstest fehlgeschlagen. Läuft Ollama?",
       showSetupTutorial: "Setup-Tutorial anzeigen",
       imagePrompt: "Bild-Prompt",
       nsfwIntimateScene: "NSFW, intime Szene, detaillierte Beschreibung...",
@@ -832,9 +846,9 @@ export const translations = {
       chatImported: "Chat erfolgreich importiert",
       invalidChatFile: "Ungültige Chat-Datei: Nachrichten fehlen",
       failedToImport: "Chat konnte nicht importiert werden. Bitte überprüfe das Dateiformat.",
-      failedToExport: "Chat konnte nicht exportiert werden",
-      timeout: "Zeitüberschreitung. Ollama ist möglicherweise überlastet — bitte erneut versuchen.",
-      sendError: "Antwort fehlgeschlagen. Bitte erneut versuchen.",
+      failedToExport: "Chat konnte nicht exportiert werden. Prüfe den Speicherplatz und versuche es erneut.",
+      timeout: "Zeitüberschreitung. Ollama ist möglicherweise beschäftigt — erneut versuchen oder Ollama neustarten.",
+      sendError: "Keine Antwort von Ollama. Prüfe, ob Ollama läuft, und versuche es erneut.",
       noOllamaResponse: "Modell hat leere Antwort erzeugt (Think-Modus). Automatisch erneut versucht — bitte erneut senden."
     },
     commands: {
@@ -998,7 +1012,9 @@ export const translations = {
         fluxStep3Title: "🤖 WebUI Forge installieren",
         fluxStep3Desc: "In Stability Matrix:\n1. Klicke 'Add Package'\n2. Wähle **Stable Diffusion WebUI Forge**\n3. Klicke 'Install'",
         fluxStep4Title: "🚀 Flux laden & Starten",
-        fluxStep4Desc: "1. Model Browser -> Suche 'flux1-dev-bnb-nf4' -> Download.\n2. Forge starten -> Warte auf Browser."
+        fluxStep4Desc: "1. Model Browser -> Suche 'flux1-dev-bnb-nf4' -> Download.\n2. Forge starten -> Warte auf Browser.",
+        connectionSuccess: "Verbunden!",
+        testConnectionBtn: "Verbindung testen"
       },
       setupGuide: "Setup-Anleitung",
       status: "Status",
@@ -1416,7 +1432,13 @@ export const translations = {
       allChangesAutoSaved: "Todos los cambios se guardan automáticamente",
       close: "Cerrar",
       yourNameDisplayed: "Este nombre se mostrará en los mensajes del chat",
-      definesAnatomy: "Define tus características anatómicas para un roleplay preciso"
+      definesAnatomy: "Define tus características anatómicas para un roleplay preciso",
+      voiceTestSuccessAlert: "Prueba de voz exitosa. Reproducción de audio iniciada.",
+      voiceTestFailedAlert: "Prueba de voz fallida.",
+      zonosTestSuccessAlert: "¡Prueba de Zonos exitosa!",
+      zonosTestFailedAlert: "Prueba de Zonos fallida.",
+      unknownError: "Error desconocido",
+      makeSureZonosRunning: "Asegúrate de que Zonos esté ejecutándose en localhost:7860."
     },
     chat: {
       passion: "Pasión",
@@ -1624,7 +1646,9 @@ export const translations = {
         tierPremium: "✨ Premium (FLUX)",
         fluxBenefits: "Mejor renderizado de texto en imágenes",
         fluxUnavailable: "⚠️ Modelo FLUX no encontrado - usando SDXL",
-        fluxConnected: "Modelo FLUX Listo"
+        fluxConnected: "Modelo FLUX Listo",
+        connectionSuccess: "¡Conectado!",
+        testConnectionBtn: "Probar Conexión"
       },
       setupGuide: "Guía de Configuración",
       status: "Estado",
@@ -2038,7 +2062,13 @@ export const translations = {
       allChangesAutoSaved: "所有更改自动保存",
       close: "关闭",
       yourNameDisplayed: "聊天中显示的名称",
-      definesAnatomy: "定义角色扮演的解剖结构"
+      definesAnatomy: "定义角色扮演的解剖结构",
+      voiceTestSuccessAlert: "语音测试成功！音频播放已开始。",
+      voiceTestFailedAlert: "语音测试失败。",
+      zonosTestSuccessAlert: "Zonos 测试成功！",
+      zonosTestFailedAlert: "Zonos 测试失败。",
+      unknownError: "未知错误",
+      makeSureZonosRunning: "请确保 Zonos 在 localhost:7860 上运行。"
     },
     chat: {
       passion: "激情",
@@ -2246,7 +2276,9 @@ export const translations = {
         tierPremium: "✨ 高级 (FLUX)",
         fluxBenefits: "最佳图像文字渲染",
         fluxUnavailable: "⚠️ 未找到 FLUX 模型 - 使用 SDXL",
-        fluxConnected: "FLUX 模型就绪"
+        fluxConnected: "FLUX 模型就绪",
+        connectionSuccess: "已连接！",
+        testConnectionBtn: "测试连接"
       },
       setupGuide: "设置指南",
       status: "状态",
@@ -2659,7 +2691,13 @@ export const translations = {
       allChangesAutoSaved: "Toutes les modifications sont enregistrées automatiquement",
       close: "Fermer",
       yourNameDisplayed: "Ce nom sera affiché dans le chat",
-      definesAnatomy: "Définit vos caractéristiques anatomiques pour le jeu de rôle"
+      definesAnatomy: "Définit vos caractéristiques anatomiques pour le jeu de rôle",
+      voiceTestSuccessAlert: "Test vocal réussi ! Lecture audio démarrée.",
+      voiceTestFailedAlert: "Test vocal échoué.",
+      zonosTestSuccessAlert: "Test Zonos réussi !",
+      zonosTestFailedAlert: "Test Zonos échoué.",
+      unknownError: "Erreur inconnue",
+      makeSureZonosRunning: "Assurez-vous que Zonos fonctionne sur localhost:7860."
     },
     chat: {
       passion: "Passion",
@@ -2852,7 +2890,9 @@ export const translations = {
         tierPremium: "✨ Premium (FLUX)",
         fluxBenefits: "Meilleur rendu de texte dans les images",
         fluxUnavailable: "⚠️ Modèle FLUX introuvable - utilisation de SDXL",
-        fluxConnected: "Modèle FLUX Prêt"
+        fluxConnected: "Modèle FLUX Prêt",
+        connectionSuccess: "Connecté !",
+        testConnectionBtn: "Tester la connexion"
       },
       setupGuide: "Guide de Configuration",
       status: "Statut",
@@ -3280,7 +3320,13 @@ export const translations = {
       allChangesAutoSaved: "Modifiche salvate automaticamente",
       close: "Chiudi",
       yourNameDisplayed: "Nome visualizzato nella chat",
-      definesAnatomy: "Definisce l'anatomia per il roleplay"
+      definesAnatomy: "Definisce l'anatomia per il roleplay",
+      voiceTestSuccessAlert: "Test vocale riuscito! Riproduzione audio avviata.",
+      voiceTestFailedAlert: "Test vocale fallito.",
+      zonosTestSuccessAlert: "Test Zonos riuscito!",
+      zonosTestFailedAlert: "Test Zonos fallito.",
+      unknownError: "Errore sconosciuto",
+      makeSureZonosRunning: "Assicurati che Zonos sia in esecuzione su localhost:7860."
     },
     chat: {
       passion: "Passione",
@@ -3488,7 +3534,9 @@ export const translations = {
         tierPremium: "✨ Premium (FLUX)",
         fluxBenefits: "Miglior rendering del testo nelle immagini",
         fluxUnavailable: "⚠️ Modello FLUX non trovato - uso SDXL",
-        fluxConnected: "Modello FLUX Pronto"
+        fluxConnected: "Modello FLUX Pronto",
+        connectionSuccess: "Connesso!",
+        testConnectionBtn: "Test Connessione"
       },
       setupGuide: "Guida alla Configurazione",
       status: "Stato",
@@ -3895,7 +3943,13 @@ export const translations = {
       allChangesAutoSaved: "Salvo automaticamente",
       close: "Fechar",
       yourNameDisplayed: "Nome exibido no chat",
-      definesAnatomy: "Define anatomia"
+      definesAnatomy: "Define anatomia",
+      voiceTestSuccessAlert: "Teste de voz bem-sucedido! Reprodução de áudio iniciada.",
+      voiceTestFailedAlert: "Teste de voz falhou.",
+      zonosTestSuccessAlert: "Teste Zonos bem-sucedido!",
+      zonosTestFailedAlert: "Teste Zonos falhou.",
+      unknownError: "Erro desconhecido",
+      makeSureZonosRunning: "Certifique-se de que o Zonos está rodando em localhost:7860."
     },
     chat: {
       passion: "Paixão",
@@ -4103,7 +4157,9 @@ export const translations = {
         tierPremium: "✨ Premium (FLUX)",
         fluxBenefits: "Melhor renderização de texto em imagens",
         fluxUnavailable: "⚠️ Modelo FLUX não encontrado - usando SDXL",
-        fluxConnected: "Modelo FLUX Pronto"
+        fluxConnected: "Modelo FLUX Pronto",
+        connectionSuccess: "Conectado!",
+        testConnectionBtn: "Testar Conexão"
       },
       setupGuide: "Guia de Configuração",
       status: "Status",
@@ -4516,7 +4572,13 @@ export const translations = {
       allChangesAutoSaved: "Авто-сохранение изменений",
       close: "Закрыть",
       yourNameDisplayed: "Отображаемое имя",
-      definesAnatomy: "Анатомия для ролеплея"
+      definesAnatomy: "Анатомия для ролеплея",
+      voiceTestSuccessAlert: "Тест голоса успешен! Воспроизведение аудио начато.",
+      voiceTestFailedAlert: "Тест голоса не пройден.",
+      zonosTestSuccessAlert: "Тест Zonos успешен!",
+      zonosTestFailedAlert: "Тест Zonos не пройден.",
+      unknownError: "Неизвестная ошибка",
+      makeSureZonosRunning: "Убедитесь, что Zonos запущен на localhost:7860."
     },
     chat: {
       passion: "Страсть",
@@ -4724,7 +4786,9 @@ export const translations = {
         tierPremium: "✨ Премиум (FLUX)",
         fluxBenefits: "Лучшая отрисовка текста в изображениях",
         fluxUnavailable: "⚠️ Модель FLUX не найдена - используется SDXL",
-        fluxConnected: "Модель FLUX Готова"
+        fluxConnected: "Модель FLUX Готова",
+        connectionSuccess: "Подключено!",
+        testConnectionBtn: "Проверить соединение"
       },
       setupGuide: "Руководство по настройке",
       status: "Статус",
@@ -5137,7 +5201,13 @@ export const translations = {
       allChangesAutoSaved: "自動保存されます",
       close: "閉じる",
       yourNameDisplayed: "表示される名前",
-      definesAnatomy: "身体的特徴を定義"
+      definesAnatomy: "身体的特徴を定義",
+      voiceTestSuccessAlert: "音声テスト成功！オーディオ再生を開始しました。",
+      voiceTestFailedAlert: "音声テスト失敗。",
+      zonosTestSuccessAlert: "Zonosテスト成功！",
+      zonosTestFailedAlert: "Zonosテスト失敗。",
+      unknownError: "不明なエラー",
+      makeSureZonosRunning: "Zonosがlocalhost:7860で実行中か確認してください。"
     },
     chat: {
       passion: "情熱",
@@ -5345,7 +5415,9 @@ export const translations = {
         tierPremium: "✨ プレミアム (FLUX)",
         fluxBenefits: "最高のテキストレンダリング",
         fluxUnavailable: "⚠️ FLUXモデル未検出 - SDXL使用",
-        fluxConnected: "FLUXモデル準備完了"
+        fluxConnected: "FLUXモデル準備完了",
+        connectionSuccess: "接続成功！",
+        testConnectionBtn: "接続テスト"
       },
       setupGuide: "セットアップガイド",
       status: "ステータス",
@@ -5758,7 +5830,13 @@ export const translations = {
       allChangesAutoSaved: "자동 저장됨",
       close: "닫기",
       yourNameDisplayed: "표시될 이름",
-      definesAnatomy: "신체 특징 정의"
+      definesAnatomy: "신체 특징 정의",
+      voiceTestSuccessAlert: "음성 테스트 성공! 오디오 재생이 시작되었습니다.",
+      voiceTestFailedAlert: "음성 테스트 실패.",
+      zonosTestSuccessAlert: "Zonos 테스트 성공!",
+      zonosTestFailedAlert: "Zonos 테스트 실패.",
+      unknownError: "알 수 없는 오류",
+      makeSureZonosRunning: "Zonos가 localhost:7860에서 실행 중인지 확인하세요."
     },
     chat: {
       passion: "열정",
@@ -5966,7 +6044,9 @@ export const translations = {
         tierPremium: "✨ 프리미엄 (FLUX)",
         fluxBenefits: "최고의 텍스트 렌더링",
         fluxUnavailable: "⚠️ FLUX 모델 없음 - SDXL 사용",
-        fluxConnected: "FLUX 모델 준비 완료"
+        fluxConnected: "FLUX 모델 준비 완료",
+        connectionSuccess: "연결됨!",
+        testConnectionBtn: "연결 테스트"
       },
       setupGuide: "설정 가이드",
       status: "상태",
@@ -6374,7 +6454,13 @@ export const translations = {
       allChangesAutoSaved: "حفظ تلقائي",
       close: "إغلاق",
       yourNameDisplayed: "اسمك المعروض في الدردشة",
-      definesAnatomy: "يحدد التشريح"
+      definesAnatomy: "يحدد التشريح",
+      voiceTestSuccessAlert: "اختبار الصوت ناجح! بدأ تشغيل الصوت.",
+      voiceTestFailedAlert: "فشل اختبار الصوت.",
+      zonosTestSuccessAlert: "اختبار Zonos ناجح!",
+      zonosTestFailedAlert: "فشل اختبار Zonos.",
+      unknownError: "خطأ غير معروف",
+      makeSureZonosRunning: "تأكد من أن Zonos يعمل على localhost:7860."
     },
     chat: {
       passion: "الشغف",
@@ -6582,7 +6668,9 @@ export const translations = {
         tierPremium: "✨ ممتاز (FLUX)",
         fluxBenefits: "أفضل عرض للنص في الصور",
         fluxUnavailable: "⚠️ نموذج FLUX غير موجود - استخدام SDXL",
-        fluxConnected: "نموذج FLUX جاهز"
+        fluxConnected: "نموذج FLUX جاهز",
+        connectionSuccess: "متصل!",
+        testConnectionBtn: "اختبار الاتصال"
       },
       setupGuide: "دليل الإعداد",
       status: "الحالة",
@@ -6996,7 +7084,13 @@ export const translations = {
       allChangesAutoSaved: "सभी परिवर्तन स्वचालित रूप से सहेजे गए",
       close: "बंद करें",
       yourNameDisplayed: "चैट संदेशों में दिखाया जाने वाला नाम",
-      definesAnatomy: "रोलप्ले के लिए शारीरिक विशेषताएं परिभाषित करता है"
+      definesAnatomy: "रोलप्ले के लिए शारीरिक विशेषताएं परिभाषित करता है",
+      voiceTestSuccessAlert: "आवाज़ परीक्षण सफल! ऑडियो प्लेबैक शुरू हुआ।",
+      voiceTestFailedAlert: "आवाज़ परीक्षण विफल।",
+      zonosTestSuccessAlert: "Zonos परीक्षण सफल!",
+      zonosTestFailedAlert: "Zonos परीक्षण विफल।",
+      unknownError: "अज्ञात त्रुटि",
+      makeSureZonosRunning: "सुनिश्चित करें कि Zonos localhost:7860 पर चल रहा है।"
     },
     chat: {
       passion: "जुनून",
@@ -7204,7 +7298,9 @@ export const translations = {
         tierPremium: "✨ प्रीमियम (FLUX)",
         fluxBenefits: "छवियों में सर्वश्रेष्ठ टेक्स्ट रेंडरिंग",
         fluxUnavailable: "⚠️ FLUX मॉडल नहीं मिला - SDXL उपयोग",
-        fluxConnected: "FLUX मॉडल तैयार"
+        fluxConnected: "FLUX मॉडल तैयार",
+        connectionSuccess: "जुड़ गया!",
+        testConnectionBtn: "कनेक्शन जांचें"
       },
       setupGuide: "सेटअप गाइड",
       status: "स्थिति",
@@ -7618,7 +7714,13 @@ export const translations = {
       allChangesAutoSaved: "Tüm değişiklikler otomatik kaydedildi",
       close: "Kapat",
       yourNameDisplayed: "Sohbet mesajlarında görüntülenen ad",
-      definesAnatomy: "Rol yapma için anatomik özellikleri tanımlar"
+      definesAnatomy: "Rol yapma için anatomik özellikleri tanımlar",
+      voiceTestSuccessAlert: "Ses testi başarılı! Ses çalma başladı.",
+      voiceTestFailedAlert: "Ses testi başarısız.",
+      zonosTestSuccessAlert: "Zonos testi başarılı!",
+      zonosTestFailedAlert: "Zonos testi başarısız.",
+      unknownError: "Bilinmeyen hata",
+      makeSureZonosRunning: "Zonos'un localhost:7860 üzerinde çalıştığından emin olun."
     },
     chat: {
       passion: "Tutku",
@@ -7826,7 +7928,9 @@ export const translations = {
         tierPremium: "✨ Premium (FLUX)",
         fluxBenefits: "Görüntülerde en iyi metin işleme",
         fluxUnavailable: "⚠️ FLUX modeli bulunamadı - SDXL kullanılıyor",
-        fluxConnected: "FLUX Modeli Hazır"
+        fluxConnected: "FLUX Modeli Hazır",
+        connectionSuccess: "Bağlandı!",
+        testConnectionBtn: "Bağlantıyı Test Et"
       },
       setupGuide: "Kurulum Kılavuzu",
       status: "Durum",

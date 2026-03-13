@@ -318,7 +318,8 @@ function createWindow() {
       if (!zonosTool) return { running: false };
       const running = await platform.isPortInUse(zonosTool.SERVER_PORT);
       return { running };
-    } catch {
+    } catch (err) {
+      console.warn('[Main] Zonos server status check failed:', err?.message);
       return { running: false };
     }
   });
@@ -811,7 +812,8 @@ ipcMain.handle('generate-speech', async (event, params) => {
       }
     }
     
-    return { success: false, error: 'Zonos returned unexpected data format. See console.' };
+    console.error('[Voice] Zonos returned unexpected data format:', JSON.stringify(result?.data?.[0])?.slice(0, 200));
+    return { success: false, error: 'Zonos returned unexpected data format' };
   }
 
   // STANDARD MODE: Use Piper TTS

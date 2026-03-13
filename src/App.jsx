@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import TitleBar from './components/TitleBar';
 import MainMenu from './components/MainMenu';
 import ModeSelection from './components/ModeSelection';

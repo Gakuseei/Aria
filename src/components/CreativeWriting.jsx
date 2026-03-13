@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { generateCreativeWriting, continueStory } from '../lib/StoryEngine';
 import { saveSession, loadSession, generateSessionId, autoDetectAndSetModel } from '../lib/api';
 import { GAME_MODES } from '../App';

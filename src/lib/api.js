@@ -5,7 +5,7 @@
 // ~300-500 token system prompts (vs ~2000 in v1)
 // ============================================================================
 
-import { passionManager, PASSION_TIERS, getTierKey, getDepthInstruction, getSpeedMultiplier } from './PassionManager.js';
+import { passionManager, getTierKey, getDepthInstruction, getSpeedMultiplier } from './PassionManager.js';
 import { getModelProfile } from './modelProfiles.js';
 
 
@@ -635,10 +635,10 @@ export const sendMessage = async (
     console.log(`[API] Unchained: ${unchainedMode}, Passion: ${currentPassionLevel}`);
     const promptTokens = estimateTokens(finalSystemPrompt);
     const numPredict = settings.maxResponseTokens ?? profile.maxResponseTokens ?? 512;
-    let availableForHistory = modelCtx - promptTokens - numPredict - 128;
+    const availableForHistory = modelCtx - promptTokens - numPredict - 128;
 
     // Dynamic sliding window — keep as many recent messages as fit
-    let trimmedHistory = [...historyToUse];
+    const trimmedHistory = [...historyToUse];
     while (trimmedHistory.length > 2) {
       const historyTokens = trimmedHistory.reduce((sum, m) => sum + estimateTokens(m.content || ''), 0);
       if (historyTokens <= availableForHistory) break;

@@ -1,5 +1,5 @@
 // ARIA v1.0 - Image Gen Setup Tutorial (Refactored Premium)
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, Check, RefreshCw, ExternalLink, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import TutorialLayout from './TutorialLayout';

@@ -1,6 +1,6 @@
 // ARIA v1.0 RELEASE - Settings (Rose Noir Theme)
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { fetchOllamaModels, testOllamaConnection } from '../lib/api';
 import { Globe, Zap, Moon, RefreshCw, Check, X, User, Image, Volume2, HelpCircle, FolderOpen } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';

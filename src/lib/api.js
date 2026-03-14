@@ -330,19 +330,17 @@ export function abortSuggestionCall() {
 }
 
 /**
- * Generate smart suggestions in background via /api/chat impersonate.
- * Sends last 4 messages + system impersonate prompt so the model
- * writes AS the user, not as the character.
+ * Generate smart suggestions in background via /api/chat.
+ * Sends last 6 messages + OOC instruction to get user response options.
  * @param {Array} history - Full conversation messages array
  * @param {string} charName - Character name
  * @param {string} charDescription - Character description for context
  * @param {string} userName - User display name
- * @param {number} passionLevel - Current passion level (0-100)
  * @param {object} settings - App settings
  * @param {function} callback - Receives string[] or null
  * @param {string[]} [previousSuggestions] - Previous suggestions to avoid repeating
  */
-export async function generateSuggestionsBackground(history, charName, charDescription, userName, passionLevel, settings, callback, previousSuggestions = []) {
+export async function generateSuggestionsBackground(history, charName, charDescription, userName, settings, callback, previousSuggestions = []) {
   abortSuggestionCall();
   const currentRequestId = ++suggestionRequestId;
 
@@ -355,13 +353,21 @@ export async function generateSuggestionsBackground(history, charName, charDescr
     .slice(-6)
     .map(m => ({ role: m.role, content: (m.content || '').slice(0, 300) }));
 
+  let descSnippet = (charDescription || '').slice(0, 300);
+  const lastSentence = descSnippet.search(/[.!?][^.!?]*$/);
+  if (lastSentence > 50) descSnippet = descSnippet.slice(0, lastSentence + 1);
+
+  const descriptionContext = descSnippet
+    ? `\nContext about ${charName}: ${descSnippet}`
+    : '';
+
   const avoidLine = previousSuggestions.length > 0
     ? `\nDo NOT repeat these: ${previousSuggestions.join(', ')}`
     : '';
 
   const instructionMsg = {
     role: 'user',
-    content: `[OOC: Give me 3 short options for what ${userName} could say or do next. ${userName}'s perspective, not ${charName}'s. Match the conversation's tone. Max 8 words each. Separate with |${avoidLine}]`
+    content: `[OOC: Give me 3 short options for what ${userName} could say or do next. ${userName}'s perspective, not ${charName}'s. Match the conversation's tone. Max 8 words each. Separate with |${descriptionContext}${avoidLine}]`
   };
 
   const messages = [...last6, instructionMsg];
@@ -390,13 +396,14 @@ export async function generateSuggestionsBackground(history, charName, charDescr
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model, messages, stream: false,
-      options: { num_predict: 70, temperature: 0.8, num_ctx: numCtx, stop: [`\n${charName}:`, `${charName}:`] }
+      options: { num_predict: 100, temperature: 0.8, num_ctx: numCtx, stop: [`\n${charName}:`, `${charName}:`] }
     })
   };
 
-  suggestionAbortController = new AbortController();
+  const controller = new AbortController();
+  suggestionAbortController = controller;
 
-  fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: suggestionAbortController.signal })
+  fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: controller.signal })
     .then(res => res.json())
     .then(data => {
       if (currentRequestId !== suggestionRequestId) return;
@@ -409,7 +416,7 @@ export async function generateSuggestionsBackground(history, charName, charDescr
         return;
       }
       console.log(`[API] Suggestions: retrying (got ${suggestions.length})`);
-      return fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: suggestionAbortController?.signal })
+      return fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: controller.signal })
         .then(r => r.json())
         .then(d => {
           suggestionAbortController = null;

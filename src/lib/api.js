@@ -396,7 +396,7 @@ export async function generateSuggestionsBackground(history, charName, charDescr
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model, messages, stream: false,
-      options: { num_predict: 70, temperature: 0.7, num_ctx: numCtx, stop: [`\n${charName}:`, `${charName}:`] }
+      options: { num_predict: 70, temperature: 0.8, num_ctx: numCtx, stop: [`\n${charName}:`, `${charName}:`] }
     })
   };
 

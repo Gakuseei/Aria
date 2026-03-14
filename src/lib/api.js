@@ -400,7 +400,7 @@ Rules:
 - Option 2: bolder or more forward than the current scene
 - Option 3: something new or unexpected
 - Stay in the current scene — do not suggest leaving or moving unless the scene is over
-- Respond in the same language the user writes in${descriptionContext}${intensityHint}${avoidLine}`
+- Respond in the same language as the conversation${descriptionContext}${intensityHint}${avoidLine}`
     },
     {
       role: 'user',

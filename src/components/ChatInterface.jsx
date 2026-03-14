@@ -579,7 +579,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
     if (settings.smartSuggestionsEnabled) {
       setIsGeneratingSuggestions(true);
-      generateSuggestionsBackground([greetingMsg], character.name, character.description || '', userName, 0, settings, (suggestions) => {
+      generateSuggestionsBackground([greetingMsg], character.name, character.description || '', userName, settings, (suggestions) => {
         const result = (suggestions && suggestions.length > 0) ? suggestions : [];
         setSmartSuggestions(result);
         setIsGeneratingSuggestions(false);
@@ -748,7 +748,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     const prevSuggestions = [...smartSuggestions];
     const suggestStart = Date.now();
     setIsGeneratingSuggestions(true);
-    generateSuggestionsBackground(updatedMessages, character.name, character.description || '', userName, passionLevel, settings, (suggestions) => {
+    generateSuggestionsBackground(updatedMessages, character.name, character.description || '', userName, settings, (suggestions) => {
       const suggestTime = ((Date.now() - suggestStart) / 1000).toFixed(1);
       setIsGeneratingSuggestions(false);
       const result = (suggestions && suggestions.length > 0) ? suggestions : [];

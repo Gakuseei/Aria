@@ -464,7 +464,7 @@ Rules:
       const raw = data.message?.content || '';
       const suggestions = parseSuggestions(raw);
       console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
-      if (suggestions.length >= 2) {
+      if (suggestions.length >= 3) {
         suggestionAbortController = null;
         callback(suggestions);
         return;
@@ -478,7 +478,8 @@ Rules:
           const retryRaw = d.message?.content || '';
           const retrySuggestions = parseSuggestions(retryRaw);
           console.log(`[API] Suggestions retry: ${retrySuggestions.length} from "${retryRaw.trim().slice(0, 120)}"`);
-          callback(retrySuggestions.length > 0 ? retrySuggestions : suggestions.length > 0 ? suggestions : null);
+          const best = retrySuggestions.length >= suggestions.length ? retrySuggestions : suggestions;
+          callback(best.length > 0 ? best : null);
         });
     })
     .catch(err => {

@@ -396,7 +396,9 @@ export async function generateSuggestionsBackground(history, charName, charDescr
 Rules:
 - Write as ACTIONS ${userName} takes: "Kiss her neck", "Pull her closer", "Whisper in her ear"
 - NEVER write instructions: "Guide her to...", "Encourage her to...", "Explain...", "Suggest..."
-- Each option = a DIFFERENT type of action
+- Option 1: match the current pace
+- Option 2: bolder or more forward than the current scene
+- Option 3: something new or unexpected
 - Stay in the current scene — do not suggest leaving or moving unless the scene is over
 - Match the conversation's language${descriptionContext}${intensityHint}${avoidLine}`
     },

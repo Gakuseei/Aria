@@ -360,15 +360,6 @@ export async function generateSuggestionsBackground(history, charName, charDescr
     ? `\nDo NOT repeat these: ${previousSuggestions.join(', ')}`
     : '';
 
-  const tierExamples = {
-    surface: 'Tell me more | Come closer | Show me around',
-    aware: 'Touch my hand | Sit next to me | Look into my eyes',
-    vivid: 'Kiss me | Pull her closer | Take off your shirt',
-    immersive: 'Touch me there | Get on your knees | I want you now',
-    consuming: 'Fuck me harder | I\'m gonna cum | Ride me faster',
-    transcendent: 'Don\'t stop | Fill me up | Make me cum'
-  };
-
   const systemMsg = {
     role: 'system',
     content: `Roleplay: ${charName} — ${(charDescription || '').slice(0, 200)}`
@@ -376,7 +367,7 @@ export async function generateSuggestionsBackground(history, charName, charDescr
 
   const instructionMsg = {
     role: 'user',
-    content: `[OOC: 3 things ${userName} could say or do next. Short, direct, physical. Max 6 words. Separate with |. Example: ${tierExamples[tier] || tierExamples.surface}${avoidLine}]`
+    content: `[OOC: 3 things ${userName} could say or do next. Direct actions, not observations. Match the conversation's tone. Max 6 words each. Separate with |${avoidLine}]`
   };
 
   const messages = [systemMsg, ...last6, instructionMsg];

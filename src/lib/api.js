@@ -374,12 +374,15 @@ export async function generateSuggestionsBackground(history, charName, charDescr
   const allAvoid = [...previousSuggestions];
   if (lastUserMsg) allAvoid.push(lastUserMsg.slice(0, 80));
   const avoidLine = allAvoid.length > 0
-    ? `\nAvoid repeating: ${allAvoid.join(' | ')}`
+    ? `\nDo NOT repeat: ${allAvoid.join(' | ')}`
     : '';
 
   const intensityHint = passionLevel > 15
-    ? `\nIntensity: ${passionLevel}/100. Match the scene's current intensity — suggestions should feel natural for what's happening, not softer or tamer.`
+    ? `\nScene intensity: ${passionLevel}/100. Suggestions must match — not softer, not tamer.`
     : '';
+
+  const lastAssistantMsg = last6.filter(m => m.role === 'assistant').pop()?.content || '';
+  const sceneAnchor = lastAssistantMsg.slice(-200).replace(/^[^.!?]*[.!?]\s*/, '').trim();
 
   const historyText = last6
     .map(m => `${m.role === 'user' ? userName : charName}: ${m.content}`)
@@ -388,11 +391,18 @@ export async function generateSuggestionsBackground(history, charName, charDescr
   const messages = [
     {
       role: 'system',
-      content: `You are a suggestion generator. Given a conversation, output exactly 3 short options (max 8 words each) for what ${userName} could say or do next. Write from ${userName}'s perspective only — NEVER as ${charName}. Match tone and language. Each option should suggest a DIFFERENT action or direction — don't repeat the same idea. At least one option should introduce something new. Output ONLY 3 options separated by |, nothing else.${descriptionContext}${intensityHint}${avoidLine}`
+      content: `You suggest what ${userName} does next in a roleplay. Output 3 options separated by |, max 8 words each.
+
+Rules:
+- Write as ACTIONS ${userName} takes: "Kiss her neck", "Pull her closer", "Whisper in her ear"
+- NEVER write instructions: "Guide her to...", "Encourage her to...", "Explain...", "Suggest..."
+- Each option = a DIFFERENT type of action
+- Stay in the current scene — do not suggest leaving or moving unless the scene is over
+- Match the conversation's language${descriptionContext}${intensityHint}${avoidLine}`
     },
     {
       role: 'user',
-      content: `Conversation:\n${historyText}\n\nGenerate 3 options for ${userName}:`
+      content: `Right now: ${sceneAnchor || historyText.slice(-300)}\n\nFull conversation:\n${historyText}\n\n3 actions for ${userName}:`
     }
   ];
 
@@ -409,9 +419,10 @@ export async function generateSuggestionsBackground(history, charName, charDescr
     if (parts.length < 2) parts = cleaned.split('\n').filter(Boolean);
     if (parts.length < 2) parts = cleaned.split(/\d+[.)]\s*/).filter(Boolean);
     const metaPattern = /^(here|these|sure|okay|option|suggestion|note)/i;
+    const metaVerbPattern = /^(guide|encourage|explain|suggest|clarify|offer|continue|describe|share|propose)\b/i;
     return parts
       .map(s => s.replace(/^[':.\-\d)]+|[':.\-,|]+$/g, '').trim())
-      .filter(s => s.length >= 2 && s.length <= 80 && s.split(/\s+/).length >= 2 && s.split(/\s+/).length <= 12 && !metaPattern.test(s))
+      .filter(s => s.length >= 2 && s.length <= 80 && s.split(/\s+/).length >= 2 && s.split(/\s+/).length <= 12 && !metaPattern.test(s) && !metaVerbPattern.test(s))
       .filter(s => {
         if (!lastUserMsg) return true;
         const sLow = s.toLowerCase().trim();

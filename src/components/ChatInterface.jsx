@@ -809,6 +809,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       let firstToken = true;
       streamBufferRef.current = '';
+      rafRef.current = null;
       const flushBuffer = () => {
         setStreamingContent(streamBufferRef.current);
         rafRef.current = null;
@@ -841,7 +842,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         handleToken
       );
 
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
 
       if (!response.success) {
         setIsStreaming(false);
@@ -1114,6 +1115,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     try {
       let firstToken = true;
       streamBufferRef.current = '';
+      rafRef.current = null;
       const flushBuffer = () => {
         setStreamingContent(streamBufferRef.current);
         rafRef.current = null;
@@ -1146,7 +1148,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         handleToken
       );
 
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
 
       if (!response.success) {
         setIsStreaming(false);

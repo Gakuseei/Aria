@@ -745,7 +745,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // MESSAGE SENDING
   // ============================================================================
 
-  const triggerSuggestions = (updatedMessages) => {
+  const triggerSuggestions = (updatedMessages, currentPassionLevel) => {
     if (!settings.smartSuggestionsEnabled) return;
     const rollingAvoid = suggestionsHistoryRef.current.slice(-9);
     const suggestStart = Date.now();
@@ -769,7 +769,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         updated[lastIdx] = { ...updated[lastIdx], suggestions: result.length > 0 ? result : undefined, suggestTime: parseFloat(suggestTime) };
         return updated;
       });
-    }, rollingAvoid, passionLevel);
+    }, rollingAvoid, currentPassionLevel ?? passionLevel);
   };
 
   const handleSend = async (messageText = input) => {
@@ -865,7 +865,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       setIsStreaming(false);
       setStreamingContent('');
 
-      triggerSuggestions(updatedMessages);
+      const newPassion = response.passionLevel ?? passionLevel;
+      triggerSuggestions(updatedMessages, newPassion);
 
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
@@ -1168,7 +1169,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       setIsStreaming(false);
       setStreamingContent('');
 
-      triggerSuggestions(updatedMessages);
+      const newPassion = response.passionLevel ?? passionLevel;
+      triggerSuggestions(updatedMessages, newPassion);
 
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);

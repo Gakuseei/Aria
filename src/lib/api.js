@@ -351,14 +351,23 @@ export async function generateSuggestionsBackground(history, charName, charDescr
   const tier = getTierKey(passionLevel);
   const numCtx = Math.min(await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium'), 2048);
 
-  const last4 = history
+  const last6 = history
     .filter(m => m.role === 'user' || m.role === 'assistant')
-    .slice(-4)
-    .map(m => ({ role: m.role, content: (m.content || '').slice(0, 400) }));
+    .slice(-6)
+    .map(m => ({ role: m.role, content: (m.content || '').slice(0, 300) }));
 
   const avoidLine = previousSuggestions.length > 0
     ? `\nDo NOT repeat these: ${previousSuggestions.join(', ')}`
     : '';
+
+  const tierExamples = {
+    surface: 'Tell me more | Come closer | Show me around',
+    aware: 'Touch my hand | Sit next to me | Look into my eyes',
+    vivid: 'Kiss me | Pull her closer | Take off your shirt',
+    immersive: 'Touch me there | Get on your knees | I want you now',
+    consuming: 'Fuck me harder | I\'m gonna cum | Ride me faster',
+    transcendent: 'Don\'t stop | Fill me up | Make me cum'
+  };
 
   const systemMsg = {
     role: 'system',
@@ -367,10 +376,10 @@ export async function generateSuggestionsBackground(history, charName, charDescr
 
   const instructionMsg = {
     role: 'user',
-    content: `[OOC: Give me 3 short options for what ${userName} could say or do next. Max 5 words each. Mood: ${tier}. Separate with |. Example: Hello there | Come closer | I like that${avoidLine}]`
+    content: `[OOC: 3 things ${userName} could say or do next. Short, direct, physical. Max 6 words. Separate with |. Example: ${tierExamples[tier] || tierExamples.surface}${avoidLine}]`
   };
 
-  const messages = [systemMsg, ...last4, instructionMsg];
+  const messages = [systemMsg, ...last6, instructionMsg];
 
   suggestionAbortController = new AbortController();
 

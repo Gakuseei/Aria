@@ -746,10 +746,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const triggerSuggestions = (updatedMessages) => {
     if (!settings.smartSuggestionsEnabled) return;
     const prevSuggestions = [...smartSuggestions];
+    const suggestStart = Date.now();
     setIsGeneratingSuggestions(true);
     generateSuggestionsBackground(updatedMessages, character.name, character.description || '', userName, passionLevel, settings, (suggestions) => {
+      const suggestTime = ((Date.now() - suggestStart) / 1000).toFixed(1);
       setIsGeneratingSuggestions(false);
       const result = (suggestions && suggestions.length > 0) ? suggestions : [];
+      console.log(`[API] Suggestions ready: ${result.length} in ${suggestTime}s`);
       setSmartSuggestions(result);
       setMessages(prev => {
         let lastIdx = -1;
@@ -758,7 +761,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         }
         if (lastIdx === -1) return prev;
         const updated = [...prev];
-        updated[lastIdx] = { ...updated[lastIdx], suggestions: result.length > 0 ? result : undefined };
+        updated[lastIdx] = { ...updated[lastIdx], suggestions: result.length > 0 ? result : undefined, suggestTime: parseFloat(suggestTime) };
         return updated;
       });
     }, prevSuggestions);

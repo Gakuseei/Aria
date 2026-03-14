@@ -381,7 +381,7 @@ export async function generateSuggestionsBackground(history, charName, charDescr
     if (parts.length < 2) parts = cleaned.split(/\d+[.)]\s*/).filter(Boolean);
     const metaPattern = /^(here|these|sure|okay|option|suggestion|note)/i;
     return parts
-      .map(s => s.replace(/^[':.\-\d)]+|[':.\-]+$/g, '').trim())
+      .map(s => s.replace(/^[':.\-\d)]+|[':.\-,|]+$/g, '').trim())
       .filter(s => s.length >= 2 && s.length <= 80 && s.split(/\s+/).length <= 12 && !metaPattern.test(s))
       .slice(0, 3);
   };
@@ -404,12 +404,12 @@ export async function generateSuggestionsBackground(history, charName, charDescr
       const raw = data.message?.content || '';
       const suggestions = parseSuggestions(raw);
       console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
-      if (suggestions.length >= 2) {
+      if (suggestions.length >= 3) {
         suggestionAbortController = null;
         callback(suggestions);
         return;
       }
-      console.log('[API] Suggestions: retrying (<2 results)');
+      console.log(`[API] Suggestions: retrying (got ${suggestions.length}, need 3)`);
       return fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: suggestionAbortController?.signal })
         .then(r => r.json())
         .then(d => {

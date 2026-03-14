@@ -360,17 +360,12 @@ export async function generateSuggestionsBackground(history, charName, charDescr
     ? `\nDo NOT repeat these: ${previousSuggestions.join(', ')}`
     : '';
 
-  const systemMsg = {
-    role: 'system',
-    content: `You are a suggestion generator. ${userName} is chatting with ${charName}: ${(charDescription || '').slice(0, 200)}. Your ONLY job is to output 3 short reply options for ${userName}. Never continue the roleplay.`
-  };
-
   const instructionMsg = {
     role: 'user',
-    content: `[3 things ${userName} could say or do next. ${userName}'s perspective only. Direct actions, not observations. Match the conversation's tone. Max 8 words each. Separate with |${avoidLine}]`
+    content: `[OOC: Give me 3 short options for what ${userName} could say or do next. ${userName}'s perspective, not ${charName}'s. Match the conversation's tone. Max 8 words each. Separate with |${avoidLine}]`
   };
 
-  const messages = [systemMsg, ...last6, instructionMsg];
+  const messages = [...last6, instructionMsg];
 
   const parseSuggestions = (raw) => {
     const cleaned = raw.trim()

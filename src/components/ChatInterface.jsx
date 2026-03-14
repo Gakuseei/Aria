@@ -809,12 +809,14 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         rafRef.current = null;
       };
       const handleToken = (token) => {
+        streamBufferRef.current += token;
         if (firstToken) {
           firstToken = false;
           setIsLoading(false);
           setIsStreaming(true);
+          setStreamingContent(streamBufferRef.current);
+          return;
         }
-        streamBufferRef.current += token;
         if (!rafRef.current) {
           rafRef.current = requestAnimationFrame(flushBuffer);
         }
@@ -1111,12 +1113,14 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         rafRef.current = null;
       };
       const handleToken = (token) => {
+        streamBufferRef.current += token;
         if (firstToken) {
           firstToken = false;
           setIsLoading(false);
           setIsStreaming(true);
+          setStreamingContent(streamBufferRef.current);
+          return;
         }
-        streamBufferRef.current += token;
         if (!rafRef.current) {
           rafRef.current = requestAnimationFrame(flushBuffer);
         }

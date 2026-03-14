@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel, cleanTranscriptArtifacts } from '../lib/api';
+import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel } from '../lib/api';
 import { passionManager, getTierKey, PASSION_TIERS } from '../lib/PassionManager';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
@@ -797,7 +797,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       let firstToken = true;
       streamBufferRef.current = '';
       const flushBuffer = () => {
-        setStreamingContent(cleanTranscriptArtifacts(streamBufferRef.current, character.name || ''));
+        setStreamingContent(streamBufferRef.current);
         rafRef.current = null;
       };
       const handleToken = (token) => {
@@ -1099,7 +1099,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       let firstToken = true;
       streamBufferRef.current = '';
       const flushBuffer = () => {
-        setStreamingContent(cleanTranscriptArtifacts(streamBufferRef.current, character.name || ''));
+        setStreamingContent(streamBufferRef.current);
         rafRef.current = null;
       };
       const handleToken = (token) => {

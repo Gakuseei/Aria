@@ -399,6 +399,8 @@ export async function generateSuggestionsBackground(history, charName, charDescr
         .replace(/<\/?s>/gi, '')
         .replace(/\bassistant\b/gi, '')
         .replace(/```[\s\S]*?```/g, '')
+        .replace(/\*[^*]+\*/g, '')
+        .replace(/"[^"]*"/g, match => match.slice(1, -1))
         .trim();
       let parts = raw.split('|').map(s => s.trim()).filter(Boolean);
       if (parts.length < 2) parts = raw.split('\n').filter(Boolean);

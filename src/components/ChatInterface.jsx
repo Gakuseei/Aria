@@ -28,35 +28,40 @@ function formatMessageText(text, isGoldMode = false) {
   const parts = [];
   let currentIndex = 0;
 
-  // Match **bold** first (Gold Mode), then *action*, then "dialogue"
-  // Double-asterisk MUST come before single-asterisk to avoid partial matches
+  // BLOCK 4 FIX: Strict parsing - asterisks MUST be gray, quotes MUST be white
+  // Match either *action* or "dialogue" or **bold** (for Gold Mode)
   const regex = isGoldMode
-    ? /(\*\*[^*]+\*\*)|(\*[^*]+\*)|("([^"]+)")/g
+    ? /(\*[^*]+\*)|("([^"]+)")|(\*\*([^*]+)\*\*)/g
     : /(\*[^*]+\*)|("([^"]+)")/g;
   let match;
 
   while ((match = regex.exec(text)) !== null) {
     if (match.index > currentIndex) {
-      parts.push({ type: 'plain', text: text.substring(currentIndex, match.index) });
+      const plainText = text.substring(currentIndex, match.index);
+      if (plainText.trim()) {
+        parts.push({ type: 'plain', text: plainText });
+      }
     }
 
-    if (isGoldMode && match[1]) {
-      // **bold** (Gold Mode only)
-      parts.push({ type: 'bold', text: match[1].slice(2, -2) });
-    } else if (isGoldMode ? match[2] : match[1]) {
-      // *action* — gray italic
-      parts.push({ type: 'action', text: isGoldMode ? match[2] : match[1] });
-    } else {
-      // "dialogue" — white
-      const dialogueMatch = isGoldMode ? match[3] : match[2];
-      if (dialogueMatch) parts.push({ type: 'dialogue', text: isGoldMode ? match[3] : match[2] });
+    if (match[1]) {
+      // Asterisks = ACTION (MUST be gray italic)
+      parts.push({ type: 'action', text: match[1] });
+    } else if (match[2]) {
+      // Quotes = DIALOGUE (MUST be white)
+      parts.push({ type: 'dialogue', text: match[2] });
+    } else if (match[4] && isGoldMode) {
+      // Double asterisks = BOLD (Gold Mode only)
+      parts.push({ type: 'bold', text: match[5] });
     }
 
     currentIndex = match.index + match[0].length;
   }
 
   if (currentIndex < text.length) {
-    parts.push({ type: 'plain', text: text.substring(currentIndex) });
+    const remainingText = text.substring(currentIndex);
+    if (remainingText.trim()) {
+      parts.push({ type: 'plain', text: remainingText });
+    }
   }
 
   return parts;

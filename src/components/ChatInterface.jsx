@@ -276,11 +276,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // v0.2.5: Smart Suggestions
   const [smartSuggestions, setSmartSuggestions] = useState([]);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
+  const suggestionsHistoryRef = useRef([]);
 
   const clearSuggestionsState = useCallback(() => {
     abortSuggestionCall();
     setSmartSuggestions([]);
     setIsGeneratingSuggestions(false);
+    suggestionsHistoryRef.current = [];
   }, []);
 
 
@@ -745,7 +747,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   const triggerSuggestions = (updatedMessages) => {
     if (!settings.smartSuggestionsEnabled) return;
-    const prevSuggestions = [...smartSuggestions];
+    const rollingAvoid = suggestionsHistoryRef.current.slice(-9);
     const suggestStart = Date.now();
     setIsGeneratingSuggestions(true);
     generateSuggestionsBackground(updatedMessages, character.name, character.description || '', userName, settings, (suggestions) => {
@@ -754,6 +756,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const result = (suggestions && suggestions.length > 0) ? suggestions : [];
       console.log(`[API] Suggestions ready: ${result.length} in ${suggestTime}s`);
       setSmartSuggestions(result);
+      if (result.length > 0) {
+        suggestionsHistoryRef.current = [...suggestionsHistoryRef.current, ...result].slice(-15);
+      }
       setMessages(prev => {
         let lastIdx = -1;
         for (let i = prev.length - 1; i >= 0; i--) {
@@ -764,7 +769,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         updated[lastIdx] = { ...updated[lastIdx], suggestions: result.length > 0 ? result : undefined, suggestTime: parseFloat(suggestTime) };
         return updated;
       });
-    }, prevSuggestions);
+    }, rollingAvoid, passionLevel);
   };
 
   const handleSend = async (messageText = input) => {

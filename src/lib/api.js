@@ -339,8 +339,9 @@ export function abortSuggestionCall() {
  * @param {object} settings - App settings
  * @param {function} callback - Receives string[] or null
  * @param {string[]} [previousSuggestions] - Previous suggestions to avoid repeating
+ * @param {number} [passionLevel=0] - Current passion level (0-100) for intensity matching
  */
-export async function generateSuggestionsBackground(history, charName, charDescription, userName, settings, callback, previousSuggestions = []) {
+export async function generateSuggestionsBackground(history, charName, charDescription, userName, settings, callback, previousSuggestions = [], passionLevel = 0) {
   abortSuggestionCall();
   const currentRequestId = ++suggestionRequestId;
 
@@ -376,6 +377,10 @@ export async function generateSuggestionsBackground(history, charName, charDescr
     ? `\nAvoid repeating: ${allAvoid.join(' | ')}`
     : '';
 
+  const intensityHint = passionLevel > 55
+    ? `\nIntensity: high (${passionLevel}/100). Match the scene's current intensity — suggestions should feel natural for what's happening, not softer or tamer.`
+    : '';
+
   const historyText = last6
     .map(m => `${m.role === 'user' ? userName : charName}: ${m.content}`)
     .join('\n');
@@ -383,7 +388,7 @@ export async function generateSuggestionsBackground(history, charName, charDescr
   const messages = [
     {
       role: 'system',
-      content: `You are a suggestion generator. Given a conversation, output exactly 3 short options (max 8 words each) for what ${userName} could say or do next. Write from ${userName}'s perspective only — NEVER as ${charName}. Match tone and language. Each option should suggest a DIFFERENT action or direction — don't repeat the same idea. At least one option should introduce something new. Output ONLY 3 options separated by |, nothing else.${descriptionContext}${avoidLine}`
+      content: `You are a suggestion generator. Given a conversation, output exactly 3 short options (max 8 words each) for what ${userName} could say or do next. Write from ${userName}'s perspective only — NEVER as ${charName}. Match tone and language. Each option should suggest a DIFFERENT action or direction — don't repeat the same idea. At least one option should introduce something new. Output ONLY 3 options separated by |, nothing else.${descriptionContext}${intensityHint}${avoidLine}`
     },
     {
       role: 'user',

@@ -408,7 +408,7 @@ export async function generateSuggestionsBackground(history, charName, charDescr
         callback(suggestions);
         return;
       }
-      console.log(`[API] Suggestions: retrying (got ${suggestions.length}, need 3)`);
+      console.log(`[API] Suggestions: retrying (got ${suggestions.length})`);
       return fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: suggestionAbortController?.signal })
         .then(r => r.json())
         .then(d => {

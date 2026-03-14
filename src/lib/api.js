@@ -428,6 +428,14 @@ Rules:
         const msgLow = lastUserMsg.toLowerCase().trim();
         return !msgLow.includes(sLow) && !sLow.includes(msgLow);
       })
+      .filter(s => {
+        const sWords = s.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+        return !previousSuggestions.some(prev => {
+          const pWords = prev.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+          const overlap = sWords.filter(w => pWords.includes(w)).length;
+          return overlap >= Math.min(sWords.length, pWords.length) * 0.6;
+        });
+      })
       .slice(0, 3);
   };
 

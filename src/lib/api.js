@@ -348,7 +348,6 @@ export async function generateSuggestionsBackground(history, charName, charDescr
 
   const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
   const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
-  const tier = getTierKey(passionLevel);
   const numCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
 
   const last6 = history

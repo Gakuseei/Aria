@@ -316,6 +316,7 @@ export function scorePassionBackground(userMessage, aiMessage, settings, modelCt
  * Exported so callers can cancel before starting a new chat request.
  */
 let suggestionAbortController = null;
+let suggestionRequestId = 0;
 
 /**
  * Abort any in-flight suggestion generation.
@@ -342,6 +343,7 @@ export function abortSuggestionCall() {
  */
 export async function generateSuggestionsBackground(history, charName, userName, passionLevel, settings, callback, previousSuggestions = []) {
   abortSuggestionCall();
+  const currentRequestId = ++suggestionRequestId;
 
   const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
   const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
@@ -357,16 +359,12 @@ export async function generateSuggestionsBackground(history, charName, userName,
     ? `\nDo NOT repeat these: ${previousSuggestions.join(', ')}`
     : '';
 
-  const impersonatePrompt = `ROLE SWITCH — you are ${userName}, NOT ${charName}.
-Write 3 things ${userName} could say or do next. First person "I" only.
-Each must be a DIFFERENT type: one action, one spoken line, one bold move.
-Max 6 words each. Intimacy: ${tier}.${avoidLine}
-Wrap each in <s> tags:
-<s>first suggestion</s>
-<s>second suggestion</s>
-<s>third suggestion</s>`;
+  const instructionMsg = {
+    role: 'user',
+    content: `[OOC: Give me 3 short options for what ${userName} could say next. Max 5 words each. Separate with |. Example: Hello there | Come closer | I like that${avoidLine}]`
+  };
 
-  const messages = [...last4, { role: 'system', content: impersonatePrompt }];
+  const messages = [...last4, instructionMsg];
 
   suggestionAbortController = new AbortController();
 
@@ -379,26 +377,30 @@ Wrap each in <s> tags:
       messages,
       stream: false,
       options: {
-        num_predict: 80,
+        num_predict: 60,
         temperature: 0.9,
         num_ctx: numCtx,
-        stop: [`\n${charName}:`, `${charName}:`]
+        stop: [`\n${charName}:`, `${charName}:`, '\n\n']
       }
     })
   })
     .then(res => res.json())
     .then(data => {
       suggestionAbortController = null;
-      const raw = (data.message?.content || '').trim();
-      // Primary: XML <s> tags (most reliable)
-      const tagMatches = [...raw.matchAll(/<s>(.+?)<\/s>/gi)].map(m => m[1].trim());
-      // Fallback: pipe separator, then numbered list, then newlines
-      let parts = tagMatches.length >= 2 ? tagMatches : raw.split('|');
-      if (parts.length < 2) parts = raw.split(/\d+[.)]\s*/).filter(Boolean);
+      if (currentRequestId !== suggestionRequestId) return;
+      const raw = (data.message?.content || '').trim()
+        .replace(/\[TOOL_CALLS\]/gi, '')
+        .replace(/<\/?s>/gi, '')
+        .replace(/\bassistant\b/gi, '')
+        .replace(/```[\s\S]*?```/g, '')
+        .trim();
+      let parts = raw.split('|').map(s => s.trim()).filter(Boolean);
       if (parts.length < 2) parts = raw.split('\n').filter(Boolean);
+      if (parts.length < 2) parts = raw.split(/\d+[.)]\s*/).filter(Boolean);
+      const metaPattern = /^(here|these|sure|okay|option|suggestion|note)/i;
       const suggestions = parts
-        .map(s => s.trim().replace(/^["':.\-*\d)+<s>]+|["':.\-*<\/s>]+$/gi, '').trim())
-        .filter(s => s.length > 0 && s.length <= 80 && s.split(/\s+/).length <= 12)
+        .map(s => s.replace(/^["':.\-*\d)]+|["':.\-*]+$/g, '').trim())
+        .filter(s => s.length >= 2 && s.length <= 60 && s.split(/\s+/).length <= 10 && !metaPattern.test(s))
         .slice(0, 3);
       console.log(`[API] Suggestions: ${suggestions.length} from "${raw.slice(0, 120)}"`);
       callback(suggestions.length > 0 ? suggestions : null);

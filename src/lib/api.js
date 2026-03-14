@@ -422,7 +422,7 @@ Rules:
     const metaPattern = /^(here|these|sure|okay|option|suggestion|note)/i;
     const metaVerbPattern = /^(guide|encourage|explain|suggest|clarify|offer|continue|describe|share|propose)\b/i;
     return parts
-      .map(s => s.replace(/^[':.\-\d)]+|[':.\-,|]+$/g, '').trim())
+      .map(s => s.replace(/^[':.\-\d)]+|[':.\-,|]+$/g, '').replace(/^(?:match the current pace|more forward|unexpected|option \d|bolder)[:\-]\s*/i, '').trim())
       .filter(s => s.length >= 2 && s.length <= 80 && s.split(/\s+/).length >= 2 && s.split(/\s+/).length <= 12 && !metaPattern.test(s) && !metaVerbPattern.test(s))
       .filter(s => {
         if (!lastUserMsg) return true;

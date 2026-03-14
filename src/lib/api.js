@@ -362,12 +362,12 @@ export async function generateSuggestionsBackground(history, charName, charDescr
 
   const systemMsg = {
     role: 'system',
-    content: `Roleplay: ${charName} — ${(charDescription || '').slice(0, 200)}`
+    content: `You are a suggestion generator. ${userName} is chatting with ${charName}: ${(charDescription || '').slice(0, 200)}. Your ONLY job is to output 3 short reply options for ${userName}. Never continue the roleplay.`
   };
 
   const instructionMsg = {
     role: 'user',
-    content: `[OOC: 3 things ${userName} could say or do next. ${userName}'s perspective only, NOT ${charName}'s. Direct actions, not observations. Match the conversation's tone. Max 8 words each. Separate with |${avoidLine}]`
+    content: `[3 things ${userName} could say or do next. ${userName}'s perspective only. Direct actions, not observations. Match the conversation's tone. Max 8 words each. Separate with |${avoidLine}]`
   };
 
   const messages = [systemMsg, ...last6, instructionMsg];

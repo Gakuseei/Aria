@@ -429,11 +429,15 @@ Rules:
         return !msgLow.includes(sLow) && !sLow.includes(msgLow);
       })
       .filter(s => {
-        const sWords = s.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+        const stopWords = new Set(['her','his','him','she','the','your','you','my','and','into','with','from','that','this','then','them','their','its','our','for']);
+        const toWords = (t) => t.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w));
+        const sWords = toWords(s);
+        if (sWords.length === 0) return true;
         return !previousSuggestions.some(prev => {
-          const pWords = prev.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+          const pWords = toWords(prev);
+          if (pWords.length === 0) return false;
           const overlap = sWords.filter(w => pWords.includes(w)).length;
-          return overlap >= Math.min(sWords.length, pWords.length) * 0.6;
+          return overlap >= Math.min(sWords.length, pWords.length) * 0.7;
         });
       })
       .slice(0, 3);

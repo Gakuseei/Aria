@@ -372,51 +372,64 @@ export async function generateSuggestionsBackground(history, charName, charDescr
 
   const messages = [systemMsg, ...last6, instructionMsg];
 
-  suggestionAbortController = new AbortController();
+  const parseSuggestions = (raw) => {
+    const cleaned = raw.trim()
+      .replace(/\[TOOL_CALLS\]/gi, '')
+      .replace(/<\/?s>/gi, '')
+      .replace(/\bassistant\b/gi, '')
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/\*/g, '')
+      .replace(/"/g, '')
+      .trim();
+    let parts = cleaned.split('|').map(s => s.trim()).filter(Boolean);
+    if (parts.length < 2) parts = cleaned.split('\n').filter(Boolean);
+    if (parts.length < 2) parts = cleaned.split(/\d+[.)]\s*/).filter(Boolean);
+    const metaPattern = /^(here|these|sure|okay|option|suggestion|note)/i;
+    return parts
+      .map(s => s.replace(/^[':.\-\d)]+|[':.\-]+$/g, '').trim())
+      .filter(s => s.length >= 2 && s.length <= 80 && s.split(/\s+/).length <= 12 && !metaPattern.test(s))
+      .slice(0, 3);
+  };
 
-  fetch(`${ollamaUrl}/api/chat`, {
+  const fetchOpts = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    signal: suggestionAbortController.signal,
     body: JSON.stringify({
-      model,
-      messages,
-      stream: false,
-      options: {
-        num_predict: 70,
-        temperature: 0.9,
-        num_ctx: numCtx,
-        stop: [`\n${charName}:`, `${charName}:`]
-      }
+      model, messages, stream: false,
+      options: { num_predict: 70, temperature: 0.7, num_ctx: numCtx, stop: [`\n${charName}:`, `${charName}:`] }
     })
-  })
+  };
+
+  suggestionAbortController = new AbortController();
+
+  fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: suggestionAbortController.signal })
     .then(res => res.json())
     .then(data => {
-      suggestionAbortController = null;
       if (currentRequestId !== suggestionRequestId) return;
-      const raw = (data.message?.content || '').trim()
-        .replace(/\[TOOL_CALLS\]/gi, '')
-        .replace(/<\/?s>/gi, '')
-        .replace(/\bassistant\b/gi, '')
-        .replace(/```[\s\S]*?```/g, '')
-        .replace(/\*[^*]+\*/g, '')
-        .replace(/"[^"]*"/g, match => match.slice(1, -1))
-        .trim();
-      let parts = raw.split('|').map(s => s.trim()).filter(Boolean);
-      if (parts.length < 2) parts = raw.split('\n').filter(Boolean);
-      if (parts.length < 2) parts = raw.split(/\d+[.)]\s*/).filter(Boolean);
-      const metaPattern = /^(here|these|sure|okay|option|suggestion|note)/i;
-      const suggestions = parts
-        .map(s => s.replace(/^["':.\-*\d)]+|["':.\-*]+$/g, '').trim())
-        .filter(s => s.length >= 2 && s.length <= 80 && s.split(/\s+/).length <= 12 && !metaPattern.test(s))
-        .slice(0, 3);
-      console.log(`[API] Suggestions: ${suggestions.length} from "${raw.slice(0, 120)}"`);
-      callback(suggestions.length > 0 ? suggestions : null);
+      const raw = data.message?.content || '';
+      const suggestions = parseSuggestions(raw);
+      console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
+      if (suggestions.length >= 2) {
+        suggestionAbortController = null;
+        callback(suggestions);
+        return;
+      }
+      console.log('[API] Suggestions: retrying (<2 results)');
+      return fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: suggestionAbortController?.signal })
+        .then(r => r.json())
+        .then(d => {
+          suggestionAbortController = null;
+          if (currentRequestId !== suggestionRequestId) return;
+          const retryRaw = d.message?.content || '';
+          const retrySuggestions = parseSuggestions(retryRaw);
+          console.log(`[API] Suggestions retry: ${retrySuggestions.length} from "${retryRaw.trim().slice(0, 120)}"`);
+          callback(retrySuggestions.length > 0 ? retrySuggestions : suggestions.length > 0 ? suggestions : null);
+        });
     })
     .catch(err => {
       suggestionAbortController = null;
       if (err?.name === 'AbortError') {
-        console.log('[API] Suggestion call aborted (new chat request)');
+        console.log('[API] Suggestion call aborted');
         return;
       }
       console.warn('[API] Suggestion generation failed:', err?.message);

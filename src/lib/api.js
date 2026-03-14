@@ -400,7 +400,7 @@ Rules:
 - Option 2: bolder or more forward than the current scene
 - Option 3: something new or unexpected
 - Stay in the current scene — do not suggest leaving or moving unless the scene is over
-- Match the conversation's language${descriptionContext}${intensityHint}${avoidLine}`
+- Respond in the same language the user writes in${descriptionContext}${intensityHint}${avoidLine}`
     },
     {
       role: 'user',
@@ -548,7 +548,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const messages = [
     {
       role: 'system',
-      content: `You write ${userName}'s next message in a roleplay conversation. Write 1-3 short sentences as ${userName} — actions in *asterisks*, dialogue in plain text. Match ${userName}'s writing style from the conversation. NEVER write as ${charName}. NEVER describe ${charName}'s reactions.${intensityHint}`
+      content: `You write ${userName}'s next message in a roleplay conversation. Write 1-3 short sentences as ${userName} — actions in *asterisks*, dialogue in plain text. Match ${userName}'s writing style from the conversation. NEVER write as ${charName}. NEVER describe ${charName}'s reactions. Respond in the same language the user writes in.${intensityHint}`
     },
     {
       role: 'user',

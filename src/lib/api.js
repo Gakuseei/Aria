@@ -351,7 +351,15 @@ export async function generateSuggestionsBackground(history, charName, charDescr
   const last6 = history
     .filter(m => m.role === 'user' || m.role === 'assistant')
     .slice(-6)
-    .map(m => ({ role: m.role, content: (m.content || '').slice(0, 300) }));
+    .map((m, i, arr) => {
+      const c = m.content || '';
+      const limit = (i === arr.length - 1) ? 500 : 350;
+      if (c.length <= limit) return { role: m.role, content: c };
+      const keep = (i === arr.length - 1)
+        ? c.slice(0, 100) + ' [...] ' + c.slice(-350)
+        : c.slice(0, 80) + ' [...] ' + c.slice(-220);
+      return { role: m.role, content: keep };
+    });
 
   let descSnippet = (charDescription || '').slice(0, 300);
   const lastSentence = descSnippet.search(/[.!?][^.!?]*$/);
@@ -361,16 +369,27 @@ export async function generateSuggestionsBackground(history, charName, charDescr
     ? `\nContext about ${charName}: ${descSnippet}`
     : '';
 
-  const avoidLine = previousSuggestions.length > 0
-    ? `\nDo NOT repeat these: ${previousSuggestions.join(', ')}`
+  const lastUserMsg = last6.filter(m => m.role === 'user').pop()?.content || '';
+  const allAvoid = [...previousSuggestions];
+  if (lastUserMsg) allAvoid.push(lastUserMsg.slice(0, 80));
+  const avoidLine = allAvoid.length > 0
+    ? `\nAvoid repeating: ${allAvoid.join(' | ')}`
     : '';
 
-  const instructionMsg = {
-    role: 'user',
-    content: `[OOC: Give me 3 short options for what ${userName} could say or do next. ${userName}'s perspective, not ${charName}'s. Match the conversation's tone. Max 8 words each. Separate with |${descriptionContext}${avoidLine}]`
-  };
+  const historyText = last6
+    .map(m => `${m.role === 'user' ? userName : charName}: ${m.content}`)
+    .join('\n');
 
-  const messages = [...last6, instructionMsg];
+  const messages = [
+    {
+      role: 'system',
+      content: `You are a suggestion generator. Given a conversation, output exactly 3 short options (max 8 words each) for what ${userName} could say or do next. Write from ${userName}'s perspective only — NEVER as ${charName}. Match tone and language. Each option should suggest a DIFFERENT action or direction — don't repeat the same idea. At least one option should introduce something new. Output ONLY 3 options separated by |, nothing else.${descriptionContext}${avoidLine}`
+    },
+    {
+      role: 'user',
+      content: `Conversation:\n${historyText}\n\nGenerate 3 options for ${userName}:`
+    }
+  ];
 
   const parseSuggestions = (raw) => {
     const cleaned = raw.trim()
@@ -387,7 +406,13 @@ export async function generateSuggestionsBackground(history, charName, charDescr
     const metaPattern = /^(here|these|sure|okay|option|suggestion|note)/i;
     return parts
       .map(s => s.replace(/^[':.\-\d)]+|[':.\-,|]+$/g, '').trim())
-      .filter(s => s.length >= 2 && s.length <= 80 && s.split(/\s+/).length <= 12 && !metaPattern.test(s))
+      .filter(s => s.length >= 2 && s.length <= 80 && s.split(/\s+/).length >= 2 && s.split(/\s+/).length <= 12 && !metaPattern.test(s))
+      .filter(s => {
+        if (!lastUserMsg) return true;
+        const sLow = s.toLowerCase().trim();
+        const msgLow = lastUserMsg.toLowerCase().trim();
+        return !msgLow.includes(sLow) && !sLow.includes(msgLow);
+      })
       .slice(0, 3);
   };
 
@@ -396,7 +421,7 @@ export async function generateSuggestionsBackground(history, charName, charDescr
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model, messages, stream: false,
-      options: { num_predict: 100, temperature: 0.8, num_ctx: numCtx, stop: [`\n${charName}:`, `${charName}:`] }
+      options: { num_predict: 120, temperature: 0.8, num_ctx: numCtx }
     })
   };
 

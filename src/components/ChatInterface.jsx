@@ -1729,7 +1729,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 title={suggestion}
               >
                 <Sparkles size={12} className={isGoldMode ? 'text-amber-400/70' : 'text-rose-400/70'} />
-                <span className="truncate max-w-[400px]">{suggestion}</span>
+                <span className="truncate max-w-[280px] sm:max-w-[400px] md:max-w-[500px]">{suggestion}</span>
               </button>
             ))}
           </div>

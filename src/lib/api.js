@@ -377,8 +377,8 @@ export async function generateSuggestionsBackground(history, charName, charDescr
     ? `\nAvoid repeating: ${allAvoid.join(' | ')}`
     : '';
 
-  const intensityHint = passionLevel > 55
-    ? `\nIntensity: high (${passionLevel}/100). Match the scene's current intensity — suggestions should feel natural for what's happening, not softer or tamer.`
+  const intensityHint = passionLevel > 15
+    ? `\nIntensity: ${passionLevel}/100. Match the scene's current intensity — suggestions should feel natural for what's happening, not softer or tamer.`
     : '';
 
   const historyText = last6

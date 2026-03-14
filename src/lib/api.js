@@ -383,10 +383,10 @@ export async function generateSuggestionsBackground(history, charName, charDescr
       messages,
       stream: false,
       options: {
-        num_predict: 60,
+        num_predict: 100,
         temperature: 0.9,
         num_ctx: numCtx,
-        stop: [`\n${charName}:`, `${charName}:`, '\n\n']
+        stop: [`\n${charName}:`, `${charName}:`]
       }
     })
   })
@@ -406,7 +406,7 @@ export async function generateSuggestionsBackground(history, charName, charDescr
       const metaPattern = /^(here|these|sure|okay|option|suggestion|note)/i;
       const suggestions = parts
         .map(s => s.replace(/^["':.\-*\d)]+|["':.\-*]+$/g, '').trim())
-        .filter(s => s.length >= 2 && s.length <= 60 && s.split(/\s+/).length <= 10 && !metaPattern.test(s))
+        .filter(s => s.length >= 2 && s.length <= 80 && s.split(/\s+/).length <= 12 && !metaPattern.test(s))
         .slice(0, 3);
       console.log(`[API] Suggestions: ${suggestions.length} from "${raw.slice(0, 120)}"`);
       callback(suggestions.length > 0 ? suggestions : null);

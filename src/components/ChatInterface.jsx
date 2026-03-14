@@ -308,6 +308,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const userScrolledUpRef = useRef(false);
   const inputRef = useRef(null);
   const importFileRef = useRef(null);
   const audioRef = useRef(null);
@@ -580,7 +581,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
     if (settings.smartSuggestionsEnabled) {
       setIsGeneratingSuggestions(true);
-      generateSuggestionsBackground([greetingMsg], character.name, userName, 0, settings, (suggestions) => {
+      generateSuggestionsBackground([greetingMsg], character.name, character.description || '', userName, 0, settings, (suggestions) => {
         const result = (suggestions && suggestions.length > 0) ? suggestions : [];
         setSmartSuggestions(result);
         setIsGeneratingSuggestions(false);
@@ -638,26 +639,34 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // ============================================================================
 
   useEffect(() => {
-    // Scroll immediately when messages change
+    // Scroll immediately when messages change (new message sent = reset scroll lock)
+    userScrolledUpRef.current = false;
     scrollToBottom();
-    
+
     // Additional delayed scroll to ensure DOM has fully rendered
     const timer = setTimeout(() => {
       scrollToBottom();
     }, 100);
-    
+
     return () => clearTimeout(timer);
   }, [messages]);
 
   useEffect(() => {
-    if (isStreaming) scrollToBottom();
+    if (isStreaming && !userScrolledUpRef.current) scrollToBottom();
   }, [streamingContent, isStreaming]);
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
-      // Force scroll to absolute bottom of container
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
+  };
+
+  const handleMessagesScroll = () => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    // Consider "at bottom" if within 150px of the end
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+    userScrolledUpRef.current = !atBottom;
   };
 
 
@@ -740,7 +749,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     if (!settings.smartSuggestionsEnabled) return;
     const prevSuggestions = [...smartSuggestions];
     setIsGeneratingSuggestions(true);
-    generateSuggestionsBackground(updatedMessages, character.name, userName, passionLevel, settings, (suggestions) => {
+    generateSuggestionsBackground(updatedMessages, character.name, character.description || '', userName, passionLevel, settings, (suggestions) => {
       setIsGeneratingSuggestions(false);
       const result = (suggestions && suggestions.length > 0) ? suggestions : [];
       setSmartSuggestions(result);
@@ -1587,6 +1596,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       {/* MESSAGES - BLOCK 6.7: Increased bottom padding for floating input */}
       <div
         ref={messagesContainerRef}
+        onScroll={handleMessagesScroll}
         className={`flex-1 min-h-0 overflow-y-auto px-4 py-6 pb-48 ${
           isGoldMode ? 'scrollbar-gold' : ''
         }`}

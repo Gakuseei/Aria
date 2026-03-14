@@ -359,9 +359,13 @@ export async function generateSuggestionsBackground(history, charName, charDescr
     ? `\nDo NOT repeat these: ${previousSuggestions.join(', ')}`
     : '';
 
+  const context = charDescription
+    ? `Context: ${charName} — ${charDescription.slice(0, 150)}. `
+    : '';
+
   const instructionMsg = {
     role: 'user',
-    content: `[OOC: Give me 3 short options for what ${userName} could say or do next. ${userName}'s perspective, not ${charName}'s. Match the conversation's tone. Max 8 words each. Separate with |${avoidLine}]`
+    content: `[OOC: ${context}Give me 3 short options for what ${userName} could say or do next. ${userName}'s perspective, not ${charName}'s. Match the conversation's tone. Max 8 words each. Separate with |${avoidLine}]`
   };
 
   const messages = [...last6, instructionMsg];

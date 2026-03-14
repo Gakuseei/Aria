@@ -383,7 +383,7 @@ export async function generateSuggestionsBackground(history, charName, charDescr
       messages,
       stream: false,
       options: {
-        num_predict: 100,
+        num_predict: 70,
         temperature: 0.9,
         num_ctx: numCtx,
         stop: [`\n${charName}:`, `${charName}:`]

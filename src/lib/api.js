@@ -367,7 +367,7 @@ export async function generateSuggestionsBackground(history, charName, charDescr
 
   const instructionMsg = {
     role: 'user',
-    content: `[OOC: 3 things ${userName} could say or do next. Direct actions, not observations. Match the conversation's tone. Max 8 words each. Separate with |${avoidLine}]`
+    content: `[OOC: 3 things ${userName} could say or do next. ${userName}'s perspective only, NOT ${charName}'s. Direct actions, not observations. Match the conversation's tone. Max 8 words each. Separate with |${avoidLine}]`
   };
 
   const messages = [systemMsg, ...last6, instructionMsg];

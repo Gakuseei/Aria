@@ -1,0 +1,64 @@
+#!/bin/sh
+#
+# commit-msg hook — normalizes commit message format:
+#   - lowercase first character (after optional conventional-commit prefix)
+#   - trim trailing periods from subject line
+#   - trim trailing whitespace from all lines
+#   - warn on subject lines over 72 characters
+#   - reject empty messages
+
+MSG_FILE="$1"
+msg=$(cat "$MSG_FILE")
+
+# Reject empty messages
+if [ -z "$(printf '%s' "$msg" | tr -d '[:space:]')" ]; then
+  echo "commit-msg hook: empty commit message, aborting." >&2
+  exit 1
+fi
+
+# Extract subject line (first line)
+subject=$(printf '%s' "$msg" | head -n 1)
+body=$(printf '%s' "$msg" | tail -n +2)
+
+# Conventional-commit prefixes
+prefix=""
+rest="$subject"
+case "$subject" in
+  fix:*|fix\(*|feat:*|feat\(*|perf:*|perf\(*|refactor:*|refactor\(*|\
+  chore:*|chore\(*|docs:*|docs\(*|style:*|style\(*|test:*|test\(*|\
+  build:*|build\(*|ci:*|ci\(*|DRY:*|DRY\(*|logging:*|logging\(*)
+    # Split into prefix (everything up to and including first space after colon)
+    prefix=$(printf '%s' "$subject" | sed 's/^\([a-zA-Z]*\(([^)]*)\)\?:[[:space:]]*\).*/\1/')
+    rest=$(printf '%s' "$subject" | sed 's/^[a-zA-Z]*\(([^)]*)\)\?:[[:space:]]*//')
+    ;;
+esac
+
+# Lowercase first character of the rest
+if [ -n "$rest" ]; then
+  first_char=$(printf '%s' "$rest" | cut -c1 | tr '[:upper:]' '[:lower:]')
+  remaining=$(printf '%s' "$rest" | cut -c2-)
+  rest="${first_char}${remaining}"
+fi
+
+# Trim trailing periods from subject
+rest=$(printf '%s' "$rest" | sed 's/\.*$//')
+
+# Reassemble subject
+subject="${prefix}${rest}"
+
+# Trim trailing whitespace from subject
+subject=$(printf '%s' "$subject" | sed 's/[[:space:]]*$//')
+
+# Warn on subject lines over 72 characters
+len=$(printf '%s' "$subject" | wc -c)
+if [ "$len" -gt 72 ]; then
+  echo "commit-msg hook: warning — subject line is ${len} chars (recommended max: 72)" >&2
+fi
+
+# Trim trailing whitespace from body lines and reassemble
+if [ -n "$body" ]; then
+  cleaned_body=$(printf '%s\n' "$body" | sed 's/[[:space:]]*$//')
+  printf '%s\n%s\n' "$subject" "$cleaned_body" > "$MSG_FILE"
+else
+  printf '%s\n' "$subject" > "$MSG_FILE"
+fi

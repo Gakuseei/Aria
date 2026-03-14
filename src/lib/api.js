@@ -335,13 +335,14 @@ export function abortSuggestionCall() {
  * writes AS the user, not as the character.
  * @param {Array} history - Full conversation messages array
  * @param {string} charName - Character name
+ * @param {string} charDescription - Character description for context
  * @param {string} userName - User display name
  * @param {number} passionLevel - Current passion level (0-100)
  * @param {object} settings - App settings
  * @param {function} callback - Receives string[] or null
  * @param {string[]} [previousSuggestions] - Previous suggestions to avoid repeating
  */
-export async function generateSuggestionsBackground(history, charName, userName, passionLevel, settings, callback, previousSuggestions = []) {
+export async function generateSuggestionsBackground(history, charName, charDescription, userName, passionLevel, settings, callback, previousSuggestions = []) {
   abortSuggestionCall();
   const currentRequestId = ++suggestionRequestId;
 
@@ -359,12 +360,17 @@ export async function generateSuggestionsBackground(history, charName, userName,
     ? `\nDo NOT repeat these: ${previousSuggestions.join(', ')}`
     : '';
 
-  const instructionMsg = {
-    role: 'user',
-    content: `[OOC: Give me 3 short options for what ${userName} could say next. Max 5 words each. Separate with |. Example: Hello there | Come closer | I like that${avoidLine}]`
+  const systemMsg = {
+    role: 'system',
+    content: `Roleplay: ${charName} — ${(charDescription || '').slice(0, 200)}`
   };
 
-  const messages = [...last4, instructionMsg];
+  const instructionMsg = {
+    role: 'user',
+    content: `[OOC: Give me 3 short options for what ${userName} could say or do next. Max 5 words each. Mood: ${tier}. Separate with |. Example: Hello there | Come closer | I like that${avoidLine}]`
+  };
+
+  const messages = [systemMsg, ...last4, instructionMsg];
 
   suggestionAbortController = new AbortController();
 

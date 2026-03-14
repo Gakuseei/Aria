@@ -404,7 +404,7 @@ Rules:
     },
     {
       role: 'user',
-      content: `Right now: ${sceneAnchor || historyText.slice(-300)}\n\nFull conversation:\n${historyText}\n\n3 actions for ${userName}:`
+      content: `Right now: ${sceneAnchor || historyText.slice(-300)}\n\nFull conversation:\n${historyText}\n\n3 actions for ${userName} (same language as the conversation above):`
     }
   ];
 

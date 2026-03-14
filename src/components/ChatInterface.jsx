@@ -1655,7 +1655,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 </div>
               </div>
               <div className="max-w-[75%] rounded-2xl px-5 py-3.5 relative transition-all duration-200 glass hover:border-white/10">
-                {isLoading && !isStreaming ? (
+                {!streamingContent ? (
                   <div className="flex items-center gap-3">
                     <div className="flex gap-1.5">
                       <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />

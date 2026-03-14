@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel } from '../lib/api';
+import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel, cleanTranscriptArtifacts } from '../lib/api';
 import { passionManager, getTierKey, PASSION_TIERS } from '../lib/PassionManager';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
@@ -28,42 +28,35 @@ function formatMessageText(text, isGoldMode = false) {
   const parts = [];
   let currentIndex = 0;
 
-  // BLOCK 4 FIX: Strict parsing - asterisks MUST be gray, quotes MUST be white
-  // Match either *action* or "dialogue" or **bold** (for Gold Mode)
-  const regex = isGoldMode 
-    ? /(\*[^*]+\*)|("([^"]+)")|(\*\*([^*]+)\*\*)/g
+  // Match **bold** first (Gold Mode), then *action*, then "dialogue"
+  // Double-asterisk MUST come before single-asterisk to avoid partial matches
+  const regex = isGoldMode
+    ? /(\*\*[^*]+\*\*)|(\*[^*]+\*)|("([^"]+)")/g
     : /(\*[^*]+\*)|("([^"]+)")/g;
   let match;
 
   while ((match = regex.exec(text)) !== null) {
-    // Add plain text before this match (if any)
     if (match.index > currentIndex) {
-      const plainText = text.substring(currentIndex, match.index);
-      if (plainText.trim()) {
-        parts.push({ type: 'plain', text: plainText });
-      }
+      parts.push({ type: 'plain', text: text.substring(currentIndex, match.index) });
     }
 
-    if (match[1]) {
-      // Asterisks = ACTION (MUST be gray italic)
-      parts.push({ type: 'action', text: match[1] });
-    } else if (match[2]) {
-      // Quotes = DIALOGUE (MUST be white)
-      parts.push({ type: 'dialogue', text: match[2] });
-    } else if (match[4] && isGoldMode) {
-      // Double asterisks = BOLD (Gold Mode only)
-      parts.push({ type: 'bold', text: match[5] });
+    if (isGoldMode && match[1]) {
+      // **bold** (Gold Mode only)
+      parts.push({ type: 'bold', text: match[1].slice(2, -2) });
+    } else if (isGoldMode ? match[2] : match[1]) {
+      // *action* — gray italic
+      parts.push({ type: 'action', text: isGoldMode ? match[2] : match[1] });
+    } else {
+      // "dialogue" — white
+      const dialogueMatch = isGoldMode ? match[3] : match[2];
+      if (dialogueMatch) parts.push({ type: 'dialogue', text: isGoldMode ? match[3] : match[2] });
     }
 
     currentIndex = match.index + match[0].length;
   }
 
-  // Add remaining text (if any)
   if (currentIndex < text.length) {
-    const remainingText = text.substring(currentIndex);
-    if (remainingText.trim()) {
-      parts.push({ type: 'plain', text: remainingText });
-    }
+    parts.push({ type: 'plain', text: text.substring(currentIndex) });
   }
 
   return parts;
@@ -804,7 +797,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       let firstToken = true;
       streamBufferRef.current = '';
       const flushBuffer = () => {
-        setStreamingContent(streamBufferRef.current);
+        setStreamingContent(cleanTranscriptArtifacts(streamBufferRef.current, character.name || ''));
         rafRef.current = null;
       };
       const handleToken = (token) => {
@@ -1106,7 +1099,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       let firstToken = true;
       streamBufferRef.current = '';
       const flushBuffer = () => {
-        setStreamingContent(streamBufferRef.current);
+        setStreamingContent(cleanTranscriptArtifacts(streamBufferRef.current, character.name || ''));
         rafRef.current = null;
       };
       const handleToken = (token) => {

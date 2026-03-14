@@ -349,7 +349,7 @@ export async function generateSuggestionsBackground(history, charName, charDescr
   const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
   const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
   const tier = getTierKey(passionLevel);
-  const numCtx = Math.min(await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium'), 2048);
+  const numCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
 
   const last6 = history
     .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -452,7 +452,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
   const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
   const tier = getTierKey(passionLevel);
-  const numCtx = Math.min(await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium'), 2048);
+  const numCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
 
   const last6 = (history || [])
     .filter(m => m.role === 'user' || m.role === 'assistant')

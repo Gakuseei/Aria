@@ -415,8 +415,7 @@ Rules:
       .replace(/\*/g, '')
       .replace(/"/g, '')
       .trim();
-    let parts = cleaned.split('|').map(s => s.trim()).filter(Boolean);
-    if (parts.length < 2) parts = cleaned.split('\n').filter(Boolean);
+    let parts = cleaned.split(/[|\n]/).map(s => s.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
     if (parts.length < 2) parts = cleaned.split(/\d+[.)]\s*/).filter(Boolean);
     const metaPattern = /^(here|these|sure|okay|option|suggestion|note)/i;
     const metaVerbPattern = /^(guide|encourage|explain|suggest|clarify|offer|continue|describe|share|propose)\b/i;

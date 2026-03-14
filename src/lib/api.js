@@ -525,13 +525,31 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const last6 = (history || [])
     .filter(m => m.role === 'user' || m.role === 'assistant')
     .slice(-6)
-    .map(m => ({ role: m.role, content: (m.content || '').slice(0, 500) }));
+    .map((m, i, arr) => {
+      const c = m.content || '';
+      const limit = (i === arr.length - 1) ? 500 : 350;
+      if (c.length <= limit) return { role: m.role, content: c };
+      return (i === arr.length - 1)
+        ? { role: m.role, content: c.slice(0, 100) + ' [...] ' + c.slice(-350) }
+        : { role: m.role, content: c.slice(0, 80) + ' [...] ' + c.slice(-220) };
+    });
+
+  const historyText = last6
+    .map(m => `${m.role === 'user' ? userName : charName}: ${m.content}`)
+    .join('\n');
+
+  const intensityHint = passionLevel > 15
+    ? `\nScene intensity: ${passionLevel}/100. Match the scene's current tone — not softer.`
+    : '';
 
   const messages = [
-    ...last6,
     {
       role: 'system',
-      content: `[Write the next reply from the point of view of ${userName}, using the chat history as a guideline for ${userName}'s writing style. Don't write as ${charName} or system. Don't describe actions of ${charName}. Write 1-2 short sentences in first person. Intimacy: ${tier}.]`
+      content: `You write ${userName}'s next message in a roleplay conversation. Write 1-3 short sentences as ${userName} — actions in *asterisks*, dialogue in plain text. Match ${userName}'s writing style from the conversation. NEVER write as ${charName}. NEVER describe ${charName}'s reactions.${intensityHint}`
+    },
+    {
+      role: 'user',
+      content: `Conversation:\n${historyText}\n\nWrite ${userName}'s next message:`
     }
   ];
 

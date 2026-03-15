@@ -600,7 +600,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
           if (token) {
             fullText += token;
             // Filter artifacts in real-time so user never sees them
-            const display = fullText.replace(/<\/s>/g, '').replace(/\[TOOL_CALLS\]/g, '').replace(/<\|[^|]*\|>/g, '').replace(/~+$/g, '').replace(/\s*\(\d+\s*words?\)\s*/gi, ' ').replace(/\[No further.*$/gim, '').replace(/\((?:Continued|Keeping|As per|Note:|Brief).*?\)/gi, '');
+            const display = fullText.replace(/<\/s>/g, '').replace(/\[TOOL_CALLS\]/g, '').replace(/<\|[^|]*\|>/g, '').replace(/~+$/g, '').replace(/\s*\(\d+\s*words?\)\s*/gi, ' ').replace(/\[No further.*$/gim, '').replace(/\((?:Continued|Keeping|As per|Note:|Brief).*?\)/gi, '').replace(/\n.*?(?:first person|keep .* brief|replies?.*brief|in character|as instructed|without describing|focusing on).*$/gim, '').replace(/^(?:Just|Note|Remember).*?(?:brief|first person|instruction|character|roleplay).*$/gim, '');
             onToken(null, display);
           }
         } catch { /* skip malformed lines */ }
@@ -623,6 +623,8 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   cleaned = cleaned.replace(/\((?:Continued|Keeping|As per|Note:|Brief).*?\)/gi, '');
   cleaned = cleaned.replace(/^I:\s*\.?\*?/gm, '');
   cleaned = cleaned.replace(/^I\s+(?:decide|choose|keep|want)\s+to\s+.*?[.!]\s*/i, '');
+  cleaned = cleaned.replace(/\n.*?(?:first person|keep .* brief|replies?.*brief|in character|as instructed|without describing|focusing on).*$/gim, '');
+  cleaned = cleaned.replace(/^(?:Just|Note|Remember).*?(?:brief|first person|instruction|character|roleplay).*$/gim, '');
   cleaned = cleaned.trim();
 
   // Trim to last complete sentence (num_predict may cut mid-word)

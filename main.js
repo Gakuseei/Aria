@@ -24,6 +24,12 @@ toolManager.registerTool(stabilityTool);
 // Active installations (for cancel support)
 const activeInstalls = new Map();
 
+// Must match src/lib/defaults.js — used as fallback when caller omits model
+const DEFAULT_MODEL_NAME = 'HammerAI/mn-mag-mell-r1:12b-q4_K_M';
+
+// Safe filename regex — blocks path traversal (../, /, null bytes)
+const SAFE_FILENAME = /^[a-zA-Z0-9_.-]+$/;
+
 // Load environment variables
 dotenv.config();
 
@@ -762,34 +768,52 @@ ipcMain.handle('generate-speech', async (event, params) => {
   // Helper for processing Gradio call results
   async function processGradioResult(baseUrl, result) {
     if (result.event_id) {
-        // Gradio 5 async/event based response - we got an event ID
-        // Need to poll result endpoint: GET /gradio_api/call/generate_audio/{event_id}
+        // Gradio 5 async response — poll the SSE endpoint for the result
         const pollUrl = `${baseUrl}/gradio_api/call/generate_audio/${result.event_id}`;
-        
-        // Poll for up to 30 seconds
-        for(let i=0; i<60; i++) {
+
+        // Poll for up to 30 seconds, parse SSE text/event-stream
+        for (let i = 0; i < 60; i++) {
             await new Promise(r => setTimeout(r, 500));
-            const pollResponse = await fetch(pollUrl);
-            
-            if (!pollResponse.ok) continue; // Not ready?
-            
-            // Gradio SSE/Stream format is tricky via simple fetch, usually returns text/event-stream
-            // But /call/ endpoint often returns JSON line events
-            
-            // Actually, for simplicity let's stick to the JSON response check
-            // If the initial call returned data directly, it's simpler.
+
+            let pollResponse;
+            try {
+              pollResponse = await fetch(pollUrl);
+            } catch { continue; }
+
+            if (!pollResponse.ok) continue;
+
+            const body = await pollResponse.text();
+            // SSE format: "event: <name>\ndata: <json>\n\n"
+            const lines = body.split('\n');
+            for (let j = 0; j < lines.length; j++) {
+              const line = lines[j];
+              if (line.startsWith('event: complete') || line.startsWith('event:complete')) {
+                // Next "data:" line contains the result JSON
+                const dataLine = lines.find((l, idx) => idx > j && l.startsWith('data:'));
+                if (dataLine) {
+                  try {
+                    const parsed = JSON.parse(dataLine.slice(dataLine.indexOf(':') + 1).trim());
+                    // Merge into result so the extraction below works
+                    result = parsed;
+                  } catch (parseErr) {
+                    console.error('[Voice] Failed to parse Gradio SSE data:', parseErr.message);
+                  }
+                }
+                break;
+              }
+              if (line.startsWith('event: error') || line.startsWith('event:error')) {
+                const dataLine = lines.find((l, idx) => idx > j && l.startsWith('data:'));
+                const errMsg = dataLine ? dataLine.slice(dataLine.indexOf(':') + 1).trim() : 'Unknown Gradio error';
+                return { success: false, error: `Zonos generation failed: ${errMsg}` };
+              }
+            }
+            // If we got data from SSE, break polling
+            if (result.data) break;
         }
-        // If we end up here, complex polling is needed. 
-        // Let's assume for now the /call/ endpoint might return the EVENT ID and we need to handle it.
-        // However, many Gradio simple setups return data immediately if not queued. 
-    }
-    
-    // Direct result format check
-    // Handle { event_id } case by just trying to read the result assuming it finished or handle error
-    if (result.event_id) {
-       // Since handling event loop in node without SSE lib is complex, let's inform user
-       // But wait, if we use /call/ endpoint, it usually returns JSON result immediately if synchronous?
-       // Let's check 'data' field directly.
+
+        if (!result.data) {
+          return { success: false, error: 'Zonos generation timed out (no result after 30s)' };
+        }
     }
 
     if (result.data && result.data[0]) {
@@ -898,6 +922,7 @@ ipcMain.handle('generate-speech', async (event, params) => {
       });
 
       let stderrData = '';
+      let resolved = false;
 
       // PROTECT STDIN: Handle EPIPE errors if Piper crashes instantly
       child.stdin.on('error', (err) => {
@@ -929,8 +954,20 @@ ipcMain.handle('generate-speech', async (event, params) => {
         stderrData += errorChunk;
       });
 
-      // Handle process close
+      // Timeout after 30 seconds — kill child THEN let 'close' handler resolve
+      const timeout = setTimeout(() => {
+        if (!child.killed) {
+          console.error('[Voice] Process timeout - killing child process');
+          child.kill();
+        }
+      }, 30000);
+
+      // Single close handler — clears timeout and resolves once
       child.on('close', (code) => {
+        clearTimeout(timeout);
+        if (resolved) return;
+        resolved = true;
+
         if (code === 0) {
           // Success - read output file
           setTimeout(() => {
@@ -960,43 +997,37 @@ ipcMain.handle('generate-speech', async (event, params) => {
             }
           }, 100);
         } else {
-          // Process failed
-          let errorMsg = `Piper process failed with code ${code}`;
-          
-          // ENHANCED ERROR MESSAGE for Access Violation
+          // Process failed (includes timeout-kill which sends SIGTERM → code null)
+          let errorMsg = code === null
+            ? 'Process timeout after 30 seconds'
+            : `Piper process failed with code ${code}`;
+
           if (code === 3221226505) {
             errorMsg += ' (Access Violation - usually caused by missing or corrupt model JSON config file)';
             console.error('[Voice] CRITICAL: Access Violation detected!');
             console.error('[Voice] This usually means the .json config file is missing or invalid.');
             console.error('[Voice] Expected JSON file:', correctConfigPath);
           }
-          
+
+          // Cleanup temp file on failure
+          if (fs.existsSync(outputFile)) {
+            try { fs.unlinkSync(outputFile); } catch { /* ignore */ }
+          }
+
           console.error('[Voice] Full stderr:', stderrData);
-          resolve({ 
-            success: false, 
-            error: `${errorMsg}: ${stderrData || 'Unknown error'}` 
+          resolve({
+            success: false,
+            error: `${errorMsg}: ${stderrData || 'Unknown error'}`
           });
         }
       });
 
       child.on('error', (error) => {
-        console.error('[Voice] Spawn error:', error.message);
-        console.error('[Voice] Error details:', error);
-        resolve({ success: false, error: `Failed to spawn Piper process: ${error.message}` });
-      });
-
-      // Timeout after 30 seconds
-      const timeout = setTimeout(() => {
-        if (!child.killed) {
-          console.error('[Voice] Process timeout - killing child process');
-          child.kill();
-          resolve({ success: false, error: 'Process timeout after 30 seconds' });
-        }
-      }, 30000);
-
-      // Clear timeout on completion
-      child.on('close', () => {
         clearTimeout(timeout);
+        if (resolved) return;
+        resolved = true;
+        console.error('[Voice] Spawn error:', error.message);
+        resolve({ success: false, error: `Failed to spawn Piper process: ${error.message}` });
       });
     } catch (error) {
       console.error('[Voice] Unexpected error:', error.message);
@@ -1175,7 +1206,7 @@ ipcMain.handle('ai-chat', async (event, params) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: model || 'dolphin-llama3:latest',
+        model: model || DEFAULT_MODEL_NAME,
         messages: ollamaMessages,
         stream: false,
         options: {
@@ -1229,7 +1260,7 @@ ipcMain.handle('ai-creative-write', async (event, params) => {
     }
 
     const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
-    const ollamaModel = settings.ollamaModel || 'dolphin-llama3:latest';
+    const ollamaModel = settings.ollamaModel || DEFAULT_MODEL_NAME;
 
 
     const finalSystemPrompt = systemPrompt || `You are an UNCENSORED, LIMITLESS creative writing engine. 
@@ -1498,6 +1529,9 @@ ipcMain.handle('save-character-memory', async (event, { characterId, sessionId, 
     if (!characterId || !sessionId) {
       return { success: false, error: 'Character ID and session ID required' };
     }
+    if (!SAFE_FILENAME.test(characterId) || !SAFE_FILENAME.test(sessionId)) {
+      return { success: false, error: 'Invalid character ID or session ID' };
+    }
     const memoriesDir = getMemoriesPath();
     if (!fs.existsSync(memoriesDir)) {
       fs.mkdirSync(memoriesDir, { recursive: true });
@@ -1517,6 +1551,9 @@ ipcMain.handle('load-character-memory', async (event, { characterId, sessionId }
     if (!characterId || !sessionId) {
       return { success: false, error: 'Character ID and session ID required' };
     }
+    if (!SAFE_FILENAME.test(characterId) || !SAFE_FILENAME.test(sessionId)) {
+      return { success: false, error: 'Invalid character ID or session ID' };
+    }
     const memoryPath = path.join(getMemoriesPath(), `${characterId}_${sessionId}.json`);
     if (!fs.existsSync(memoryPath)) {
       return { success: true, data: null };
@@ -1533,6 +1570,9 @@ ipcMain.handle('delete-character-memory', async (event, { characterId, sessionId
   try {
     if (!characterId || !sessionId) {
       return { success: false, error: 'Character ID and session ID required' };
+    }
+    if (!SAFE_FILENAME.test(characterId) || !SAFE_FILENAME.test(sessionId)) {
+      return { success: false, error: 'Invalid character ID or session ID' };
     }
     const memoryPath = path.join(getMemoriesPath(), `${characterId}_${sessionId}.json`);
     if (fs.existsSync(memoryPath)) {

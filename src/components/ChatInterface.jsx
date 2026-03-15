@@ -317,6 +317,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const abortRef = useRef(null);
   const streamBufferRef = useRef('');
   const rafRef = useRef(null);
+  const parentSettingsRef = useRef(parentSettings);
+
+  useEffect(() => {
+    parentSettingsRef.current = parentSettings;
+  }, [parentSettings]);
 
   useEffect(() => {
     return () => {
@@ -330,7 +335,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       }
       abortSuggestionCall();
       abortImpersonateCall();
-      unloadOllamaModel(parentSettings);
+      unloadOllamaModel(parentSettingsRef.current);
     };
   }, []);
 
@@ -842,8 +847,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         handleToken
       );
 
-      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-
       if (!response.success) {
         setIsStreaming(false);
         setStreamingContent('');
@@ -896,6 +899,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           : (t.chat?.sendError || error?.message || 'Failed to get response');
       toast.error(errorMsg);
     } finally {
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       setIsLoading(false);
       setIsStreaming(false);
       setStreamingContent('');
@@ -1148,8 +1152,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         handleToken
       );
 
-      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-
       if (!response.success) {
         setIsStreaming(false);
         setStreamingContent('');
@@ -1191,6 +1193,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       console.error('[ChatInterface] Regeneration error:', error);
       toast.error(t.chat?.sendError || 'Failed to regenerate response');
     } finally {
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       setIsLoading(false);
       setIsStreaming(false);
       setStreamingContent('');

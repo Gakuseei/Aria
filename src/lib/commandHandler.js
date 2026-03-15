@@ -75,7 +75,7 @@ function handleSummary({ messages, t, settings, character, passionLevel }) {
   }
 
   const totalTokens = tokens + promptTokens;
-  const avgResponse = aiMsgs.length > 0 ? Math.round(responseMs / aiMsgs.length / 1000) : 0;
+  const avgResponse = (aiMsgs.length > 0 && responseMs > 0) ? Math.round(responseMs / aiMsgs.length / 1000) : 0;
   const charName = character?.name || '—';
   const model = settings?.ollamaModel || '—';
 

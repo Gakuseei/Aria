@@ -470,7 +470,9 @@ Rules:
         return;
       }
       console.log(`[API] Suggestions: retrying (got ${suggestions.length})`);
-      return fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: controller.signal })
+      const retryController = new AbortController();
+      suggestionAbortController = retryController;
+      return fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: retryController.signal })
         .then(r => r.json())
         .then(d => {
           suggestionAbortController = null;
@@ -600,6 +602,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
       }
     }
   } finally {
+    reader.releaseLock();
     impersonateAbortController = null;
   }
 
@@ -802,39 +805,43 @@ export const sendMessage = async (
       const decoder = new TextDecoder();
       let buffer = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop(); // keep incomplete line in buffer
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop(); // keep incomplete line in buffer
 
-        for (const line of lines) {
-          if (!line.trim()) continue;
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              const chunk = JSON.parse(line);
+              if (chunk.message?.content) {
+                fullContent += chunk.message.content;
+                onToken(chunk.message.content);
+              }
+              if (chunk.done) {
+                finalChunk = chunk;
+              }
+            } catch { /* skip malformed lines */ }
+          }
+        }
+
+        // Process any remaining buffer
+        if (buffer.trim()) {
           try {
-            const chunk = JSON.parse(line);
+            const chunk = JSON.parse(buffer);
             if (chunk.message?.content) {
               fullContent += chunk.message.content;
               onToken(chunk.message.content);
             }
-            if (chunk.done) {
-              finalChunk = chunk;
-            }
-          } catch { /* skip malformed lines */ }
+            if (chunk.done) finalChunk = chunk;
+          } catch { /* skip */ }
         }
-      }
-
-      // Process any remaining buffer
-      if (buffer.trim()) {
-        try {
-          const chunk = JSON.parse(buffer);
-          if (chunk.message?.content) {
-            fullContent += chunk.message.content;
-            onToken(chunk.message.content);
-          }
-          if (chunk.done) finalChunk = chunk;
-        } catch { /* skip */ }
+      } finally {
+        reader.releaseLock();
       }
 
       data = {

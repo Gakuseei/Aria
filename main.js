@@ -30,8 +30,12 @@ dotenv.config();
 let mainWindow;
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SAFE_ID_REGEX = /^[a-zA-Z0-9_.-]+$/;
 function isValidSessionId(id) {
   return typeof id === 'string' && (UUID_REGEX.test(id) || /^session_\d+_[a-z0-9]+$/i.test(id));
+}
+function isSafeId(id) {
+  return typeof id === 'string' && id.length > 0 && id.length <= 128 && SAFE_ID_REGEX.test(id);
 }
 
 // v0.2.5: AGGRESSIVE Content Security Policy
@@ -1033,12 +1037,12 @@ ipcMain.handle('check-file-exists', async (event, filePath) => {
 ipcMain.handle('download-voice-model', async (event, params) => {
   const { name, urlOnnx, urlJson } = params;
 
-  if (!/^[a-zA-Z0-9_.-]+$/.test(name)) {
-    return { success: false, error: 'Invalid model name' };
-  }
-
   if (!name || !urlOnnx || !urlJson) {
     return { success: false, error: 'Missing required parameters' };
+  }
+
+  if (!/^[a-zA-Z0-9_.-]+$/.test(name)) {
+    return { success: false, error: 'Invalid model name' };
   }
 
   // Define download folder
@@ -1498,6 +1502,9 @@ ipcMain.handle('save-character-memory', async (event, { characterId, sessionId, 
     if (!characterId || !sessionId) {
       return { success: false, error: 'Character ID and session ID required' };
     }
+    if (!isSafeId(characterId) || !isSafeId(sessionId)) {
+      return { success: false, error: 'Invalid character or session ID' };
+    }
     const memoriesDir = getMemoriesPath();
     if (!fs.existsSync(memoriesDir)) {
       fs.mkdirSync(memoriesDir, { recursive: true });
@@ -1517,6 +1524,9 @@ ipcMain.handle('load-character-memory', async (event, { characterId, sessionId }
     if (!characterId || !sessionId) {
       return { success: false, error: 'Character ID and session ID required' };
     }
+    if (!isSafeId(characterId) || !isSafeId(sessionId)) {
+      return { success: false, error: 'Invalid character or session ID' };
+    }
     const memoryPath = path.join(getMemoriesPath(), `${characterId}_${sessionId}.json`);
     if (!fs.existsSync(memoryPath)) {
       return { success: true, data: null };
@@ -1533,6 +1543,9 @@ ipcMain.handle('delete-character-memory', async (event, { characterId, sessionId
   try {
     if (!characterId || !sessionId) {
       return { success: false, error: 'Character ID and session ID required' };
+    }
+    if (!isSafeId(characterId) || !isSafeId(sessionId)) {
+      return { success: false, error: 'Invalid character or session ID' };
     }
     const memoryPath = path.join(getMemoriesPath(), `${characterId}_${sessionId}.json`);
     if (fs.existsSync(memoryPath)) {

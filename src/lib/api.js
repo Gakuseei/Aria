@@ -548,7 +548,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const messages = [
     {
       role: 'system',
-      content: `Write ${userName}'s next reply in a roleplay. 1-2 sentences MAX, under 30 words. Actions in *asterisks*, dialogue in plain text. NEVER write as ${charName}. NEVER describe ${charName}'s reactions or actions. Same language as the conversation.${intensityHint}`
+      content: `Write ${userName}'s next reply in a roleplay. 1-2 sentences MAX, under 30 words. Write in FIRST PERSON (I/me/my). Actions in *asterisks*, dialogue in plain text. NEVER write as ${charName}. NEVER use third person (he/his/him) for ${userName}. Same language as the conversation.${intensityHint}`
     },
     {
       role: 'user',
@@ -604,6 +604,12 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   }
 
   let cleaned = fullText.trim();
+
+  // Strip model special tokens and artifacts (</s>, [TOOL_CALLS], <|...|>)
+  cleaned = cleaned.replace(/<\/s>/g, '');
+  cleaned = cleaned.replace(/\[TOOL_CALLS\]/g, '');
+  cleaned = cleaned.replace(/<\|[^|]*\|>/g, '');
+  cleaned = cleaned.trim();
 
   // SillyTavern technique: if response starts with charName, it's writing as the character — trash it
   if (cleaned.startsWith(`${charName}:`) || cleaned.startsWith(`${charName} :`)) {

@@ -129,8 +129,10 @@ export default function DebugConsole({
     if (!isVisible) return;
     let lastTime = performance.now();
     let frames = 0;
+    let cancelled = false;
 
     const measureFps = () => {
+      if (cancelled) return;
       frames++;
       const currentTime = performance.now();
       if (currentTime >= lastTime + 1000) {
@@ -141,8 +143,8 @@ export default function DebugConsole({
       requestAnimationFrame(measureFps);
     };
 
-    const rafId = requestAnimationFrame(measureFps);
-    return () => cancelAnimationFrame(rafId);
+    requestAnimationFrame(measureFps);
+    return () => { cancelled = true; };
   }, [isVisible]);
 
   // Load localStorage

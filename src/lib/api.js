@@ -66,7 +66,8 @@ export function cleanTranscriptArtifacts(text, charName = '') {
 
   // Strip character name prefixes (e.g. "**Sophia:**", "Alice:", "Sophia said:")
   if (charName) {
-    cleaned = cleaned.replace(new RegExp(`^\\*{0,2}${charName}\\*{0,2}\\s*:\\s*`, 'gim'), '');
+    const escapedName = charName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    cleaned = cleaned.replace(new RegExp(`^\\*{0,2}${escapedName}\\*{0,2}\\s*:\\s*`, 'gim'), '');
   }
 
   // Strip markdown headers (e.g. "### The Velvet Room's Signature Surprise")

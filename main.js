@@ -762,34 +762,45 @@ ipcMain.handle('generate-speech', async (event, params) => {
   // Helper for processing Gradio call results
   async function processGradioResult(baseUrl, result) {
     if (result.event_id) {
-        // Gradio 5 async/event based response - we got an event ID
-        // Need to poll result endpoint: GET /gradio_api/call/generate_audio/{event_id}
+        // Gradio 5 async: poll SSE endpoint for completion
         const pollUrl = `${baseUrl}/gradio_api/call/generate_audio/${result.event_id}`;
-        
-        // Poll for up to 30 seconds
-        for(let i=0; i<60; i++) {
+
+        for (let i = 0; i < 60; i++) {
             await new Promise(r => setTimeout(r, 500));
             const pollResponse = await fetch(pollUrl);
-            
-            if (!pollResponse.ok) continue; // Not ready?
-            
-            // Gradio SSE/Stream format is tricky via simple fetch, usually returns text/event-stream
-            // But /call/ endpoint often returns JSON line events
-            
-            // Actually, for simplicity let's stick to the JSON response check
-            // If the initial call returned data directly, it's simpler.
+
+            if (!pollResponse.ok) continue;
+
+            // Gradio returns text/event-stream with "event: ...\ndata: ...\n\n" lines
+            const sseText = await pollResponse.text();
+            const lines = sseText.split('\n');
+
+            for (let j = 0; j < lines.length; j++) {
+                const line = lines[j].trim();
+                if (line === 'event: complete') {
+                    // Next line should be "data: {json}"
+                    const dataLine = (lines[j + 1] || '').trim();
+                    if (dataLine.startsWith('data: ')) {
+                        try {
+                            const payload = JSON.parse(dataLine.slice(6));
+                            // Overwrite result with completed data and fall through to handler below
+                            result = payload;
+                        } catch { /* parse error, continue polling */ }
+                    }
+                } else if (line === 'event: error') {
+                    const dataLine = (lines[j + 1] || '').trim();
+                    const errorMsg = dataLine.startsWith('data: ') ? dataLine.slice(6) : 'Zonos generation failed';
+                    return { success: false, error: errorMsg };
+                }
+            }
+
+            // If result now has data, break out of polling
+            if (result.data) break;
         }
-        // If we end up here, complex polling is needed. 
-        // Let's assume for now the /call/ endpoint might return the EVENT ID and we need to handle it.
-        // However, many Gradio simple setups return data immediately if not queued. 
-    }
-    
-    // Direct result format check
-    // Handle { event_id } case by just trying to read the result assuming it finished or handle error
-    if (result.event_id) {
-       // Since handling event loop in node without SSE lib is complex, let's inform user
-       // But wait, if we use /call/ endpoint, it usually returns JSON result immediately if synchronous?
-       // Let's check 'data' field directly.
+
+        if (!result.data) {
+            return { success: false, error: 'Zonos generation timed out (30s)' };
+        }
     }
 
     if (result.data && result.data[0]) {
@@ -818,10 +829,17 @@ ipcMain.handle('generate-speech', async (event, params) => {
 
   // STANDARD MODE: Use Piper TTS
   return new Promise((resolve) => {
+    let resolved = false;
+    const safeResolve = (value) => {
+      if (resolved) return;
+      resolved = true;
+      resolve(value);
+    };
+
     // 1. INPUT VALIDATION
     if (!text || !piperPath || !modelPath) {
       console.error('[Voice] Missing required parameters:', { text: !!text, piperPath: !!piperPath, modelPath: !!modelPath });
-      return resolve({ success: false, error: 'Missing required parameters' });
+      return safeResolve({ success: false, error: 'Missing required parameters' });
     }
 
     try {
@@ -838,7 +856,7 @@ ipcMain.handle('generate-speech', async (event, params) => {
       // Validate ONNX model file exists
       if (!fs.existsSync(cleanModelPath)) {
         console.error('[Voice] Model file not found:', cleanModelPath);
-        return resolve({ success: false, error: `Model file not found: ${cleanModelPath}` });
+        return safeResolve({ success: false, error: `Model file not found: ${cleanModelPath}` });
       }
 
       // CRITICAL: Auto-Heal Logic - Fix JSON filename mismatch
@@ -849,9 +867,9 @@ ipcMain.handle('generate-speech', async (event, params) => {
             fs.copyFileSync(fallbackConfigPath, correctConfigPath);
           } catch (copyError) {
             console.error('[Voice] Auto-fix failed:', copyError);
-            return resolve({ 
-              success: false, 
-              error: `Failed to apply config filename fix: ${copyError.message}. Please manually rename ${path.basename(fallbackConfigPath)} to ${path.basename(correctConfigPath)}` 
+            return safeResolve({
+              success: false,
+              error: `Failed to apply config filename fix: ${copyError.message}. Please manually rename ${path.basename(fallbackConfigPath)} to ${path.basename(correctConfigPath)}`
             });
           }
         } else {
@@ -860,9 +878,9 @@ ipcMain.handle('generate-speech', async (event, params) => {
           console.error('[Voice] Expected (strict):', path.basename(correctConfigPath));
           console.error('[Voice] Expected (fallback):', path.basename(fallbackConfigPath));
           console.error('[Voice] Model directory:', path.dirname(cleanModelPath));
-          return resolve({ 
-            success: false, 
-            error: `CRITICAL: Model config file missing! Expected: ${path.basename(correctConfigPath)}. Please redownload the voice model.` 
+          return safeResolve({
+            success: false,
+            error: `CRITICAL: Model config file missing! Expected: ${path.basename(correctConfigPath)}. Please redownload the voice model.`
           });
         }
       }
@@ -870,13 +888,13 @@ ipcMain.handle('generate-speech', async (event, params) => {
       // Validate Piper executable exists
       if (!fs.existsSync(cleanPiperPath)) {
         console.error('[Voice] Piper executable not found:', cleanPiperPath);
-        return resolve({ success: false, error: `Piper executable not found at: ${cleanPiperPath}` });
+        return safeResolve({ success: false, error: `Piper executable not found at: ${cleanPiperPath}` });
       }
 
       // 3. TEXT VALIDATION
       const cleanText = text.trim();
       if (!cleanText) {
-        return resolve({ success: false, error: 'Empty text' });
+        return safeResolve({ success: false, error: 'Empty text' });
       }
 
       // 4. PREPARE OUTPUT PATH
@@ -914,13 +932,13 @@ ipcMain.handle('generate-speech', async (event, params) => {
         child.stdin.write(cleanText, 'utf8', (writeError) => {
           if (writeError) {
             console.error('[Voice] stdin write error:', writeError);
-            return resolve({ success: false, error: `Failed to write text to stdin: ${writeError.message}` });
+            return safeResolve({ success: false, error: `Failed to write text to stdin: ${writeError.message}` });
           }
           child.stdin.end();
         });
       } catch (writeException) {
         console.error('[Voice] Exception writing to stdin:', writeException);
-        return resolve({ success: false, error: `Failed to write to stdin: ${writeException.message}` });
+        return safeResolve({ success: false, error: `Failed to write to stdin: ${writeException.message}` });
       }
 
       // Capture stderr
@@ -937,7 +955,7 @@ ipcMain.handle('generate-speech', async (event, params) => {
             try {
               if (!fs.existsSync(outputFile)) {
                 console.error('[Voice] Output file not created after process exit');
-                return resolve({ success: false, error: 'Output file missing - Piper may have failed silently' });
+                return safeResolve({ success: false, error: 'Output file missing - Piper may have failed silently' });
               }
 
               const audioBuffer = fs.readFileSync(outputFile);
@@ -950,13 +968,13 @@ ipcMain.handle('generate-speech', async (event, params) => {
                 console.warn('[Voice] Cleanup warning:', cleanupError.message);
               }
 
-              resolve({
+              safeResolve({
                 success: true,
                 audioData: `data:audio/wav;base64,${audioBase64}`,
               });
             } catch (readError) {
               console.error('[Voice] Read error:', readError.message);
-              resolve({ success: false, error: `Failed to read output file: ${readError.message}` });
+              safeResolve({ success: false, error: `Failed to read output file: ${readError.message}` });
             }
           }, 100);
         } else {
@@ -972,9 +990,9 @@ ipcMain.handle('generate-speech', async (event, params) => {
           }
           
           console.error('[Voice] Full stderr:', stderrData);
-          resolve({ 
-            success: false, 
-            error: `${errorMsg}: ${stderrData || 'Unknown error'}` 
+          safeResolve({
+            success: false,
+            error: `${errorMsg}: ${stderrData || 'Unknown error'}`
           });
         }
       });
@@ -982,7 +1000,7 @@ ipcMain.handle('generate-speech', async (event, params) => {
       child.on('error', (error) => {
         console.error('[Voice] Spawn error:', error.message);
         console.error('[Voice] Error details:', error);
-        resolve({ success: false, error: `Failed to spawn Piper process: ${error.message}` });
+        safeResolve({ success: false, error: `Failed to spawn Piper process: ${error.message}` });
       });
 
       // Timeout after 30 seconds
@@ -990,7 +1008,7 @@ ipcMain.handle('generate-speech', async (event, params) => {
         if (!child.killed) {
           console.error('[Voice] Process timeout - killing child process');
           child.kill();
-          resolve({ success: false, error: 'Process timeout after 30 seconds' });
+          safeResolve({ success: false, error: 'Process timeout after 30 seconds' });
         }
       }, 30000);
 
@@ -1001,7 +1019,7 @@ ipcMain.handle('generate-speech', async (event, params) => {
     } catch (error) {
       console.error('[Voice] Unexpected error:', error.message);
       console.error('[Voice] Error stack:', error.stack);
-      resolve({ success: false, error: `Unexpected error: ${error.message}` });
+      safeResolve({ success: false, error: `Unexpected error: ${error.message}` });
     }
   });
 });

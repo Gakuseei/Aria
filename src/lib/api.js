@@ -548,7 +548,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const messages = [
     {
       role: 'system',
-      content: `Write ${userName}'s next reply in a roleplay. Keep it very brief. First person only (I/me/my). *actions* in asterisks. NEVER write as ${charName}. NEVER copy ${charName}'s speech patterns, mannerisms or vocabulary. ${userName} is confident and direct. Same language as the conversation.${intensityHint}`
+      content: `Write ${userName}'s next reply. One casual sentence — like a real person texting, not a novel. First person (I/me/my). *actions* in asterisks. NEVER write as ${charName} or copy ${charName}'s style. Same language as the conversation.${intensityHint}`
     },
     {
       role: 'user',

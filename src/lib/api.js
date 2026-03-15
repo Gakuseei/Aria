@@ -548,12 +548,11 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const messages = [
     {
       role: 'system',
-      content: `Write what ${userName} does or says next. One short action with optional dialogue. Examples: "*pulls her closer* You're beautiful." / "*grins* Surprise me." / "*kisses her neck*"
-First person (I/me/my). Max 10 words. NEVER write as ${charName}. Same language as the conversation.${intensityHint}`
+      content: `Write 1 short reply from the point of view of ${userName}, using the chat history so far as a guideline for the writing style of ${userName}. Internet RP style. Keep it to 1-2 sentences. Don't write as ${charName} or system. Don't describe actions of ${charName}.${intensityHint}`
     },
     {
       role: 'user',
-      content: `Conversation:\n${historyText}\n\n${userName} (one short sentence):`
+      content: `Conversation:\n${historyText}\n\n${userName}:`
     }
   ];
 

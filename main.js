@@ -1313,6 +1313,236 @@ Write VIVID, EXPLICIT, IMMERSIVE prose with minimal dialogue.`;
 });
 
 // ===========================================
+// OLLAMA IPC HANDLERS (for api.js migration)
+// ===========================================
+
+/** Active streaming abort controllers keyed by requestId */
+const streamAbortControllers = new Map();
+
+/**
+ * Streaming chat — pushes NDJSON chunks to renderer via IPC events.
+ * Returns final stats when stream completes.
+ * Params: { requestId, ollamaUrl, model, messages, options, stop }
+ */
+ipcMain.handle('ollama-chat-stream', async (event, params) => {
+  const {
+    requestId,
+    ollamaUrl = 'http://127.0.0.1:11434',
+    model,
+    messages,
+    options = {},
+    stop = []
+  } = params;
+
+  if (!requestId || !model || !messages) {
+    return { success: false, error: 'Missing required params: requestId, model, messages' };
+  }
+
+  const controller = new AbortController();
+  streamAbortControllers.set(requestId, controller);
+
+  try {
+    const response = await fetch(`${ollamaUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: true,
+        options,
+        stop
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { success: false, error: `Ollama error (${response.status}): ${errorText}` };
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullContent = '';
+    let finalChunk = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const chunk = JSON.parse(line);
+          if (chunk.message?.content) {
+            fullContent += chunk.message.content;
+            // Push token to renderer
+            if (!event.sender.isDestroyed()) {
+              event.sender.send('ollama-stream-token', { requestId, token: chunk.message.content });
+            }
+          }
+          if (chunk.done) {
+            finalChunk = chunk;
+          }
+        } catch { /* skip malformed NDJSON lines */ }
+      }
+    }
+
+    // Flush remaining buffer
+    if (buffer.trim()) {
+      try {
+        const chunk = JSON.parse(buffer);
+        if (chunk.message?.content) {
+          fullContent += chunk.message.content;
+          if (!event.sender.isDestroyed()) {
+            event.sender.send('ollama-stream-token', { requestId, token: chunk.message.content });
+          }
+        }
+        if (chunk.done) finalChunk = chunk;
+      } catch { /* skip */ }
+    }
+
+    return {
+      success: true,
+      content: fullContent,
+      evalCount: finalChunk?.eval_count || 0,
+      promptEvalCount: finalChunk?.prompt_eval_count || 0
+    };
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      return { success: false, error: 'Request aborted', aborted: true };
+    }
+    console.error('[IPC] ollama-chat-stream error:', error);
+    return { success: false, error: error.message };
+  } finally {
+    streamAbortControllers.delete(requestId);
+  }
+});
+
+/**
+ * Abort an active streaming request by requestId.
+ */
+ipcMain.handle('ollama-stream-abort', async (event, { requestId }) => {
+  const controller = streamAbortControllers.get(requestId);
+  if (controller) {
+    controller.abort();
+    streamAbortControllers.delete(requestId);
+    return { success: true };
+  }
+  return { success: false, error: 'No active stream for this requestId' };
+});
+
+/**
+ * Unload model from VRAM (keep_alive: 0).
+ * Params: { ollamaUrl, model }
+ */
+ipcMain.handle('ollama-unload', async (event, params) => {
+  const { ollamaUrl = 'http://127.0.0.1:11434', model } = params;
+  if (!model) return { success: false, error: 'Missing model name' };
+
+  try {
+    await fetch(`${ollamaUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, messages: [], keep_alive: 0 }),
+      signal: AbortSignal.timeout(10000)
+    });
+    console.log('[IPC] Model unloaded:', model);
+    return { success: true };
+  } catch (error) {
+    console.error('[IPC] ollama-unload error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Fetch available Ollama models (/api/tags). Filters out embedding models.
+ * Params: { ollamaUrl }
+ */
+ipcMain.handle('ollama-models', async (event, params = {}) => {
+  const { ollamaUrl = 'http://127.0.0.1:11434' } = params;
+
+  try {
+    const response = await fetch(`${ollamaUrl}/api/tags`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(5000)
+    });
+
+    if (!response.ok) {
+      return { success: false, error: `Ollama error (${response.status})` };
+    }
+
+    const data = await response.json();
+    const allModels = (data.models || []).map(m => m.name);
+
+    // Same filter as api.js: block embedding/BERT models
+    const chatModels = allModels.filter(name => {
+      const lower = name.toLowerCase();
+      return !lower.includes('embed') && !lower.includes('bert');
+    });
+
+    return { success: true, models: chatModels, totalCount: allModels.length };
+  } catch (error) {
+    console.error('[IPC] ollama-models error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Get model capabilities via /api/show (context length, parameter size).
+ * Params: { ollamaUrl, model }
+ */
+ipcMain.handle('ollama-model-info', async (event, params) => {
+  const { ollamaUrl = 'http://127.0.0.1:11434', model } = params;
+  if (!model) return { success: false, error: 'Missing model name' };
+
+  const defaults = { contextLength: 4096, parameterSize: '7B' };
+
+  try {
+    const response = await fetch(`${ollamaUrl}/api/show`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: model }),
+      signal: AbortSignal.timeout(5000)
+    });
+
+    if (!response.ok) return { success: true, ...defaults };
+
+    const info = await response.json();
+
+    // Extract context length from model_info (supports multiple architectures)
+    let ctxParam = info.model_info?.['general.context_length']
+      || info.model_info?.['llama.context_length']
+      || info.model_info?.['qwen2.context_length']
+      || info.model_info?.['qwen35.context_length'];
+
+    if (typeof ctxParam !== 'number') {
+      const mi = info.model_info || {};
+      for (const key of Object.keys(mi)) {
+        if (key.endsWith('.context_length') && typeof mi[key] === 'number') {
+          ctxParam = mi[key];
+          break;
+        }
+      }
+    }
+
+    return {
+      success: true,
+      contextLength: typeof ctxParam === 'number' ? ctxParam : 4096,
+      parameterSize: info.details?.parameter_size || '7B'
+    };
+  } catch (error) {
+    console.error('[IPC] ollama-model-info error:', error);
+    return { success: true, ...defaults };
+  }
+});
+
+// ===========================================
 // v0.2.5: SYSTEM CHECK
 // ===========================================
 

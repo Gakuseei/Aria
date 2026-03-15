@@ -548,7 +548,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const messages = [
     {
       role: 'system',
-      content: `Write ${userName}'s next reply in a roleplay. 1-2 sentences MAX — keep it short. Actions in *asterisks*, dialogue in plain text. NEVER write as ${charName}. NEVER describe ${charName}'s reactions or actions. Same language as the conversation.${intensityHint}`
+      content: `Write ${userName}'s next reply in a roleplay. 1-2 sentences MAX, under 30 words. Actions in *asterisks*, dialogue in plain text. NEVER write as ${charName}. NEVER describe ${charName}'s reactions or actions. Same language as the conversation.${intensityHint}`
     },
     {
       role: 'user',
@@ -567,7 +567,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
       messages,
       stream: true,
       options: {
-        num_predict: 80,
+        num_predict: 60,
         temperature: 0.85,
         num_ctx: numCtx,
         stop: [`\n${charName}:`, `\n${charName} :`, `${charName}:`]

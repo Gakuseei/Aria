@@ -626,7 +626,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const messages = [
     {
       role: 'system',
-      content: `Write your next reply from the point of view of ${userName}, using the chat history so far as a guideline for the writing style of ${userName}. Write 1 reply only in internet RP style. Don't write as ${charName} or system. Don't describe actions of ${charName}.${intensityHint}`
+      content: `Write ${userName}'s next reply from their point of view, using the chat history as a style guide. Write in first person (I/me/my). Internet RP style — *actions* and "dialogue". Don't write as ${charName} or system. Don't describe ${charName}'s actions or reactions.${intensityHint}`
     },
     {
       role: 'user',
@@ -634,8 +634,9 @@ export async function impersonateUser(history, charName, userName, passionLevel,
     }
   ];
 
-  // Same sampling as chat — no special overrides
+  // Same sampling as chat + SillyTavern-style token limit (80)
   const options = {
+    num_predict: 80,
     temperature: settings.temperature ?? profile.temperature,
     num_ctx: numCtx,
     top_k: settings.topK ?? profile.topK,
@@ -721,13 +722,20 @@ export async function impersonateUser(history, charName, userName, passionLevel,
     }
   }
 
-  // Minimal cleanup — same as SillyTavern: special tokens + wrong name
+  // Cleanup: special tokens + sentence trim + wrong name
   let cleaned = fullText.trim();
   cleaned = cleaned.replace(/<\/s>/g, '');
   cleaned = cleaned.replace(/\[TOOL_CALLS\]/g, '');
   cleaned = cleaned.replace(/<\|[^|]*\|>/g, '');
   cleaned = cleaned.replace(/^[./]+(?=\*)/gm, '');
   cleaned = cleaned.trim();
+
+  // Trim to last complete sentence if num_predict cut mid-word
+  const lastCh = cleaned.slice(-1);
+  if (lastCh && !['.', '!', '?', '"', '*', ')'].includes(lastCh)) {
+    const end = Math.max(cleaned.lastIndexOf('*'), cleaned.lastIndexOf('"'), cleaned.lastIndexOf('.'), cleaned.lastIndexOf('!'), cleaned.lastIndexOf('?'));
+    if (end > cleaned.length * 0.3) cleaned = cleaned.substring(0, end + 1);
+  }
 
   // If response starts with charName — wrong character, trash it
   if (cleaned.startsWith(`${charName}:`) || cleaned.startsWith(`${charName} :`)) {

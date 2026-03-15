@@ -27,7 +27,7 @@ nul
 logs/
 *.log
 npm-debug.log*
-Aria Roadmap.md
+Aria Release Roadmap.md
 
 # User data
 userData/

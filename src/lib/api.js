@@ -548,11 +548,14 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const messages = [
     {
       role: 'system',
-      content: `Write 1 short reply from the point of view of ${userName}, using the chat history so far as a guideline for the writing style of ${userName}. Internet RP style. Keep it to 1-2 sentences. Don't write as ${charName} or system. Don't describe actions of ${charName}.${intensityHint}`
+      content: `You are ghostwriting ${userName}'s next action in a roleplay with ${charName}. Output ONLY the action — no explanations.
+Format: *action* "optional dialogue"
+Examples: *leans closer and brushes hair from her face* | *grins* "Surprise me." | *kisses her deeply*
+RULES: First person. One action, one optional line of dialogue. Nothing else.${intensityHint}`
     },
     {
       role: 'user',
-      content: `Conversation:\n${historyText}\n\n${userName}:`
+      content: `${historyText}\n\n${userName}:`
     }
   ];
 
@@ -567,7 +570,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
       messages,
       stream: true,
       options: {
-        num_predict: 50,
+        num_predict: 30,
         temperature: 0.85,
         num_ctx: numCtx,
         top_k: 50,
@@ -634,12 +637,18 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   if (metaCut > 0) cleaned = cleaned.substring(0, metaCut);
   cleaned = cleaned.trim();
 
-  // Trim trailing incomplete word (not sentence — user can edit)
+  // Trim to last complete sentence/action boundary
   const lastCh = cleaned.slice(-1);
-  if (lastCh && /\w/.test(lastCh) && !cleaned.endsWith('.') && !cleaned.endsWith('!') && !cleaned.endsWith('?')) {
-    const lastSpace = cleaned.lastIndexOf(' ');
-    if (lastSpace > cleaned.length * 0.5) {
-      cleaned = cleaned.substring(0, lastSpace).trim();
+  if (lastCh && !['.', '!', '?', '"', '*', ')'].includes(lastCh)) {
+    const end = Math.max(
+      cleaned.lastIndexOf('*'),
+      cleaned.lastIndexOf('"'),
+      cleaned.lastIndexOf('.'),
+      cleaned.lastIndexOf('!'),
+      cleaned.lastIndexOf('?')
+    );
+    if (end > cleaned.length * 0.3) {
+      cleaned = cleaned.substring(0, end + 1);
     }
   }
 

@@ -599,7 +599,9 @@ export async function impersonateUser(history, charName, userName, passionLevel,
           const token = parsed.message?.content || '';
           if (token) {
             fullText += token;
-            onToken(token);
+            // Filter artifacts in real-time so user never sees them
+            const display = fullText.replace(/<\/s>/g, '').replace(/\[TOOL_CALLS\]/g, '').replace(/<\|[^|]*\|>/g, '').replace(/~+$/g, '').replace(/\s*\(\d+\s*words?\)\s*/gi, ' ').replace(/\[No further.*$/gim, '').replace(/\((?:Continued|Keeping|As per|Note:|Brief).*?\)/gi, '');
+            onToken(null, display);
           }
         } catch { /* skip malformed lines */ }
       }

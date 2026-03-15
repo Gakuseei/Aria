@@ -687,7 +687,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         userName,
         passionLevel,
         settings,
-        (token) => setInput(prev => prev + token)
+        (_token, display) => setInput(display)
       );
       if (cleaned) {
         setInput(cleaned);

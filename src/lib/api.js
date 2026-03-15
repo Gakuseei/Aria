@@ -548,7 +548,8 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const messages = [
     {
       role: 'system',
-      content: `Write ${userName}'s next reply. One casual sentence — like a real person texting, not a novel. First person (I/me/my). *actions* in asterisks. NEVER write as ${charName} or copy ${charName}'s style. Same language as the conversation.${intensityHint}`
+      content: `Write what ${userName} does or says next. One short action with optional dialogue. Examples: "*pulls her closer* You're beautiful." / "*grins* Surprise me." / "*kisses her neck*"
+First person (I/me/my). Max 10 words. NEVER write as ${charName}. Same language as the conversation.${intensityHint}`
     },
     {
       role: 'user',
@@ -600,7 +601,10 @@ export async function impersonateUser(history, charName, userName, passionLevel,
           if (token) {
             fullText += token;
             // Filter artifacts in real-time so user never sees them
-            const display = fullText.replace(/<\/s>/g, '').replace(/\[TOOL_CALLS\]/g, '').replace(/<\|[^|]*\|>/g, '').replace(/~+$/g, '').replace(/\s*\(\d+\s*words?\)\s*/gi, ' ').replace(/\[No further.*$/gim, '').replace(/\((?:Continued|Keeping|As per|Note:|Brief).*?\)/gi, '').replace(/\n.*?(?:first person|keep .* brief|replies?.*brief|in character|as instructed|without describing|focusing on).*$/gim, '').replace(/^(?:Just|Note|Remember).*?(?:brief|first person|instruction|character|roleplay).*$/gim, '').replace(/^[./]+(?=\*)/gm, '').trim();
+            let display = fullText.replace(/<\/s>/g, '').replace(/\[TOOL_CALLS\]/g, '').replace(/<\|[^|]*\|>/g, '').replace(/~+$/g, '').replace(/\s*\(\d+\s*words?\)\s*/gi, ' ').replace(/\[No further.*$/gim, '').replace(/\((?:Continued|Keeping|As per|Note:|Brief).*?\)/gi, '').replace(/\n.*?(?:first person|keep .* brief|replies?.*brief|in character|as instructed|without describing|focusing on).*$/gim, '').replace(/^(?:Just|Note|Remember).*?(?:brief|first person|instruction|character|roleplay).*$/gim, '').replace(/^[./]+(?=\*)/gm, '');
+            const mc = display.search(/\n---|\n\n(?:I chose|I picked|I kept|I went|This |Alice |Sarah |The |Here )/i);
+            if (mc > 0) display = display.substring(0, mc);
+            display = display.trim();
             onToken(null, display);
           }
         } catch { /* skip malformed lines */ }
@@ -626,6 +630,9 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   cleaned = cleaned.replace(/\n.*?(?:first person|keep .* brief|replies?.*brief|in character|as instructed|without describing|focusing on).*$/gim, '');
   cleaned = cleaned.replace(/^(?:Just|Note|Remember).*?(?:brief|first person|instruction|character|roleplay).*$/gim, '');
   cleaned = cleaned.replace(/^[./]+(?=\*)/gm, '');
+  // Cut everything after --- separator or meta-commentary blocks
+  const metaCut = cleaned.search(/\n---|\n\n(?:I chose|I picked|I kept|I went|This |Alice |Sarah |The |Here )/i);
+  if (metaCut > 0) cleaned = cleaned.substring(0, metaCut);
   cleaned = cleaned.trim();
 
   // Trim trailing incomplete word (not sentence — user can edit)

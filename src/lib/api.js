@@ -179,11 +179,15 @@ export async function unloadOllamaModel(settings) {
   try {
     const ollamaUrl = settings?.ollamaUrl || OLLAMA_DEFAULT_URL;
     const model = settings?.ollamaModel || DEFAULT_MODEL_NAME;
-    await fetch(`${ollamaUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, messages: [], keep_alive: 0 })
-    });
+    if (isElectron()) {
+      await window.electronAPI.ollamaUnload({ ollamaUrl, model });
+    } else {
+      await fetch(`${ollamaUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, messages: [], keep_alive: 0 })
+      });
+    }
     console.log('[API] Model unloaded (keep_alive: 0)');
   } catch (err) {
     console.warn('[API] Model unload failed:', err?.message);
@@ -196,6 +200,16 @@ async function getModelCapabilities(ollamaUrl, modelName) {
 
   const defaults = { contextLength: 4096, parameterSize: '7B' };
   try {
+    if (isElectron()) {
+      const result = await window.electronAPI.ollamaModelInfo({ ollamaUrl, model: modelName });
+      const caps = {
+        contextLength: result.contextLength || 4096,
+        parameterSize: result.parameterSize || '7B'
+      };
+      MODEL_CAPS_CACHE[cacheKey] = caps;
+      return caps;
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(`${ollamaUrl}/api/show`, {
@@ -245,26 +259,49 @@ function estimateTokens(text) {
  * @returns {Promise<number>} Score from 0 to 10, or 0 on failure
  */
 async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096) {
-  const abort = new AbortController();
-  const timer = setTimeout(() => abort.abort(), PASSION_SCORING_TIMEOUT_MS);
+  const scoringPrompt = `Rate closeness 0-10. Number only.\n0=casual 3=building 5=personal 7=intense 10=peak\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`;
+
   try {
-    const response = await fetch(`${settings.ollamaUrl || OLLAMA_DEFAULT_URL}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: abort.signal,
-      body: JSON.stringify({
-        model: settings.ollamaModel || DEFAULT_MODEL_NAME,
-        messages: [{
-          role: 'user',
-          content: `Rate closeness 0-10. Number only.\n0=casual 3=building 5=personal 7=intense 10=peak\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`
-        }],
-        stream: false,
-        options: { temperature: 0.1, num_predict: 16, num_ctx: modelCtx }
-      })
-    });
-    if (!response.ok) return 0;
-    const data = await response.json();
-    const content = data.message?.content?.trim() || '';
+    let content = '';
+
+    if (isElectron()) {
+      const result = await Promise.race([
+        window.electronAPI.aiChat({
+          messages: [{ role: 'user', content: scoringPrompt }],
+          systemPrompt: '',
+          model: settings.ollamaModel || DEFAULT_MODEL_NAME,
+          isOllama: true,
+          ollamaUrl: settings.ollamaUrl || OLLAMA_DEFAULT_URL,
+          temperature: 0.1,
+          maxTokens: 16
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), PASSION_SCORING_TIMEOUT_MS))
+      ]);
+      if (!result.success) return 0;
+      content = result.content?.trim() || '';
+    } else {
+      const abort = new AbortController();
+      const timer = setTimeout(() => abort.abort(), PASSION_SCORING_TIMEOUT_MS);
+      try {
+        const response = await fetch(`${settings.ollamaUrl || OLLAMA_DEFAULT_URL}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: abort.signal,
+          body: JSON.stringify({
+            model: settings.ollamaModel || DEFAULT_MODEL_NAME,
+            messages: [{ role: 'user', content: scoringPrompt }],
+            stream: false,
+            options: { temperature: 0.1, num_predict: 16, num_ctx: modelCtx }
+          })
+        });
+        if (!response.ok) return 0;
+        const data = await response.json();
+        content = data.message?.content?.trim() || '';
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
     const match = content.match(/(\d+)/);
     if (!match) return 0;
     const score = parseInt(match[1], 10);
@@ -273,8 +310,6 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
   } catch (err) {
     console.warn('[API] Passion scoring failed:', err?.message || 'timeout');
     return 0;
-  } finally {
-    clearTimeout(timer);
   }
 }
 
@@ -445,52 +480,94 @@ Rules:
       .slice(0, 3);
   };
 
-  const fetchOpts = {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model, messages, stream: false,
-      options: { num_predict: 120, temperature: 0.8, num_ctx: numCtx }
-    })
+  const chatParams = {
+    messages: [{ role: 'system', content: messages[0].content }, { role: 'user', content: messages[1].content }],
+    systemPrompt: messages[0].content,
+    model,
+    isOllama: true,
+    ollamaUrl,
+    temperature: 0.8,
+    maxTokens: 120
   };
 
-  const controller = new AbortController();
-  suggestionAbortController = controller;
+  if (isElectron()) {
+    suggestionAbortController = { abort: () => { /* IPC has no abort — rely on requestId check */ } };
 
-  fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: controller.signal })
-    .then(res => res.json())
-    .then(data => {
-      if (currentRequestId !== suggestionRequestId) return;
-      const raw = data.message?.content || '';
-      const suggestions = parseSuggestions(raw);
-      console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
-      if (suggestions.length >= 3) {
-        suggestionAbortController = null;
-        callback(suggestions);
-        return;
-      }
-      console.log(`[API] Suggestions: retrying (got ${suggestions.length})`);
-      return fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: controller.signal })
-        .then(r => r.json())
-        .then(d => {
+    window.electronAPI.aiChat(chatParams)
+      .then(result => {
+        if (currentRequestId !== suggestionRequestId) return;
+        const raw = result.success ? result.content || '' : '';
+        const suggestions = parseSuggestions(raw);
+        console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
+        if (suggestions.length >= 3) {
+          suggestionAbortController = null;
+          callback(suggestions);
+          return;
+        }
+        console.log(`[API] Suggestions: retrying (got ${suggestions.length})`);
+        return window.electronAPI.aiChat(chatParams).then(retryResult => {
           suggestionAbortController = null;
           if (currentRequestId !== suggestionRequestId) return;
-          const retryRaw = d.message?.content || '';
+          const retryRaw = retryResult.success ? retryResult.content || '' : '';
           const retrySuggestions = parseSuggestions(retryRaw);
           console.log(`[API] Suggestions retry: ${retrySuggestions.length} from "${retryRaw.trim().slice(0, 120)}"`);
           const best = retrySuggestions.length >= suggestions.length ? retrySuggestions : suggestions;
           callback(best.length > 0 ? best : null);
         });
-    })
-    .catch(err => {
-      suggestionAbortController = null;
-      if (err?.name === 'AbortError') {
-        console.log('[API] Suggestion call aborted');
-        return;
-      }
-      console.warn('[API] Suggestion generation failed:', err?.message);
-      callback(null);
-    });
+      })
+      .catch(err => {
+        suggestionAbortController = null;
+        console.warn('[API] Suggestion generation failed:', err?.message);
+        callback(null);
+      });
+  } else {
+    const fetchOpts = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model, messages, stream: false,
+        options: { num_predict: 120, temperature: 0.8, num_ctx: numCtx }
+      })
+    };
+
+    const controller = new AbortController();
+    suggestionAbortController = controller;
+
+    fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: controller.signal })
+      .then(res => res.json())
+      .then(data => {
+        if (currentRequestId !== suggestionRequestId) return;
+        const raw = data.message?.content || '';
+        const suggestions = parseSuggestions(raw);
+        console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
+        if (suggestions.length >= 3) {
+          suggestionAbortController = null;
+          callback(suggestions);
+          return;
+        }
+        console.log(`[API] Suggestions: retrying (got ${suggestions.length})`);
+        return fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: controller.signal })
+          .then(r => r.json())
+          .then(d => {
+            suggestionAbortController = null;
+            if (currentRequestId !== suggestionRequestId) return;
+            const retryRaw = d.message?.content || '';
+            const retrySuggestions = parseSuggestions(retryRaw);
+            console.log(`[API] Suggestions retry: ${retrySuggestions.length} from "${retryRaw.trim().slice(0, 120)}"`);
+            const best = retrySuggestions.length >= suggestions.length ? retrySuggestions : suggestions;
+            callback(best.length > 0 ? best : null);
+          });
+      })
+      .catch(err => {
+        suggestionAbortController = null;
+        if (err?.name === 'AbortError') {
+          console.log('[API] Suggestion call aborted');
+          return;
+        }
+        console.warn('[API] Suggestion generation failed:', err?.message);
+        callback(null);
+      });
+  }
 }
 
 /** @type {AbortController|null} */
@@ -559,61 +636,96 @@ RULES: First person. One action, one optional line of dialogue. Nothing else.${i
     }
   ];
 
-  impersonateAbortController = new AbortController();
-
-  const res = await fetch(`${ollamaUrl}/api/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    signal: impersonateAbortController.signal,
-    body: JSON.stringify({
-      model,
-      messages,
-      stream: true,
-      options: {
-        num_predict: 30,
-        temperature: 0.85,
-        num_ctx: numCtx,
-        top_k: 50,
-        top_p: 0.9,
-        min_p: 0.05,
-        repeat_penalty: 1.15,
-        repeat_last_n: 128,
-        stop: [`\n${charName}:`, `\n${charName} :`, `${charName}:`]
-      }
-    })
-  });
-
-  if (!res.ok || !res.body) {
-    throw new Error(`Ollama request failed: ${res.status}`);
-  }
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
   let fullText = '';
+  const streamOptions = {
+    num_predict: 30,
+    temperature: 0.85,
+    num_ctx: numCtx,
+    top_k: 50,
+    top_p: 0.9,
+    min_p: 0.05,
+    repeat_penalty: 1.15,
+    repeat_last_n: 128
+  };
+  const stopSequences = [`\n${charName}:`, `\n${charName} :`, `${charName}:`];
 
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      for (const line of chunk.split('\n').filter(Boolean)) {
-        try {
-          const parsed = JSON.parse(line);
-          const token = parsed.message?.content || '';
-          if (token) {
-            fullText += token;
-            // Filter artifacts in real-time so user never sees them
-            let display = fullText.replace(/<\/s>/g, '').replace(/\[TOOL_CALLS\]/g, '').replace(/<\|[^|]*\|>/g, '').replace(/~+$/g, '').replace(/\s*\(\d+\s*words?\)\s*/gi, ' ').replace(/\[No further.*$/gim, '').replace(/\((?:Continued|Keeping|As per|Note:|Brief).*?\)/gi, '').replace(/\n.*?(?:first person|keep .* brief|replies?.*brief|in character|as instructed|without describing|focusing on).*$/gim, '').replace(/^(?:Just|Note|Remember).*?(?:brief|first person|instruction|character|roleplay).*$/gim, '').replace(/^[./]+(?=\*)/gm, '');
-            const mc = display.search(/\n---|\n\n(?:I chose|I picked|I kept|I went|This |Alice |Sarah |The |Here )/i);
-            if (mc > 0) display = display.substring(0, mc);
-            display = display.trim();
-            onToken(null, display);
-          }
-        } catch { /* skip malformed lines */ }
+  /** Real-time artifact filter applied on each token */
+  const filterAndEmit = () => {
+    let display = fullText.replace(/<\/s>/g, '').replace(/\[TOOL_CALLS\]/g, '').replace(/<\|[^|]*\|>/g, '').replace(/~+$/g, '').replace(/\s*\(\d+\s*words?\)\s*/gi, ' ').replace(/\[No further.*$/gim, '').replace(/\((?:Continued|Keeping|As per|Note:|Brief).*?\)/gi, '').replace(/\n.*?(?:first person|keep .* brief|replies?.*brief|in character|as instructed|without describing|focusing on).*$/gim, '').replace(/^(?:Just|Note|Remember).*?(?:brief|first person|instruction|character|roleplay).*$/gim, '').replace(/^[./]+(?=\*)/gm, '');
+    const mc = display.search(/\n---|\n\n(?:I chose|I picked|I kept|I went|This |Alice |Sarah |The |Here )/i);
+    if (mc > 0) display = display.substring(0, mc);
+    onToken(null, display.trim());
+  };
+
+  if (isElectron()) {
+    const requestId = `impersonate-${Date.now()}`;
+    impersonateAbortController = {
+      abort: () => window.electronAPI.ollamaStreamAbort(requestId)
+    };
+
+    const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
+      if (rid !== requestId) return;
+      fullText += token;
+      filterAndEmit();
+    });
+
+    try {
+      const result = await window.electronAPI.ollamaChatStream({
+        requestId,
+        ollamaUrl,
+        model,
+        messages,
+        options: streamOptions,
+        stop: stopSequences
+      });
+      if (!result.success && !result.aborted) {
+        throw new Error(result.error || 'Stream failed');
       }
+    } finally {
+      cleanup();
+      impersonateAbortController = null;
     }
-  } finally {
-    impersonateAbortController = null;
+  } else {
+    impersonateAbortController = new AbortController();
+
+    const res = await fetch(`${ollamaUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: impersonateAbortController.signal,
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: true,
+        options: { ...streamOptions, stop: stopSequences }
+      })
+    });
+
+    if (!res.ok || !res.body) {
+      throw new Error(`Ollama request failed: ${res.status}`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n').filter(Boolean)) {
+          try {
+            const parsed = JSON.parse(line);
+            const token = parsed.message?.content || '';
+            if (token) {
+              fullText += token;
+              filterAndEmit();
+            }
+          } catch { /* skip malformed lines */ }
+        }
+      }
+    } finally {
+      impersonateAbortController = null;
+    }
   }
 
   let cleaned = fullText.trim();
@@ -803,95 +915,131 @@ export const sendMessage = async (
       ...trimmedHistory.map(msg => ({ role: msg.role, content: msg.content }))
     ];
 
-    const fetchController = new AbortController();
-    const fetchTimer = setTimeout(() => fetchController.abort(), 120000);
-
-    let response;
-    try {
-      response = await fetch(`${ollamaUrl}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: fetchController.signal,
-        body: JSON.stringify({
-          model: model,
-          messages: messages,
-          stream: !!onToken,
-          options: {
-            temperature: settings.temperature ?? profile.temperature,
-            num_predict: numPredict,
-            num_ctx: modelCtx,
-            top_k: settings.topK ?? profile.topK,
-            top_p: settings.topP ?? profile.topP,
-            min_p: settings.minP ?? profile.minP,
-            repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty,
-            repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
-            penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline
-          },
-          stop: ['\nUser:', '\nHuman:', `\n${userName}:`, `\n${character.name}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>', '<|start_header_id|>']
-        })
-      });
-    } finally {
-      clearTimeout(fetchTimer);
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Ollama error: ${response.status} - ${errorText}`);
-    }
+    const chatOptions = {
+      temperature: settings.temperature ?? profile.temperature,
+      num_predict: numPredict,
+      num_ctx: modelCtx,
+      top_k: settings.topK ?? profile.topK,
+      top_p: settings.topP ?? profile.topP,
+      min_p: settings.minP ?? profile.minP,
+      repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty,
+      repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
+      penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline
+    };
+    const stopSequences = ['\nUser:', '\nHuman:', `\n${userName}:`, `\n${character.name}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>', '<|start_header_id|>'];
 
     let data;
 
-    if (onToken && response.body) {
-      // STREAMING MODE: Read NDJSON line-by-line
-      let fullContent = '';
-      let finalChunk = null;
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+    if (isElectron() && onToken) {
+      // STREAMING via IPC
+      const requestId = `chat-${Date.now()}`;
+      const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
+        if (rid === requestId) onToken(token);
+      });
+      const abortTimer = setTimeout(() => window.electronAPI.ollamaStreamAbort(requestId), 120000);
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      try {
+        const result = await window.electronAPI.ollamaChatStream({
+          requestId,
+          ollamaUrl,
+          model,
+          messages,
+          options: chatOptions,
+          stop: stopSequences
+        });
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop(); // keep incomplete line in buffer
+        if (!result.success) throw new Error(result.error || 'Stream failed');
 
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          try {
-            const chunk = JSON.parse(line);
-            if (chunk.message?.content) {
-              fullContent += chunk.message.content;
-              onToken(chunk.message.content);
-            }
-            if (chunk.done) {
-              finalChunk = chunk;
-            }
-          } catch { /* skip malformed lines */ }
-        }
+        data = {
+          message: { content: result.content },
+          eval_count: result.evalCount,
+          prompt_eval_count: result.promptEvalCount
+        };
+      } finally {
+        clearTimeout(abortTimer);
+        cleanup();
       }
+    } else if (isElectron()) {
+      // NON-STREAMING via IPC
+      const result = await window.electronAPI.aiChat({
+        messages: messages.slice(1).map(m => ({ role: m.role, content: m.content })),
+        systemPrompt: finalSystemPrompt,
+        model,
+        isOllama: true,
+        ollamaUrl,
+        temperature: chatOptions.temperature,
+        maxTokens: numPredict
+      });
 
-      // Process any remaining buffer
-      if (buffer.trim()) {
-        try {
-          const chunk = JSON.parse(buffer);
-          if (chunk.message?.content) {
-            fullContent += chunk.message.content;
-            onToken(chunk.message.content);
-          }
-          if (chunk.done) finalChunk = chunk;
-        } catch { /* skip */ }
-      }
+      if (!result.success) throw new Error(result.error || 'Chat failed');
 
       data = {
-        message: { content: fullContent },
-        eval_count: finalChunk?.eval_count,
-        prompt_eval_count: finalChunk?.prompt_eval_count
+        message: { content: result.content },
+        eval_count: result.usage?.total_tokens || 0,
+        prompt_eval_count: 0
       };
     } else {
-      // NON-STREAMING MODE: Original behavior
-      data = await response.json();
+      // DIRECT FETCH fallback (non-Electron)
+      const fetchController = new AbortController();
+      const fetchTimer = setTimeout(() => fetchController.abort(), 120000);
+
+      let response;
+      try {
+        response = await fetch(`${ollamaUrl}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: fetchController.signal,
+          body: JSON.stringify({
+            model, messages, stream: !!onToken,
+            options: chatOptions,
+            stop: stopSequences
+          })
+        });
+      } finally {
+        clearTimeout(fetchTimer);
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Ollama error: ${response.status} - ${errorText}`);
+      }
+
+      if (onToken && response.body) {
+        let fullContent = '';
+        let finalChunk = null;
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              const chunk = JSON.parse(line);
+              if (chunk.message?.content) {
+                fullContent += chunk.message.content;
+                onToken(chunk.message.content);
+              }
+              if (chunk.done) finalChunk = chunk;
+            } catch { /* skip malformed lines */ }
+          }
+        }
+        if (buffer.trim()) {
+          try {
+            const chunk = JSON.parse(buffer);
+            if (chunk.message?.content) { fullContent += chunk.message.content; onToken(chunk.message.content); }
+            if (chunk.done) finalChunk = chunk;
+          } catch { /* skip */ }
+        }
+        data = { message: { content: fullContent }, eval_count: finalChunk?.eval_count, prompt_eval_count: finalChunk?.prompt_eval_count };
+      } else {
+        data = await response.json();
+      }
     }
 
     // Check for empty response
@@ -910,29 +1058,50 @@ export const sendMessage = async (
         { role: 'system', content: retrySystemPrompt },
         ...trimmedHistory.slice(-2).map(m => ({ role: m.role, content: m.content }))
       ];
-      const retryCtrl = new AbortController();
-      const retryTimer = setTimeout(() => retryCtrl.abort(), 120000);
-      try {
-        const retryRes = await fetch(`${ollamaUrl}/api/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: retryCtrl.signal,
-          body: JSON.stringify({
-            model, messages: retryMessages, stream: false,
-            options: { temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx, top_k: settings.topK ?? profile.topK, top_p: settings.topP ?? profile.topP, min_p: settings.minP ?? profile.minP, repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty, repeat_last_n: settings.repeatLastN ?? profile.repeatLastN, penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline },
-            stop: ['\nUser:', '\nHuman:', `\n${userName}:`, `\n${character.name}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>', '<|start_header_id|>']
-          })
-        });
-        if (retryRes.ok) {
-          const retryData = await retryRes.json();
-          if (retryData.message?.content) {
-            if (retryData.message.content.replace(/[*\s\n_~`]/g, '').length >= 3) {
+
+      if (isElectron()) {
+        try {
+          const retryResult = await Promise.race([
+            window.electronAPI.aiChat({
+              messages: retryMessages.slice(1).map(m => ({ role: m.role, content: m.content })),
+              systemPrompt: retrySystemPrompt,
+              model,
+              isOllama: true,
+              ollamaUrl,
+              temperature: 0.5,
+              maxTokens: numPredict
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 120000))
+          ]);
+          if (retryResult.success && retryResult.content) {
+            if (retryResult.content.replace(/[*\s\n_~`]/g, '').length >= 3) {
+              data = { message: { content: retryResult.content }, eval_count: retryResult.usage?.total_tokens || 0 };
+            }
+          }
+        } catch (err) { console.warn('[API] Retry request failed:', err?.message); }
+      } else {
+        const retryCtrl = new AbortController();
+        const retryTimer = setTimeout(() => retryCtrl.abort(), 120000);
+        try {
+          const retryRes = await fetch(`${ollamaUrl}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: retryCtrl.signal,
+            body: JSON.stringify({
+              model, messages: retryMessages, stream: false,
+              options: { temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx, ...chatOptions },
+              stop: stopSequences
+            })
+          });
+          if (retryRes.ok) {
+            const retryData = await retryRes.json();
+            if (retryData.message?.content && retryData.message.content.replace(/[*\s\n_~`]/g, '').length >= 3) {
               data = retryData;
             }
           }
-        }
-      } catch (err) { console.warn('[API] Retry request failed:', err?.message); }
-      finally { clearTimeout(retryTimer); }
+        } catch (err) { console.warn('[API] Retry request failed:', err?.message); }
+        finally { clearTimeout(retryTimer); }
+      }
 
       if (!data.message || !data.message.content) {
         throw new Error('No response from Ollama');
@@ -1157,6 +1326,14 @@ export const listSessions = async () => {
  */
 export const testOllamaConnection = async (url = OLLAMA_DEFAULT_URL) => {
   try {
+    if (isElectron()) {
+      const result = await window.electronAPI.ollamaModels({ ollamaUrl: url });
+      if (result.success) {
+        return { success: true, message: `✅ Connected! Found ${result.totalCount} models.` };
+      }
+      return { success: false, message: `❌ Connection failed: ${result.error}` };
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
     const response = await fetch(`${url}/api/tags`, {
@@ -1169,9 +1346,9 @@ export const testOllamaConnection = async (url = OLLAMA_DEFAULT_URL) => {
     if (response.ok) {
       const data = await response.json();
       const modelCount = data.models ? data.models.length : 0;
-      return { 
-        success: true, 
-        message: `✅ Connected! Found ${modelCount} models.` 
+      return {
+        success: true,
+        message: `✅ Connected! Found ${modelCount} models.`
       };
     } else {
       return { success: false, message: `❌ Connection failed: ${response.status}` };
@@ -1188,6 +1365,11 @@ export const testOllamaConnection = async (url = OLLAMA_DEFAULT_URL) => {
  */
 export const fetchOllamaModels = async (ollamaUrl = OLLAMA_DEFAULT_URL) => {
   try {
+    if (isElectron()) {
+      const result = await window.electronAPI.ollamaModels({ ollamaUrl });
+      return result.success ? result.models : [];
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     const response = await fetch(`${ollamaUrl}/api/tags`, {
@@ -1205,16 +1387,12 @@ export const fetchOllamaModels = async (ollamaUrl = OLLAMA_DEFAULT_URL) => {
 
     if (data.models && Array.isArray(data.models)) {
       const allModels = data.models.map(m => m.name);
-      
-      // STRICT FILTER: Block ALL embedding/BERT models
       const chatModels = allModels.filter(name => {
         const lowerName = name.toLowerCase();
-        // Blacklist patterns (strict - any model with these keywords)
         if (lowerName.includes('embed')) return false;
         if (lowerName.includes('bert')) return false;
         return true;
       });
-      
       return chatModels;
     }
 

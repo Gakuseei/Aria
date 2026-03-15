@@ -600,7 +600,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
           if (token) {
             fullText += token;
             // Filter artifacts in real-time so user never sees them
-            const display = fullText.replace(/<\/s>/g, '').replace(/\[TOOL_CALLS\]/g, '').replace(/<\|[^|]*\|>/g, '').replace(/~+$/g, '').replace(/\s*\(\d+\s*words?\)\s*/gi, ' ').replace(/\[No further.*$/gim, '').replace(/\((?:Continued|Keeping|As per|Note:|Brief).*?\)/gi, '').replace(/\n.*?(?:first person|keep .* brief|replies?.*brief|in character|as instructed|without describing|focusing on).*$/gim, '').replace(/^(?:Just|Note|Remember).*?(?:brief|first person|instruction|character|roleplay).*$/gim, '').replace(/^[./]+(?=\*)/gm, '');
+            const display = fullText.replace(/<\/s>/g, '').replace(/\[TOOL_CALLS\]/g, '').replace(/<\|[^|]*\|>/g, '').replace(/~+$/g, '').replace(/\s*\(\d+\s*words?\)\s*/gi, ' ').replace(/\[No further.*$/gim, '').replace(/\((?:Continued|Keeping|As per|Note:|Brief).*?\)/gi, '').replace(/\n.*?(?:first person|keep .* brief|replies?.*brief|in character|as instructed|without describing|focusing on).*$/gim, '').replace(/^(?:Just|Note|Remember).*?(?:brief|first person|instruction|character|roleplay).*$/gim, '').replace(/^[./]+(?=\*)/gm, '').trim();
             onToken(null, display);
           }
         } catch { /* skip malformed lines */ }
@@ -628,18 +628,12 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   cleaned = cleaned.replace(/^[./]+(?=\*)/gm, '');
   cleaned = cleaned.trim();
 
-  // Trim to last complete sentence (num_predict may cut mid-word)
+  // Trim trailing incomplete word (not sentence — user can edit)
   const lastCh = cleaned.slice(-1);
-  if (lastCh && !['.', '!', '?', '"', '*', ')'].includes(lastCh)) {
-    const end = Math.max(
-      cleaned.lastIndexOf('*'),
-      cleaned.lastIndexOf('"'),
-      cleaned.lastIndexOf('.'),
-      cleaned.lastIndexOf('!'),
-      cleaned.lastIndexOf('?')
-    );
-    if (end > cleaned.length * 0.3) {
-      cleaned = cleaned.substring(0, end + 1);
+  if (lastCh && /\w/.test(lastCh) && !cleaned.endsWith('.') && !cleaned.endsWith('!') && !cleaned.endsWith('?')) {
+    const lastSpace = cleaned.lastIndexOf(' ');
+    if (lastSpace > cleaned.length * 0.5) {
+      cleaned = cleaned.substring(0, lastSpace).trim();
     }
   }
 

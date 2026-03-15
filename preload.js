@@ -20,6 +20,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // AI Communication
   aiChat: (params) => ipcRenderer.invoke('ai-chat', params),
   aiCreativeWrite: (params) => ipcRenderer.invoke('ai-creative-write', params),
+
+  // Ollama IPC (streaming, model management)
+  ollamaChatStream: (params) => ipcRenderer.invoke('ollama-chat-stream', params),
+  ollamaStreamAbort: (requestId) => ipcRenderer.invoke('ollama-stream-abort', { requestId }),
+  onOllamaStreamToken: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('ollama-stream-token', handler);
+    return () => ipcRenderer.removeListener('ollama-stream-token', handler);
+  },
+  ollamaUnload: (params) => ipcRenderer.invoke('ollama-unload', params),
+  ollamaModels: (params) => ipcRenderer.invoke('ollama-models', params),
+  ollamaModelInfo: (params) => ipcRenderer.invoke('ollama-model-info', params),
   
   // Session Management
   saveSession: (sessionId, data) => ipcRenderer.invoke('save-session', { sessionId, data }),

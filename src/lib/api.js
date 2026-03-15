@@ -626,17 +626,17 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const messages = [
     {
       role: 'system',
-      content: `Write ${userName}'s next reply from their point of view, using the chat history as a style guide. Write in first person (I/me/my). Internet RP style — *actions* and "dialogue". Don't write as ${charName} or system. Don't describe ${charName}'s actions or reactions.${intensityHint}`
+      content: `Write ${userName}'s next reply in a roleplay. 1-2 sentences MAX. Write in FIRST PERSON (I/me/my). Actions in *asterisks*, dialogue in plain text. NEVER write as ${charName}. NEVER use third person (he/his/him) for ${userName}. Same language as the conversation.${intensityHint}`
     },
     {
       role: 'user',
-      content: `${historyText}\n\n${userName}:`
+      content: `Conversation:\n${historyText}\n\n${userName} (1-2 sentences only):`
     }
   ];
 
-  // Same sampling as chat + SillyTavern-style token limit (80)
+  // v3 settings + chat sampling
   const options = {
-    num_predict: 80,
+    num_predict: 60,
     temperature: settings.temperature ?? profile.temperature,
     num_ctx: numCtx,
     top_k: settings.topK ?? profile.topK,
@@ -722,12 +722,16 @@ export async function impersonateUser(history, charName, userName, passionLevel,
     }
   }
 
-  // Cleanup: special tokens + sentence trim + wrong name
+  // Cleanup: special tokens + artifacts + sentence trim + wrong name
   let cleaned = fullText.trim();
   cleaned = cleaned.replace(/<\/s>/g, '');
   cleaned = cleaned.replace(/\[TOOL_CALLS\]/g, '');
   cleaned = cleaned.replace(/<\|[^|]*\|>/g, '');
+  cleaned = cleaned.replace(/~+\s*$/g, '');
+  cleaned = cleaned.replace(/\s*\(\d+\s*words?\)\s*/gi, ' ');
   cleaned = cleaned.replace(/^[./]+(?=\*)/gm, '');
+  const metaCut = cleaned.search(/\n---|\n\n(?:I chose|I picked|This |The |Here |Note)/i);
+  if (metaCut > 0) cleaned = cleaned.substring(0, metaCut);
   cleaned = cleaned.trim();
 
   // Trim to last complete sentence if num_predict cut mid-word

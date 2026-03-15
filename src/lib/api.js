@@ -548,11 +548,11 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const messages = [
     {
       role: 'system',
-      content: `You write ${userName}'s next message in a roleplay conversation. Write 1-3 short sentences as ${userName} — actions in *asterisks*, dialogue in plain text. Match ${userName}'s writing style from the conversation. NEVER write as ${charName}. NEVER describe ${charName}'s reactions. Respond in the same language the user writes in.${intensityHint}`
+      content: `Write ${userName}'s next reply in a roleplay. 1-2 sentences MAX — keep it short. Actions in *asterisks*, dialogue in plain text. NEVER write as ${charName}. NEVER describe ${charName}'s reactions or actions. Same language as the conversation.${intensityHint}`
     },
     {
       role: 'user',
-      content: `Conversation:\n${historyText}\n\nWrite ${userName}'s next message:`
+      content: `Conversation:\n${historyText}\n\n${userName} (1-2 sentences only):`
     }
   ];
 
@@ -567,7 +567,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
       messages,
       stream: true,
       options: {
-        num_predict: 150,
+        num_predict: 80,
         temperature: 0.85,
         num_ctx: numCtx,
         stop: [`\n${charName}:`, `\n${charName} :`, `${charName}:`]

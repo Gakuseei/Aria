@@ -584,14 +584,15 @@ export function abortImpersonateCall() {
 }
 
 /**
- * Generate a user-perspective reply using the AI model.
+ * Generate a user-perspective reply using the AI model (SillyTavern-style).
  * Streams tokens into `onToken` callback so the input field fills live.
+ * Uses same generation settings as chat — no special overrides.
  * @param {Array} history - Conversation history
  * @param {string} charName - Character name
  * @param {string} userName - User name
  * @param {number} passionLevel - Current passion level 0-100
  * @param {object} settings - App settings (ollamaUrl, ollamaModel)
- * @param {function} onToken - Called with each streamed token
+ * @param {function} onToken - Called with (null, fullDisplayText) on each token
  * @returns {Promise<string>} Full generated text
  */
 export async function impersonateUser(history, charName, userName, passionLevel, settings, onToken) {
@@ -599,8 +600,8 @@ export async function impersonateUser(history, charName, userName, passionLevel,
 
   const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
   const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
-  const tier = getTierKey(passionLevel);
   const numCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
+  const profile = getModelProfile(model);
 
   const last6 = (history || [])
     .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -625,10 +626,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const messages = [
     {
       role: 'system',
-      content: `You are ghostwriting ${userName}'s next action in a roleplay with ${charName}. Output ONLY the action — no explanations.
-Format: *action* "optional dialogue"
-Examples: *leans closer and brushes hair from her face* | *grins* "Surprise me." | *kisses her deeply*
-RULES: First person. One action, one optional line of dialogue. Nothing else.${intensityHint}`
+      content: `Write your next reply from the point of view of ${userName}, using the chat history so far as a guideline for the writing style of ${userName}. Write 1 reply only in internet RP style. Don't write as ${charName} or system. Don't describe actions of ${charName}.${intensityHint}`
     },
     {
       role: 'user',
@@ -636,25 +634,30 @@ RULES: First person. One action, one optional line of dialogue. Nothing else.${i
     }
   ];
 
-  let fullText = '';
-  const streamOptions = {
-    num_predict: 30,
-    temperature: 0.85,
+  // Same sampling as chat — no special overrides
+  const options = {
+    temperature: settings.temperature ?? profile.temperature,
     num_ctx: numCtx,
-    top_k: 50,
-    top_p: 0.9,
-    min_p: 0.05,
-    repeat_penalty: 1.15,
-    repeat_last_n: 128
+    top_k: settings.topK ?? profile.topK,
+    top_p: settings.topP ?? profile.topP,
+    min_p: settings.minP ?? profile.minP,
+    repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty,
+    repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
+    penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline
   };
-  const stopSequences = [`\n${charName}:`, `\n${charName} :`, `${charName}:`];
+  const stop = [`\n${charName}:`, `\n${charName} :`, `${charName}:`];
 
-  /** Real-time artifact filter applied on each token */
-  const filterAndEmit = () => {
-    let display = fullText.replace(/<\/s>/g, '').replace(/\[TOOL_CALLS\]/g, '').replace(/<\|[^|]*\|>/g, '').replace(/~+$/g, '').replace(/\s*\(\d+\s*words?\)\s*/gi, ' ').replace(/\[No further.*$/gim, '').replace(/\((?:Continued|Keeping|As per|Note:|Brief).*?\)/gi, '').replace(/\n.*?(?:first person|keep .* brief|replies?.*brief|in character|as instructed|without describing|focusing on).*$/gim, '').replace(/^(?:Just|Note|Remember).*?(?:brief|first person|instruction|character|roleplay).*$/gim, '').replace(/^[./]+(?=\*)/gm, '');
-    const mc = display.search(/\n---|\n\n(?:I chose|I picked|I kept|I went|This |Alice |Sarah |The |Here )/i);
-    if (mc > 0) display = display.substring(0, mc);
-    onToken(null, display.trim());
+  let fullText = '';
+
+  /** Stream display: only strip special tokens so user never sees </s> etc */
+  const emitDisplay = () => {
+    const display = fullText
+      .replace(/<\/s>/g, '')
+      .replace(/\[TOOL_CALLS\]/g, '')
+      .replace(/<\|[^|]*\|>/g, '')
+      .replace(/^[./]+(?=\*)/gm, '')
+      .trim();
+    onToken(null, display);
   };
 
   if (isElectron()) {
@@ -666,17 +669,12 @@ RULES: First person. One action, one optional line of dialogue. Nothing else.${i
     const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
       if (rid !== requestId) return;
       fullText += token;
-      filterAndEmit();
+      emitDisplay();
     });
 
     try {
       const result = await window.electronAPI.ollamaChatStream({
-        requestId,
-        ollamaUrl,
-        model,
-        messages,
-        options: streamOptions,
-        stop: stopSequences
+        requestId, ollamaUrl, model, messages, options, stop
       });
       if (!result.success && !result.aborted) {
         throw new Error(result.error || 'Stream failed');
@@ -692,12 +690,7 @@ RULES: First person. One action, one optional line of dialogue. Nothing else.${i
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: impersonateAbortController.signal,
-      body: JSON.stringify({
-        model,
-        messages,
-        stream: true,
-        options: { ...streamOptions, stop: stopSequences }
-      })
+      body: JSON.stringify({ model, messages, stream: true, options: { ...options, stop } })
     });
 
     if (!res.ok || !res.body) {
@@ -718,7 +711,7 @@ RULES: First person. One action, one optional line of dialogue. Nothing else.${i
             const token = parsed.message?.content || '';
             if (token) {
               fullText += token;
-              filterAndEmit();
+              emitDisplay();
             }
           } catch { /* skip malformed lines */ }
         }
@@ -728,54 +721,26 @@ RULES: First person. One action, one optional line of dialogue. Nothing else.${i
     }
   }
 
+  // Minimal cleanup — same as SillyTavern: special tokens + wrong name
   let cleaned = fullText.trim();
-
-  // Strip model special tokens and artifacts
   cleaned = cleaned.replace(/<\/s>/g, '');
   cleaned = cleaned.replace(/\[TOOL_CALLS\]/g, '');
   cleaned = cleaned.replace(/<\|[^|]*\|>/g, '');
-  cleaned = cleaned.replace(/~+\s*$/g, '');
-  cleaned = cleaned.replace(/\s*\(\d+\s*words?\)\s*/gi, ' ');
-  cleaned = cleaned.replace(/\s*\*?actions?\*?:\s*/gi, '');
-  cleaned = cleaned.replace(/\[No further.*$/gim, '');
-  cleaned = cleaned.replace(/\((?:Continued|Keeping|As per|Note:|Brief).*?\)/gi, '');
-  cleaned = cleaned.replace(/^I:\s*\.?\*?/gm, '');
-  cleaned = cleaned.replace(/^I\s+(?:decide|choose|keep|want)\s+to\s+.*?[.!]\s*/i, '');
-  cleaned = cleaned.replace(/\n.*?(?:first person|keep .* brief|replies?.*brief|in character|as instructed|without describing|focusing on).*$/gim, '');
-  cleaned = cleaned.replace(/^(?:Just|Note|Remember).*?(?:brief|first person|instruction|character|roleplay).*$/gim, '');
   cleaned = cleaned.replace(/^[./]+(?=\*)/gm, '');
-  // Cut everything after --- separator or meta-commentary blocks
-  const metaCut = cleaned.search(/\n---|\n\n(?:I chose|I picked|I kept|I went|This |Alice |Sarah |The |Here )/i);
-  if (metaCut > 0) cleaned = cleaned.substring(0, metaCut);
   cleaned = cleaned.trim();
 
-  // Trim to last complete sentence/action boundary
-  const lastCh = cleaned.slice(-1);
-  if (lastCh && !['.', '!', '?', '"', '*', ')'].includes(lastCh)) {
-    const end = Math.max(
-      cleaned.lastIndexOf('*'),
-      cleaned.lastIndexOf('"'),
-      cleaned.lastIndexOf('.'),
-      cleaned.lastIndexOf('!'),
-      cleaned.lastIndexOf('?')
-    );
-    if (end > cleaned.length * 0.3) {
-      cleaned = cleaned.substring(0, end + 1);
-    }
-  }
-
-  // SillyTavern technique: if response starts with charName, it's writing as the character — trash it
+  // If response starts with charName — wrong character, trash it
   if (cleaned.startsWith(`${charName}:`) || cleaned.startsWith(`${charName} :`)) {
     cleaned = '';
   }
 
-  // If charName appears mid-text as a new speaker, truncate everything from that point
+  // If charName appears mid-text as new speaker, cut there
   const charSpeakIdx = cleaned.indexOf(`\n${charName}:`);
   if (charSpeakIdx >= 0) {
     cleaned = cleaned.substring(0, charSpeakIdx).trim();
   }
 
-  // Strip any leading "userName:" prefix the model might add
+  // Strip userName: prefix the model might add
   if (cleaned.startsWith(`${userName}:`) || cleaned.startsWith(`${userName} :`)) {
     cleaned = cleaned.replace(/^\S+:\s*/, '');
   }

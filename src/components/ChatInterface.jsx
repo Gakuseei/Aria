@@ -843,7 +843,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         isUnchainedMode,
         handleApiStats,
         settings,
-        false,
         handleToken
       );
 
@@ -1148,7 +1147,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         isUnchainedMode,
         null,
         settings,
-        true,
         handleToken
       );
 

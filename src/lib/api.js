@@ -18,7 +18,7 @@ import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from './defaults.js';
  * Removes any "User:" or "Assistant:" hallucinations from the AI response
  * This prevents the AI from speaking for the user or breaking immersion
  */
-export function cleanTranscriptArtifacts(text, charName = '') {
+function cleanTranscriptArtifacts(text, charName = '') {
   if (!text || typeof text !== 'string') return '';
 
   let cleaned = text;
@@ -694,7 +694,6 @@ export const sendMessage = async (
   unchainedMode = false,
   onApiStats = null,  // v0.2.5: NEW - Callback for API Monitor stats
   settingsOverride = null,  // v0.2.5: FIX - Accept settings directly to avoid race conditions
-  _skipPassionUpdate = false,
   onToken = null  // Streaming callback — receives each token chunk as string
 ) => {
   const startTime = Date.now();  // v0.2.5: Track response time
@@ -962,7 +961,7 @@ export const sendMessage = async (
 // SETTINGS MANAGEMENT
 // ============================================================================
 
-export const loadSettings = async () => {
+const loadSettings = async () => {
   try {
     if (isElectron()) {
       const result = await window.electronAPI.loadSettings();

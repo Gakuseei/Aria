@@ -1,6 +1,6 @@
 // ARIA v1.0 RELEASE - Translations System
 
-export const translations = {
+const translations = {
   en: {
     meta: { label: "English", flag: "🇺🇸" },
     mainMenu: {

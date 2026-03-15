@@ -4,7 +4,7 @@
  */
 
 /** @type {Record<string, {label: string, temperature: number, topP: number, topK: number, maxResponseTokens: number, minP: number, repeatPenalty: number, repeatLastN: number, penalizeNewline: boolean, flags: Record<string, boolean>}>} */
-export const MODEL_PROFILES = {
+const MODEL_PROFILES = {
   qwen: {
     label: 'Qwen',
     temperature: 0.8,
@@ -106,7 +106,7 @@ const FAMILY_KEYWORDS = [
  * @param {string} modelName - Ollama model name (e.g. "HammerAI/mn-mag-mell-r1:12b-q4_K_M")
  * @returns {string} Family key ("qwen", "llama", etc.) or "generic" if unknown
  */
-export function detectModelFamily(modelName) {
+function detectModelFamily(modelName) {
   const lower = (modelName || '').toLowerCase();
   for (const { key, patterns } of FAMILY_KEYWORDS) {
     if (patterns.some(p => lower.includes(p))) return key;

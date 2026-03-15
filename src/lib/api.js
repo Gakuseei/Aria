@@ -548,11 +548,11 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const messages = [
     {
       role: 'system',
-      content: `Write ${userName}'s next reply in a roleplay. 1-2 sentences MAX, under 30 words. Write in FIRST PERSON (I/me/my). Actions in *asterisks*, dialogue in plain text. NEVER write as ${charName}. NEVER use third person (he/his/him) for ${userName}. Same language as the conversation.${intensityHint}`
+      content: `Write ${userName}'s next reply in a roleplay. Keep it very brief. First person only (I/me/my). *actions* in asterisks. NEVER write as ${charName}. NEVER narrate ${charName}'s reactions. Same language as the conversation.${intensityHint}`
     },
     {
       role: 'user',
-      content: `Conversation:\n${historyText}\n\n${userName} (1-2 sentences only):`
+      content: `Conversation:\n${historyText}\n\n${userName} (one short sentence):`
     }
   ];
 
@@ -567,9 +567,14 @@ export async function impersonateUser(history, charName, userName, passionLevel,
       messages,
       stream: true,
       options: {
-        num_predict: 60,
+        num_predict: 50,
         temperature: 0.85,
         num_ctx: numCtx,
+        top_k: 50,
+        top_p: 0.9,
+        min_p: 0.05,
+        repeat_penalty: 1.15,
+        repeat_last_n: 128,
         stop: [`\n${charName}:`, `\n${charName} :`, `${charName}:`]
       }
     })
@@ -605,11 +610,33 @@ export async function impersonateUser(history, charName, userName, passionLevel,
 
   let cleaned = fullText.trim();
 
-  // Strip model special tokens and artifacts (</s>, [TOOL_CALLS], <|...|>)
+  // Strip model special tokens and artifacts
   cleaned = cleaned.replace(/<\/s>/g, '');
   cleaned = cleaned.replace(/\[TOOL_CALLS\]/g, '');
   cleaned = cleaned.replace(/<\|[^|]*\|>/g, '');
+  cleaned = cleaned.replace(/~+\s*$/g, '');
+  cleaned = cleaned.replace(/\s*\(\d+\s*words?\)\s*/gi, ' ');
+  cleaned = cleaned.replace(/\s*\*?actions?\*?:\s*/gi, '');
+  cleaned = cleaned.replace(/\[No further.*$/gim, '');
+  cleaned = cleaned.replace(/\((?:Continued|Keeping|As per|Note:|Brief).*?\)/gi, '');
+  cleaned = cleaned.replace(/^I:\s*\.?\*?/gm, '');
+  cleaned = cleaned.replace(/^I\s+(?:decide|choose|keep|want)\s+to\s+.*?[.!]\s*/i, '');
   cleaned = cleaned.trim();
+
+  // Trim to last complete sentence (num_predict may cut mid-word)
+  const lastCh = cleaned.slice(-1);
+  if (lastCh && !['.', '!', '?', '"', '*', ')'].includes(lastCh)) {
+    const end = Math.max(
+      cleaned.lastIndexOf('*'),
+      cleaned.lastIndexOf('"'),
+      cleaned.lastIndexOf('.'),
+      cleaned.lastIndexOf('!'),
+      cleaned.lastIndexOf('?')
+    );
+    if (end > cleaned.length * 0.3) {
+      cleaned = cleaned.substring(0, end + 1);
+    }
+  }
 
   // SillyTavern technique: if response starts with charName, it's writing as the character — trash it
   if (cleaned.startsWith(`${charName}:`) || cleaned.startsWith(`${charName} :`)) {

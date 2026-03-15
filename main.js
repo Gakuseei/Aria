@@ -477,6 +477,23 @@ ipcMain.handle('test-image-gen', async (event, url) => {
 });
 
 /**
+ * List available Stable Diffusion models (for Flux detection).
+ */
+ipcMain.handle('image-gen-models', async (event, params = {}) => {
+  const { url = 'http://127.0.0.1:7860' } = params;
+  try {
+    const response = await fetch(`${url}/sdapi/v1/sd-models`, {
+      signal: AbortSignal.timeout(5000)
+    });
+    if (!response.ok) return { success: false, error: `Status ${response.status}` };
+    const models = await response.json();
+    return { success: true, models: models.map(m => m.title || m.model_name || '') };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+/**
  * Test Voice/TTS - CLI check with model validation
  * CRITICAL FIX: Validate both Piper executable and model JSON config
  */

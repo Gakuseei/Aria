@@ -37,11 +37,14 @@ export default function ImageGenSetup({ onClose, onVerified }) {
 
   const checkFluxAvailable = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:7860/sdapi/v1/sd-models');
-      if (response.ok) {
-        const models = await response.json();
-        const hasFlux = models.some(m => m.title?.toLowerCase().includes('flux'));
+      const saved = JSON.parse(localStorage.getItem('settings') || '{}');
+      const url = saved.imageGenUrl || 'http://127.0.0.1:7860';
+      const result = await window.electronAPI.imageGenModels({ url });
+      if (result.success) {
+        const hasFlux = result.models.some(m => m.toLowerCase().includes('flux'));
         setFluxAvailable(hasFlux);
+      } else {
+        setFluxAvailable(false);
       }
     } catch {
        setFluxAvailable(false);

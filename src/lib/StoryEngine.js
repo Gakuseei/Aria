@@ -210,39 +210,45 @@ This instruction OVERRIDES all other language detection. The user explicitly sel
     // Append language enforcement to system prompt
     systemPrompt = systemPrompt + languageEnforcement;
 
-    const response = await fetch(`${url}/api/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    let generatedStory;
+
+    if (typeof window !== 'undefined' && window.electronAPI) {
+      const result = await window.electronAPI.aiChat({
+        messages: [{ role: 'user', content: `User Request: ${prompt}\n\nStory:` }],
+        systemPrompt: systemPrompt,
         model: modelName,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `User Request: ${prompt}\n\nStory:` }
-        ],
-        stream: false,
-        options: {
-          temperature: 0.9,
-          num_predict: 2000,
-          top_p: 0.95,
-          top_k: 40
-        }
-      })
-    });
+        isOllama: true,
+        ollamaUrl: url,
+        temperature: 0.9,
+        maxTokens: 2000
+      });
+      if (!result.success) throw new Error(result.error || 'No response from Ollama');
+      if (!result.content) throw new Error('No response from Ollama');
+      generatedStory = result.content.trim();
+    } else {
+      const response = await fetch(`${url}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: modelName,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `User Request: ${prompt}\n\nStory:` }
+          ],
+          stream: false,
+          options: { temperature: 0.9, num_predict: 2000, top_p: 0.95, top_k: 40 }
+        })
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Ollama returned status ${response.status}: ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Ollama returned status ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      if (!data.message || !data.message.content) throw new Error('No response from Ollama');
+      generatedStory = data.message.content.trim();
     }
-
-    const data = await response.json();
-
-    if (!data.message || !data.message.content) {
-      throw new Error('No response from Ollama');
-    }
-
-    const generatedStory = data.message.content.trim();
 
     console.log('[StoryEngine] ✅ Story generated');
     console.log('[StoryEngine] Output length:', generatedStory.length);

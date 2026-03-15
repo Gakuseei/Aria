@@ -31,14 +31,34 @@ export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', im
 
     console.log("[Image Gen] Sending Payload:", JSON.stringify(payload, null, 2));
 
+    if (typeof window !== 'undefined' && window.electronAPI?.generateImage) {
+      const result = await window.electronAPI.generateImage({
+        prompt,
+        url: apiUrl,
+        imageGenTier,
+        width: payload.width,
+        height: payload.height,
+        steps: payload.steps
+      });
+      if (!result?.success) {
+        throw new Error(result?.error || 'Image generation failed');
+      }
+      if (!result.imageBase64) {
+        throw new Error('No images returned from API');
+      }
+      // Strip data URI prefix — caller expects raw base64
+      const raw = result.imageBase64.replace(/^data:image\/\w+;base64,/, '');
+      console.log("[Image Gen] Received Image Length:", raw.length);
+      console.log("[Image Gen] ✅ Image generated successfully");
+      return raw;
+    }
+
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 600000); // v0.2.5 FIX: 600s (10m) timeout for CPU generation
+    const timeoutId = setTimeout(() => controller.abort(), 600000);
 
     const response = await fetch(`${apiUrl}/sdapi/v1/txt2img`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
       signal: controller.signal
     });
@@ -58,7 +78,6 @@ export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', im
     console.log("[Image Gen] Received Image Length:", data.images[0].length);
     console.log("[Image Gen] ✅ Image generated successfully");
 
-    // Return the first image as base64
     return data.images[0];
   } catch (error) {
     if (error.name === 'AbortError') {

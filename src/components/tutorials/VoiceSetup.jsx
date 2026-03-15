@@ -139,10 +139,8 @@ export default function VoiceSetup({ onClose, onVerified }) {
 
   const testZonosConnection = async () => {
       try {
-        const response = await fetch('http://localhost:7860/api/health', {
-            signal: AbortSignal.timeout(2000)
-        });
-        if(response.ok) {
+        const result = await window.electronAPI.zonosCheckStatus();
+        if(result?.success || result?.status === 'running') {
             setZonosStatus('connected');
             setConnectionStatus('connected');
             setZonosInstallStatus('completed');

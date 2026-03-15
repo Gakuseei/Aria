@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Download, Check, RefreshCw, Copy, ExternalLink, HardDrive, Cpu, Zap } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import TutorialLayout from './TutorialLayout';
+import { OLLAMA_DEFAULT_URL } from '../../lib/defaults';
 
 /**
  * @description Premium Ollama Setup Tutorial
@@ -27,18 +28,10 @@ export default function OllamaSetup({ onClose, isOnboarding = false, onComplete 
   const testConnection = async () => {
     setTesting(true);
     try {
-      // Use API lib if available, or fetch direct
-      const response = await fetch('http://127.0.0.1:11434/api/tags');
-      if (response.ok) {
+      const result = await window.electronAPI.ollamaModels({ ollamaUrl: OLLAMA_DEFAULT_URL });
+      if (result.success) {
         setConnectionStatus('connected');
-        const data = await response.json();
-        setModelsInstalled(data.models?.map(m => m.name) || []);
-        
-        // If connected and has models, we might be done
-        if (isOnboarding && currentStep < 4) {
-             // Let user manually proceed to see info, or auto-scan?
-             // Better to let user click "Next"
-        }
+        setModelsInstalled(result.models || []);
       } else {
         setConnectionStatus('error');
       }

@@ -402,9 +402,13 @@ let suggestionRequestId = 0;
  * Call before sendMessage/regenerate so Ollama is free for the chat stream.
  */
 export function abortSuggestionCall() {
+  suggestionRequestId++;
   if (suggestionAbortController) {
     suggestionAbortController.abort();
     suggestionAbortController = null;
+  }
+  if (isElectron() && window.electronAPI?.abortAiChat) {
+    window.electronAPI.abortAiChat('suggestions');
   }
 }
 
@@ -525,22 +529,22 @@ Rules:
   };
 
   if (isElectron()) {
-    suggestionAbortController = { abort: () => { /* IPC has no abort — rely on requestId check */ } };
+    suggestionAbortController = null;
+    const taggedParams = { ...chatParams, tag: 'suggestions' };
 
-    window.electronAPI.aiChat(chatParams)
+    window.electronAPI.aiChat(taggedParams)
       .then(result => {
-        if (currentRequestId !== suggestionRequestId) { suggestionAbortController = null; return; }
-        const raw = result.success ? result.content || '' : '';
+        if (currentRequestId !== suggestionRequestId) return;
+        if (!result.success) { callback(null); return; }
+        const raw = result.content || '';
         const suggestions = parseSuggestions(raw);
         console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
         if (suggestions.length >= 3) {
-          suggestionAbortController = null;
           callback(suggestions);
           return;
         }
         console.log(`[API] Suggestions: retrying (got ${suggestions.length})`);
-        return window.electronAPI.aiChat(chatParams).then(retryResult => {
-          suggestionAbortController = null;
+        return window.electronAPI.aiChat(taggedParams).then(retryResult => {
           if (currentRequestId !== suggestionRequestId) return;
           const retryRaw = retryResult.success ? retryResult.content || '' : '';
           const retrySuggestions = parseSuggestions(retryRaw);
@@ -550,7 +554,7 @@ Rules:
         });
       })
       .catch(err => {
-        suggestionAbortController = null;
+        if (err?.message === 'aborted') return;
         console.warn('[API] Suggestion generation failed:', err?.message);
         callback(null);
       });

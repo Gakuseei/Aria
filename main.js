@@ -1028,17 +1028,39 @@ ipcMain.handle('open-file-dialog', async (event, filters) => {
 // v0.2.5 LOCAL: AI COMMUNICATION (OLLAMA ONLY)
 // ===========================================
 
+/** @type {Map<string, AbortController>} Tagged abort controllers for ai-chat requests */
+const aiChatAbortControllers = new Map();
+
+/**
+ * Abort a tagged ai-chat request by tag name.
+ */
+ipcMain.handle('abort-ai-chat', async (_event, { tag }) => {
+  const controller = aiChatAbortControllers.get(tag);
+  if (controller) {
+    controller.abort();
+    aiChatAbortControllers.delete(tag);
+  }
+  return { success: true };
+});
+
 /**
  * Send chat message to LOCAL Ollama
  */
 ipcMain.handle('ai-chat', async (event, params) => {
-  const { messages, systemPrompt, maxTokens, model, isOllama, ollamaUrl, temperature, num_ctx } = params;
+  const { messages, systemPrompt, maxTokens, model, isOllama, ollamaUrl, temperature, num_ctx, tag } = params;
 
   if (!isOllama) {
     return {
       success: false,
       error: 'Cloud AI is disabled in v5.5. Only local Ollama is supported.',
     };
+  }
+
+  const abortController = new AbortController();
+  if (tag) {
+    const prev = aiChatAbortControllers.get(tag);
+    if (prev) prev.abort();
+    aiChatAbortControllers.set(tag, abortController);
   }
 
   try {
@@ -1056,6 +1078,8 @@ ipcMain.handle('ai-chat', async (event, params) => {
     };
     if (num_ctx) options.num_ctx = num_ctx;
 
+    const timeoutId = setTimeout(() => abortController.abort(), 120000);
+
     const response = await fetch(`${url}/api/chat`, {
       method: 'POST',
       headers: {
@@ -1067,8 +1091,10 @@ ipcMain.handle('ai-chat', async (event, params) => {
         stream: false,
         options
       }),
-      signal: AbortSignal.timeout(120000),
+      signal: abortController.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -1088,11 +1114,16 @@ ipcMain.handle('ai-chat', async (event, params) => {
       },
     };
   } catch (error) {
+    if (error.name === 'AbortError') {
+      return { success: false, error: 'aborted' };
+    }
     console.error('[Main IPC] Ollama error:', error);
     return {
       success: false,
       error: error.message,
     };
+  } finally {
+    if (tag) aiChatAbortControllers.delete(tag);
   }
 });
 

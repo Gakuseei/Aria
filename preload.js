@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // AI Communication
   aiChat: (params) => ipcRenderer.invoke('ai-chat', params),
+  abortAiChat: (tag) => ipcRenderer.invoke('abort-ai-chat', { tag }),
   aiCreativeWrite: (params) => ipcRenderer.invoke('ai-creative-write', params),
 
   // Ollama IPC (streaming, model management)

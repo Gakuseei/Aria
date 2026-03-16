@@ -71,7 +71,7 @@ export function getSpeedMultiplier(passionSpeed) {
   switch (passionSpeed) {
     case 'slow': return 0.5;
     case 'fast': return 1.5;
-    case 'extreme': return 2.5;
+    case 'extreme': return 1.8;
     default: return 1.0;
   }
 }

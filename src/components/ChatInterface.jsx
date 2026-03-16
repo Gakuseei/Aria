@@ -317,6 +317,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const abortRef = useRef(null);
   const streamBufferRef = useRef('');
   const rafRef = useRef(null);
+  const settingsRef = useRef(parentSettings);
+
+  useEffect(() => {
+    settingsRef.current = parentSettings;
+  }, [parentSettings]);
 
   useEffect(() => {
     return () => {
@@ -328,9 +333,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         clearTimeout(passionTimerRef.current);
         passionTimerRef.current = null;
       }
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       abortSuggestionCall();
       abortImpersonateCall();
-      unloadOllamaModel(parentSettings);
+      unloadOllamaModel(settingsRef.current);
     };
   }, []);
 
@@ -529,9 +538,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // ============================================================================
 
   useEffect(() => {
+    let cancelled = false;
+
     const initializeChat = async () => {
       // Check if we're restoring a saved session
       if (loadedSession && loadedSession.messages && loadedSession.messages.length > 0) {
+        if (cancelled) return;
         const restoredSessionId = loadedSession.sessionId || generateSessionId();
         setSessionId(restoredSessionId);
         setMessages(loadedSession.messages);
@@ -554,6 +566,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         return;
       }
 
+      if (cancelled) return;
+
       // New chat = fresh passion level. Always 0.
       const newSessionId = generateSessionId();
       setSessionId(newSessionId);
@@ -564,6 +578,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     };
 
     initializeChat();
+
+    return () => { cancelled = true; };
   }, [character]);
 
   const initializeGreeting = () => {
@@ -887,6 +903,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         handleSpeak(safeResponse);
       }
     } catch (error) {
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       if (abortRef.current?.signal?.aborted) return;
       console.error('[ChatInterface] Send error:', error);
       const errorMsg = error?.message === 'The operation was aborted'

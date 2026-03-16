@@ -19,9 +19,7 @@
 
 <br/>
 
-<!-- TODO: Add demo.gif — 15-30s screen recording showing chat + streaming + suggestions -->
-<!-- ffmpeg -i clip.mp4 -vf "fps=15,scale=800:-1" assets/demo.gif -->
-<img src="assets/demo.gif" alt="Aria Demo" width="800"/>
+<!-- TODO: Add screenshots or demo.gif when available -->
 
 </div>
 

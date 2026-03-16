@@ -320,6 +320,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   useEffect(() => {
     return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       if (abortRef.current) {
         abortRef.current.abort();
         abortRef.current = null;

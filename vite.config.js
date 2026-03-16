@@ -9,6 +9,21 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     sourcemap: false,
+    target: 'esnext',
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/react-dom/') || id.includes('node_modules/react/')) {
+            return 'vendor';
+          }
+          if (id.includes('node_modules/lucide-react/')) {
+            return 'icons';
+          }
+        },
+      },
+    },
   },
   resolve: {
     alias: {

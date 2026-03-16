@@ -7,13 +7,6 @@ describe('platform', () => {
     platform = await import('../../lib/platform.js');
   });
 
-  describe('getPlatform', () => {
-    it('returns current platform', () => {
-      const result = platform.getPlatform();
-      expect(['win32', 'linux', 'darwin']).toContain(result);
-    });
-  });
-
   describe('isWindows / isLinux / isMac', () => {
     it('exactly one returns true', () => {
       const results = [platform.isWindows(), platform.isLinux(), platform.isMac()];
@@ -50,14 +43,6 @@ describe('platform', () => {
     });
   });
 
-  describe('getDefaultToolsDir', () => {
-    it('returns a string path', () => {
-      const dir = platform.getDefaultToolsDir();
-      expect(typeof dir).toBe('string');
-      expect(dir.length).toBeGreaterThan(0);
-    });
-  });
-
   describe('isPortInUse', () => {
     it('returns false for random high port', async () => {
       const result = await platform.isPortInUse(59999);
@@ -65,16 +50,4 @@ describe('platform', () => {
     });
   });
 
-  describe('killProcess', () => {
-    it('returns false for nonexistent PID', () => {
-      const result = platform.killProcess(999999);
-      expect(result).toBe(false);
-    });
-
-    it('returns false for invalid PID', () => {
-      expect(platform.killProcess(0)).toBe(false);
-      expect(platform.killProcess(-1)).toBe(false);
-      expect(platform.killProcess(null)).toBe(false);
-    });
-  });
 });

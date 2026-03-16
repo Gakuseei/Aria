@@ -16,6 +16,12 @@ const zonosTool = require('./lib/tools/zonos');
 const stabilityTool = require('./lib/tools/stability');
 const { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } = require('./lib/defaults');
 
+function ensureDir(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+}
+
 function loadSettingsSync() {
   try {
     const settingsPath = path.join(app.getPath('userData'), 'settings.json');
@@ -510,15 +516,8 @@ ipcMain.handle('image-gen-models', async (event, params = {}) => {
  */
 ipcMain.handle('test-voice', async (event, url) => {
   try {
-    // Load settings
-    const settingsPath = path.join(app.getPath('userData'), 'settings.json');
-    let settings = {};
-    
-    if (fs.existsSync(settingsPath)) {
-      const data = fs.readFileSync(settingsPath, 'utf-8');
-      settings = JSON.parse(data);
-    }
-    
+    const settings = loadSettingsSync();
+
     let piperPath = settings.piperPath || settings.piperExecutablePath;
     const modelPath = settings.modelPath;
     
@@ -909,9 +908,7 @@ ipcMain.handle('generate-speech', async (event, params) => {
 
       // 4. PREPARE OUTPUT PATH
       const tempDir = path.join(app.getPath('temp'), 'aria-voice');
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
+      ensureDir(tempDir);
 
       const timestamp = Date.now();
       const outputFile = path.join(tempDir, `speech-${timestamp}.wav`);
@@ -1071,9 +1068,7 @@ ipcMain.handle('download-voice-model', async (event, params) => {
 
   // Define download folder
   const downloadDir = path.join(app.getPath('userData'), 'voice-models');
-  if (!fs.existsSync(downloadDir)) {
-    fs.mkdirSync(downloadDir, { recursive: true });
-  }
+  ensureDir(downloadDir);
 
   const onnxPath = path.join(downloadDir, `${name}.onnx`);
   const jsonPath = path.join(downloadDir, `${name}.json`);
@@ -1247,14 +1242,7 @@ ipcMain.handle('ai-creative-write', async (event, params) => {
   const { prompt, systemPrompt } = params;
 
   try {
-    // Load settings to get Ollama config
-    const settingsPath = path.join(app.getPath('userData'), 'settings.json');
-    let settings = {};
-    
-    if (fs.existsSync(settingsPath)) {
-      const data = fs.readFileSync(settingsPath, 'utf-8');
-      settings = JSON.parse(data);
-    }
+    const settings = loadSettingsSync();
 
     const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
     const ollamaModel = settings.ollamaModel || DEFAULT_MODEL_NAME;
@@ -1585,15 +1573,8 @@ ipcMain.handle('check-system-ready', async () => {
     errors: []
   };
 
-  let ollamaUrl = OLLAMA_DEFAULT_URL;
-  try {
-    const settingsPath = path.join(app.getPath('userData'), 'settings.json');
-    if (fs.existsSync(settingsPath)) {
-      const data = fs.readFileSync(settingsPath, 'utf-8');
-      const parsed = JSON.parse(data);
-      ollamaUrl = parsed.ollamaUrl || ollamaUrl;
-    }
-  } catch (_) {}
+  const storedSettings = loadSettingsSync();
+  let ollamaUrl = storedSettings.ollamaUrl || OLLAMA_DEFAULT_URL;
 
   try {
     // Check Ollama
@@ -1767,9 +1748,7 @@ ipcMain.handle('save-character-memory', async (event, { characterId, sessionId, 
       return { success: false, error: 'Character ID and session ID required' };
     }
     const memoriesDir = getMemoriesPath();
-    if (!fs.existsSync(memoriesDir)) {
-      fs.mkdirSync(memoriesDir, { recursive: true });
-    }
+    ensureDir(memoriesDir);
     const memoryPath = path.join(memoriesDir, `${characterId}_${sessionId}.json`);
     const memoryData = { ...data, savedAt: new Date().toISOString() };
     fs.writeFileSync(memoryPath, JSON.stringify(memoryData, null, 2));

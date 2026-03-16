@@ -495,7 +495,7 @@ Rules:
 
     window.electronAPI.aiChat(chatParams)
       .then(result => {
-        if (currentRequestId !== suggestionRequestId) return;
+        if (currentRequestId !== suggestionRequestId) { suggestionAbortController = null; return; }
         const raw = result.success ? result.content || '' : '';
         const suggestions = parseSuggestions(raw);
         console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
@@ -536,7 +536,7 @@ Rules:
     fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: controller.signal })
       .then(res => res.json())
       .then(data => {
-        if (currentRequestId !== suggestionRequestId) return;
+        if (currentRequestId !== suggestionRequestId) { suggestionAbortController = null; return; }
         const raw = data.message?.content || '';
         const suggestions = parseSuggestions(raw);
         console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);

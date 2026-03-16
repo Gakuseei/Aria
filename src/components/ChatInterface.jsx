@@ -328,6 +328,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         clearTimeout(passionTimerRef.current);
         passionTimerRef.current = null;
       }
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       abortSuggestionCall();
       abortImpersonateCall();
       unloadOllamaModel(parentSettings);
@@ -529,9 +533,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // ============================================================================
 
   useEffect(() => {
+    let cancelled = false;
+
     const initializeChat = async () => {
       // Check if we're restoring a saved session
       if (loadedSession && loadedSession.messages && loadedSession.messages.length > 0) {
+        if (cancelled) return;
         const restoredSessionId = loadedSession.sessionId || generateSessionId();
         setSessionId(restoredSessionId);
         setMessages(loadedSession.messages);
@@ -554,6 +561,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         return;
       }
 
+      if (cancelled) return;
+
       // New chat = fresh passion level. Always 0.
       const newSessionId = generateSessionId();
       setSessionId(newSessionId);
@@ -564,6 +573,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     };
 
     initializeChat();
+
+    return () => { cancelled = true; };
   }, [character]);
 
   const initializeGreeting = () => {

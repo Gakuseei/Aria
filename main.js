@@ -22,7 +22,9 @@ function loadSettingsSync() {
     if (fs.existsSync(settingsPath)) {
       return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
     }
-  } catch (_) {}
+  } catch (_) {
+    // Ignore errors, return defaults below
+  }
   return {};
 }
 
@@ -241,7 +243,7 @@ function createWindow() {
   });
 
   // TOOLS FOLDER HANDLER
-  ipcMain.on('open-tools-folder', (event) => {
+  ipcMain.on('open-tools-folder', (_event) => {
     const toolsPath = path.join(__dirname, 'tools');
     shell.openPath(toolsPath).then((err) => {
       if (err) console.error('Failed to open tools folder:', err);
@@ -508,7 +510,7 @@ ipcMain.handle('image-gen-models', async (event, params = {}) => {
  * Test Voice/TTS - CLI check with model validation
  * CRITICAL FIX: Validate both Piper executable and model JSON config
  */
-ipcMain.handle('test-voice', async (event, url) => {
+ipcMain.handle('test-voice', async (_event, url) => {
   try {
     // Load settings
     const settingsPath = path.join(app.getPath('userData'), 'settings.json');
@@ -1593,7 +1595,9 @@ ipcMain.handle('check-system-ready', async () => {
       const parsed = JSON.parse(data);
       ollamaUrl = parsed.ollamaUrl || ollamaUrl;
     }
-  } catch (_) {}
+  } catch (_) {
+    // Ignore settings read errors, use default URL
+  }
 
   try {
     // Check Ollama

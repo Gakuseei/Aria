@@ -5,7 +5,7 @@
 // ~300-500 token system prompts (vs ~2000 in v1)
 // ============================================================================
 
-import { passionManager, getTierKey, getDepthInstruction, getSpeedMultiplier } from './PassionManager.js';
+import { passionManager, getDepthInstruction, getSpeedMultiplier } from './PassionManager.js';
 import { getModelProfile } from './modelProfiles.js';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from './defaults.js';
 
@@ -764,7 +764,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
  * Build system prompt from template slots.
  * Built ONCE per session, never rebuilt mid-conversation.
  */
-function buildSystemPrompt({ character, userName = 'User', userGender = 'male', passionLevel = 0, unchainedMode = false }) {
+function buildSystemPrompt({ character, userName = 'User', passionLevel = 0, unchainedMode = false }) {
   const charName = character.name;
   const rT = (text) => resolveTemplates(text, charName, userName);
 
@@ -827,7 +827,6 @@ export const sendMessage = async (
   unchainedMode = false,
   onApiStats = null,  // v0.2.5: NEW - Callback for API Monitor stats
   settingsOverride = null,  // v0.2.5: FIX - Accept settings directly to avoid race conditions
-  _skipPassionUpdate = false,
   onToken = null  // Streaming callback — receives each token chunk as string
 ) => {
   const startTime = Date.now();  // v0.2.5: Track response time
@@ -862,13 +861,11 @@ export const sendMessage = async (
 
     const currentPassionLevel = passionManager.getPassionLevel(sessionId || '');
 
-    const userGender = settings.userGender || 'male';
     const userName = settings.userName || 'User';
 
     const finalSystemPrompt = buildSystemPrompt({
       character,
       userName,
-      userGender,
       passionLevel: currentPassionLevel,
       unchainedMode
     });

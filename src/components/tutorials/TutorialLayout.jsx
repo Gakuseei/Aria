@@ -1,5 +1,3 @@
-import { X } from 'lucide-react';
-
 /**
  * Shared Layout for all Tutorials
  * Provides consistent Glassmorphism UI, Header, Progress Bar, and Footer

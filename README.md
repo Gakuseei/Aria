@@ -2,13 +2,7 @@
 
 <br/>
 
-<img src="assets/logo.png" alt="Aria" width="160"/>
-
-<br/><br/>
-
-# Aria
-
-**Local-only AI roleplay with a Passion System. No cloud. No censorship. No limits.**
+<img src="assets/banner.png" alt="Aria" width="100%"/>
 
 <br/>
 

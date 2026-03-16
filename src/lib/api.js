@@ -703,7 +703,14 @@ export async function impersonateUser(history, charName, userName, passionLevel,
 
     try {
       while (true) {
-        const { done, value } = await reader.read();
+        let readResult;
+        try {
+          readResult = await reader.read();
+        } catch (readErr) {
+          console.warn('[API] Impersonate stream interrupted:', readErr.message);
+          break;
+        }
+        const { done, value } = readResult;
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
         for (const line of chunk.split('\n').filter(Boolean)) {
@@ -989,7 +996,14 @@ export const sendMessage = async (
         let buffer = '';
 
         while (true) {
-          const { done, value } = await reader.read();
+          let readResult;
+          try {
+            readResult = await reader.read();
+          } catch (readErr) {
+            console.warn('[API] Chat stream interrupted:', readErr.message);
+            break;
+          }
+          const { done, value } = readResult;
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
@@ -1015,7 +1029,12 @@ export const sendMessage = async (
         }
         data = { message: { content: fullContent }, eval_count: finalChunk?.eval_count, prompt_eval_count: finalChunk?.prompt_eval_count };
       } else {
-        data = await response.json();
+        try {
+          data = await response.json();
+        } catch (parseErr) {
+          console.error('[API] Failed to parse non-streaming response:', parseErr.message);
+          throw new Error('Invalid response from Ollama (JSON parse failed)');
+        }
       }
     }
 

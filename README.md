@@ -47,7 +47,7 @@
 
 ## Getting Started
 
-Install [Ollama](https://ollama.ai), download Aria, and launch. The app guides you through model selection and setup on first run.
+Download Aria and launch. The app handles everything — Ollama setup, model selection, and configuration. No terminal needed.
 
 <details>
 <summary><strong>Build from Source</strong></summary>

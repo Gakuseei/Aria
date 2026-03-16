@@ -41,10 +41,10 @@ export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', im
         steps: payload.steps
       });
       if (!result?.success) {
-        throw new Error(result?.error || 'Image generation failed');
+        throw new Error(result?.error || 'Image generation failed. Check that Stability Matrix is running and a model is loaded.');
       }
       if (!result.imageBase64) {
-        throw new Error('No images returned from API');
+        throw new Error('No images returned. The model may have failed to generate — check Stability Matrix for errors.');
       }
       // Strip data URI prefix — caller expects raw base64
       const raw = result.imageBase64.replace(/^data:image\/\w+;base64,/, '');
@@ -66,13 +66,13 @@ export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', im
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      throw new Error(`Image API error (HTTP ${response.status}). Make sure Stability Matrix WebUI is running and accessible.`);
     }
 
     const data = await response.json();
 
     if (!data.images || data.images.length === 0 || !data.images[0]) {
-      throw new Error('No images returned from API');
+      throw new Error('No images returned. The model may have failed to generate — check Stability Matrix for errors.');
     }
 
     console.log("[Image Gen] Received Image Length:", data.images[0].length);
@@ -82,7 +82,7 @@ export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', im
   } catch (error) {
     if (error.name === 'AbortError') {
       console.error('[Image Gen] Request timed out after 600s');
-      throw new Error('Image generation timed out (10m). Check if AUTOMATIC1111 is running with GPU acceleration.');
+      throw new Error('Image generation timed out after 10 minutes. Ensure Stability Matrix is running with GPU acceleration enabled.');
     }
     console.error(`[Image Gen] txt2img failed (url=${apiUrl}, tier=${imageGenTier}):`, error?.message || error);
     throw error;

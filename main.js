@@ -251,7 +251,7 @@ function createWindow() {
   // CROSS-PLATFORM: Install any registered tool
   ipcMain.handle('tool-install', async (event, { toolName, destPath }) => {
     const tool = toolManager.getTool(toolName);
-    if (!tool) return { success: false, error: `Unknown tool: ${toolName}` };
+    if (!tool) return { success: false, error: `Unknown tool: ${toolName}. Available tools can be found in Settings.` };
 
     const abortController = new AbortController();
     activeInstalls.set(toolName, abortController);
@@ -462,7 +462,7 @@ ipcMain.handle('test-image-gen', async (event, url) => {
     } else {
       return {
         success: false,
-        error: `API responded with status ${response.status}`,
+        error: `Image API responded with error ${response.status}. Make sure the WebUI is fully loaded.`,
       };
     }
   } catch (error) {
@@ -534,7 +534,7 @@ ipcMain.handle('test-voice', async (event, url) => {
       } else {
         return {
           success: false,
-          error: 'Piper executable path not configured',
+          error: 'Piper TTS is not set up. Install it in Settings \u2192 Voice or set the path manually.',
         };
       }
     }
@@ -544,7 +544,7 @@ ipcMain.handle('test-voice', async (event, url) => {
     if (!fs.existsSync(cleanPiperPath)) {
       return {
         success: false,
-        error: `Piper executable not found: ${cleanPiperPath}`,
+        error: `Piper executable not found at ${cleanPiperPath}. Reinstall Piper in Settings \u2192 Voice.`,
       };
     }
     
@@ -559,10 +559,10 @@ ipcMain.handle('test-voice', async (event, url) => {
       if (!fs.existsSync(cleanModelPath)) {
         return {
           success: false,
-          error: `Model file not found: ${cleanModelPath}`,
+          error: `Voice model file not found at ${cleanModelPath}. Re-download the voice model in Settings \u2192 Voice.`,
         };
       }
-      
+
       // CRITICAL: Auto-Heal Logic - Fix JSON filename mismatch
       if (!fs.existsSync(correctConfigPath)) {
         // Check if the alternative naming exists
@@ -686,7 +686,7 @@ ipcMain.handle('generate-image', async (event, params) => {
     } else {
       return {
         success: false,
-        error: 'No image data returned from API',
+        error: 'Image generation produced no output. The model may have failed \u2014 check Stability Matrix for errors.',
       };
     }
   } catch (error) {
@@ -849,7 +849,7 @@ ipcMain.handle('generate-speech', async (event, params) => {
     // 1. INPUT VALIDATION
     if (!text || !piperPath || !modelPath) {
       console.error('[Voice] Missing required parameters:', { text: !!text, piperPath: !!piperPath, modelPath: !!modelPath });
-      return resolve({ success: false, error: 'Missing required parameters' });
+      return resolve({ success: false, error: 'Voice generation failed: missing text, Piper path, or model path. Configure voice in Settings \u2192 Voice.' });
     }
 
     try {
@@ -866,7 +866,7 @@ ipcMain.handle('generate-speech', async (event, params) => {
       // Validate ONNX model file exists
       if (!fs.existsSync(cleanModelPath)) {
         console.error('[Voice] Model file not found:', cleanModelPath);
-        return resolve({ success: false, error: `Model file not found: ${cleanModelPath}` });
+        return resolve({ success: false, error: `Voice model file not found at ${cleanModelPath}. Re-download the voice model in Settings \u2192 Voice.` });
       }
 
       // CRITICAL: Auto-Heal Logic - Fix JSON filename mismatch
@@ -898,13 +898,13 @@ ipcMain.handle('generate-speech', async (event, params) => {
       // Validate Piper executable exists
       if (!fs.existsSync(cleanPiperPath)) {
         console.error('[Voice] Piper executable not found:', cleanPiperPath);
-        return resolve({ success: false, error: `Piper executable not found at: ${cleanPiperPath}` });
+        return resolve({ success: false, error: `Piper executable not found at ${cleanPiperPath}. Reinstall Piper in Settings \u2192 Voice.` });
       }
 
       // 3. TEXT VALIDATION
       const cleanText = text.trim();
       if (!cleanText) {
-        return resolve({ success: false, error: 'Empty text' });
+        return resolve({ success: false, error: 'Cannot generate speech from empty text.' });
       }
 
       // 4. PREPARE OUTPUT PATH
@@ -1018,7 +1018,7 @@ ipcMain.handle('generate-speech', async (event, params) => {
         if (!child.killed) {
           console.error('[Voice] Process timeout - killing child process');
           child.kill();
-          resolve({ success: false, error: 'Process timeout after 30 seconds' });
+          resolve({ success: false, error: 'Voice generation timed out after 30 seconds. The text may be too long \u2014 try a shorter message.' });
         }
       }, 30000);
 
@@ -1062,11 +1062,11 @@ ipcMain.handle('download-voice-model', async (event, params) => {
   const { name, urlOnnx, urlJson } = params;
 
   if (!/^[a-zA-Z0-9_.-]+$/.test(name)) {
-    return { success: false, error: 'Invalid model name' };
+    return { success: false, error: 'Invalid voice model name. Model names can only contain letters, numbers, dots, hyphens, and underscores.' };
   }
 
   if (!name || !urlOnnx || !urlJson) {
-    return { success: false, error: 'Missing required parameters' };
+    return { success: false, error: 'Voice model download failed: model name and download URLs are required.' };
   }
 
   // Define download folder
@@ -1184,7 +1184,7 @@ ipcMain.handle('ai-chat', async (event, params) => {
   if (!isOllama) {
     return {
       success: false,
-      error: 'Cloud AI is disabled in v5.5. Only local Ollama is supported.',
+      error: 'Cloud AI is not supported. Aria uses local Ollama only. Set up Ollama in Settings.',
     };
   }
 
@@ -1363,7 +1363,7 @@ ipcMain.handle('ollama-chat-stream', async (event, params) => {
   } = params;
 
   if (!requestId || !model || !messages) {
-    return { success: false, error: 'Missing required params: requestId, model, messages' };
+    return { success: false, error: 'Chat request incomplete: missing model or message data. Check Ollama settings.' };
   }
 
   const controller = new AbortController();
@@ -1470,7 +1470,7 @@ ipcMain.handle('ollama-stream-abort', async (event, { requestId }) => {
  */
 ipcMain.handle('ollama-unload', async (event, params) => {
   const { ollamaUrl = OLLAMA_DEFAULT_URL, model } = params;
-  if (!model) return { success: false, error: 'Missing model name' };
+  if (!model) return { success: false, error: 'No model specified. Select a model in Settings \u2192 AI Model.' };
 
   try {
     await fetch(`${ollamaUrl}/api/chat`, {
@@ -1527,7 +1527,7 @@ ipcMain.handle('ollama-models', async (event, params = {}) => {
  */
 ipcMain.handle('ollama-model-info', async (event, params) => {
   const { ollamaUrl = OLLAMA_DEFAULT_URL, model } = params;
-  if (!model) return { success: false, error: 'Missing model name' };
+  if (!model) return { success: false, error: 'No model specified. Select a model in Settings \u2192 AI Model.' };
 
   const defaults = { contextLength: 4096, parameterSize: '7B' };
 
@@ -1606,7 +1606,7 @@ ipcMain.handle('check-system-ready', async () => {
       const data = await ollamaResponse.json();
       results.ollama = data.models && data.models.length > 0;
       if (!results.ollama) {
-        results.errors.push('Ollama running but no models installed');
+        results.errors.push('Ollama is running but no models are installed. Run "ollama pull" to download a model.');
       }
     }
   } catch (error) {
@@ -1669,7 +1669,7 @@ ipcMain.handle('save-session', async (event, { sessionId, data }) => {
     return { success: true };
   } catch (error) {
     console.error('Save session error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: `Failed to save session: ${error.message}. Check disk space and write permissions.` };
   }
 });
 
@@ -1690,7 +1690,7 @@ ipcMain.handle('load-session', async (event, { sessionId }) => {
     }
   } catch (error) {
     console.error('Load session error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: `Failed to load session: ${error.message}` };
   }
 });
 
@@ -1733,7 +1733,7 @@ ipcMain.handle('list-sessions', async () => {
     return { success: true, sessions: sessions.filter(Boolean) };
   } catch (error) {
     console.error('List sessions error:', error);
-    return { success: false, sessions: [], error: error.message };
+    return { success: false, sessions: [], error: `Failed to list sessions: ${error.message}` };
   }
 });
 
@@ -1751,7 +1751,7 @@ ipcMain.handle('delete-session', async (event, { sessionId }) => {
     return { success: true };
   } catch (error) {
     console.error('Delete session error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: `Failed to delete session: ${error.message}` };
   }
 });
 
@@ -1776,7 +1776,7 @@ ipcMain.handle('save-character-memory', async (event, { characterId, sessionId, 
     return { success: true };
   } catch (error) {
     console.error('Save character memory error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: `Failed to save character memory: ${error.message}. Check disk space and permissions.` };
   }
 });
 
@@ -1793,7 +1793,7 @@ ipcMain.handle('load-character-memory', async (event, { characterId, sessionId }
     return { success: true, data };
   } catch (error) {
     console.error('Load character memory error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: `Failed to load character memory: ${error.message}` };
   }
 });
 
@@ -1809,7 +1809,7 @@ ipcMain.handle('delete-character-memory', async (event, { characterId, sessionId
     return { success: true };
   } catch (error) {
     console.error('Delete character memory error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: `Failed to delete character memory: ${error.message}` };
   }
 });
 
@@ -1850,7 +1850,7 @@ ipcMain.handle('save-settings', async (event, newSettings) => {
     return { success: true };
   } catch (error) {
     console.error('Save settings error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: `Failed to save settings: ${error.message}. Check disk space and permissions.` };
   }
 });
 
@@ -1886,5 +1886,5 @@ const STUB_HANDLERS = [
   'zonos-synthesize', 'run-tool-script'
 ];
 STUB_HANDLERS.forEach(name => {
-  ipcMain.handle(name, async () => ({ success: false, error: 'Not yet available' }));
+  ipcMain.handle(name, async () => ({ success: false, error: 'This feature is not yet available. Check for updates.' }));
 });

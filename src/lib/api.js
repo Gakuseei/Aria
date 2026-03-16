@@ -678,7 +678,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
         requestId, ollamaUrl, model, messages, options, stop
       });
       if (!result.success && !result.aborted) {
-        throw new Error(result.error || 'Stream failed');
+        throw new Error(result.error || 'Streaming response failed. Ollama may have crashed — try restarting it.');
       }
     } finally {
       cleanup();
@@ -695,7 +695,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
     });
 
     if (!res.ok || !res.body) {
-      throw new Error(`Ollama request failed: ${res.status}`);
+      throw new Error(`Write-for-me request failed (HTTP ${res.status}). Check that Ollama is running.`);
     }
 
     const reader = res.body.getReader();
@@ -925,7 +925,7 @@ export const sendMessage = async (
           stop: stopSequences
         });
 
-        if (!result.success) throw new Error(result.error || 'Stream failed');
+        if (!result.success) throw new Error(result.error || 'Write-for-me streaming failed. Ollama may be busy — try again.');
 
         data = {
           message: { content: result.content },
@@ -948,7 +948,7 @@ export const sendMessage = async (
         maxTokens: numPredict
       });
 
-      if (!result.success) throw new Error(result.error || 'Chat failed');
+      if (!result.success) throw new Error(result.error || 'Chat request failed. Make sure Ollama is running and the model is loaded.');
 
       data = {
         message: { content: result.content },
@@ -1081,7 +1081,7 @@ export const sendMessage = async (
       }
 
       if (!data.message || !data.message.content) {
-        throw new Error('No response from Ollama');
+        throw new Error('Ollama returned an empty response. The model may be overloaded — try again or restart Ollama.');
       }
     }
 
@@ -1139,7 +1139,7 @@ export const sendMessage = async (
     console.error('[v8.1 API] ❌ Fatal error:', error);
     return {
       success: false,
-      error: error.message || 'Connection to Ollama failed'
+      error: error.message || 'Cannot connect to Ollama. Make sure it is running on the configured URL.'
     };
   }
 };
@@ -1201,7 +1201,7 @@ export const saveSession = async (sessionId, sessionData) => {
       const result = await window.electronAPI.saveSession(sessionId, completeSessionData);
 
       if (!result || !result.success) {
-        throw new Error(result?.error || 'IPC save failed');
+        throw new Error(result?.error || 'Failed to save session to disk. Check available disk space.');
       }
 
       return { success: true };
@@ -1227,13 +1227,13 @@ export const loadSession = async (sessionId) => {
       if (result && result.success && (result.session || result.data)) {
         return { success: true, session: result.session || result.data };
       } else {
-        throw new Error(result?.error || 'Session not found');
+        throw new Error(result?.error || 'Session not found. It may have been deleted.');
       }
     } else {
       const sessions = JSON.parse(localStorage.getItem('sessions') || '{}');
       const session = sessions[sessionId];
 
-      if (!session) throw new Error('Session not found');
+      if (!session) throw new Error('Session not found. It may have been deleted.');
 
       return { success: true, session: session };
     }
@@ -1251,7 +1251,7 @@ export const deleteSession = async (sessionId) => {
       const deleteResult = await window.electronAPI.deleteSession(sessionId);
 
       if (!deleteResult || !deleteResult.success) {
-        throw new Error(deleteResult?.error || 'IPC delete failed');
+        throw new Error(deleteResult?.error || 'Failed to delete session from disk.');
       }
 
       return { success: true };
@@ -1276,7 +1276,7 @@ export const listSessions = async () => {
       if (result && result.success) {
         return { success: true, sessions: result.sessions };
       } else {
-        throw new Error(result?.error || 'Failed to list sessions');
+        throw new Error(result?.error || 'Failed to load session list. The sessions folder may be corrupted.');
       }
     } else {
       const sessions = JSON.parse(localStorage.getItem('sessions') || '{}');
@@ -1453,18 +1453,18 @@ export const generateSessionId = () => {
 export const fileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     if (!file) {
-      reject(new Error('No file provided'));
+      reject(new Error('No file selected. Please choose an image file.'));
       return;
     }
     
     if (!file.type.startsWith('image/')) {
-      reject(new Error('File must be an image'));
+      reject(new Error('Invalid file type. Only image files (PNG, JPG, GIF) are supported.'));
       return;
     }
     
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error('Error reading file'));
+    reader.onerror = () => reject(new Error('Failed to read the selected file. It may be corrupted or inaccessible.'));
     reader.readAsDataURL(file);
   });
 };
@@ -1476,7 +1476,7 @@ export const fileToBase64 = (file) => {
 export const saveCustomCharacter = (characterData) => {
   try {
     if (!characterData || !characterData.name) {
-      throw new Error('Invalid character data');
+      throw new Error('Cannot save character: name is required.');
     }
     
     const characters = JSON.parse(localStorage.getItem('customCharacters') || '[]');

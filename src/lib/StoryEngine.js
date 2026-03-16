@@ -222,8 +222,8 @@ This instruction OVERRIDES all other language detection. The user explicitly sel
         temperature: 0.9,
         maxTokens: 2000
       });
-      if (!result.success) throw new Error(result.error || 'No response from Ollama');
-      if (!result.content) throw new Error('No response from Ollama');
+      if (!result.success) throw new Error(result.error || 'No response from Ollama. Make sure it is running and a model is loaded.');
+      if (!result.content) throw new Error('Ollama returned an empty response. Try a different prompt or restart Ollama.');
       generatedStory = result.content.trim();
     } else {
       const response = await fetch(`${url}/api/chat`, {
@@ -242,11 +242,11 @@ This instruction OVERRIDES all other language detection. The user explicitly sel
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Ollama returned status ${response.status}: ${errorText}`);
+        throw new Error(`Story generation failed (HTTP ${response.status}). Check that Ollama is running. Details: ${errorText}`);
       }
 
       const data = await response.json();
-      if (!data.message || !data.message.content) throw new Error('No response from Ollama');
+      if (!data.message || !data.message.content) throw new Error('Ollama returned an empty response. Try a different prompt or restart Ollama.');
       generatedStory = data.message.content.trim();
     }
 

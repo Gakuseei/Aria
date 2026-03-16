@@ -47,12 +47,12 @@
 
 ## Status
 
-Aria is in active development. First public release coming soon — the app will handle Ollama setup, model selection, and configuration out of the box. No terminal needed.
+Aria is in active development. First public release coming soon — everything is built in. Ollama installation, model selection, voice setup. One click, no terminal.
 
 Star the repo to get notified when v1.0 drops.
 
 <details>
-<summary><strong>Run from Source (developers)</strong></summary>
+<summary><strong>Run from Source</strong></summary>
 
 <br/>
 
@@ -63,7 +63,7 @@ npm install
 npm run dev
 ```
 
-Requires Node.js v18+ and [Ollama](https://ollama.ai).
+Requires Node.js v18+.
 
 </details>
 

@@ -192,6 +192,7 @@ function CharacterCreator({ onSave, onBack }) {
           <button
             onClick={onBack}
             className="p-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-700/50 border border-zinc-700/50 transition-all group"
+            aria-label={t.common?.back || 'Back'}
           >
             <svg className="w-5 h-5 text-zinc-400 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -320,6 +321,7 @@ function CharacterCreator({ onSave, onBack }) {
                   accept="image/*"
                   onChange={handleImageUpload}
                   className="hidden"
+                  aria-label="Upload character avatar"
                 />
                 <div className="flex gap-3">
                   <button

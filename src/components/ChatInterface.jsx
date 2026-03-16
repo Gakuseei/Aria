@@ -1305,6 +1305,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         accept=".json"
         onChange={handleImportChat}
         className="hidden"
+        aria-label="Import chat file"
       />
 
       {/* v1.0 ROSE NOIR: Premium Glass Header - BLOCK 6.9: Smooth Fade-In */}
@@ -1317,6 +1318,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             onClick={onBack}
             className="p-3 hover:bg-white/5 rounded-xl transition-all duration-200 text-zinc-500 hover:text-white"
             title={t.chat.back}
+            aria-label={t.chat.back}
           >
             <ArrowLeft size={22} strokeWidth={1.5} />
           </button>
@@ -1345,6 +1347,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 onClick={() => setShowBioModal(true)}
                 className="p-2 hover:bg-white/10 rounded-lg text-zinc-500 hover:text-zinc-300 transition-all"
                 title={t.chat.viewBio}
+                aria-label={t.chat.viewBio}
               >
                 <Info size={18} strokeWidth={1.5} />
               </button>
@@ -1413,6 +1416,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
               imageGenEnabled ? 'text-purple-400 hover:text-purple-300' : 'text-zinc-600'
             }`}
             title="Image Generation"
+            aria-label="Image Generation"
           >
             <ImageIcon size={22} strokeWidth={1.5} />
           </button>
@@ -1425,6 +1429,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 voiceEnabled === true ? 'text-cyan-400 hover:text-cyan-300' : 'text-zinc-600'
               }`}
               title="Voice Settings"
+              aria-label="Voice Settings"
             >
               <Volume2 size={22} strokeWidth={1.5} />
             </button>
@@ -1560,6 +1565,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 : 'hover:bg-white/10 text-cyan-400 hover:text-cyan-300'
             }`}
             title={!isUnchainedMode ? t.chat.enableUnchained : t.chat.unchainedActive}
+            aria-label={!isUnchainedMode ? t.chat.enableUnchained : t.chat.unchainedActive}
           >
             <Sparkles size={22} strokeWidth={1.5} />
           </button>
@@ -1570,6 +1576,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             disabled={isLoading || isStreaming || messages.length < 2}
             className="p-3 hover:bg-white/10 active:scale-95 rounded-xl transition-all duration-200 text-zinc-500 hover:text-rose-400 disabled:opacity-30 disabled:cursor-not-allowed"
             title={t.chat.regenerateResponse}
+            aria-label={t.chat.regenerateResponse}
           >
             <RotateCcw size={22} strokeWidth={1.5} />
           </button>
@@ -1582,6 +1589,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 showChatOptions ? 'text-rose-400' : 'text-zinc-500 hover:text-white'
               }`}
               title={t.chat.chatOptions}
+              aria-label={t.chat.chatOptions}
             >
               <SettingsIcon size={22} strokeWidth={1.5} />
             </button>

@@ -149,6 +149,7 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
         accept=".json"
         onChange={handleImportCharacter}
         className="hidden"
+        aria-label="Import character file"
       />
 
       {/* v1.0 ROSE NOIR: Premium Glass Header */}
@@ -157,6 +158,7 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
           <button
             onClick={onBack}
             className="p-3 hover:bg-white/5 rounded-xl transition-all duration-200 text-zinc-500 hover:text-white"
+            aria-label={t.common?.back || 'Back'}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -185,6 +187,7 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
         <button
           onClick={handleImportClick}
           className="px-5 py-2.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 hover:border-purple-500/50 text-purple-300 hover:text-purple-200 transition-all duration-200 flex items-center gap-2 font-medium"
+          aria-label={t.characterSelect.import}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -298,19 +301,27 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
                   {/* Custom Actions (Delete/Export) */}
                   {character.isCustom && (
                     <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                      <div 
-                        onClick={(e) => handleExportCharacter(character, e)} 
+                      <div
+                        onClick={(e) => handleExportCharacter(character, e)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleExportCharacter(character, e); } }}
+                        role="button"
+                        tabIndex={0}
                         className="w-8 h-8 rounded-full bg-blue-900/80 flex items-center justify-center hover:bg-blue-800 transition-all cursor-pointer"
                         title={t.characterSelect.exportCharacter}
+                        aria-label={t.characterSelect.exportCharacter}
                       >
                         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
                       </div>
-                      <div 
-                        onClick={(e) => handleDeleteCustom(character.id, e)} 
+                      <div
+                        onClick={(e) => handleDeleteCustom(character.id, e)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleDeleteCustom(character.id, e); } }}
+                        role="button"
+                        tabIndex={0}
                         className="w-8 h-8 rounded-full bg-red-900/80 flex items-center justify-center hover:bg-red-800 transition-all cursor-pointer"
                         title={t.characterSelect.deleteCustom}
+                        aria-label={t.characterSelect.deleteCustom}
                       >
                         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Download, Check, RefreshCw, ExternalLink, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import TutorialLayout from './TutorialLayout';
+import { IMAGE_GEN_DEFAULT_URL } from '../../lib/defaults';
 
 export default function ImageGenSetup({ onClose, onVerified }) {
   const { t } = useLanguage();
@@ -20,7 +21,7 @@ export default function ImageGenSetup({ onClose, onVerified }) {
     setTesting(true);
     try {
       const saved = JSON.parse(localStorage.getItem('settings') || '{}');
-      const url = saved.imageGenUrl || 'http://127.0.0.1:7860';
+      const url = saved.imageGenUrl || IMAGE_GEN_DEFAULT_URL;
       const result = await window.electronAPI?.testImageGen?.(url);
       if (result?.success) {
         setConnectionStatus('connected');
@@ -38,7 +39,7 @@ export default function ImageGenSetup({ onClose, onVerified }) {
   const checkFluxAvailable = async () => {
     try {
       const saved = JSON.parse(localStorage.getItem('settings') || '{}');
-      const url = saved.imageGenUrl || 'http://127.0.0.1:7860';
+      const url = saved.imageGenUrl || IMAGE_GEN_DEFAULT_URL;
       const result = await window.electronAPI.imageGenModels({ url });
       if (result.success) {
         const hasFlux = result.models.some(m => m.toLowerCase().includes('flux'));

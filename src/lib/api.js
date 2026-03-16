@@ -7,7 +7,7 @@
 
 import { passionManager, getTierKey, getDepthInstruction, getSpeedMultiplier } from './PassionManager.js';
 import { getModelProfile } from './modelProfiles.js';
-import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from './defaults.js';
+import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL, API_TIMEOUT_MS } from './defaults.js';
 
 
 // ============================================================================
@@ -138,9 +138,9 @@ const DEFAULT_SETTINGS = {
   userName: 'User',
   userGender: 'male',
   imageGenEnabled: false,
-  imageGenUrl: 'http://127.0.0.1:7860',
+  imageGenUrl: IMAGE_GEN_DEFAULT_URL,
   voiceEnabled: false,
-  voiceUrl: 'http://127.0.0.1:5000',
+  voiceUrl: VOICE_DEFAULT_URL,
   maxResponseTokens: 512
 };
 
@@ -211,7 +211,7 @@ async function getModelCapabilities(ollamaUrl, modelName) {
     }
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
+    const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
     const res = await fetch(`${ollamaUrl}/api/show`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1348,7 +1348,7 @@ export const fetchOllamaModels = async (ollamaUrl = OLLAMA_DEFAULT_URL) => {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
     const response = await fetch(`${ollamaUrl}/api/tags`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },

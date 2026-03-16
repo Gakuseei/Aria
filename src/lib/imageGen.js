@@ -1,26 +1,25 @@
 // ARIA v1.0 RELEASE - Image Generation Logic
 
+import { IMAGE_GEN_DEFAULT_URL, IMAGE_GEN_STANDARD, IMAGE_GEN_PREMIUM } from './defaults.js';
+
 /**
  * Generate image using AUTOMATIC1111 WebUI API
  * @param {string} prompt - The text prompt for image generation
- * @param {string} apiUrl - The API URL (default: http://127.0.0.1:7860)
+ * @param {string} apiUrl - The API URL
  * @returns {Promise<string>} Base64 encoded image
  */
-export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', imageGenTier = 'standard') {
+export async function generateImage(prompt, apiUrl = IMAGE_GEN_DEFAULT_URL, imageGenTier = 'standard') {
   try {
     const isPremium = imageGenTier === 'premium';
     console.log(`[Image Gen] ${isPremium ? '🌟 Premium (FLUX)' : 'Standard (SDXL)'} mode`);
 
+    const preset = isPremium ? IMAGE_GEN_PREMIUM : IMAGE_GEN_STANDARD;
     const payload = {
       prompt: prompt,
-      negative_prompt: isPremium 
+      negative_prompt: isPremium
         ? "blurry, low quality, distorted, text, watermark"
         : "ugly, low quality, deformed, text, watermark, bad anatomy, mutation, blurry, pixelated",
-      steps: isPremium ? 28 : 20,
-      sampler_name: isPremium ? "Euler" : "Euler a",
-      cfg_scale: isPremium ? 3.5 : 7,
-      width: isPremium ? 1024 : 512,
-      height: isPremium ? 1024 : 768,
+      ...preset,
       batch_size: 1,
       n_iter: 1,
       restore_faces: false,

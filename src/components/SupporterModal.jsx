@@ -19,6 +19,15 @@ export default function SupporterModal({ onClose }) {
   const [showGoldTheme, setShowGoldTheme] = useState(false);
   const [validationMessage, setValidationMessage] = useState(null);
 
+  // Close on Escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
   // Load Premium status and Gold Theme preference on mount
   useEffect(() => {
     const saved = localStorage.getItem('isSupporter');

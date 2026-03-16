@@ -104,11 +104,15 @@ export default function CustomDropdown({ value, onChange, options, className = '
               width: `${menuPosition.width}px`
             }}
           >
-            <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+            <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent" role="listbox">
               {options.map((option) => (
                 <div
                   key={option.value}
                   onClick={() => handleSelect(option.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(option.value); } }}
+                  role="option"
+                  tabIndex={0}
+                  aria-selected={value === option.value}
                   className={`
                     p-3 text-sm cursor-pointer transition-colors
                     ${value === option.value

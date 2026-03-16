@@ -39,6 +39,7 @@ function ModeSelection({ onSelect, onBack }) {
         <button
           onClick={onBack}
           className="p-3 hover:bg-white/5 rounded-xl transition-all duration-200 text-zinc-500 hover:text-white"
+          aria-label={t.common?.back || 'Back'}
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -58,6 +59,7 @@ function ModeSelection({ onSelect, onBack }) {
               key={mode.id}
               onClick={() => onSelect(mode.id)}
               className="group relative text-left p-8 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+              aria-label={mode.title}
             >
               {/* v1.0 ROSE NOIR: Glass Background */}
               <div className="absolute inset-0 glass" />

@@ -1,6 +1,6 @@
 // ARIA v1.0 BLOCK 7.0 - Aria Monitor (Rose Noir Glass Theme)
 import React, { useState, useEffect } from 'react';
-import { X, Activity, Database, FileText, Gauge, Cpu, HardDrive, AlertTriangle, Copy, Trash2, CheckCircle2, Download, Filter } from 'lucide-react';
+import { X, Activity, FileText, Gauge, HardDrive, AlertTriangle, Copy, Trash2, CheckCircle2, Download } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import toast, { Toaster } from 'react-hot-toast';
 import downloadBlob from '../utils/downloadBlob';
@@ -13,7 +13,6 @@ export default function DebugConsole({
   animationsEnabled,
   currentView,
   lastApiResponseTime,
-  lastResponseWords,
   lastResponseTokens,
   lastApiModel,
   lastApiWPS,

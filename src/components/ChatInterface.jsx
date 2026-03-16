@@ -258,9 +258,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     localStorage.setItem('autoReadEnabled', JSON.stringify(autoReadEnabled));
   }, [autoReadEnabled]);
   
-  // v0.2.5 RESTORED: UI panels
-  const [showImagePanel, setShowImagePanel] = useState(false);
-
   // Text Zoom State
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('chatFontSize') || 'base');
 
@@ -870,7 +867,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         isUnchainedMode,
         handleApiStats,
         settings,
-        false,
         handleToken
       );
 
@@ -1180,7 +1176,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         isUnchainedMode,
         null,
         settings,
-        true,
         handleToken
       );
 

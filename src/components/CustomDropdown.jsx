@@ -1,5 +1,5 @@
 // ARIA v1.0 BLOCK 7.2 - CustomDropdown (React Portal Solution)
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 

@@ -27,9 +27,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const [testResult, setTestResult] = useState(null);
   const [showTutorial, setShowTutorial] = useState(null);
   const [availableVoiceModels, setAvailableVoiceModels] = useState([]);
-  // v0.2.5 FIX: Feature activation states (only activate after successful test)
-  const [imageGenVerified, setImageGenVerified] = useState(false);
-  const [voiceVerified, setVoiceVerified] = useState(false);
 
   // v0.2.5: HARD SYNC FIX - Force localStorage update on EVERY setting change
   useEffect(() => {
@@ -62,22 +59,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
     return () => { if (typeof cleanup === 'function') cleanup(); };
   }, []);
 
-  // Language options
-  const availableLanguages = [
-    { code: 'en', name: '🇺🇸 English', flag: '🇺🇸' },
-    { code: 'de', name: '🇩🇪 Deutsch', flag: '🇩🇪' },
-    { code: 'es', name: '🇪🇸 Español', flag: '🇪🇸' },
-    { code: 'zh', name: '🇨🇳 中文', flag: '🇨🇳' },
-    { code: 'fr', name: '🇫🇷 Français', flag: '🇫🇷' },
-    { code: 'it', name: '🇮🇹 Italiano', flag: '🇮🇹' },
-    { code: 'pt', name: '🇵🇹 Português', flag: '🇵🇹' },
-    { code: 'ru', name: '🇷🇺 Русский', flag: '🇷🇺' },
-    { code: 'ja', name: '🇯🇵 日本語', flag: '🇯🇵' },
-    { code: 'ko', name: '🇰🇷 한국어', flag: '🇰🇷' },
-    { code: 'ar', name: '🇸🇦 العربية', flag: '🇸🇦' },
-    { code: 'hi', name: '🇮🇳 हिंदी', flag: '🇮🇳' },
-    { code: 'tr', name: '🇹🇷 Türkçe', flag: '🇹🇷' }
-  ];
 
   // FIX 2: Load local voice models on mount
   useEffect(() => {
@@ -468,9 +449,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   onClick={() => {
                     const newValue = !settings.imageGenEnabled;
                     onSettingChange('imageGenEnabled', newValue);
-                    if (!newValue) {
-                      setImageGenVerified(false);
-                    }
                   }}
                   className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
                     settings.imageGenEnabled
@@ -576,9 +554,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                       await window.electronAPI?.saveSettings?.(updatedSettings);
                       // Optimistic update
                       onSettingChange('voiceEnabled', newValue);
-                      if (settings.voiceEnabled) {
-                        setVoiceVerified(false);
-                      }
                     }}
                     className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
                       settings.voiceEnabled
@@ -731,7 +706,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                         });
 
                         if (result?.success && result?.audioData) {
-                          setVoiceVerified(true);
                           // Play audio in renderer process
                           const audio = new Audio(result.audioData);
                           audio.volume = settings.voiceVolume ?? 1.0;
@@ -770,7 +744,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                         });
 
                         if (result?.success && result?.audioData) {
-                          setVoiceVerified(true);
                           const audio = new Audio(result.audioData);
                           audio.volume = settings.voiceVolume ?? 1.0;
                           await audio.play();
@@ -961,9 +934,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
           <ImageGenSetup
             onClose={() => setShowTutorial(null)}
             onVerified={() => {
-               setImageGenVerified(true);
                onSettingChange('imageGenEnabled', true);
-               // Optional: Auto-close after delay or let user close
             }}
           />
         )}
@@ -972,7 +943,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
           <VoiceSetup
             onClose={() => setShowTutorial(null)}
             onVerified={() => {
-               setVoiceVerified(true);
                onSettingChange('voiceEnabled', true);
             }}
           />

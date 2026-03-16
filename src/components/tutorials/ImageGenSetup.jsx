@@ -1,6 +1,6 @@
 // ARIA v1.0 - Image Gen Setup Tutorial (Refactored Premium)
 import { useState, useEffect } from 'react';
-import { Download, Check, RefreshCw, ExternalLink, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import TutorialLayout from './TutorialLayout';
 import { IMAGE_GEN_DEFAULT_URL } from '../../lib/defaults';
@@ -8,7 +8,6 @@ import { IMAGE_GEN_DEFAULT_URL } from '../../lib/defaults';
 export default function ImageGenSetup({ onClose, onVerified }) {
   const { t } = useLanguage();
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
-  const [testing, setTesting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [tierMode, setTierMode] = useState('standard'); // 'standard' (SDXL) | 'premium' (FLUX)
   const [fluxAvailable, setFluxAvailable] = useState(false);
@@ -18,7 +17,6 @@ export default function ImageGenSetup({ onClose, onVerified }) {
   }, []);
 
   const testConnection = async () => {
-    setTesting(true);
     try {
       const saved = JSON.parse(localStorage.getItem('settings') || '{}');
       const url = saved.imageGenUrl || IMAGE_GEN_DEFAULT_URL;
@@ -31,8 +29,8 @@ export default function ImageGenSetup({ onClose, onVerified }) {
       } else {
         setConnectionStatus('disconnected');
       }
-    } finally {
-      setTesting(false);
+    } catch {
+      setConnectionStatus('disconnected');
     }
   };
 

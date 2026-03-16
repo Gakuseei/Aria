@@ -1,4 +1,3 @@
-import React from 'react';
 import { GAME_MODES } from '../App';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -54,7 +53,7 @@ function ModeSelection({ onSelect, onBack }) {
       {/* Mode Cards */}
       <div className="flex-1 flex items-center justify-center">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
-          {modes.map((mode, index) => (
+          {modes.map((mode) => (
             <button
               key={mode.id}
               onClick={() => onSelect(mode.id)}

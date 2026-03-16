@@ -1,19 +1,16 @@
 // ARIA v1.0 - Voice Setup Tutorial (Refactored Premium)
 import { useState, useEffect, useRef } from 'react';
-import { Download, Check, RefreshCw, Play, Volume2, FolderOpen, Zap, Star, Loader2, AlertCircle, Power, XCircle, FileText } from 'lucide-react';
+import { Download, Check, RefreshCw, Star, Loader2, AlertCircle, Power, XCircle, FileText } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import TutorialLayout from './TutorialLayout';
 
 export default function VoiceSetup({ onClose, onVerified }) {
   const { t } = useLanguage();
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
-  const [testing, setTesting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [tierMode, setTierMode] = useState('standard'); // 'standard' | 'premium'
   
   // Voice State
-  const [selectedVoice, setSelectedVoice] = useState('en_US-amy-medium');
-  const [playingVoice, setPlayingVoice] = useState(null);
   const [downloadingVoices, setDownloadingVoices] = useState({});
   const [downloadedVoices, setDownloadedVoices] = useState({});
   const [localModels, setLocalModels] = useState([]);
@@ -117,23 +114,18 @@ export default function VoiceSetup({ onClose, onVerified }) {
   };
 
   const testConnection = async () => {
-    setTesting(true);
-    try {
-      if (tierMode === 'premium') {
-         await testZonosConnection();
-      } else {
-         const result = await window.electronAPI?.testVoice?.();
-         setConnectionStatus(result?.success ? 'connected' : 'disconnected');
-         if (result?.success) {
-            if (result.detectedPiperPath && !piperPath) {
-                setPiperPath(result.detectedPiperPath);
-                saveSetting('piperPath', result.detectedPiperPath);
-            }
-            if (onVerified) onVerified();
-         }
-      }
-    } finally {
-      setTesting(false);
+    if (tierMode === 'premium') {
+       await testZonosConnection();
+    } else {
+       const result = await window.electronAPI?.testVoice?.();
+       setConnectionStatus(result?.success ? 'connected' : 'disconnected');
+       if (result?.success) {
+          if (result.detectedPiperPath && !piperPath) {
+              setPiperPath(result.detectedPiperPath);
+              saveSetting('piperPath', result.detectedPiperPath);
+          }
+          if (onVerified) onVerified();
+       }
     }
   };
 

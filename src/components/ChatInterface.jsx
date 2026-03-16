@@ -277,6 +277,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [smartSuggestions, setSmartSuggestions] = useState([]);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
   const suggestionsHistoryRef = useRef([]);
+  const chatMessages = useMemo(() => messages.filter(m => !m.isTierEvent), [messages]);
 
   const clearSuggestionsState = useCallback(() => {
     abortSuggestionCall();
@@ -318,13 +319,20 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const streamBufferRef = useRef('');
   const rafRef = useRef(null);
   const settingsRef = useRef(parentSettings);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     settingsRef.current = parentSettings;
   }, [parentSettings]);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       if (abortRef.current) {
         abortRef.current.abort();
         abortRef.current = null;
@@ -704,7 +712,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     setInput('');
     try {
       const cleaned = await impersonateUser(
-        messages.filter(m => !m.isTierEvent),
+        chatMessages,
         character.name,
         userName,
         passionLevel,
@@ -833,6 +841,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       streamBufferRef.current = '';
       rafRef.current = null;
       const flushBuffer = () => {
+        if (!mountedRef.current) return;
         setStreamingContent(streamBufferRef.current);
         rafRef.current = null;
       };
@@ -851,7 +860,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         }
       };
 
-      const historyForApi = newMessages.filter(m => !m.isTierEvent);
+      const historyForApi = [...chatMessages, userMessage];
       const response = await sendMessage(
         safeMessageText,
         character,
@@ -1142,6 +1151,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       streamBufferRef.current = '';
       rafRef.current = null;
       const flushBuffer = () => {
+        if (!mountedRef.current) return;
         setStreamingContent(streamBufferRef.current);
         rafRef.current = null;
       };

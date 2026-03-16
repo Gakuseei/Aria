@@ -148,6 +148,15 @@ const DEFAULT_SETTINGS = {
 const PASSION_SCORING_TIMEOUT_MS = 30000;
 
 const MODEL_CAPS_CACHE = {};
+const MODEL_CAPS_CACHE_MAX = 16;
+
+function cacheModelCaps(key, caps) {
+  const keys = Object.keys(MODEL_CAPS_CACHE);
+  if (keys.length >= MODEL_CAPS_CACHE_MAX) {
+    delete MODEL_CAPS_CACHE[keys[0]];
+  }
+  MODEL_CAPS_CACHE[key] = caps;
+}
 
 /**
  * Invalidate cached model capabilities.
@@ -217,7 +226,7 @@ async function getModelCapabilities(ollamaUrl, modelName) {
         contextLength: result.contextLength || 4096,
         parameterSize: result.parameterSize || '7B'
       };
-      MODEL_CAPS_CACHE[cacheKey] = caps;
+      cacheModelCaps(cacheKey, caps);
       return caps;
     }
 
@@ -249,8 +258,9 @@ async function getModelCapabilities(ollamaUrl, modelName) {
     const contextLength = typeof ctxParam === 'number' ? ctxParam : 4096;
 
     const paramRaw = info.details?.parameter_size || '7B';
-    MODEL_CAPS_CACHE[cacheKey] = { contextLength, parameterSize: paramRaw };
-    return MODEL_CAPS_CACHE[cacheKey];
+    const caps = { contextLength, parameterSize: paramRaw };
+    cacheModelCaps(cacheKey, caps);
+    return caps;
   } catch (err) {
     console.warn('[API] getModelCapabilities failed for', modelName, ':', err?.message);
     return defaults;
@@ -664,11 +674,11 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   };
   const stop = [`\n${charName}:`, `\n${charName} :`, `${charName}:`];
 
-  let fullText = '';
+  const textChunks = [];
 
   /** Stream display: only strip special tokens so user never sees </s> etc */
   const emitDisplay = () => {
-    const display = fullText
+    const display = textChunks.join('')
       .replace(/<\/s>/g, '')
       .replace(/\[TOOL_CALLS\]/g, '')
       .replace(/<\|[^|]*\|>/g, '')
@@ -685,7 +695,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
 
     const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
       if (rid !== requestId) return;
-      fullText += token;
+      textChunks.push(token);
       emitDisplay();
     });
 
@@ -727,7 +737,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
             const parsed = JSON.parse(line);
             const token = parsed.message?.content || '';
             if (token) {
-              fullText += token;
+              textChunks.push(token);
               emitDisplay();
             }
           } catch { /* skip malformed lines */ }
@@ -740,7 +750,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   }
 
   // Cleanup: special tokens + artifacts + sentence trim + wrong name
-  let cleaned = fullText.trim();
+  let cleaned = textChunks.join('').trim();
   cleaned = cleaned.replace(/<\/s>/g, '');
   cleaned = cleaned.replace(/\[TOOL_CALLS\]/g, '');
   cleaned = cleaned.replace(/<\|[^|]*\|>/g, '');
@@ -1006,7 +1016,7 @@ export const sendMessage = async (
       }
 
       if (onToken && response.body) {
-        let fullContent = '';
+        const contentChunks = [];
         let finalChunk = null;
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -1024,7 +1034,7 @@ export const sendMessage = async (
               try {
                 const chunk = JSON.parse(line);
                 if (chunk.message?.content) {
-                  fullContent += chunk.message.content;
+                  contentChunks.push(chunk.message.content);
                   onToken(chunk.message.content);
                 }
                 if (chunk.done) finalChunk = chunk;
@@ -1034,13 +1044,14 @@ export const sendMessage = async (
           if (buffer.trim()) {
             try {
               const chunk = JSON.parse(buffer);
-              if (chunk.message?.content) { fullContent += chunk.message.content; onToken(chunk.message.content); }
+              if (chunk.message?.content) { contentChunks.push(chunk.message.content); onToken(chunk.message.content); }
               if (chunk.done) finalChunk = chunk;
             } catch { /* skip */ }
           }
         } finally {
           reader.cancel().catch(() => {});
         }
+        const fullContent = contentChunks.join('');
         data = { message: { content: fullContent }, eval_count: finalChunk?.eval_count, prompt_eval_count: finalChunk?.prompt_eval_count };
       } else {
         data = await response.json();

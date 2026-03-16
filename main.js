@@ -358,84 +358,6 @@ app.on('activate', () => {
 });
 
 // ===========================================
-// v0.2.5: PASSION SENTIMENT ANALYSIS (moved to passionManager.js in frontend)
-// ===========================================
-
-/**
- * Analyze user message sentiment and return passion change
- * NOTE: This is now handled by passionManager.js in the frontend
- * This IPC handler is kept for backward compatibility but delegates to frontend logic
- */
-ipcMain.handle('analyze-sentiment', async (event, params) => {
-  const { message, currentPassion } = params;
-
-  try {
-    // Simple fallback if frontend doesn't have passionManager
-    const lowerMessage = message.toLowerCase();
-    
-    const positiveKeywords = [
-      'love', 'beautiful', 'gorgeous', 'amazing', 'perfect', 'wonderful',
-      'sweet', 'cute', 'hot', 'sexy', 'attractive', 'adorable',
-      'yes', 'absolutely', 'definitely', 'of course', 'please',
-      'thank you', 'thanks', 'appreciate', 'like you', 'love you',
-      'liebe', 'schön', 'wunderbar', 'toll', 'perfekt', 'süß',
-      'heiß', 'attraktiv', 'ja', 'danke', 'mag dich', 'liebe dich'
-    ];
-
-    const negativeKeywords = [
-      'hate', 'ugly', 'stupid', 'dumb', 'idiot', 'disgusting',
-      'no', 'never', 'stop', 'leave me alone', 'shut up',
-      'annoying', 'boring', 'terrible', 'awful', 'horrible',
-      'hasse', 'hässlich', 'dumm', 'blöd', 'ekelhaft', 'nein'
-    ];
-
-    const intimateKeywords = [
-      'kiss', 'touch', 'feel', 'want you', 'need you', 'desire',
-      'body', 'skin', 'lips', 'close', 'hold', 'embrace',
-      'küssen', 'berühren', 'fühlen', 'will dich', 'brauche dich'
-    ];
-
-    let passionChange = 0;
-    let sentiment = 'neutral';
-
-    const intimateCount = intimateKeywords.filter(kw => lowerMessage.includes(kw)).length;
-    if (intimateCount > 0) {
-      passionChange = Math.min(10, 5 + intimateCount * 2);
-      sentiment = 'intimate';
-    } else {
-      const positiveCount = positiveKeywords.filter(kw => lowerMessage.includes(kw)).length;
-      const negativeCount = negativeKeywords.filter(kw => lowerMessage.includes(kw)).length;
-
-      if (positiveCount > negativeCount) {
-        passionChange = Math.min(8, 2 + positiveCount * 2);
-        sentiment = 'positive';
-      } else if (negativeCount > positiveCount) {
-        passionChange = Math.max(-10, -2 - negativeCount * 2);
-        sentiment = 'negative';
-      }
-    }
-
-    if (currentPassion > 70 && passionChange > 0) {
-      passionChange = Math.floor(passionChange * 0.5);
-    }
-
-    return {
-      success: true,
-      sentiment: sentiment,
-      passionChange: passionChange,
-      reason: `Message analysis: ${sentiment}`
-    };
-  } catch (error) {
-    console.error('[V5.5 Sentiment IPC] Error:', error);
-    return {
-      success: false,
-      error: error.message,
-      passionChange: 0
-    };
-  }
-});
-
-// ===========================================
 // v0.2.5: MULTIMEDIA IPC HANDLERS
 // ===========================================
 
@@ -1871,11 +1793,6 @@ ipcMain.handle('load-settings', async () => {
     console.error('Load settings error:', error);
     return { success: true, settings: {} };
   }
-});
-
-// v0.2.5 LOCAL: No API key check needed (local only)
-ipcMain.handle('check-api-key', async () => {
-  return { hasKey: true }; // Always true for local mode
 });
 
 console.log('[Aria] Main process started');

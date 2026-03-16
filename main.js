@@ -42,7 +42,30 @@ let mainWindow;
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isValidSessionId(id) {
-  return typeof id === 'string' && (UUID_REGEX.test(id) || /^session_\d+_[a-z0-9]+$/i.test(id));
+  return typeof id === 'string' && (UUID_REGEX.test(id) || /^session_\d{1,15}_[a-z0-9]{1,32}$/i.test(id));
+}
+
+/**
+ * Reject path components containing traversal sequences or path separators.
+ * Use for user-supplied IDs that become part of filenames.
+ */
+function sanitizePathComponent(value) {
+  if (typeof value !== 'string') return false;
+  if (value.includes('..') || value.includes('/') || value.includes('\\') || value.includes('\0')) return false;
+  return value.length > 0 && value.length <= 255;
+}
+
+/**
+ * Validate that a URL points to localhost only (127.0.0.1 or localhost).
+ */
+function validateLocalUrl(url) {
+  if (typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === '127.0.0.1' || parsed.hostname === 'localhost';
+  } catch {
+    return false;
+  }
 }
 
 // v0.2.5: AGGRESSIVE Content Security Policy
@@ -445,6 +468,9 @@ ipcMain.handle('analyze-sentiment', async (event, params) => {
  */
 ipcMain.handle('test-image-gen', async (event, url) => {
   try {
+    if (!validateLocalUrl(url)) {
+      return { success: false, error: 'Only localhost URLs are allowed' };
+    }
     const testUrl = `${url}/sdapi/v1/options`;
     
     const response = await fetch(testUrl, {
@@ -493,6 +519,9 @@ ipcMain.handle('test-image-gen', async (event, url) => {
 ipcMain.handle('image-gen-models', async (event, params = {}) => {
   const { url = 'http://127.0.0.1:7860' } = params;
   try {
+    if (!validateLocalUrl(url)) {
+      return { success: false, error: 'Only localhost URLs are allowed' };
+    }
     const response = await fetch(`${url}/sdapi/v1/sd-models`, {
       signal: AbortSignal.timeout(5000)
     });
@@ -642,8 +671,11 @@ ipcMain.handle('get-local-voice-models', async () => {
  */
 ipcMain.handle('generate-image', async (event, params) => {
   const { prompt, url, width, height, steps, imageGenTier } = params;
-  
+
   try {
+    if (!validateLocalUrl(url)) {
+      return { success: false, error: 'Only localhost URLs are allowed' };
+    }
     const isPremium = imageGenTier === 'premium';
     const apiUrl = `${url}/sdapi/v1/txt2img`;
     
@@ -825,6 +857,9 @@ ipcMain.handle('generate-speech', async (event, params) => {
       
       // Standard Gradio 5 file obj: { path: "...", url: "...", orig_name: "..." }
       if (typeof audioInfo === 'object' && (audioInfo.path || audioInfo.url)) {
+        if (audioInfo.path && typeof audioInfo.path === 'string' && audioInfo.path.includes('..')) {
+          return { success: false, error: 'Invalid audio path' };
+        }
         // Construct full URL
         let audioUrl = audioInfo.url;
         if (!audioUrl && audioInfo.path) {
@@ -1047,7 +1082,7 @@ ipcMain.handle('check-file-exists', async (event, filePath) => {
     if (!resolved.startsWith(userDataPath) && !resolved.startsWith(path.resolve(__dirname))) {
       return { success: false, exists: false };
     }
-    const exists = fs.existsSync(filePath);
+    const exists = fs.existsSync(resolved);
     return { success: true, exists };
   } catch (error) {
     console.error('[Main] Check file exists error:', error);
@@ -1766,6 +1801,9 @@ ipcMain.handle('save-character-memory', async (event, { characterId, sessionId, 
     if (!characterId || !sessionId) {
       return { success: false, error: 'Character ID and session ID required' };
     }
+    if (!sanitizePathComponent(characterId) || !sanitizePathComponent(sessionId)) {
+      return { success: false, error: 'Invalid character ID or session ID' };
+    }
     const memoriesDir = getMemoriesPath();
     if (!fs.existsSync(memoriesDir)) {
       fs.mkdirSync(memoriesDir, { recursive: true });
@@ -1785,6 +1823,9 @@ ipcMain.handle('load-character-memory', async (event, { characterId, sessionId }
     if (!characterId || !sessionId) {
       return { success: false, error: 'Character ID and session ID required' };
     }
+    if (!sanitizePathComponent(characterId) || !sanitizePathComponent(sessionId)) {
+      return { success: false, error: 'Invalid character ID or session ID' };
+    }
     const memoryPath = path.join(getMemoriesPath(), `${characterId}_${sessionId}.json`);
     if (!fs.existsSync(memoryPath)) {
       return { success: true, data: null };
@@ -1801,6 +1842,9 @@ ipcMain.handle('delete-character-memory', async (event, { characterId, sessionId
   try {
     if (!characterId || !sessionId) {
       return { success: false, error: 'Character ID and session ID required' };
+    }
+    if (!sanitizePathComponent(characterId) || !sanitizePathComponent(sessionId)) {
+      return { success: false, error: 'Invalid character ID or session ID' };
     }
     const memoryPath = path.join(getMemoriesPath(), `${characterId}_${sessionId}.json`);
     if (fs.existsSync(memoryPath)) {

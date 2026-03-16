@@ -1179,7 +1179,7 @@ ipcMain.handle('open-file-dialog', async (event, filters) => {
  * Send chat message to LOCAL Ollama
  */
 ipcMain.handle('ai-chat', async (event, params) => {
-  const { messages, systemPrompt, maxTokens, model, isOllama, ollamaUrl, temperature } = params;
+  const { messages, systemPrompt, maxTokens, model, isOllama, ollamaUrl, temperature, num_ctx } = params;
 
   if (!isOllama) {
     return {
@@ -1197,6 +1197,12 @@ ipcMain.handle('ai-chat', async (event, params) => {
       ...messages.map(m => ({ role: m.role, content: m.content }))
     ];
 
+    const options = {
+      temperature: temperature ?? 0.85,
+      num_predict: maxTokens ?? 1000,
+    };
+    if (num_ctx) options.num_ctx = num_ctx;
+
     const response = await fetch(`${url}/api/chat`, {
       method: 'POST',
       headers: {
@@ -1206,10 +1212,7 @@ ipcMain.handle('ai-chat', async (event, params) => {
         model: model || loadSettingsSync().ollamaModel || DEFAULT_MODEL_NAME,
         messages: ollamaMessages,
         stream: false,
-        options: {
-          temperature: temperature || 0.85,
-          num_predict: maxTokens || 1000,
-        }
+        options
       }),
       signal: AbortSignal.timeout(120000),
     });

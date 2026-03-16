@@ -273,9 +273,13 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
           isOllama: true,
           ollamaUrl: settings.ollamaUrl || OLLAMA_DEFAULT_URL,
           temperature: 0.1,
-          maxTokens: 16
+          maxTokens: 16,
+          num_ctx: modelCtx
         }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), PASSION_SCORING_TIMEOUT_MS))
+        new Promise((_, reject) => {
+          const t = setTimeout(() => reject(new Error('timeout')), PASSION_SCORING_TIMEOUT_MS);
+          if (typeof t === 'object' && t.unref) t.unref();
+        })
       ]);
       if (!result.success) return 0;
       content = result.content?.trim() || '';
@@ -487,7 +491,8 @@ Rules:
     isOllama: true,
     ollamaUrl,
     temperature: 0.8,
-    maxTokens: 120
+    maxTokens: 120,
+    num_ctx: numCtx
   };
 
   if (isElectron()) {
@@ -945,7 +950,8 @@ export const sendMessage = async (
         isOllama: true,
         ollamaUrl,
         temperature: chatOptions.temperature,
-        maxTokens: numPredict
+        maxTokens: numPredict,
+        num_ctx: modelCtx
       });
 
       if (!result.success) throw new Error(result.error || 'Chat failed');
@@ -1046,9 +1052,14 @@ export const sendMessage = async (
               isOllama: true,
               ollamaUrl,
               temperature: 0.5,
-              maxTokens: numPredict
+              maxTokens: numPredict,
+              num_ctx: modelCtx
             }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 120000))
+            new Promise((_, reject) => {
+              const t = setTimeout(() => reject(new Error('timeout')), 120000);
+              // Prevent timeout from keeping Node alive if main promise wins
+              if (typeof t === 'object' && t.unref) t.unref();
+            })
           ]);
           if (retryResult.success && retryResult.content) {
             if (retryResult.content.replace(/[*\s\n_~`]/g, '').length >= 3) {
@@ -1066,7 +1077,7 @@ export const sendMessage = async (
             signal: retryCtrl.signal,
             body: JSON.stringify({
               model, messages: retryMessages, stream: false,
-              options: { temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx, ...chatOptions },
+              options: { ...chatOptions, temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx },
               stop: stopSequences
             })
           });

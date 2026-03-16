@@ -5,6 +5,7 @@ export const IMAGE_GEN_DEFAULT_URL = 'http://127.0.0.1:7860';
 export const VOICE_DEFAULT_URL = 'http://127.0.0.1:5000';
 
 export const API_TIMEOUT_MS = 5000;
+export const DATA_VERSION = 1;
 
 export const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
 

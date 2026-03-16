@@ -9,7 +9,7 @@ const fs = require('fs');
 const https = require('https');
 const dotenv = require('dotenv');
 const platform = require('./lib/platform');
-const { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } = require('./lib/defaults');
+const { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, DATA_VERSION, KNOWN_OLD_DEFAULT_MODELS } = require('./lib/defaults');
 
 function loadSettingsSync() {
   try {
@@ -1447,6 +1447,7 @@ ipcMain.handle('save-session', async (event, { sessionId, data }) => {
 
     const sessionData = {
       ...data,
+      dataVersion: DATA_VERSION,
       savedAt: new Date().toISOString(),
     };
 
@@ -1469,6 +1470,13 @@ ipcMain.handle('load-session', async (event, { sessionId }) => {
     try {
       const raw = await fs.promises.readFile(sessionPath, 'utf-8');
       const data = JSON.parse(raw);
+
+      // Normalize missing fields for old sessions
+      if (data.passionLevel === undefined) data.passionLevel = 0;
+      if (!Array.isArray(data.conversationHistory)) data.conversationHistory = [];
+      if (!data.lastUpdated) data.lastUpdated = data.savedAt || new Date().toISOString();
+      if (!data.createdAt) data.createdAt = data.savedAt || new Date().toISOString();
+
       return { success: true, data };
     } catch (err) {
       if (err.code === 'ENOENT') return { success: false, error: 'Session not found' };
@@ -1492,9 +1500,10 @@ ipcMain.handle('list-sessions', async () => {
       throw err;
     }
 
-    // Clean up ghost session from old preload.js bug
-    const ghostFile = path.join(sessionsDir, 'undefined.json');
-    try { await fs.promises.unlink(ghostFile); } catch { /* ignore if missing */ }
+    // Clean up ghost sessions from old preload.js bugs
+    for (const ghost of ['undefined.json', 'null.json']) {
+      try { await fs.promises.unlink(path.join(sessionsDir, ghost)); } catch { /* ignore if missing */ }
+    }
 
     const jsonFiles = dirFiles
       .filter(file => file.endsWith('.json'))
@@ -1653,15 +1662,54 @@ ipcMain.handle('load-settings', async () => {
   try {
     const settingsPath = getSettingsPath();
 
+    let settings;
     try {
       const raw = await fs.promises.readFile(settingsPath, 'utf-8');
-      const settings = JSON.parse(raw);
-      return { success: true, settings };
+      settings = JSON.parse(raw);
     } catch (err) {
       if (err.code === 'ENOENT') return { success: true, settings: {} };
       console.warn('[Main] Settings corrupt, using defaults:', err.message);
       return { success: true, settings: {} };
     }
+
+    // Migration: stamp dataVersion, replace old default models, backfill missing keys
+    let migrated = false;
+
+    if (!settings.dataVersion || settings.dataVersion < DATA_VERSION) {
+      settings.dataVersion = DATA_VERSION;
+      migrated = true;
+    }
+
+    // Replace known old default model names with current default
+    if (settings.ollamaModel && KNOWN_OLD_DEFAULT_MODELS.includes(settings.ollamaModel)) {
+      console.log(`[Main] Migrating old default model "${settings.ollamaModel}" → "${DEFAULT_MODEL_NAME}"`);
+      settings.ollamaModel = DEFAULT_MODEL_NAME;
+      migrated = true;
+    }
+
+    // Backfill missing keys from defaults (referencing api.js DEFAULT_SETTINGS via shared constants)
+    const BACKFILL_DEFAULTS = {
+      ollamaUrl: OLLAMA_DEFAULT_URL,
+      ollamaModel: DEFAULT_MODEL_NAME,
+      maxResponseTokens: 512
+    };
+    for (const [key, value] of Object.entries(BACKFILL_DEFAULTS)) {
+      if (settings[key] === undefined) {
+        settings[key] = value;
+        migrated = true;
+      }
+    }
+
+    if (migrated) {
+      try {
+        await fs.promises.writeFile(settingsPath, JSON.stringify(settings, null, 2));
+        console.log('[Main] Settings migrated and saved');
+      } catch (writeErr) {
+        console.warn('[Main] Failed to write migrated settings:', writeErr.message);
+      }
+    }
+
+    return { success: true, settings };
   } catch (error) {
     console.error('Load settings error:', error);
     return { success: true, settings: {} };

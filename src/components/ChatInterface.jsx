@@ -317,6 +317,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const abortRef = useRef(null);
   const streamBufferRef = useRef('');
   const rafRef = useRef(null);
+  const settingsRef = useRef(parentSettings);
+
+  useEffect(() => {
+    settingsRef.current = parentSettings;
+  }, [parentSettings]);
 
   useEffect(() => {
     return () => {
@@ -330,7 +335,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       }
       abortSuggestionCall();
       abortImpersonateCall();
-      unloadOllamaModel(parentSettings);
+      unloadOllamaModel(settingsRef.current);
     };
   }, []);
 

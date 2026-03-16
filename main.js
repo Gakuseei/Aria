@@ -1539,7 +1539,7 @@ ipcMain.handle('ollama-model-info', async (event, params) => {
       signal: AbortSignal.timeout(5000)
     });
 
-    if (!response.ok) return { success: true, ...defaults };
+    if (!response.ok) return { success: true, fallback: true, ...defaults };
 
     const info = await response.json();
 
@@ -1566,7 +1566,7 @@ ipcMain.handle('ollama-model-info', async (event, params) => {
     };
   } catch (error) {
     console.error('[IPC] ollama-model-info error:', error);
-    return { success: true, ...defaults };
+    return { success: true, fallback: true, ...defaults };
   }
 });
 

@@ -718,6 +718,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
         }
       }
     } finally {
+      reader.cancel().catch(() => {});
       impersonateAbortController = null;
     }
   }
@@ -988,30 +989,34 @@ export const sendMessage = async (
         const decoder = new TextDecoder();
         let buffer = '';
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop();
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            try {
-              const chunk = JSON.parse(line);
-              if (chunk.message?.content) {
-                fullContent += chunk.message.content;
-                onToken(chunk.message.content);
-              }
-              if (chunk.done) finalChunk = chunk;
-            } catch { /* skip malformed lines */ }
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              try {
+                const chunk = JSON.parse(line);
+                if (chunk.message?.content) {
+                  fullContent += chunk.message.content;
+                  onToken(chunk.message.content);
+                }
+                if (chunk.done) finalChunk = chunk;
+              } catch { /* skip malformed lines */ }
+            }
           }
-        }
-        if (buffer.trim()) {
-          try {
-            const chunk = JSON.parse(buffer);
-            if (chunk.message?.content) { fullContent += chunk.message.content; onToken(chunk.message.content); }
-            if (chunk.done) finalChunk = chunk;
-          } catch { /* skip */ }
+          if (buffer.trim()) {
+            try {
+              const chunk = JSON.parse(buffer);
+              if (chunk.message?.content) { fullContent += chunk.message.content; onToken(chunk.message.content); }
+              if (chunk.done) finalChunk = chunk;
+            } catch { /* skip */ }
+          }
+        } finally {
+          reader.cancel().catch(() => {});
         }
         data = { message: { content: fullContent }, eval_count: finalChunk?.eval_count, prompt_eval_count: finalChunk?.prompt_eval_count };
       } else {

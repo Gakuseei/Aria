@@ -225,7 +225,8 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}`;
           border: '1px solid rgba(34, 197, 94, 0.5)'
         }
       });
-    }).catch(() => {
+    }).catch((err) => {
+      console.error('[UI] Clipboard copy failed:', err);
       toast.error('Failed to copy', { duration: 1500 });
     });
   };
@@ -259,7 +260,8 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}
           border: '1px solid rgba(34, 197, 94, 0.5)'
         }
       });
-    }).catch(() => {
+    }).catch((err) => {
+      console.error('[UI] Clipboard copy all failed:', err);
       toast.error('Failed to copy', { duration: 1500 });
     });
   };

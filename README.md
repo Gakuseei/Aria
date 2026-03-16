@@ -2,141 +2,78 @@
 
 <br/>
 
-<img src="assets/logo.png" alt="Aria Logo" width="200"/>
-
-<br/><br/>
-
-# <span style="color: #E91E63;">🌹 ARIA</span>
-
-### **Uncensored AI Roleplay • 100% Offline • Zero Restrictions**
-
-**Your AI. Your Rules. Your Privacy.**
+<img src="assets/logo.png" alt="Aria" width="180"/>
 
 <br/>
 
-[![Version](https://img.shields.io/badge/v0.2.5%20Alpha-E91E63?style=for-the-badge&labelColor=0d1117&logo=github)](https://github.com/Gakuseei/Aria/releases)
-[![Platform](https://img.shields.io/badge/Windows-8B5CF6?style=for-the-badge&labelColor=0d1117&logo=windows)](https://github.com/Gakuseei/Aria)
+# Aria
+
+### Local AI Roleplay with a Passion System — 100% Offline, Zero Restrictions
+
+The only AI companion app where conversations **evolve**. Aria's unique Passion System dynamically adjusts prose depth as your relationship deepens — from casual chat to immersive roleplay. Runs entirely on your machine via [Ollama](https://ollama.ai). No cloud. No filters. No subscriptions. Free forever.
+
+<br/>
+
+[![Stars](https://img.shields.io/github/stars/Gakuseei/Aria?style=for-the-badge&logo=github&color=E91E63&labelColor=0d1117)](https://github.com/Gakuseei/Aria/stargazers)
 [![License](https://img.shields.io/badge/MIT-FFD700?style=for-the-badge&labelColor=0d1117)](LICENSE.md)
-[![Offline](https://img.shields.io/badge/🔒%20100%25%20Private%20%26%20Offline-10B981?style=for-the-badge&labelColor=0d1117)](https://github.com/Gakuseei/Aria)
+[![Platform](https://img.shields.io/badge/Windows%20•%20Linux-8B5CF6?style=for-the-badge&labelColor=0d1117)](https://github.com/Gakuseei/Aria/releases)
+[![Offline](https://img.shields.io/badge/100%25%20Local-10B981?style=for-the-badge&labelColor=0d1117)](https://github.com/Gakuseei/Aria)
 
 <br/>
 
-[![Discord](https://img.shields.io/badge/Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white&labelColor=5865F2)](https://discord.gg/h3gVtkw9ja)
-[![Ko-fi](https://img.shields.io/badge/☕%20Support%20Development-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white&labelColor=FF5E5B)](https://ko-fi.com/gakuseei)
-
-</div>
-
----
-
-<br/>
-
-<div align="center">
-
-## 🎭 What is Aria?
-
-**Aria** is a premium, fully local AI companion platform designed for immersive roleplay, storytelling, and unfiltered conversations.
+[![Discord](https://img.shields.io/badge/Join%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/h3gVtkw9ja)
+[![Ko-fi](https://img.shields.io/badge/Support%20on%20Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/gakuseei)
 
 </div>
 
 <br/>
+
+<!--
+  TODO: Replace with actual GIF recording of Aria in action
+  Record: 15-30s OBS clip showing chat + streaming + suggestions
+  Convert to GIF: ffmpeg -i clip.mp4 -vf "fps=15,scale=800:-1" demo.gif
+-->
 
 <p align="center">
-  <img src="https://img.shields.io/badge/🔐%20100%25%20Offline-0d1117?style=flat-square&color=10B981" alt="Offline"/>
-  &nbsp;
-  <img src="https://img.shields.io/badge/🎨%20Rose--Noir%20Design-0d1117?style=flat-square&color=E91E63" alt="Design"/>
-  &nbsp;
-  <img src="https://img.shields.io/badge/🌍%2013%20Languages-0d1117?style=flat-square&color=8B5CF6" alt="Languages"/>
-  &nbsp;
-  <img src="https://img.shields.io/badge/💎%20Gold%20Mode-0d1117?style=flat-square&color=FFD700" alt="Gold"/>
+  <img src="assets/demo.gif" alt="Aria Demo" width="800"/>
 </p>
 
 <br/>
 
-> [!CAUTION]
-> ### ⚠️ ALPHA SOFTWARE
->
-> **This is an early ALPHA release.** Expect bugs — potentially many. Features may be incomplete, unstable, or change without notice. Your feedback helps shape the future of Aria.
->
-> **Use at your own risk.** Report issues on [Discord](https://discord.gg/h3gVtkw9ja) or [GitHub Issues](https://github.com/Gakuseei/Aria/issues).
-
-<br/>
-
 ---
 
 <br/>
 
-## ✨ Why Aria?
+## What Makes Aria Different
 
 <br/>
 
 <table>
 <tr>
-<td width="33%" valign="top">
+<td width="50%" valign="top">
 
-#### 🔐 Absolute Privacy
-**Your data never leaves your device.** Aria runs entirely offline using [Ollama](https://ollama.ai) — no cloud, no tracking, no subscriptions, no compromises.
-
-</td>
-<td width="33%" valign="top">
-
-#### 🎭 Living Characters
-Create AI companions with **deep personalities, persistent memories, and evolving relationships**. The Passion System adapts responses based on your unique dynamic.
+### 🔥 Passion System
+No other AI chat app has this. Passion tracks how your conversation evolves — from casual (Surface) through six tiers to peak intensity (Transcendent). The AI doesn't just respond, it **adapts its writing depth** based on your relationship. Configurable speed per character: Slow, Normal, Fast, Extreme.
 
 </td>
-<td width="33%" valign="top">
+<td width="50%" valign="top">
 
-#### 🎨 Premium Experience
-Rose-Noir aesthetic with glassmorphism, smooth animations, and OLED optimization. **Gold Mode** unlocks exclusive visuals for supporters.
+### ✍️ Impersonate
+Writer's block? Hit the Impersonate button and Aria writes **your** next message. Tokens stream live into the input field. Edit it or send it as-is. 90% of testers used this as their default input method — it's that good.
 
 </td>
 </tr>
-</table>
-
-<br/>
-
-<div align="center">
-
-### Features at a Glance
-
-</div>
-
-<br/>
-
-<table align="center">
 <tr>
-<td align="center" width="20%">
+<td width="50%" valign="top">
 
-💡  
-**Smart Suggestions**  
-AI-powered prompts
-
-</td>
-<td align="center" width="20%">
-
-🎙️  
-**Voice Synthesis**  
-Piper TTS / Zonos
+### 💡 Smart Suggestions
+After every AI response, three context-aware action suggestions appear. They match the scene's intensity, never repeat, and adapt to the conversation language. Click one to send it instantly.
 
 </td>
-<td align="center" width="20%">
+<td width="50%" valign="top">
 
-🖼️  
-**Image Generation**  
-Stable Diffusion
-
-</td>
-<td align="center" width="20%">
-
-📦  
-**Import/Export**  
-Share characters
-
-</td>
-<td align="center" width="20%">
-
-🌍  
-**13 Languages**  
-Full localization
+### 🔐 100% Local & Private
+Everything runs on your machine through Ollama. No API keys, no cloud, no data collection, no content filters. Your conversations never leave your device. Period.
 
 </td>
 </tr>
@@ -148,59 +85,79 @@ Full localization
 
 <br/>
 
-## 🚀 Quick Start
+## Aria vs The Competition
+
+<br/>
 
 <div align="center">
 
-**Get started in under 5 minutes**
+| Feature | **Aria** | SillyTavern | HammerAI |
+|:--------|:--------:|:-----------:|:--------:|
+| Passion System (dynamic prose depth) | ✅ Unique | ❌ | ❌ |
+| Smart Suggestions | ✅ | ❌ | ❌ |
+| Impersonate (write-for-me) | ✅ | ✅ | ❌ |
+| 100% Local / Offline | ✅ | ✅ | ❌ Cloud-primary |
+| Languages | 13 | 1 | 1 |
+| Custom Character Builder | ✅ In-app | ❌ JSON files | ❌ |
+| Voice Synthesis | ✅ Piper + Zonos | ❌ | ❌ |
+| Image Generation | ✅ Stable Diffusion | ✅ | ❌ |
+| Desktop App | ✅ Electron | ❌ Browser | ❌ Browser |
+| Uncensored NSFW | ✅ | ✅ | Partial |
+| Price | Free forever | Free | Freemium |
 
 </div>
 
 <br/>
 
-### Requirements
-
-<table align="center">
-<tr>
-<th>Component</th>
-<th>Minimum</th>
-<th>Recommended</th>
-</tr>
-<tr>
-<td align="center"><strong>Ollama</strong></td>
-<td align="center" colspan="2"><a href="https://ollama.ai">Download Latest</a></td>
-</tr>
-<tr>
-<td align="center"><strong>RAM</strong></td>
-<td align="center">8 GB</td>
-<td align="center">16 GB+</td>
-</tr>
-<tr>
-<td align="center"><strong>GPU</strong></td>
-<td align="center">—</td>
-<td align="center">For faster inference</td>
-</tr>
-</table>
+---
 
 <br/>
 
-### Download & Install
+## Quick Start
 
-1. Download **`Aria Setup 0.2.5.exe`** from [Releases](https://github.com/Gakuseei/Aria/releases)
-2. Run the installer, Aria sets itself up
-3. Open Aria and you're good to go
+**Get running in 3 steps:**
 
-> [!TIP]
-> No terminal, no config files. Aria walks you through everything on first launch: Ollama setup, model selection, voice, and character creation.
+```bash
+# 1. Install Ollama (if you haven't already)
+# → https://ollama.ai
+
+# 2. Pull a recommended model
+ollama pull HammerAI/mn-mag-mell-r1:12b-q4_K_M
+
+# 3. Download Aria from Releases and launch
+```
+
+**[Download Latest Release](https://github.com/Gakuseei/Aria/releases)**
+
+> Aria walks you through everything on first launch: model selection, voice setup, and character creation. No terminal knowledge required.
 
 <br/>
 
 <details>
-<summary><strong>Developer Setup (from source)</strong></summary>
+<summary><strong>Recommended Models by VRAM</strong></summary>
 
 <br/>
 
-Requires **Node.js v18+** (v20+ recommended).
+| VRAM | Tier | Top Pick | Alternatives |
+|:-----|:-----|:---------|:-------------|
+| 0-2 GB | Ultra-Low | `gemma3:1b` | `llama3.2:1b`, `llama3.2:3b` |
+| 2-6 GB | Low | `HammerAI/smart-lemon-cookie:7b` | `HammerAI/neuraldaredevil-abliterated` |
+| **6-12 GB** | **Mid ⭐** | **`HammerAI/mn-mag-mell-r1:12b`** | `vanilj/mistral-nemo-12b-celeste-v1.9` |
+| 12-24 GB | High | `HammerAI/cydonia-v3.1` | `HammerAI/omega-darker-gaslight-fever-dream:24b` |
+| 24 GB+ | Max | `HammerAI/l3.3-omega-directive-unslop-v2:70b` | `fluffy/magnum-v4-72b` |
+
+> Avoid Qwen 3/3.5 (thinking leaks into output) and DeepSeek R1 (reasoning model, not creative).
+
+</details>
+
+<br/>
+
+<details>
+<summary><strong>Build from Source</strong></summary>
+
+<br/>
+
+Requires **Node.js v18+** (v20 recommended).
 
 ```bash
 git clone https://github.com/Gakuseei/Aria.git
@@ -217,173 +174,26 @@ npm run dev
 
 <br/>
 
-## 🗺️ Roadmap
+## Features
+
+<br/>
 
 <div align="center">
 
-*Building the ultimate private AI companion*
-
-</div>
-
-<br/>
-
-<table align="center">
-<tr>
-<th>Version</th>
-<th>Status</th>
-</tr>
-<tr>
-<td align="center"><strong>v0.2.5 Alpha</strong></td>
-<td align="center">✅ Current</td>
-</tr>
-<tr>
-<td align="center"><strong>v0.5 Alpha</strong></td>
-<td align="center">🚧 In Development</td>
-</tr>
-<tr>
-<td align="center"><strong>v1.0 Beta</strong></td>
-<td align="center">📋 Planned</td>
-</tr>
-<tr>
-<td align="center"><strong>v2.0 Stable</strong></td>
-<td align="center">📋 Planned</td>
-</tr>
-</table>
-
-<br/>
-
-<details>
-<summary><strong>✅ Completed</strong></summary>
-
-<br/>
-
-- [x] **Voice System** — TTS with Piper & Zonos
-- [x] **Gold Mode** — Premium visuals for supporters
-- [x] **13 Languages** — Complete localization
-- [x] **Premium Animations** — Startup sequence & transitions
-- [x] **Image Generation** — Stable Diffusion integration
-- [x] **Context Cleaner** — Smart memory management
-- [x] **Ko-fi Integration** — Direct supporter benefits
-- [x] **Windows Installer** — One-click setup, no terminal needed
-- [x] **OLED Toggle** — Quick-switch Moon/Sun button
-- [x] **Passion System v3** — 6-tier prose depth engine with speed multipliers
-
-</details>
-
-<details open>
-<summary><strong>🚧 v0.5 Alpha — Next Up</strong></summary>
-
-<br/>
-
-| Feature | Description |
-|:--------|:------------|
-| 📚 **Tutorial 2.0** | Model recommendations by hardware tier |
-| 💬 **Enhanced Chat** | Personas, auto-scroll, edit messages |
-| 💾 **Auto Backup** | Automatic saves after each message |
-| 🖼️ **Profile Pictures** | Character backgrounds & info tab |
-| 🔊 **Sound Effects** | Rose-Noir audio feedback |
-
-</details>
-
-<details>
-<summary><strong>📋 v1.0 Beta</strong></summary>
-
-<br/>
-
-| Feature | Description |
-|:--------|:------------|
-| 🎓 **Onboarding Tour** | First-time setup walkthrough |
-| 🎨 **Brand Refresh** | Refined visual identity |
-| 👥 **Group Chats** | Multi-character conversations |
-| 👁️ **Vision** | Image understanding (local) |
-| 🎤 **TTS 2.0** | Enhanced emotional voice |
-| ⚖️ **Content Toggle** | Customizable content preferences |
-
-</details>
-
-<details>
-<summary><strong>📋 v2.0 Stable</strong></summary>
-
-<br/>
-
-| Feature | Description |
-|:--------|:------------|
-| 🖥️ **Cross-Platform** | macOS & Linux installers |
-| 🥚 **Gold Easter Eggs** | Hidden surprises for supporters |
-| 🔌 **Plugin System** | Community extensions |
-| 📊 **Analytics** | Local usage insights & stats |
-
-</details>
-
-<br/>
-
----
-
-<br/>
-
-## 🛠️ Technology Stack
-
-<div align="center">
-
-<table>
-<tr>
-<td align="center" width="20%">
-
-<br/>
-
-**Electron**  
-⚡  
-Desktop Platform
-
-<br/>
-
-</td>
-<td align="center" width="20%">
-
-<br/>
-
-**React 18**  
-⚛️  
-UI Framework
-
-<br/>
-
-</td>
-<td align="center" width="20%">
-
-<br/>
-
-**Vite**  
-🚀  
-Build Tool
-
-<br/>
-
-</td>
-<td align="center" width="20%">
-
-<br/>
-
-**Tailwind CSS**  
-🎨  
-Styling
-
-<br/>
-
-</td>
-<td align="center" width="20%">
-
-<br/>
-
-**Ollama**  
-🤖  
-Local AI
-
-<br/>
-
-</td>
-</tr>
-</table>
+| | Feature | Description |
+|:--|:--------|:------------|
+| 🔥 | **Passion System v3** | 6-tier prose depth engine with speed multipliers and unchained mode |
+| ✍️ | **Impersonate** | AI writes your next message — streams live into input field |
+| 💡 | **Smart Suggestions** | 3 context-aware action options after every response |
+| 🎭 | **5 Built-in Characters** | Fully voiced W++ personas with unique personalities |
+| 🛠️ | **Custom Character Builder** | Create your own characters with passion speed control |
+| 🌍 | **13 Languages** | EN, DE, ES, ZH, FR, IT, PT, RU, JA, KO, AR, HI, TR |
+| 🎙️ | **Voice Synthesis** | Piper TTS + Zonos for character voices |
+| 🖼️ | **Image Generation** | Stable Diffusion / AUTOMATIC1111 integration |
+| 💾 | **Auto-Save** | Conversations saved after every message |
+| 📤 | **Export** | Full chat export with model stats and passion data |
+| ✨ | **Gold Mode** | Premium visuals for Ko-fi supporters |
+| 🔓 | **Unchained Mode** | Remove all behavioral guardrails |
 
 </div>
 
@@ -393,53 +203,73 @@ Local AI
 
 <br/>
 
-## 🤝 Contribute
+## Roadmap
+
+<br/>
 
 <div align="center">
 
-We welcome contributors of all experience levels
+*Building the ultimate local AI companion*
 
 </div>
 
 <br/>
 
-<table align="center">
-<tr>
-<td align="center" width="25%">
+- [x] **Phase 1 — Polish & Stabilize** ✅
+  - [x] Full manual testing (21 tests, all characters, all speeds)
+  - [x] Smart Suggestions (auto-cut, scene anchor, fuzzy dedup)
+  - [x] Passion System v3 (6 tiers, unchained mode, speed multipliers)
+  - [x] Chat Engine overhaul (W++ characters, streaming, token stats)
 
-🐛  
-**Bug Reports**  
-Help improve stability
+- [ ] **Phase 2 — Core Features** 🔥
+  - [ ] Premium Personas — enhanced default characters
+  - [ ] Chat improvements — auto scroll, edit last message
+  - [ ] Profile pictures & AI-assisted character creation
+  - [ ] Chat search — find old conversations by content
 
-</td>
-<td align="center" width="25%">
+- [ ] **Phase 3 — Infrastructure** 🏗️
+  - [ ] Custom Installer — Ollama included, one-click setup
+  - [ ] Tutorial refactoring — model recommendations by VRAM tier
+  - [ ] Stats dashboard — token usage, chat statistics
 
-🌐  
-**Translations**  
-Add new languages
+- [ ] **Phase 4 — Visual Overhaul** 🎨
+  - [ ] UI upgrade with collapsible persona folders
+  - [ ] Proper dark/light mode toggle
+  - [ ] New logo
 
-</td>
-<td align="center" width="25%">
+- [ ] **Phase 5 — v1.0 Release** 🚀
+  - [ ] Group chats / NPC-to-NPC interactions
+  - [ ] Multimodal vision (local image understanding)
+  - [ ] Landing page + promo video
 
-💡  
-**Features**  
-Share your ideas
-
-</td>
-<td align="center" width="25%">
-
-📝  
-**Documentation**  
-Improve guides
-
-</td>
-</tr>
-</table>
+- [ ] **Phase 6 — v2.0 Rust Rewrite** 🦀
+  - [ ] Full rewrite: Dioxus + Rust backend. One language, one binary. No Chromium.
 
 <br/>
+
+---
+
+<br/>
+
+## Tech Stack
+
+<div align="center">
+
+**Electron** · **React** · **Vite** · **Tailwind CSS** · **Ollama**
+
+</div>
+
+<br/>
+
+---
+
+<br/>
+
+## Contributing
+
+Contributions welcome — bug reports, translations, features, documentation.
 
 ```bash
-# Quick contribution workflow
 git checkout -b feature/your-feature
 git commit -m "Add your feature"
 git push origin feature/your-feature
@@ -452,56 +282,21 @@ git push origin feature/your-feature
 
 <br/>
 
-## 💬 Community
-
 <div align="center">
 
-**Questions, ideas, or just want to connect?**
+## Community & Support
 
-[![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/h3gVtkw9ja)
+[![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/h3gVtkw9ja)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/gakuseei)
 
-*Share characters • Get support • Report bugs • Connect with users*
-
-</div>
-
-<br/>
-
----
+**Ko-fi supporters unlock Gold Mode** — exclusive visuals and early access.
 
 <br/>
-
-## 💖 Support
-
-<div align="center">
-
-If Aria brings you value, consider supporting its development
-
-[![Ko-fi](https://img.shields.io/badge/☕%20Buy%20me%20a%20Coffee-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/gakuseei)
-
-**Supporters unlock Gold Mode:** exclusive visuals, early access, and special recognition
-
-</div>
-
-<br/>
-
----
-
-<br/>
-
-## 📜 License
-
-<div align="center">
 
 **MIT License** — See [LICENSE.md](LICENSE.md)
 
-<br/><br/>
-
-Made with 🌹 by the Aria Community
-
 <br/>
 
-[![GitHub stars](https://img.shields.io/github/stars/Gakuseei/Aria?style=social&logo=github)](https://github.com/Gakuseei/Aria)
-&nbsp;
-[![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.gg/h3gVtkw9ja)
+Made with 🌹 by [Gakuseei](https://github.com/Gakuseei)
 
 </div>

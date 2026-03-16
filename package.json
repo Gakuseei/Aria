@@ -18,9 +18,9 @@
   "author": "Gakuseeii",
   "license": "MIT",
   "dependencies": {
-    "dotenv": "^16.4.5",
+    "dotenv": "^17.3.1",
     "framer-motion": "^12.27.5",
-    "lucide-react": "^0.562.0",
+    "lucide-react": "^0.577.0",
 "react-hot-toast": "^2.6.0"
   },
   "devDependencies": {
@@ -28,10 +28,10 @@
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
-    "concurrently": "^8.2.2",
+    "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
-    "electron": "^39.2.7",
-    "electron-builder": "^24.13.3",
+    "electron": "^39.8.2",
+    "electron-builder": "^26.0.12",
     "postcss": "^8.4.38",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -39,7 +39,7 @@
     "tailwindcss": "^3.4.3",
     "vite": "^7.3.0",
     "vitest": "^4.0.18",
-    "wait-on": "^7.2.0"
+    "wait-on": "^9.0.4"
   },
   "build": {
     "appId": "com.aria.chatbot",

@@ -887,6 +887,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         handleSpeak(safeResponse);
       }
     } catch (error) {
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       if (abortRef.current?.signal?.aborted) return;
       console.error('[ChatInterface] Send error:', error);
       const errorMsg = error?.message === 'The operation was aborted'

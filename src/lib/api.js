@@ -84,7 +84,7 @@ export function cleanTranscriptArtifacts(text, charName = '') {
       cleaned.lastIndexOf('!'),
       cleaned.lastIndexOf('?')
     );
-    if (sentenceEnd > cleaned.length * 0.5) {
+    if (sentenceEnd > 0 && sentenceEnd > cleaned.length * 0.5) {
       console.warn(`[Cleaner] Trimmed incomplete sentence (cut at ${sentenceEnd}/${cleaned.length})`);
       cleaned = cleaned.substring(0, sentenceEnd + 1);
     }
@@ -738,7 +738,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const lastCh = cleaned.slice(-1);
   if (lastCh && !['.', '!', '?', '"', '*', ')'].includes(lastCh)) {
     const end = Math.max(cleaned.lastIndexOf('*'), cleaned.lastIndexOf('"'), cleaned.lastIndexOf('.'), cleaned.lastIndexOf('!'), cleaned.lastIndexOf('?'));
-    if (end > cleaned.length * 0.3) cleaned = cleaned.substring(0, end + 1);
+    if (end > 0 && end > cleaned.length * 0.3) cleaned = cleaned.substring(0, end + 1);
   }
 
   // If response starts with charName — wrong character, trash it

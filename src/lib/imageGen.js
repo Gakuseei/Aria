@@ -56,14 +56,17 @@ export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', im
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 600000);
 
-    const response = await fetch(`${apiUrl}/sdapi/v1/txt2img`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
+    let response;
+    try {
+      response = await fetch(`${apiUrl}/sdapi/v1/txt2img`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       throw new Error(`API returned ${response.status}: ${response.statusText}`);

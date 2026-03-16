@@ -94,6 +94,7 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
         <button
           onClick={onNewGame}
           className="group relative w-full px-8 py-5 overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+          aria-label={t.mainMenu.newGame}
         >
           {/* Background */}
           <div className={`absolute inset-0 ${
@@ -125,6 +126,7 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
         <button
           onClick={onLoadGame}
           className="group relative w-full px-8 py-5 overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+          aria-label={t.mainMenu.load}
         >
           {/* Background */}
           <div className="absolute inset-0 bg-zinc-900/80 backdrop-blur-sm border border-white/5 rounded-2xl group-hover:border-rose-500/50 group-hover:bg-zinc-900 group-hover:shadow-[0_0_30px_rgba(226,29,72,0.2)] transition-all duration-300" />
@@ -142,6 +144,7 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
         <button
           onClick={onSettings}
           className="group relative w-full px-8 py-5 overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+          aria-label={t.mainMenu.settings}
         >
           {/* Background */}
           <div className="absolute inset-0 bg-zinc-900/80 backdrop-blur-sm border border-white/5 rounded-2xl group-hover:border-rose-500/50 group-hover:bg-zinc-900 group-hover:shadow-[0_0_30px_rgba(226,29,72,0.2)] transition-all duration-300" />

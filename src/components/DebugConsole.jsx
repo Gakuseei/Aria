@@ -31,6 +31,16 @@ export default function DebugConsole({
   const errorListRef = React.useRef(null);
   const ERROR_LIMIT = 75;
 
+  // Close on Escape key
+  useEffect(() => {
+    if (!isVisible) return;
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isVisible, onClose]);
+
   // Error Collection System
   useEffect(() => {
     const captureError = (severity, message, stack, source) => {

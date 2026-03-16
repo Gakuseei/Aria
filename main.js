@@ -23,8 +23,8 @@ function loadSettingsSync() {
     if (fs.existsSync(settingsPath)) {
       return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
     }
-  } catch (_) {
-    // Ignore errors, return defaults below
+  } catch (err) {
+    console.error('[Main] Failed to load settings:', err.message);
   }
   return {};
 }
@@ -1259,7 +1259,9 @@ ipcMain.handle('ollama-chat-stream', async (event, params) => {
           if (chunk.done) {
             finalChunk = chunk;
           }
-        } catch { /* skip malformed NDJSON lines */ }
+        } catch (parseErr) {
+          if (process.env.ARIA_DEBUG) console.warn('[Main] Malformed NDJSON line:', parseErr.message);
+        }
       }
     }
 
@@ -1274,7 +1276,9 @@ ipcMain.handle('ollama-chat-stream', async (event, params) => {
           }
         }
         if (chunk.done) finalChunk = chunk;
-      } catch { /* skip */ }
+      } catch (parseErr) {
+        if (process.env.ARIA_DEBUG) console.warn('[Main] Malformed NDJSON buffer remainder:', parseErr.message);
+      }
     }
 
     return {

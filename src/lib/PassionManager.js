@@ -88,7 +88,14 @@ class PassionManager {
   loadPassionData() {
     try {
       const stored = localStorage.getItem(PASSION_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : {};
+      if (!stored) return {};
+      const data = JSON.parse(stored);
+      for (const key of Object.keys(data)) {
+        if (key.endsWith('_history') && Array.isArray(data[key]) && data[key].length > HISTORY_LIMIT) {
+          data[key] = data[key].slice(-HISTORY_LIMIT);
+        }
+      }
+      return data;
     } catch (error) {
       console.error('[PassionManager] Error loading:', error);
       return {};

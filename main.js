@@ -20,9 +20,17 @@ function loadSettingsSync() {
   try {
     const settingsPath = path.join(app.getPath('userData'), 'settings.json');
     if (fs.existsSync(settingsPath)) {
-      return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+      const raw = fs.readFileSync(settingsPath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        console.warn('[Main] settings.json is not an object, using defaults');
+        return {};
+      }
+      return parsed;
     }
-  } catch (_) {}
+  } catch (err) {
+    console.error('[Main] Failed to load settings.json, using defaults:', err.message);
+  }
   return {};
 }
 
@@ -1832,6 +1840,9 @@ ipcMain.handle('save-settings', async (event, newSettings) => {
       if (err.code !== 'ENOENT') throw err;
     }
 
+    if (newSettings === null || typeof newSettings !== 'object' || Array.isArray(newSettings)) {
+      return { success: false, error: 'Invalid settings: expected an object' };
+    }
     const mergedSettings = { ...existingSettings, ...newSettings };
     await fs.promises.writeFile(settingsPath, JSON.stringify(mergedSettings, null, 2));
     

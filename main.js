@@ -9,11 +9,6 @@ const fs = require('fs');
 const https = require('https');
 const dotenv = require('dotenv');
 const platform = require('./lib/platform');
-const toolManager = require('./lib/toolManager');
-const ollamaTool = require('./lib/tools/ollama');
-const piperTool = require('./lib/tools/piper');
-const zonosTool = require('./lib/tools/zonos');
-const stabilityTool = require('./lib/tools/stability');
 const { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } = require('./lib/defaults');
 
 function loadSettingsSync() {
@@ -25,15 +20,6 @@ function loadSettingsSync() {
   } catch (_) {}
   return {};
 }
-
-// Register tools
-toolManager.registerTool(ollamaTool);
-toolManager.registerTool(piperTool);
-toolManager.registerTool(zonosTool);
-toolManager.registerTool(stabilityTool);
-
-// Active installations (for cancel support)
-const activeInstalls = new Map();
 
 // Load environment variables
 dotenv.config();
@@ -248,100 +234,7 @@ function createWindow() {
     });
   });
 
-  // CROSS-PLATFORM: Install any registered tool
-  ipcMain.handle('tool-install', async (event, { toolName, destPath }) => {
-    const tool = toolManager.getTool(toolName);
-    if (!tool) return { success: false, error: `Unknown tool: ${toolName}` };
-
-    const abortController = new AbortController();
-    activeInstalls.set(toolName, abortController);
-
-    try {
-      await tool.install(destPath, (progress) => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('tool:progress', { tool: toolName, ...progress });
-        }
-      }, abortController);
-
-      activeInstalls.delete(toolName);
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('tool:complete', { tool: toolName, path: destPath });
-      }
-      return { success: true };
-    } catch (error) {
-      activeInstalls.delete(toolName);
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('tool:error', { tool: toolName, error: error.message });
-      }
-      return { success: false, error: error.message };
-    }
-  });
-
-  // Cancel active installation
-  ipcMain.handle('tool-cancel', async (event, { toolName }) => {
-    const controller = activeInstalls.get(toolName);
-    if (controller) {
-      controller.abort();
-      activeInstalls.delete(toolName);
-      return { success: true };
-    }
-    return { success: true, message: 'No active installation' };
-  });
-
-  // Detect if a tool is installed
-  ipcMain.handle('tool-detect', async (event, { toolName }) => {
-    const tool = toolManager.getTool(toolName);
-    if (!tool) return { installed: false };
-    const detectedPath = await tool.detect();
-    return { installed: !!detectedPath, path: detectedPath };
-  });
-
-  // List all registered tools
-  ipcMain.handle('tool-list', async () => {
-    return toolManager.getAllTools().map(t => ({ name: t.name, displayName: t.displayName }));
-  });
-
-  // Zonos-specific: server management
-  ipcMain.handle('zonos-start-server', async (event, { zonosPath }) => {
-    try {
-      const zonosTool = toolManager.getTool('zonos');
-      if (!zonosTool) return { success: false, error: 'Zonos tool not registered' };
-      return await zonosTool.startServer(zonosPath);
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  });
-
-  ipcMain.handle('zonos-stop-server', async () => {
-    try {
-      const zonosTool = toolManager.getTool('zonos');
-      if (!zonosTool) return { success: false, error: 'Zonos tool not registered' };
-      zonosTool.stopServer();
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  });
-
-  ipcMain.handle('zonos-server-status', async () => {
-    try {
-      const zonosTool = toolManager.getTool('zonos');
-      if (!zonosTool) return { running: false };
-      const running = await platform.isPortInUse(zonosTool.SERVER_PORT);
-      return { running };
-    } catch (err) {
-      console.warn('[Main] Zonos server status check failed:', err?.message);
-      return { running: false };
-    }
-  });
 }
-
-app.on('before-quit', () => {
-  for (const [, install] of activeInstalls) {
-    if (typeof install.abort === 'function') install.abort();
-  }
-  activeInstalls.clear();
-});
 
 app.whenReady().then(createWindow);
 
@@ -354,84 +247,6 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
-  }
-});
-
-// ===========================================
-// v0.2.5: PASSION SENTIMENT ANALYSIS (moved to passionManager.js in frontend)
-// ===========================================
-
-/**
- * Analyze user message sentiment and return passion change
- * NOTE: This is now handled by passionManager.js in the frontend
- * This IPC handler is kept for backward compatibility but delegates to frontend logic
- */
-ipcMain.handle('analyze-sentiment', async (event, params) => {
-  const { message, currentPassion } = params;
-
-  try {
-    // Simple fallback if frontend doesn't have passionManager
-    const lowerMessage = message.toLowerCase();
-    
-    const positiveKeywords = [
-      'love', 'beautiful', 'gorgeous', 'amazing', 'perfect', 'wonderful',
-      'sweet', 'cute', 'hot', 'sexy', 'attractive', 'adorable',
-      'yes', 'absolutely', 'definitely', 'of course', 'please',
-      'thank you', 'thanks', 'appreciate', 'like you', 'love you',
-      'liebe', 'schön', 'wunderbar', 'toll', 'perfekt', 'süß',
-      'heiß', 'attraktiv', 'ja', 'danke', 'mag dich', 'liebe dich'
-    ];
-
-    const negativeKeywords = [
-      'hate', 'ugly', 'stupid', 'dumb', 'idiot', 'disgusting',
-      'no', 'never', 'stop', 'leave me alone', 'shut up',
-      'annoying', 'boring', 'terrible', 'awful', 'horrible',
-      'hasse', 'hässlich', 'dumm', 'blöd', 'ekelhaft', 'nein'
-    ];
-
-    const intimateKeywords = [
-      'kiss', 'touch', 'feel', 'want you', 'need you', 'desire',
-      'body', 'skin', 'lips', 'close', 'hold', 'embrace',
-      'küssen', 'berühren', 'fühlen', 'will dich', 'brauche dich'
-    ];
-
-    let passionChange = 0;
-    let sentiment = 'neutral';
-
-    const intimateCount = intimateKeywords.filter(kw => lowerMessage.includes(kw)).length;
-    if (intimateCount > 0) {
-      passionChange = Math.min(10, 5 + intimateCount * 2);
-      sentiment = 'intimate';
-    } else {
-      const positiveCount = positiveKeywords.filter(kw => lowerMessage.includes(kw)).length;
-      const negativeCount = negativeKeywords.filter(kw => lowerMessage.includes(kw)).length;
-
-      if (positiveCount > negativeCount) {
-        passionChange = Math.min(8, 2 + positiveCount * 2);
-        sentiment = 'positive';
-      } else if (negativeCount > positiveCount) {
-        passionChange = Math.max(-10, -2 - negativeCount * 2);
-        sentiment = 'negative';
-      }
-    }
-
-    if (currentPassion > 70 && passionChange > 0) {
-      passionChange = Math.floor(passionChange * 0.5);
-    }
-
-    return {
-      success: true,
-      sentiment: sentiment,
-      passionChange: passionChange,
-      reason: `Message analysis: ${sentiment}`
-    };
-  } catch (error) {
-    console.error('[V5.5 Sentiment IPC] Error:', error);
-    return {
-      success: false,
-      error: error.message,
-      passionChange: 0
-    };
   }
 });
 
@@ -1571,78 +1386,6 @@ ipcMain.handle('ollama-model-info', async (event, params) => {
 });
 
 // ===========================================
-// v0.2.5: SYSTEM CHECK
-// ===========================================
-
-/**
- * Comprehensive system readiness check
- */
-ipcMain.handle('check-system-ready', async () => {
-  const results = {
-    ollama: false,
-    imageGen: false,
-    voice: false,
-    errors: []
-  };
-
-  let ollamaUrl = OLLAMA_DEFAULT_URL;
-  try {
-    const settingsPath = path.join(app.getPath('userData'), 'settings.json');
-    if (fs.existsSync(settingsPath)) {
-      const data = fs.readFileSync(settingsPath, 'utf-8');
-      const parsed = JSON.parse(data);
-      ollamaUrl = parsed.ollamaUrl || ollamaUrl;
-    }
-  } catch (_) {}
-
-  try {
-    // Check Ollama
-    const ollamaResponse = await fetch(`${ollamaUrl}/api/tags`, {
-      method: 'GET',
-      signal: AbortSignal.timeout(3000),
-    });
-    
-    if (ollamaResponse.ok) {
-      const data = await ollamaResponse.json();
-      results.ollama = data.models && data.models.length > 0;
-      if (!results.ollama) {
-        results.errors.push('Ollama running but no models installed');
-      }
-    }
-  } catch (error) {
-    results.errors.push(`Ollama: ${error.message}`);
-  }
-
-  try {
-    // Check Image Generation (optional)
-    const imageResponse = await fetch('http://127.0.0.1:7860/sdapi/v1/options', {
-      method: 'GET',
-      signal: AbortSignal.timeout(3000),
-    });
-    results.imageGen = imageResponse.ok;
-  } catch (error) {
-    results.errors.push(`ImageGen: ${error.message}`);
-  }
-
-  try {
-    // Check Voice/TTS (optional)
-    const voiceResponse = await fetch('http://127.0.0.1:5000/api/status', {
-      method: 'GET',
-      signal: AbortSignal.timeout(3000),
-    });
-    results.voice = voiceResponse.ok;
-  } catch (error) {
-    results.errors.push(`Voice: ${error.message}`);
-  }
-
-
-  return {
-    success: true,
-    results: results
-  };
-});
-
-// ===========================================
 // SESSION MANAGEMENT
 // ===========================================
 
@@ -1873,17 +1616,12 @@ ipcMain.handle('load-settings', async () => {
   }
 });
 
-// v0.2.5 LOCAL: No API key check needed (local only)
-ipcMain.handle('check-api-key', async () => {
-  return { hasKey: true }; // Always true for local mode
-});
-
 console.log('[Aria] Main process started');
 
 const STUB_HANDLERS = [
   'zonos-auto-install', 'zonos-check-status', 'zonos-is-installed',
   'zonos-get-error', 'zonos-cancel-install', 'zonos-get-progress',
-  'zonos-synthesize', 'run-tool-script'
+  'run-tool-script'
 ];
 STUB_HANDLERS.forEach(name => {
   ipcMain.handle(name, async () => ({ success: false, error: 'Not yet available' }));

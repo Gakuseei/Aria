@@ -247,7 +247,7 @@ function translateToEnglish(text) {
  * @param {Object|string} character - Character object or name for visual context
  * @returns {string} Coherent visual prompt for Stable Diffusion
  */
-export function cleanContextForImage(text, character = '') {
+function cleanContextForImage(text, character = '') {
   // Always start with character visual identity
   const characterTags = character ? getCharacterVisualTags(character) : '1girl, beautiful woman';
 

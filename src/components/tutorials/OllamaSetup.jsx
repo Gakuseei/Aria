@@ -1,6 +1,6 @@
 // ARIA v1.0 - Ollama Setup Tutorial (Refactored Premium)
 import { useState, useEffect } from 'react';
-import { Download, Check, RefreshCw, Copy, ExternalLink, HardDrive, Cpu, Zap } from 'lucide-react';
+import { Download, Check, RefreshCw, Copy, Zap } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import TutorialLayout from './TutorialLayout';
 import { OLLAMA_DEFAULT_URL } from '../../lib/defaults';
@@ -15,7 +15,7 @@ export default function OllamaSetup({ onClose, isOnboarding = false, onComplete 
   const [testing, setTesting] = useState(false);
   const [selectedModel, setSelectedModel] = useState('midEnd');
   const [copied, setCopied] = useState(false);
-  const [modelsInstalled, setModelsInstalled] = useState([]);
+
 
   // Determine current step based on status
   // 1: Install & Run, 2: Model, 3: Connect
@@ -31,7 +31,6 @@ export default function OllamaSetup({ onClose, isOnboarding = false, onComplete 
       const result = await window.electronAPI.ollamaModels({ ollamaUrl: OLLAMA_DEFAULT_URL });
       if (result.success) {
         setConnectionStatus('connected');
-        setModelsInstalled(result.models || []);
       } else {
         setConnectionStatus('error');
       }

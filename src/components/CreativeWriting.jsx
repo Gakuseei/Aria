@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { generateCreativeWriting, continueStory } from '../lib/StoryEngine';
-import { saveSession, loadSession, generateSessionId, autoDetectAndSetModel } from '../lib/api';
+import { saveSession, generateSessionId, autoDetectAndSetModel } from '../lib/api';
 import { GAME_MODES } from '../App';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';

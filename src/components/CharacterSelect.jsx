@@ -196,7 +196,7 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter }) {
       {/* Character Grid */}
       <div className="flex-1 flex items-center justify-center">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-6xl w-full">
-          {allCharacters.map((character, index) => {
+          {allCharacters.map((character) => {
             const isSelected = selectedId === character.id;
             
             // Determine Border & Shadow Classes based on state

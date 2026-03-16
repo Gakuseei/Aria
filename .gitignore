@@ -45,7 +45,9 @@ docs/plans/
 Discord/
 tools/Zonos
 testsprite_tests
-tests/
+tests/*
+!tests/lib/
+!tests/TEST_GAP_REPORT.md
 .todos/
 .sidecar/
 .sidecar-agent

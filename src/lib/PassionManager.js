@@ -139,7 +139,7 @@ class PassionManager {
    * @returns {number} New passion level (rounded integer 0-100)
    */
   applyScore(sessionId, score) {
-    if (!score || isNaN(score) || score <= 0) return this.getPassionLevel(sessionId);
+    if (isNaN(score) || score <= 0) return this.getPassionLevel(sessionId);
 
     const currentLevel = this.passionData[sessionId] || 0;
     const newLevel = Math.round(Math.min(100, currentLevel + score));

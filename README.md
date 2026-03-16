@@ -45,33 +45,9 @@
 
 <br/>
 
-## Quick Start
+## Getting Started
 
-```bash
-# 1. Install Ollama → https://ollama.ai
-# 2. Pull a model
-ollama pull HammerAI/mn-mag-mell-r1:12b-q4_K_M
-# 3. Launch Aria
-```
-
-> First launch walks you through everything — no terminal knowledge required.
-
-<br/>
-
-<details>
-<summary><strong>Models by VRAM</strong></summary>
-
-<br/>
-
-| VRAM | Top Pick | Alternatives |
-|:-----|:---------|:-------------|
-| 0-2 GB | `gemma3:1b` | `llama3.2:3b` |
-| 2-6 GB | `HammerAI/smart-lemon-cookie:7b` | `HammerAI/neuraldaredevil-abliterated` |
-| **6-12 GB ⭐** | **`HammerAI/mn-mag-mell-r1:12b`** | `vanilj/mistral-nemo-12b-celeste-v1.9` |
-| 12-24 GB | `HammerAI/cydonia-v3.1` | `huihui_ai/gemma3-abliterated:27b` |
-| 24 GB+ | `HammerAI/l3.3-omega-directive-unslop-v2:70b` | `fluffy/magnum-v4-72b` |
-
-</details>
+Install [Ollama](https://ollama.ai), download Aria, and launch. The app guides you through model selection and setup on first run.
 
 <details>
 <summary><strong>Build from Source</strong></summary>
@@ -84,6 +60,8 @@ cd Aria
 npm install
 npm run dev
 ```
+
+Requires Node.js v18+.
 
 </details>
 

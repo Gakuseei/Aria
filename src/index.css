@@ -448,21 +448,6 @@ body.oled-mode .glass-panel {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-/* Cyberpunk Grid Background - VERSION 5.7: REMOVED for OLED */
-body:not(.oled-mode) .cyber-grid {
-  background-image: 
-    linear-gradient(rgba(113, 113, 122, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(113, 113, 122, 0.03) 1px, transparent 1px);
-  background-size: 50px 50px;
-}
-
-/* VERSION 5.7: No glow effects in OLED mode */
-body:not(.oled-mode) .neon-text-red {
-  text-shadow: 
-    0 0 5px rgba(113, 113, 122, 0.5),
-    0 0 10px rgba(113, 113, 122, 0.3);
-}
-
 /* v1.0 ROSE NOIR: Focus Styles with Rose Accent */
 input:focus,
 textarea:focus,
@@ -716,24 +701,6 @@ body.oled-mode .skeleton {
   overflow-y: auto;
 }
 
-/* VERSION 5.7: Group Chat Speaker Names - Minimal Styling */
-.group-chat-content .character-name {
-  font-weight: 700;
-  color: #71717a;
-  margin-right: 0.25rem;
-  display: inline-block;
-}
-
-body.oled-mode .group-chat-content .character-name {
-  color: #52525b;
-}
-
-.group-chat-content .character-name:hover {
-  text-decoration: underline;
-  cursor: default;
-  color: #52525b;
-}
-
 /* VERSION 5.7: Modal Animations */
 .modal-backdrop {
   animation: fadeIn 0.15s ease-out;
@@ -751,27 +718,6 @@ body.oled-mode .group-chat-content .character-name {
   font-style: italic;
   color: #a1a1aa;
   font-size: 0.875rem;
-}
-
-/* VERSION 5.7: Character Avatar Stack */
-.character-avatar-stack {
-  display: flex;
-  align-items: center;
-  gap: -0.5rem;
-}
-
-.character-avatar-stack > * {
-  border: 2px solid #18181b;
-  transition: transform 0.2s;
-}
-
-.character-avatar-stack > *:hover {
-  transform: scale(1.1);
-  z-index: 10;
-}
-
-body.oled-mode .character-avatar-stack > * {
-  border: 2px solid #000000;
 }
 
 /* VERSION 5.7: ROLEPLAY-SPECIFIC STYLING */
@@ -844,46 +790,3 @@ body.oled-mode *:focus-visible {
   will-change: transform, opacity;
 }
 
-/* VERSION 5.7: Quick Response Bubbles - Minimal OLED styling */
-.quick-reply-bubble {
-  position: relative;
-  overflow: hidden;
-}
-
-.quick-reply-bubble::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(82, 82, 91, 0.2),
-    transparent
-  );
-  transition: left 0.5s;
-}
-
-.quick-reply-bubble:hover::before {
-  left: 100%;
-}
-
-/* VERSION 5.7: Passion Indicator - Minimal glow */
-body:not(.oled-mode) .passion-glow-low {
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
-}
-
-body:not(.oled-mode) .passion-glow-medium {
-  box-shadow: 0 0 10px rgba(113, 113, 122, 0.2);
-}
-
-body:not(.oled-mode) .passion-glow-high {
-  box-shadow: 0 0 10px rgba(113, 113, 122, 0.3);
-}
-
-/* VERSION 5.7: Character mood transitions */
-.mood-transition {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}

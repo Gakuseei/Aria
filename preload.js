@@ -14,12 +14,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Open Tools Folder
   openToolsFolder: () => ipcRenderer.send('open-tools-folder'),
   
-  // Run Tool Script (True One-Click)
-  runToolScript: (scriptName) => ipcRenderer.send('run-tool-script', scriptName),
-  
   // AI Communication
   aiChat: (params) => ipcRenderer.invoke('ai-chat', params),
-  aiCreativeWrite: (params) => ipcRenderer.invoke('ai-creative-write', params),
 
   // Ollama IPC (streaming, model management)
   ollamaChatStream: (params) => ipcRenderer.invoke('ollama-chat-stream', params),
@@ -38,11 +34,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadSession: (sessionId) => ipcRenderer.invoke('load-session', { sessionId }),
   listSessions: () => ipcRenderer.invoke('list-sessions'),
   deleteSession: (sessionId) => ipcRenderer.invoke('delete-session', { sessionId }),
-
-  // Character Session Memory
-  saveCharacterMemory: (characterId, sessionId, data) => ipcRenderer.invoke('save-character-memory', { characterId, sessionId, data }),
-  loadCharacterMemory: (characterId, sessionId) => ipcRenderer.invoke('load-character-memory', { characterId, sessionId }),
-  deleteCharacterMemory: (characterId, sessionId) => ipcRenderer.invoke('delete-character-memory', { characterId, sessionId }),
 
   // Settings
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
@@ -66,9 +57,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     };
   },
   
-  // API Key Check
-  checkApiKey: () => ipcRenderer.invoke('check-api-key'),
-  
   // v0.2.5: Multimedia IPC handlers
   imageGenModels: (params) => ipcRenderer.invoke('image-gen-models', params),
   testImageGen: (params) => ipcRenderer.invoke('test-image-gen', params),
@@ -79,20 +67,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // File dialog
   selectFile: (filters) => ipcRenderer.invoke('open-file-dialog', filters),
   
-  // File check
-  checkFileExists: (filePath) => ipcRenderer.invoke('check-file-exists', filePath),
-  
   // Voice model download
   downloadVoiceModel: (params) => ipcRenderer.invoke('download-voice-model', params),
   
   // Get local voice models
   getLocalVoiceModels: () => ipcRenderer.invoke('get-local-voice-models'),
   
-  // ZONOS AUTO INSTALLER - True One-Click
-  zonosAutoInstall: () => ipcRenderer.invoke('zonos-auto-install'),
+  // ZONOS STATUS CHECK
   zonosCheckStatus: () => ipcRenderer.invoke('zonos-check-status'),
-  zonosIsInstalled: () => ipcRenderer.invoke('zonos-is-installed'),
-  zonosGetError: () => ipcRenderer.invoke('zonos-get-error'),
-  zonosCancelInstall: () => ipcRenderer.invoke('zonos-cancel-install'),
-  zonosGetProgress: () => ipcRenderer.invoke('zonos-get-progress'),
 });

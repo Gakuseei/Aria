@@ -58,7 +58,7 @@ function handleSummary({ messages, t, settings, character, passionLevel }) {
   todayStart.setHours(0, 0, 0, 0);
   const ts = todayStart.getTime();
 
-  const todayMsgs = messages.filter(m => (m.timestamp || 0) >= ts);
+  const todayMsgs = messages.filter(m => (m.timestamp || 0) >= ts && !m.isTierEvent);
   const userMsgs = todayMsgs.filter(m => m.role === 'user');
   const aiMsgs = todayMsgs.filter(m => m.role === 'assistant');
 

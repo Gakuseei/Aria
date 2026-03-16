@@ -7,7 +7,7 @@
 
 import { passionManager, getTierKey, getDepthInstruction, getSpeedMultiplier } from './PassionManager.js';
 import { getModelProfile } from './modelProfiles.js';
-import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from './defaults.js';
+import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, DATA_VERSION } from './defaults.js';
 
 
 // ============================================================================
@@ -119,6 +119,7 @@ export function resolveTemplates(text, charName, userName) {
 // ============================================================================
 
 const DEFAULT_SETTINGS = {
+  dataVersion: DATA_VERSION,
   ollamaUrl: OLLAMA_DEFAULT_URL,
   ollamaModel: DEFAULT_MODEL_NAME,
   temperature: 0.8,

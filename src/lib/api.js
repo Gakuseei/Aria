@@ -246,6 +246,24 @@ async function getModelCapabilities(ollamaUrl, modelName) {
   }
 }
 
+/**
+ * Extract last N user/assistant messages with content truncation for context windows.
+ */
+function getRecentHistory(history, count = 6) {
+  return (history || [])
+    .filter(m => m.role === 'user' || m.role === 'assistant')
+    .slice(-count)
+    .map((m, i, arr) => {
+      const c = m.content || '';
+      const limit = (i === arr.length - 1) ? 500 : 350;
+      if (c.length <= limit) return { role: m.role, content: c };
+      const keep = (i === arr.length - 1)
+        ? c.slice(0, 100) + ' [...] ' + c.slice(-350)
+        : c.slice(0, 80) + ' [...] ' + c.slice(-220);
+      return { role: m.role, content: keep };
+    });
+}
+
 function estimateTokens(text) {
   if (!text) return 0;
   return Math.ceil(text.length / 3.5);
@@ -384,18 +402,7 @@ export async function generateSuggestionsBackground(history, charName, charDescr
   const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
   const numCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
 
-  const last6 = history
-    .filter(m => m.role === 'user' || m.role === 'assistant')
-    .slice(-6)
-    .map((m, i, arr) => {
-      const c = m.content || '';
-      const limit = (i === arr.length - 1) ? 500 : 350;
-      if (c.length <= limit) return { role: m.role, content: c };
-      const keep = (i === arr.length - 1)
-        ? c.slice(0, 100) + ' [...] ' + c.slice(-350)
-        : c.slice(0, 80) + ' [...] ' + c.slice(-220);
-      return { role: m.role, content: keep };
-    });
+  const last6 = getRecentHistory(history);
 
   let descSnippet = (charDescription || '').slice(0, 300);
   const lastSentence = descSnippet.search(/[.!?][^.!?]*$/);
@@ -603,17 +610,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const numCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
   const profile = getModelProfile(model);
 
-  const last6 = (history || [])
-    .filter(m => m.role === 'user' || m.role === 'assistant')
-    .slice(-6)
-    .map((m, i, arr) => {
-      const c = m.content || '';
-      const limit = (i === arr.length - 1) ? 500 : 350;
-      if (c.length <= limit) return { role: m.role, content: c };
-      return (i === arr.length - 1)
-        ? { role: m.role, content: c.slice(0, 100) + ' [...] ' + c.slice(-350) }
-        : { role: m.role, content: c.slice(0, 80) + ' [...] ' + c.slice(-220) };
-    });
+  const last6 = getRecentHistory(history);
 
   const historyText = last6
     .map(m => `${m.role === 'user' ? userName : charName}: ${m.content}`)

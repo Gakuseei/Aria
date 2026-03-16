@@ -13,7 +13,9 @@
     "build": "npm run build:react && electron-builder",
     "pack": "npm run build:react && electron-builder --dir",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "setup-hooks": "node -e \"const fs=require('fs'),p=require('path');const s=p.join('tools','git-hooks','commit-msg'),d=p.join('.git','hooks','commit-msg');fs.mkdirSync(p.dirname(d),{recursive:true});try{fs.unlinkSync(d)}catch{};fs.symlinkSync(p.resolve(s),d);console.log('Git hooks installed')\"",
+    "postinstall": "npm run setup-hooks"
   },
   "author": "Gakuseeii",
   "license": "MIT",

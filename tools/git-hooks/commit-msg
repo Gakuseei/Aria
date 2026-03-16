@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+#
+# commit-msg hook — enforces consistent commit message format:
+#   [scope: ]lowercase description   (subject ≤72 chars, no trailing period)
+#
+# Allows multi-line bodies and git trailers without restriction.
+
+set -euo pipefail
+
+MSG_FILE="$1"
+SUBJECT=$(head -n1 "$MSG_FILE")
+
+# Skip merge commits
+if echo "$SUBJECT" | grep -qE '^Merge '; then
+  exit 0
+fi
+
+# 1. Non-empty subject
+if [ -z "$SUBJECT" ]; then
+  echo "commit-msg: subject line must not be empty" >&2
+  exit 1
+fi
+
+# 2. Subject ≤72 chars
+if [ ${#SUBJECT} -gt 72 ]; then
+  echo "commit-msg: subject line is ${#SUBJECT} chars (max 72)" >&2
+  exit 1
+fi
+
+# 3. No trailing period
+if echo "$SUBJECT" | grep -qE '\.$'; then
+  echo "commit-msg: subject line must not end with a period" >&2
+  exit 1
+fi
+
+# 4. Lowercase first word (after optional "scope: " prefix)
+DESC="$SUBJECT"
+if echo "$DESC" | grep -qE '^[a-zA-Z0-9_-]+: '; then
+  DESC=$(echo "$DESC" | sed 's/^[a-zA-Z0-9_-]*: //')
+fi
+
+FIRST_CHAR=$(echo "$DESC" | cut -c1)
+if echo "$FIRST_CHAR" | grep -qE '^[A-Z]$'; then
+  echo "commit-msg: description must start lowercase (got '${FIRST_CHAR}')" >&2
+  exit 1
+fi
+
+exit 0

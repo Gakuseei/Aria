@@ -16,7 +16,7 @@ import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
 import downloadBlob from '../utils/downloadBlob';
-import { OLLAMA_DEFAULT_URL } from '../lib/defaults';
+import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from '../lib/defaults';
 
 // ============================================================================
 // TEXT FORMATTING - BLOCK 4 FIX: Apostroph-Bug behoben
@@ -233,8 +233,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   // v0.2.5 FIX: Settings come from parent (App.jsx), merged with localStorage for backward compatibility
   const [localSettings, setLocalSettings] = useState({
-    imageGenUrl: 'http://127.0.0.1:7860',
-    voiceUrl: 'http://127.0.0.1:5000',
+    imageGenUrl: IMAGE_GEN_DEFAULT_URL,
+    voiceUrl: VOICE_DEFAULT_URL,
     ollamaUrl: OLLAMA_DEFAULT_URL,
     piperPath: '',
     modelPath: '',
@@ -402,10 +402,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
         // BLOCK 8.2: Store full settings object (including ollamaModel)
         setLocalSettings({
-          imageGenUrl: loadedSettings.imageGenUrl || 'http://127.0.0.1:7860',
-          voiceUrl: loadedSettings.voiceUrl || 'http://127.0.0.1:5000',
+          imageGenUrl: loadedSettings.imageGenUrl || IMAGE_GEN_DEFAULT_URL,
+          voiceUrl: loadedSettings.voiceUrl || VOICE_DEFAULT_URL,
           ollamaUrl: loadedSettings.ollamaUrl || OLLAMA_DEFAULT_URL,
-          ollamaModel: loadedSettings.ollamaModel || 'hermes3',
+          ollamaModel: loadedSettings.ollamaModel || DEFAULT_MODEL_NAME,
           piperPath: loadedSettings.piperPath || '',
           modelPath: loadedSettings.modelPath || '',
           voiceVolume: loadedSettings.voiceVolume ?? 1.0,

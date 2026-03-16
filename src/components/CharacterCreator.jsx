@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { fileToBase64, saveCustomCharacter } from '../lib/api';
 import { useLanguage } from '../context/LanguageContext';
+import { MAX_FILE_SIZE_BYTES } from '../lib/defaults';
 
 function CharacterCreator({ onSave, onBack }) {
   const { t } = useLanguage();
@@ -66,7 +67,7 @@ function CharacterCreator({ onSave, onBack }) {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > MAX_FILE_SIZE_BYTES) {
       window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: t.characterCreator.imageTooLarge, type: 'error' } }));
       return;
     }

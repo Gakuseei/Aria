@@ -511,7 +511,9 @@ Rules:
           const pWords = toWords(prev);
           if (pWords.length === 0) return false;
           const overlap = sWords.filter(w => pWords.includes(w)).length;
-          return overlap >= Math.min(sWords.length, pWords.length) * 0.7;
+          const shorter = Math.min(sWords.length, pWords.length);
+          const threshold = shorter <= 3 ? 0.5 : 0.7;
+          return overlap >= shorter * threshold;
         });
       })
       .slice(0, 3);

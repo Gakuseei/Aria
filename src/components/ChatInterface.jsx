@@ -774,7 +774,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   const triggerSuggestions = (updatedMessages, currentPassionLevel) => {
     if (!settings.smartSuggestionsEnabled) return;
-    const rollingAvoid = suggestionsHistoryRef.current.slice(-18);
+    const rollingAvoid = suggestionsHistoryRef.current.slice(-30);
     const suggestStart = Date.now();
     setIsGeneratingSuggestions(true);
     generateSuggestionsBackground(updatedMessages, character.name, character.description || '', userName, settings, (suggestions) => {
@@ -784,7 +784,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       console.log(`[API] Suggestions ready: ${result.length} in ${suggestTime}s`);
       setSmartSuggestions(result);
       if (result.length > 0) {
-        suggestionsHistoryRef.current = [...suggestionsHistoryRef.current, ...result].slice(-30);
+        suggestionsHistoryRef.current = [...suggestionsHistoryRef.current, ...result].slice(-50);
       }
       setMessages(prev => {
         let lastIdx = -1;

@@ -116,6 +116,7 @@ function LoadGame({ onLoad, onBack }) {
         minute: '2-digit',
       });
     } catch (e) {
+      console.error('[UI] Date formatting error:', e.message, 'input:', dateStr);
       return t.loadGame.unknownDate;
     }
   };

@@ -1225,6 +1225,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         toast.error(t.chat.imageGenTestFailed);
       }
     } catch (error) {
+      console.error('[Chat] Image gen test error:', error);
       toast.error(t.chat.testError);
     }
   };
@@ -1238,6 +1239,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         toast.error(t.chat.voiceTestFailed);
       }
     } catch (error) {
+      console.error('[Chat] Voice test error:', error);
       toast.error(t.chat.testError);
     }
   };

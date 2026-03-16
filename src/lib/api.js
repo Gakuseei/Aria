@@ -150,6 +150,16 @@ const PASSION_SCORING_TIMEOUT_MS = 30000;
 const MODEL_CAPS_CACHE = {};
 
 /**
+ * Invalidate cached model capabilities.
+ * Call when ollamaUrl or model changes to prevent stale context lengths.
+ */
+export function invalidateModelCapsCache() {
+  for (const key of Object.keys(MODEL_CAPS_CACHE)) {
+    delete MODEL_CAPS_CACHE[key];
+  }
+}
+
+/**
  * Context size presets (tokens). Users pick a tier in Settings.
  * Ollama offloads to CPU if VRAM is exceeded — safe to overshoot.
  */
@@ -856,6 +866,12 @@ export const sendMessage = async (
     };
   }
 
+  const MAX_INPUT_LENGTH = 4096;
+  if (userMessage.length > MAX_INPUT_LENGTH) {
+    console.warn(`[API] Input truncated: ${userMessage.length} → ${MAX_INPUT_LENGTH} chars`);
+    userMessage = userMessage.slice(0, MAX_INPUT_LENGTH);
+  }
+
   try {
     const settings = { ...(settingsOverride || await loadSettings()) };
 
@@ -1032,7 +1048,7 @@ export const sendMessage = async (
     }
 
     // Check for empty response
-    if (data.message?.content) {
+    if (data.message?.content && typeof data.message.content === 'string') {
       const stripped = data.message.content.replace(/[*\s\n_~`]/g, '');
       if (stripped.length < 3) {
         console.warn('[API] Empty/broken response — scheduling retry');

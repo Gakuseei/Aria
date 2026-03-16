@@ -1359,7 +1359,12 @@ ipcMain.handle('ollama-models', async (event, params = {}) => {
     }
 
     const data = await response.json();
-    const allModels = (data.models || []).map(m => m.name);
+    if (!Array.isArray(data.models)) {
+      return { success: true, models: [], totalCount: 0 };
+    }
+    const allModels = data.models
+      .filter(m => m && typeof m.name === 'string')
+      .map(m => m.name);
 
     // Same filter as api.js: block embedding/BERT models
     const chatModels = allModels.filter(name => {

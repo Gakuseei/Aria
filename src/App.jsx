@@ -11,7 +11,7 @@ import CharacterCreator from './components/CharacterCreator';
 import DebugConsole from './components/DebugConsole';
 import OledToggleButton from './components/OledToggleButton';
 import { testOllamaConnection, autoDetectAndSetModel } from './lib/api';
-import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from './lib/defaults';
+import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from './lib/defaults';
 import OllamaSetup from './components/tutorials/OllamaSetup';
 
 // App views
@@ -71,10 +71,10 @@ function App() {
     userName: 'User',
     userGender: 'male',
     imageGenEnabled: false,
-    imageGenUrl: 'http://127.0.0.1:7860',
+    imageGenUrl: IMAGE_GEN_DEFAULT_URL,
     imageGenTier: 'standard', // 'standard' (SDXL) or 'premium' (FLUX)
     voiceEnabled: false,
-    voiceUrl: 'http://127.0.0.1:5000',
+    voiceUrl: VOICE_DEFAULT_URL,
     voiceTier: 'standard', // 'standard' (Piper) or 'premium' (Zonos)
     contextSize: 'medium',
     fontSize: 'medium',
@@ -113,10 +113,10 @@ function App() {
             userName: loadedSettings.userName || 'User',
             userGender: loadedSettings.userGender || 'male',
             imageGenEnabled: loadedSettings.imageGenEnabled ?? false,
-            imageGenUrl: loadedSettings.imageGenUrl || 'http://127.0.0.1:7860',
+            imageGenUrl: loadedSettings.imageGenUrl || IMAGE_GEN_DEFAULT_URL,
             imageGenTier: loadedSettings.imageGenTier || 'standard',
             voiceEnabled: loadedSettings.voiceEnabled ?? false,
-            voiceUrl: loadedSettings.voiceUrl || 'http://127.0.0.1:5000',
+            voiceUrl: loadedSettings.voiceUrl || VOICE_DEFAULT_URL,
             voiceTier: loadedSettings.voiceTier || 'standard',
             contextSize: loadedSettings.contextSize || 'medium',
             fontSize: loadedSettings.fontSize || 'medium',

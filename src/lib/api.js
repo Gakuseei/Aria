@@ -66,7 +66,8 @@ export function cleanTranscriptArtifacts(text, charName = '') {
 
   // Strip character name prefixes (e.g. "**Sophia:**", "Alice:", "Sophia said:")
   if (charName) {
-    cleaned = cleaned.replace(new RegExp(`^\\*{0,2}${charName}\\*{0,2}\\s*:\\s*`, 'gim'), '');
+    const escapedName = charName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    cleaned = cleaned.replace(new RegExp(`^\\*{0,2}${escapedName}\\*{0,2}\\s*:\\s*`, 'gim'), '');
   }
 
   // Strip markdown headers (e.g. "### The Velvet Room's Signature Surprise")
@@ -84,7 +85,7 @@ export function cleanTranscriptArtifacts(text, charName = '') {
       cleaned.lastIndexOf('!'),
       cleaned.lastIndexOf('?')
     );
-    if (sentenceEnd > cleaned.length * 0.5) {
+    if (sentenceEnd > 0 && sentenceEnd > cleaned.length * 0.5) {
       console.warn(`[Cleaner] Trimmed incomplete sentence (cut at ${sentenceEnd}/${cleaned.length})`);
       cleaned = cleaned.substring(0, sentenceEnd + 1);
     }
@@ -273,9 +274,13 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
           isOllama: true,
           ollamaUrl: settings.ollamaUrl || OLLAMA_DEFAULT_URL,
           temperature: 0.1,
-          maxTokens: 16
+          maxTokens: 16,
+          num_ctx: modelCtx
         }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), PASSION_SCORING_TIMEOUT_MS))
+        new Promise((_, reject) => {
+          const t = setTimeout(() => reject(new Error('timeout')), PASSION_SCORING_TIMEOUT_MS);
+          if (typeof t === 'object' && t.unref) t.unref();
+        })
       ]);
       if (!result.success) return 0;
       content = result.content?.trim() || '';
@@ -487,7 +492,8 @@ Rules:
     isOllama: true,
     ollamaUrl,
     temperature: 0.8,
-    maxTokens: 120
+    maxTokens: 120,
+    num_ctx: numCtx
   };
 
   if (isElectron()) {
@@ -495,7 +501,7 @@ Rules:
 
     window.electronAPI.aiChat(chatParams)
       .then(result => {
-        if (currentRequestId !== suggestionRequestId) return;
+        if (currentRequestId !== suggestionRequestId) { suggestionAbortController = null; return; }
         const raw = result.success ? result.content || '' : '';
         const suggestions = parseSuggestions(raw);
         console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
@@ -536,7 +542,7 @@ Rules:
     fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: controller.signal })
       .then(res => res.json())
       .then(data => {
-        if (currentRequestId !== suggestionRequestId) return;
+        if (currentRequestId !== suggestionRequestId) { suggestionAbortController = null; return; }
         const raw = data.message?.content || '';
         const suggestions = parseSuggestions(raw);
         console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
@@ -718,6 +724,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
         }
       }
     } finally {
+      reader.cancel().catch(() => {});
       impersonateAbortController = null;
     }
   }
@@ -738,7 +745,7 @@ export async function impersonateUser(history, charName, userName, passionLevel,
   const lastCh = cleaned.slice(-1);
   if (lastCh && !['.', '!', '?', '"', '*', ')'].includes(lastCh)) {
     const end = Math.max(cleaned.lastIndexOf('*'), cleaned.lastIndexOf('"'), cleaned.lastIndexOf('.'), cleaned.lastIndexOf('!'), cleaned.lastIndexOf('?'));
-    if (end > cleaned.length * 0.3) cleaned = cleaned.substring(0, end + 1);
+    if (end > 0 && end > cleaned.length * 0.3) cleaned = cleaned.substring(0, end + 1);
   }
 
   // If response starts with charName — wrong character, trash it
@@ -945,7 +952,8 @@ export const sendMessage = async (
         isOllama: true,
         ollamaUrl,
         temperature: chatOptions.temperature,
-        maxTokens: numPredict
+        maxTokens: numPredict,
+        num_ctx: modelCtx
       });
 
       if (!result.success) throw new Error(result.error || 'Chat failed');
@@ -988,30 +996,34 @@ export const sendMessage = async (
         const decoder = new TextDecoder();
         let buffer = '';
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop();
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            try {
-              const chunk = JSON.parse(line);
-              if (chunk.message?.content) {
-                fullContent += chunk.message.content;
-                onToken(chunk.message.content);
-              }
-              if (chunk.done) finalChunk = chunk;
-            } catch { /* skip malformed lines */ }
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              try {
+                const chunk = JSON.parse(line);
+                if (chunk.message?.content) {
+                  fullContent += chunk.message.content;
+                  onToken(chunk.message.content);
+                }
+                if (chunk.done) finalChunk = chunk;
+              } catch { /* skip malformed lines */ }
+            }
           }
-        }
-        if (buffer.trim()) {
-          try {
-            const chunk = JSON.parse(buffer);
-            if (chunk.message?.content) { fullContent += chunk.message.content; onToken(chunk.message.content); }
-            if (chunk.done) finalChunk = chunk;
-          } catch { /* skip */ }
+          if (buffer.trim()) {
+            try {
+              const chunk = JSON.parse(buffer);
+              if (chunk.message?.content) { fullContent += chunk.message.content; onToken(chunk.message.content); }
+              if (chunk.done) finalChunk = chunk;
+            } catch { /* skip */ }
+          }
+        } finally {
+          reader.cancel().catch(() => {});
         }
         data = { message: { content: fullContent }, eval_count: finalChunk?.eval_count, prompt_eval_count: finalChunk?.prompt_eval_count };
       } else {
@@ -1046,9 +1058,14 @@ export const sendMessage = async (
               isOllama: true,
               ollamaUrl,
               temperature: 0.5,
-              maxTokens: numPredict
+              maxTokens: numPredict,
+              num_ctx: modelCtx
             }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 120000))
+            new Promise((_, reject) => {
+              const t = setTimeout(() => reject(new Error('timeout')), 120000);
+              // Prevent timeout from keeping Node alive if main promise wins
+              if (typeof t === 'object' && t.unref) t.unref();
+            })
           ]);
           if (retryResult.success && retryResult.content) {
             if (retryResult.content.replace(/[*\s\n_~`]/g, '').length >= 3) {
@@ -1066,7 +1083,7 @@ export const sendMessage = async (
             signal: retryCtrl.signal,
             body: JSON.stringify({
               model, messages: retryMessages, stream: false,
-              options: { temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx, ...chatOptions },
+              options: { ...chatOptions, temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx },
               stop: stopSequences
             })
           });

@@ -56,14 +56,17 @@ export async function generateImage(prompt, apiUrl = 'http://127.0.0.1:7860', im
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 600000);
 
-    const response = await fetch(`${apiUrl}/sdapi/v1/txt2img`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
+    let response;
+    try {
+      response = await fetch(`${apiUrl}/sdapi/v1/txt2img`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       throw new Error(`API returned ${response.status}: ${response.statusText}`);
@@ -247,7 +250,7 @@ function translateToEnglish(text) {
  * @param {Object|string} character - Character object or name for visual context
  * @returns {string} Coherent visual prompt for Stable Diffusion
  */
-export function cleanContextForImage(text, character = '') {
+function cleanContextForImage(text, character = '') {
   // Always start with character visual identity
   const characterTags = character ? getCharacterVisualTags(character) : '1girl, beautiful woman';
 

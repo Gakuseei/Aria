@@ -554,6 +554,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         return;
       }
 
+      // Warn if custom character has excessively large systemPrompt
+      if (character.isCustom && character.systemPrompt && character.systemPrompt.length > 8192) {
+        console.warn(`[ChatInterface] Custom character "${character.name}" systemPrompt is ${character.systemPrompt.length} chars (>8KB) — may cause slow responses`);
+        toast.error(t.chat?.promptTooLarge || `Character prompt is very large (${Math.round(character.systemPrompt.length / 1024)}KB) — this may cause slow responses`);
+      }
+
       // New chat = fresh passion level. Always 0.
       const newSessionId = generateSessionId();
       setSessionId(newSessionId);
@@ -815,6 +821,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         rafRef.current = null;
       };
       const handleToken = (token) => {
+        if (typeof token !== 'string') return;
         streamBufferRef.current += token;
         if (firstToken) {
           firstToken = false;
@@ -896,6 +903,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           : (t.chat?.sendError || error?.message || 'Failed to get response');
       toast.error(errorMsg);
     } finally {
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       setIsLoading(false);
       setIsStreaming(false);
       setStreamingContent('');
@@ -1121,6 +1129,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         rafRef.current = null;
       };
       const handleToken = (token) => {
+        if (typeof token !== 'string') return;
         streamBufferRef.current += token;
         if (firstToken) {
           firstToken = false;
@@ -1191,6 +1200,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       console.error('[ChatInterface] Regeneration error:', error);
       toast.error(t.chat?.sendError || 'Failed to regenerate response');
     } finally {
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       setIsLoading(false);
       setIsStreaming(false);
       setStreamingContent('');

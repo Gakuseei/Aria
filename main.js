@@ -14,6 +14,17 @@ const ollamaTool = require('./lib/tools/ollama');
 const piperTool = require('./lib/tools/piper');
 const zonosTool = require('./lib/tools/zonos');
 const stabilityTool = require('./lib/tools/stability');
+const { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } = require('./lib/defaults');
+
+function loadSettingsSync() {
+  try {
+    const settingsPath = path.join(app.getPath('userData'), 'settings.json');
+    if (fs.existsSync(settingsPath)) {
+      return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    }
+  } catch (_) {}
+  return {};
+}
 
 // Register tools
 toolManager.registerTool(ollamaTool);
@@ -1178,7 +1189,7 @@ ipcMain.handle('ai-chat', async (event, params) => {
   }
 
   try {
-    const url = ollamaUrl || 'http://127.0.0.1:11434';
+    const url = ollamaUrl || OLLAMA_DEFAULT_URL;
 
     // Build messages array with system prompt
     const ollamaMessages = [
@@ -1192,7 +1203,7 @@ ipcMain.handle('ai-chat', async (event, params) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: model || 'dolphin-llama3:latest',
+        model: model || loadSettingsSync().ollamaModel || DEFAULT_MODEL_NAME,
         messages: ollamaMessages,
         stream: false,
         options: {
@@ -1245,8 +1256,8 @@ ipcMain.handle('ai-creative-write', async (event, params) => {
       settings = JSON.parse(data);
     }
 
-    const ollamaUrl = settings.ollamaUrl || 'http://127.0.0.1:11434';
-    const ollamaModel = settings.ollamaModel || 'dolphin-llama3:latest';
+    const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
+    const ollamaModel = settings.ollamaModel || DEFAULT_MODEL_NAME;
 
 
     const finalSystemPrompt = systemPrompt || `You are an UNCENSORED, LIMITLESS creative writing engine. 
@@ -1344,7 +1355,7 @@ const streamAbortControllers = new Map();
 ipcMain.handle('ollama-chat-stream', async (event, params) => {
   const {
     requestId,
-    ollamaUrl = 'http://127.0.0.1:11434',
+    ollamaUrl = OLLAMA_DEFAULT_URL,
     model,
     messages,
     options = {},
@@ -1458,7 +1469,7 @@ ipcMain.handle('ollama-stream-abort', async (event, { requestId }) => {
  * Params: { ollamaUrl, model }
  */
 ipcMain.handle('ollama-unload', async (event, params) => {
-  const { ollamaUrl = 'http://127.0.0.1:11434', model } = params;
+  const { ollamaUrl = OLLAMA_DEFAULT_URL, model } = params;
   if (!model) return { success: false, error: 'Missing model name' };
 
   try {
@@ -1481,7 +1492,7 @@ ipcMain.handle('ollama-unload', async (event, params) => {
  * Params: { ollamaUrl }
  */
 ipcMain.handle('ollama-models', async (event, params = {}) => {
-  const { ollamaUrl = 'http://127.0.0.1:11434' } = params;
+  const { ollamaUrl = OLLAMA_DEFAULT_URL } = params;
 
   try {
     const response = await fetch(`${ollamaUrl}/api/tags`, {
@@ -1515,7 +1526,7 @@ ipcMain.handle('ollama-models', async (event, params = {}) => {
  * Params: { ollamaUrl, model }
  */
 ipcMain.handle('ollama-model-info', async (event, params) => {
-  const { ollamaUrl = 'http://127.0.0.1:11434', model } = params;
+  const { ollamaUrl = OLLAMA_DEFAULT_URL, model } = params;
   if (!model) return { success: false, error: 'Missing model name' };
 
   const defaults = { contextLength: 4096, parameterSize: '7B' };
@@ -1574,9 +1585,19 @@ ipcMain.handle('check-system-ready', async () => {
     errors: []
   };
 
+  let ollamaUrl = OLLAMA_DEFAULT_URL;
+  try {
+    const settingsPath = path.join(app.getPath('userData'), 'settings.json');
+    if (fs.existsSync(settingsPath)) {
+      const data = fs.readFileSync(settingsPath, 'utf-8');
+      const parsed = JSON.parse(data);
+      ollamaUrl = parsed.ollamaUrl || ollamaUrl;
+    }
+  } catch (_) {}
+
   try {
     // Check Ollama
-    const ollamaResponse = await fetch('http://127.0.0.1:11434/api/tags', {
+    const ollamaResponse = await fetch(`${ollamaUrl}/api/tags`, {
       method: 'GET',
       signal: AbortSignal.timeout(3000),
     });

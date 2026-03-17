@@ -1195,6 +1195,7 @@ Rules:
         options: {
           temperature: 0.9,
           num_predict: 2048,
+          num_ctx: 4096,
         },
         format: field ? undefined : 'json',
       }),
@@ -1223,11 +1224,14 @@ Rules:
       const character = JSON.parse(content);
       return { success: true, character };
     } catch (parseError) {
-      // Try to extract JSON from markdown code blocks
       const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (jsonMatch) {
-        const character = JSON.parse(jsonMatch[1].trim());
-        return { success: true, character };
+        try {
+          const character = JSON.parse(jsonMatch[1].trim());
+          return { success: true, character };
+        } catch (innerParseError) {
+          // Code block found but still not valid JSON
+        }
       }
       return { success: false, error: 'Failed to parse character JSON from model output', raw: content };
     }

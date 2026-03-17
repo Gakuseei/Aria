@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { fileToBase64, saveCustomCharacter } from '../lib/api';
+import { fileToBase64 } from '../lib/api';
 import { MAX_FILE_SIZE_BYTES } from '../lib/defaults';
 import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
@@ -72,7 +72,10 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       setGeneratedCharacter(result.character);
       setCurrentStep(3);
     } else {
-      setError(result.error || 'Generation failed');
+      const errorMsg = result.raw
+        ? `${result.error}\n\nRaw output:\n${result.raw.substring(0, 500)}`
+        : (result.error || 'Generation failed');
+      setError(errorMsg);
       setCurrentStep(1);
     }
   };
@@ -152,12 +155,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       isCustom: true,
     };
 
-    const saved = saveCustomCharacter(character);
-    if (saved) {
-      onSave(character);
-    } else {
-      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: t.characterCreator?.failedToSave || 'Failed to save character', type: 'error' } }));
-    }
+    onSave(character);
   };
 
   const RegenerateButton = ({ field }) => (
@@ -307,7 +305,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
             </div>
 
             {error && (
-              <div className="bg-red-900/20 border border-red-700/30 rounded-xl p-4 text-red-400 text-sm">
+              <div className="bg-red-900/20 border border-red-700/30 rounded-xl p-4 text-red-400 text-sm whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
                 {error}
               </div>
             )}
@@ -453,7 +451,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
                           : 'bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50 border border-transparent'
                       }`}
                     >
-                      {speed.charAt(0).toUpperCase() + speed.slice(1)}
+                      {t.characterCreator?.[`passionSpeed_${speed}`] || speed.charAt(0).toUpperCase() + speed.slice(1)}
                     </button>
                   ))}
                 </div>
@@ -482,8 +480,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
         )}
         {currentStep === 4 && generatedCharacter && (
           <div className="w-full max-w-2xl space-y-8">
-            {/* Hidden file input */}
-            <input
+<input
               ref={fileInputRef}
               type="file"
               accept="image/*"
@@ -492,8 +489,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
               aria-label="Upload character avatar"
             />
 
-            {/* Preview Card */}
-            <div className="relative aspect-[3/4] max-w-xs mx-auto bg-zinc-900/80 rounded-2xl overflow-hidden border-2 border-transparent hover:border-violet-500/50 transition-all">
+<div className="relative aspect-[3/4] max-w-xs mx-auto bg-zinc-900/80 rounded-2xl overflow-hidden border-2 border-transparent hover:border-violet-500/50 transition-all">
               <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
                 {avatarBase64 ? (
                   <img src={avatarBase64} alt={generatedCharacter.name} className="w-full h-full object-cover" />
@@ -525,8 +521,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
               </div>
             </div>
 
-            {/* Avatar Upload */}
-            <div className="flex justify-center gap-3">
+<div className="flex justify-center gap-3">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -558,13 +553,12 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
               )}
             </div>
 
-            {/* Navigation */}
-            <div className="flex justify-between pt-4 border-t border-zinc-800">
+<div className="flex justify-between pt-4 border-t border-zinc-800">
               <button
                 onClick={() => setCurrentStep(3)}
                 className="px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 hover:text-white hover:border-zinc-600 transition-all"
               >
-                {t.aiCharacterBuilder?.backToDescription || 'Back to Review'}
+                {t.aiCharacterBuilder?.backToReview || 'Back to Review'}
               </button>
               <button
                 onClick={handleSave}

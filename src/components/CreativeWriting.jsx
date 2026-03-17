@@ -125,7 +125,8 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   };
 
   const handleGenerate = async () => {
-    if (!prompt.trim() || isLoading || isStreaming) return;
+    const model = parentSettings?.ollamaModel || currentModel;
+    if (!prompt.trim() || isLoading || isStreaming || !model) return;
     setIsLoading(true);
     setError(null);
 
@@ -160,7 +161,6 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     try {
       const language = localStorage.getItem('language') || 'en';
       const ollamaUrl = parentSettings?.ollamaUrl || OLLAMA_DEFAULT_URL;
-      const model = parentSettings?.ollamaModel || currentModel;
       const numCtx = await getModelCtx(ollamaUrl, model, parentSettings?.contextSize || 'medium');
 
       const result = await generateStory({
@@ -195,7 +195,8 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   };
 
   const handleContinue = async () => {
-    if (!story || isLoading || isStreaming) return;
+    const model = parentSettings?.ollamaModel || currentModel;
+    if (!story || isLoading || isStreaming || !model) return;
     setIsLoading(true);
     setError(null);
 
@@ -230,7 +231,6 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     try {
       const language = localStorage.getItem('language') || 'en';
       const ollamaUrl = parentSettings?.ollamaUrl || OLLAMA_DEFAULT_URL;
-      const model = parentSettings?.ollamaModel || currentModel;
       const numCtx = await getModelCtx(ollamaUrl, model, parentSettings?.contextSize || 'medium');
 
       const result = await continueStory({
@@ -367,7 +367,6 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     });
   }
 
-  const displayText = isStreaming ? streamingContent : story;
   const hasStory = !!story;
 
   return (
@@ -591,7 +590,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
                 {t.creative.authorNote}
               </button>
               <button
-                onClick={() => navigator.clipboard.writeText(story)}
+                onClick={() => { navigator.clipboard.writeText(story).catch(() => {}); }}
                 className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 transition-colors"
                 title={t.creative.copyToClipboard}
               >

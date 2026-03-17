@@ -141,7 +141,7 @@ export async function generateStory({ prompt, genre = null, authorNote = null, o
       const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
         if (rid === requestId) onToken(token);
       });
-      const abortTimer = setTimeout(() => window.electronAPI.ollamaStreamAbort(requestId), 180000);
+      const abortTimer = setTimeout(() => window.electronAPI.ollamaStreamAbort(requestId), 300000);
 
       let result;
       try {
@@ -203,15 +203,8 @@ export async function continueStory({ storyText, genre = null, authorNote = null
   }
 
   const storyTokens = estimateTokens(storyText);
-  let storySummary = summary;
-
-  // Auto-generate summary if story is long and no cached summary
-  if (storyTokens > 2000 && !storySummary) {
-    const summaryResult = await generateSummary({ storyText, ollamaUrl, model });
-    if (summaryResult.success) {
-      storySummary = summaryResult.summary;
-    }
-  }
+  const storySummary = summary || null;
+  const needsSummary = storyTokens > 2000 && !storySummary;
 
   // Last ~1200 tokens (~4200 chars) for direct context
   const contextChars = Math.min(storyText.length, 4200);
@@ -243,7 +236,7 @@ export async function continueStory({ storyText, genre = null, authorNote = null
       const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
         if (rid === requestId) onToken(token);
       });
-      const abortTimer = setTimeout(() => window.electronAPI.ollamaStreamAbort(requestId), 180000);
+      const abortTimer = setTimeout(() => window.electronAPI.ollamaStreamAbort(requestId), 300000);
 
       let result;
       try {
@@ -260,7 +253,14 @@ export async function continueStory({ storyText, genre = null, authorNote = null
       }
       if (result?.aborted) return { success: false, error: 'Generation aborted', requestId };
       if (!result?.success) return { success: false, error: result?.error || 'Continuation failed', requestId };
-      return { success: true, content: (result.content || '').trim(), summary: storySummary, requestId };
+      const content = (result.content || '').trim();
+      // Generate summary AFTER continuation (non-blocking for user, they already see the story)
+      let finalSummary = storySummary;
+      if (needsSummary) {
+        const sumResult = await generateSummary({ storyText: storyText + '\n\n' + content, ollamaUrl, model });
+        if (sumResult.success) finalSummary = sumResult.summary;
+      }
+      return { success: true, content, summary: finalSummary, requestId };
     } else if (window.electronAPI?.aiChat) {
       const result = await window.electronAPI.aiChat({
         messages: [{ role: 'user', content: userMessage }],
@@ -272,7 +272,13 @@ export async function continueStory({ storyText, genre = null, authorNote = null
         maxTokens: numPredict
       });
       if (!result.success) return { success: false, error: result.error || 'Continuation failed', requestId: null };
-      return { success: true, content: (result.content || '').trim(), summary: storySummary, requestId: null };
+      const content = (result.content || '').trim();
+      let finalSummary = storySummary;
+      if (needsSummary) {
+        const sumResult = await generateSummary({ storyText: storyText + '\n\n' + content, ollamaUrl, model });
+        if (sumResult.success) finalSummary = sumResult.summary;
+      }
+      return { success: true, content, summary: finalSummary, requestId: null };
     }
 
     return { success: false, error: 'Electron API not available' };

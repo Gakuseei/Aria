@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 /**
  * CustomDropdown - OLED-Friendly Custom Select Component
@@ -9,6 +10,7 @@ import { ChevronDown } from 'lucide-react';
  * This guarantees the menu floats above ALL content without clipping
  */
 export default function CustomDropdown({ value, onChange, options, className = '', disabled = false }) {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
   const buttonRef = useRef(null);
@@ -43,7 +45,7 @@ export default function CustomDropdown({ value, onChange, options, className = '
   }, [isOpen]);
 
   const selectedOption = options.find(opt => opt.value === value);
-  const selectedLabel = selectedOption ? selectedOption.label : 'Select...';
+  const selectedLabel = selectedOption ? selectedOption.label : (t.common?.select || 'Select...');
 
   const handleSelect = (optionValue) => {
     onChange({ target: { value: optionValue } });

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Moon, Sun } from 'lucide-react'
+import { useLanguage } from '../context/LanguageContext'
 
 export default function OledToggleButton({ oledMode, onToggle, currentView }) {
+  const { t } = useLanguage()
   const [isVisible, setIsVisible] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const [isPressed, setIsPressed] = useState(false)
@@ -45,7 +47,7 @@ export default function OledToggleButton({ oledMode, onToggle, currentView }) {
         ${isPressed ? 'scale-90' : ''}
         overflow-hidden
       `}
-      title={oledMode ? 'Normal Mode' : 'OLED Mode'}
+      title={oledMode ? (t.common?.normalMode || 'Normal Mode') : (t.settings?.oledMode || 'OLED Mode')}
     >
       {/* Subtle gradient overlay */}
       <div className={`

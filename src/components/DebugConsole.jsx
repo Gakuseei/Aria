@@ -1,6 +1,6 @@
 // ARIA v1.0 BLOCK 7.0 - Aria Monitor (Rose Noir Glass Theme)
 import React, { useState, useEffect } from 'react';
-import { X, Activity, FileText, Gauge, HardDrive, AlertTriangle, Copy, Trash2, CheckCircle2, Download } from 'lucide-react';
+import { X, Activity, FileText, Gauge, HardDrive, AlertTriangle, Copy, Trash2, CheckCircle2, Download, Database } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import toast, { Toaster } from 'react-hot-toast';
 import downloadBlob from '../utils/downloadBlob';
@@ -226,7 +226,7 @@ Message: ${error.message}
 ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}`;
 
     navigator.clipboard.writeText(errorText).then(() => {
-      toast.success('Copied!', {
+      toast.success(t.debugConsole?.copied || 'Copied!', {
         duration: 1500,
         style: {
           background: '#18181b',
@@ -236,7 +236,7 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}`;
       });
     }).catch((err) => {
       console.error('[UI] Clipboard copy failed:', err);
-      toast.error('Failed to copy', { duration: 1500 });
+      toast.error(t.debugConsole?.copyFailed || 'Failed to copy', { duration: 1500 });
     });
   };
 
@@ -261,7 +261,7 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}
 `).join('\n' + '='.repeat(80) + '\n')}`;
 
     navigator.clipboard.writeText(allErrorsText).then(() => {
-      toast.success('Copied!', {
+      toast.success(t.debugConsole?.copied || 'Copied!', {
         duration: 1500,
         style: {
           background: '#18181b',
@@ -271,7 +271,7 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}
       });
     }).catch((err) => {
       console.error('[UI] Clipboard copy all failed:', err);
-      toast.error('Failed to copy', { duration: 1500 });
+      toast.error(t.debugConsole?.copyFailed || 'Failed to copy', { duration: 1500 });
     });
   };
 
@@ -302,7 +302,7 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}
 
   const exportErrorLog = () => {
     if (errors.length === 0) {
-      toast.error('No errors to export', { duration: 1500 });
+      toast.error(t.debugConsole?.noErrorsToExport || 'No errors to export', { duration: 1500 });
       return;
     }
 
@@ -327,7 +327,7 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}
     const blob = new Blob([logContent], { type: 'text/plain' });
     downloadBlob(blob, `aria-errors-${Date.now()}.log`);
 
-    toast.success('Log exported!', {
+    toast.success(t.debugConsole?.logExported || 'Log exported!', {
       duration: 1500,
       style: {
         background: '#18181b',
@@ -656,27 +656,27 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}
                               : 'text-zinc-500 hover:text-zinc-300'
                           }`}
                         >
-                          All
+                          {t.debugConsole?.filterAll || 'All'}
                         </button>
                         <button
                           onClick={() => setSeverityFilter('error')}
                           className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                            severityFilter === 'error' 
-                              ? 'bg-rose-500/20 text-rose-300' 
+                            severityFilter === 'error'
+                              ? 'bg-rose-500/20 text-rose-300'
                               : 'text-zinc-500 hover:text-rose-400'
                           }`}
                         >
-                          Errors
+                          {t.debugConsole?.filterErrors || 'Errors'}
                         </button>
                         <button
                           onClick={() => setSeverityFilter('warning')}
                           className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                            severityFilter === 'warning' 
-                              ? 'bg-amber-500/20 text-amber-300' 
+                            severityFilter === 'warning'
+                              ? 'bg-amber-500/20 text-amber-300'
                               : 'text-zinc-500 hover:text-amber-400'
                           }`}
                         >
-                          Warnings
+                          {t.debugConsole?.filterWarnings || 'Warnings'}
                         </button>
                       </div>
                     </div>
@@ -687,7 +687,7 @@ ${error.stack ? `\nStack Trace:\n${error.stack}` : ''}
                         className="px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 border-2 border-transparent hover:border-purple-500/50"
                       >
                         <Download size={14} />
-                        Export .log
+                        {t.debugConsole?.exportLog || 'Export .log'}
                       </button>
                       <button
                         onClick={copyAllErrors}

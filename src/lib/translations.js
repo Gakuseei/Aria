@@ -187,7 +187,11 @@ export const translations = {
       failedToExport: "Failed to export chat. Check disk space and try again.",
       timeout: "Request timed out. Ollama may be busy — try again or restart Ollama.",
       sendError: "No response from Ollama. Check that it is running and try again.",
-      noOllamaResponse: "Model returned empty response (think-mode). Retried automatically — please send again."
+      noOllamaResponse: "Model returned empty response (think-mode). Retried automatically — please send again.",
+      copyFailed: "Copy failed",
+      resetPassion: "Reset Passion",
+      imageGeneration: "Image Generation",
+      promptTooLarge: "Character prompt is very large — this may cause slow responses"
     },
     commands: {
       helpTitle: "── Commands ──",
@@ -386,7 +390,12 @@ export const translations = {
       continue: "Continue",
       yes: "Yes",
       no: "No",
-      ok: "OK"
+      ok: "OK",
+      minimize: "Minimize",
+      maximize: "Maximize",
+      close: "Close",
+      select: "Select...",
+      normalMode: "Normal Mode"
     },
     characterSelect: {
       selectCharacter: "Select Character",
@@ -410,7 +419,9 @@ export const translations = {
       createWithAI: 'Create with AI',
       aiPowered: 'AI-Powered',
       filterNsfw: 'NSFW',
-      filterSfw: 'SFW'
+      filterSfw: 'SFW',
+      importedCharacter: "Imported Character",
+      importedDescription: "An imported character"
     },
     aiCharacterBuilder: {
       title: 'AI Character Builder',
@@ -727,7 +738,14 @@ export const translations = {
       allErrorsCopied: "All errors copied to clipboard",
       errorsCleared: "All errors cleared",
       allStable: "All Stable",
-      noErrorsSinceStart: "No errors detected since app start"
+      noErrorsSinceStart: "No errors detected since app start",
+      copyFailed: "Failed to copy",
+      noErrorsToExport: "No errors to export",
+      logExported: "Log exported!",
+      filterErrors: "Errors",
+      filterWarnings: "Warnings",
+      exportLog: "Export .log",
+      copied: "Copied!"
     },
     characters: {
       alice_maid: {
@@ -990,7 +1008,11 @@ export const translations = {
       failedToExport: "Chat konnte nicht exportiert werden. Prüfe den Speicherplatz und versuche es erneut.",
       timeout: "Zeitüberschreitung. Ollama ist möglicherweise beschäftigt — erneut versuchen oder Ollama neustarten.",
       sendError: "Keine Antwort von Ollama. Prüfe, ob Ollama läuft, und versuche es erneut.",
-      noOllamaResponse: "Modell hat leere Antwort erzeugt (Think-Modus). Automatisch erneut versucht — bitte erneut senden."
+      noOllamaResponse: "Modell hat leere Antwort erzeugt (Think-Modus). Automatisch erneut versucht — bitte erneut senden.",
+      copyFailed: "Kopieren fehlgeschlagen",
+      resetPassion: "Leidenschaft zurücksetzen",
+      imageGeneration: "Bilderzeugung",
+      promptTooLarge: "Charakter-Prompt ist sehr groß — dies kann zu langsamen Antworten führen"
     },
     commands: {
       helpTitle: "── Befehle ──",
@@ -1187,7 +1209,12 @@ export const translations = {
       continue: "Weiter",
       yes: "Ja",
       no: "Nein",
-      ok: "OK"
+      ok: "OK",
+      minimize: "Minimieren",
+      maximize: "Maximieren",
+      close: "Schließen",
+      select: "Auswählen...",
+      normalMode: "Normaler Modus"
     },
     characterSelect: {
       selectCharacter: "Charakter auswählen",
@@ -1211,7 +1238,9 @@ export const translations = {
       createWithAI: 'Mit KI erstellen',
       aiPowered: 'KI-gestützt',
       filterNsfw: 'NSFW',
-      filterSfw: 'SFW'
+      filterSfw: 'SFW',
+      importedCharacter: "Importierter Charakter",
+      importedDescription: "Ein importierter Charakter"
     },
     aiCharacterBuilder: {
       title: 'KI-Charakter-Builder',
@@ -1528,7 +1557,14 @@ export const translations = {
       allErrorsCopied: "Alle Fehler in Zwischenablage kopiert",
       errorsCleared: "Alle Fehler gelöscht",
       allStable: "Alles stabil",
-      noErrorsSinceStart: "Keine Fehler seit App-Start erkannt"
+      noErrorsSinceStart: "Keine Fehler seit App-Start erkannt",
+      copyFailed: "Kopieren fehlgeschlagen",
+      noErrorsToExport: "Keine Fehler zum Exportieren",
+      logExported: "Log exportiert!",
+      filterErrors: "Fehler",
+      filterWarnings: "Warnungen",
+      exportLog: "Export .log",
+      copied: "Kopiert!"
     },
     characters: {
       alice_maid: {
@@ -1791,7 +1827,11 @@ export const translations = {
       failedToExport: "Error al exportar chat",
       timeout: "Tiempo de espera agotado. Ollama puede estar sobrecargado — inténtalo de nuevo.",
       sendError: "Error al obtener respuesta. Por favor, inténtalo de nuevo.",
-      noOllamaResponse: "El modelo devolvió respuesta vacía (modo think). Reintentado automáticamente — por favor envía de nuevo."
+      noOllamaResponse: "El modelo devolvió respuesta vacía (modo think). Reintentado automáticamente — por favor envía de nuevo.",
+      copyFailed: "Error al copiar",
+      resetPassion: "Restablecer Pasión",
+      imageGeneration: "Generación de Imagen",
+      promptTooLarge: "El prompt del personaje es muy grande — puede causar respuestas lentas"
     },
     commands: {
       helpTitle: "── Comandos ──",
@@ -1988,7 +2028,12 @@ export const translations = {
       continue: "Continuar",
       yes: "Sí",
       no: "No",
-      ok: "OK"
+      ok: "OK",
+      minimize: "Minimizar",
+      maximize: "Maximizar",
+      close: "Cerrar",
+      select: "Seleccionar...",
+      normalMode: "Modo Normal"
     },
     characterSelect: {
       selectCharacter: "Seleccionar Personaje",
@@ -2012,7 +2057,9 @@ export const translations = {
       createWithAI: 'Crear con IA',
       aiPowered: 'Impulsado por IA',
       filterNsfw: 'NSFW',
-      filterSfw: 'SFW'
+      filterSfw: 'SFW',
+      importedCharacter: "Personaje Importado",
+      importedDescription: "Un personaje importado"
     },
     aiCharacterBuilder: {
       title: 'Constructor de Personaje IA',
@@ -2329,7 +2376,14 @@ export const translations = {
       allErrorsCopied: "Todos los errores copiados al portapapeles",
       errorsCleared: "Todos los errores borrados",
       allStable: "Todo Estable",
-      noErrorsSinceStart: "No se detectaron errores desde el inicio de la app"
+      noErrorsSinceStart: "No se detectaron errores desde el inicio de la app",
+      copyFailed: "Error al copiar",
+      noErrorsToExport: "No hay errores para exportar",
+      logExported: "¡Log exportado!",
+      filterErrors: "Errores",
+      filterWarnings: "Advertencias",
+      exportLog: "Exportar .log",
+      copied: "¡Copiado!"
     },
     characters: {
       alice_maid: {
@@ -2592,7 +2646,11 @@ export const translations = {
       failedToExport: "导出失败",
       timeout: "请求超时。Ollama 可能过载 — 请重试。",
       sendError: "获取回复失败，请重试。",
-      noOllamaResponse: "模型返回空响应（思考模式）。已自动重试 — 请再次发送。"
+      noOllamaResponse: "模型返回空响应（思考模式）。已自动重试 — 请再次发送。",
+      copyFailed: "复制失败",
+      resetPassion: "重置激情",
+      imageGeneration: "图像生成",
+      promptTooLarge: "角色提示词非常大 — 可能导致响应缓慢"
     },
     commands: {
       helpTitle: "── 命令 ──",
@@ -2789,7 +2847,12 @@ export const translations = {
       continue: "继续",
       yes: "是",
       no: "否",
-      ok: "确定"
+      ok: "确定",
+      minimize: "最小化",
+      maximize: "最大化",
+      close: "关闭",
+      select: "选择...",
+      normalMode: "正常模式"
     },
     characterSelect: {
       selectCharacter: "选择角色",
@@ -2813,7 +2876,9 @@ export const translations = {
       createWithAI: '用AI创建',
       aiPowered: 'AI驱动',
       filterNsfw: 'NSFW',
-      filterSfw: 'SFW'
+      filterSfw: 'SFW',
+      importedCharacter: "导入的角色",
+      importedDescription: "一个导入的角色"
     },
     aiCharacterBuilder: {
       title: 'AI角色构建器',
@@ -3130,7 +3195,14 @@ export const translations = {
       allErrorsCopied: "所有错误已复制到剪贴板",
       errorsCleared: "所有错误已清除",
       allStable: "一切稳定",
-      noErrorsSinceStart: "自应用启动以来未检测到错误"
+      noErrorsSinceStart: "自应用启动以来未检测到错误",
+      copyFailed: "复制失败",
+      noErrorsToExport: "没有错误可导出",
+      logExported: "日志已导出！",
+      filterErrors: "错误",
+      filterWarnings: "警告",
+      exportLog: "导出 .log",
+      copied: "已复制！"
     },
     characters: {
       alice_maid: {
@@ -3393,7 +3465,11 @@ export const translations = {
       failedToExport: "Échec de l'exportation",
       timeout: "Délai dépassé. Ollama est peut-être surchargé — réessayez.",
       sendError: "Échec de la réponse. Veuillez réessayer.",
-      noOllamaResponse: "Le modèle a renvoyé une réponse vide (mode think). Réessayé automatiquement — veuillez renvoyer."
+      noOllamaResponse: "Le modèle a renvoyé une réponse vide (mode think). Réessayé automatiquement — veuillez renvoyer.",
+      copyFailed: "Échec de la copie",
+      resetPassion: "Réinitialiser la Passion",
+      imageGeneration: "Génération d'Image",
+      promptTooLarge: "Le prompt du personnage est très volumineux — cela peut ralentir les réponses"
     },
     commands: {
       helpTitle: "── Commandes ──",
@@ -3590,7 +3666,12 @@ export const translations = {
       continue: "Continuer",
       yes: "Oui",
       no: "Non",
-      ok: "OK"
+      ok: "OK",
+      minimize: "Réduire",
+      maximize: "Agrandir",
+      close: "Fermer",
+      select: "Sélectionner...",
+      normalMode: "Mode Normal"
     },
     characterSelect: {
       selectCharacter: "Choisir un Personnage",
@@ -3614,7 +3695,9 @@ export const translations = {
       createWithAI: 'Créer avec l\'IA',
       aiPowered: 'Propulsé par l\'IA',
       filterNsfw: 'NSFW',
-      filterSfw: 'SFW'
+      filterSfw: 'SFW',
+      importedCharacter: "Personnage Importé",
+      importedDescription: "Un personnage importé"
     },
     aiCharacterBuilder: {
       title: 'Créateur de Personnage IA',
@@ -3931,7 +4014,14 @@ export const translations = {
       allErrorsCopied: "Toutes les erreurs copiées dans le presse-papiers",
       errorsCleared: "Toutes les erreurs effacées",
       allStable: "Tout Stable",
-      noErrorsSinceStart: "Aucune erreur détectée depuis le démarrage de l'app"
+      noErrorsSinceStart: "Aucune erreur détectée depuis le démarrage de l'app",
+      copyFailed: "Échec de la copie",
+      noErrorsToExport: "Aucune erreur à exporter",
+      logExported: "Log exporté !",
+      filterErrors: "Erreurs",
+      filterWarnings: "Avertissements",
+      exportLog: "Exporter .log",
+      copied: "Copié !"
     },
     characters: {
       alice_maid: {
@@ -4194,7 +4284,11 @@ export const translations = {
       failedToExport: "Esportazione fallita",
       timeout: "Timeout della richiesta. Ollama potrebbe essere sovraccarico — riprova.",
       sendError: "Impossibile ottenere risposta. Per favore riprova.",
-      noOllamaResponse: "Il modello ha restituito risposta vuota (modalità think). Riprovato automaticamente — invia di nuovo."
+      noOllamaResponse: "Il modello ha restituito risposta vuota (modalità think). Riprovato automaticamente — invia di nuovo.",
+      copyFailed: "Copia fallita",
+      resetPassion: "Reset Passione",
+      imageGeneration: "Generazione Immagine",
+      promptTooLarge: "Il prompt del personaggio è molto grande — potrebbe causare risposte lente"
     },
     commands: {
       helpTitle: "── Comandi ──",
@@ -4391,7 +4485,12 @@ export const translations = {
       continue: "Continua",
       yes: "Sì",
       no: "No",
-      ok: "OK"
+      ok: "OK",
+      minimize: "Riduci",
+      maximize: "Ingrandisci",
+      close: "Chiudi",
+      select: "Seleziona...",
+      normalMode: "Modo Normale"
     },
     characterSelect: {
       selectCharacter: "Seleziona Personaggio",
@@ -4415,7 +4514,9 @@ export const translations = {
       createWithAI: 'Crea con IA',
       aiPowered: 'Basato su IA',
       filterNsfw: 'NSFW',
-      filterSfw: 'SFW'
+      filterSfw: 'SFW',
+      importedCharacter: "Personaggio Importato",
+      importedDescription: "Un personaggio importato"
     },
     aiCharacterBuilder: {
       title: 'Costruttore Personaggio IA',
@@ -4732,7 +4833,14 @@ export const translations = {
       allErrorsCopied: "Tutti gli errori copiati negli appunti",
       errorsCleared: "Tutti gli errori cancellati",
       allStable: "Tutto Stabile",
-      noErrorsSinceStart: "Nessun errore rilevato dall'avvio dell'app"
+      noErrorsSinceStart: "Nessun errore rilevato dall'avvio dell'app",
+      copyFailed: "Copia fallita",
+      noErrorsToExport: "Nessun errore da esportare",
+      logExported: "Log esportato!",
+      filterErrors: "Errori",
+      filterWarnings: "Avvertenze",
+      exportLog: "Esporta .log",
+      copied: "Copiato!"
     },
     characters: {
       alice_maid: {
@@ -4995,7 +5103,11 @@ export const translations = {
       failedToExport: "Falha ao exportar",
       timeout: "Tempo esgotado. Ollama pode estar sobrecarregado — tente novamente.",
       sendError: "Falha ao obter resposta. Por favor, tente novamente.",
-      noOllamaResponse: "Modelo retornou resposta vazia (modo think). Tentado novamente automaticamente — envie novamente."
+      noOllamaResponse: "Modelo retornou resposta vazia (modo think). Tentado novamente automaticamente — envie novamente.",
+      copyFailed: "Falha ao copiar",
+      resetPassion: "Resetar Paixão",
+      imageGeneration: "Geração de Imagem",
+      promptTooLarge: "O prompt do personagem é muito grande — pode causar respostas lentas"
     },
     commands: {
       helpTitle: "── Comandos ──",
@@ -5192,7 +5304,12 @@ export const translations = {
       continue: "Continuar",
       yes: "Sim",
       no: "Não",
-      ok: "OK"
+      ok: "OK",
+      minimize: "Minimizar",
+      maximize: "Maximizar",
+      close: "Fechar",
+      select: "Selecionar...",
+      normalMode: "Modo Normal"
     },
     characterSelect: {
       selectCharacter: "Selecionar Personagem",
@@ -5216,7 +5333,9 @@ export const translations = {
       createWithAI: 'Criar com IA',
       aiPowered: 'Alimentado por IA',
       filterNsfw: 'NSFW',
-      filterSfw: 'SFW'
+      filterSfw: 'SFW',
+      importedCharacter: "Personagem Importado",
+      importedDescription: "Um personagem importado"
     },
     aiCharacterBuilder: {
       title: 'Construtor de Personagem IA',
@@ -5533,7 +5652,14 @@ export const translations = {
       allErrorsCopied: "Todos os erros copiados para a área de transferência",
       errorsCleared: "Todos os erros limpos",
       allStable: "Tudo Estável",
-      noErrorsSinceStart: "Nenhum erro detectado desde o início do app"
+      noErrorsSinceStart: "Nenhum erro detectado desde o início do app",
+      copyFailed: "Falha ao copiar",
+      noErrorsToExport: "Nenhum erro para exportar",
+      logExported: "Log exportado!",
+      filterErrors: "Erros",
+      filterWarnings: "Avisos",
+      exportLog: "Exportar .log",
+      copied: "Copiado!"
     },
     characters: {
       alice_maid: {
@@ -5796,7 +5922,11 @@ export const translations = {
       failedToExport: "Ошибка экспорта",
       timeout: "Превышено время ожидания. Ollama перегружен — попробуйте снова.",
       sendError: "Не удалось получить ответ. Попробуйте снова.",
-      noOllamaResponse: "Модель вернула пустой ответ (режим думания). Автоматически повторено — отправьте снова."
+      noOllamaResponse: "Модель вернула пустой ответ (режим думания). Автоматически повторено — отправьте снова.",
+      copyFailed: "Ошибка копирования",
+      resetPassion: "Сбросить Страсть",
+      imageGeneration: "Генерация Изображений",
+      promptTooLarge: "Промпт персонажа очень большой — это может вызвать медленные ответы"
     },
     commands: {
       helpTitle: "── Команды ──",
@@ -5993,7 +6123,12 @@ export const translations = {
       continue: "Далее",
       yes: "Да",
       no: "Нет",
-      ok: "ОК"
+      ok: "ОК",
+      minimize: "Свернуть",
+      maximize: "Развернуть",
+      close: "Закрыть",
+      select: "Выбрать...",
+      normalMode: "Обычный режим"
     },
     characterSelect: {
       selectCharacter: "Выбор Персонажа",
@@ -6017,7 +6152,9 @@ export const translations = {
       createWithAI: 'Создать с ИИ',
       aiPowered: 'На базе ИИ',
       filterNsfw: 'NSFW',
-      filterSfw: 'SFW'
+      filterSfw: 'SFW',
+      importedCharacter: "Импортированный Персонаж",
+      importedDescription: "Импортированный персонаж"
     },
     aiCharacterBuilder: {
       title: 'Конструктор персонажей ИИ',
@@ -6334,7 +6471,14 @@ export const translations = {
       allErrorsCopied: "Все ошибки скопированы в буфер обмена",
       errorsCleared: "Все ошибки очищены",
       allStable: "Все Стабильно",
-      noErrorsSinceStart: "С момента запуска приложения ошибок не обнаружено"
+      noErrorsSinceStart: "С момента запуска приложения ошибок не обнаружено",
+      copyFailed: "Ошибка копирования",
+      noErrorsToExport: "Нет ошибок для экспорта",
+      logExported: "Лог экспортирован!",
+      filterErrors: "Ошибки",
+      filterWarnings: "Предупреждения",
+      exportLog: "Экспорт .log",
+      copied: "Скопировано!"
     },
     characters: {
       alice_maid: {
@@ -6597,7 +6741,11 @@ export const translations = {
       failedToExport: "失敗",
       timeout: "タイムアウト。Ollamaが過負荷かもしれません — 再試行してください。",
       sendError: "応答の取得に失敗しました。再試行してください。",
-      noOllamaResponse: "モデルが空の応答を返しました（思考モード）。自動再試行済み — 再送信してください。"
+      noOllamaResponse: "モデルが空の応答を返しました（思考モード）。自動再試行済み — 再送信してください。",
+      copyFailed: "コピー失敗",
+      resetPassion: "情熱リセット",
+      imageGeneration: "画像生成",
+      promptTooLarge: "キャラクタープロンプトが非常に大きいです — 応答が遅くなる可能性があります"
     },
     commands: {
       helpTitle: "── コマンド ──",
@@ -6794,7 +6942,12 @@ export const translations = {
       continue: "続く",
       yes: "はい",
       no: "いいえ",
-      ok: "OK"
+      ok: "OK",
+      minimize: "最小化",
+      maximize: "最大化",
+      close: "閉じる",
+      select: "選択...",
+      normalMode: "通常モード"
     },
     characterSelect: {
       selectCharacter: "選択",
@@ -6818,7 +6971,9 @@ export const translations = {
       createWithAI: 'AIで作成',
       aiPowered: 'AI搭載',
       filterNsfw: 'NSFW',
-      filterSfw: 'SFW'
+      filterSfw: 'SFW',
+      importedCharacter: "インポートされたキャラクター",
+      importedDescription: "インポートされたキャラクター"
     },
     aiCharacterBuilder: {
       title: 'AIキャラクタービルダー',
@@ -7135,7 +7290,14 @@ export const translations = {
       allErrorsCopied: "すべてのエラーをクリップボードにコピーしました",
       errorsCleared: "すべてのエラーをクリアしました",
       allStable: "すべて安定",
-      noErrorsSinceStart: "アプリ起動以降エラーは検出されていません"
+      noErrorsSinceStart: "アプリ起動以降エラーは検出されていません",
+      copyFailed: "コピー失敗",
+      noErrorsToExport: "エクスポートするエラーがありません",
+      logExported: "ログをエクスポートしました！",
+      filterErrors: "エラー",
+      filterWarnings: "警告",
+      exportLog: "エクスポート .log",
+      copied: "コピーしました！"
     },
     characters: {
       alice_maid: {
@@ -7398,7 +7560,11 @@ export const translations = {
       failedToExport: "실패",
       timeout: "요청 시간 초과. Ollama가 과부하 상태일 수 있습니다 — 다시 시도하세요.",
       sendError: "응답을 가져오지 못했습니다. 다시 시도해 주세요.",
-      noOllamaResponse: "모델이 빈 응답을 반환했습니다(생각 모드). 자동으로 재시도됨 — 다시 보내주세요."
+      noOllamaResponse: "모델이 빈 응답을 반환했습니다(생각 모드). 자동으로 재시도됨 — 다시 보내주세요.",
+      copyFailed: "복사 실패",
+      resetPassion: "열정 초기화",
+      imageGeneration: "이미지 생성",
+      promptTooLarge: "캐릭터 프롬프트가 매우 큽니다 — 응답이 느려질 수 있습니다"
     },
     commands: {
       helpTitle: "── 명령어 ──",
@@ -7595,7 +7761,12 @@ export const translations = {
       continue: "계속",
       yes: "예",
       no: "아니오",
-      ok: "확인"
+      ok: "확인",
+      minimize: "최소화",
+      maximize: "최대화",
+      close: "닫기",
+      select: "선택...",
+      normalMode: "일반 모드"
     },
     characterSelect: {
       selectCharacter: "선택",
@@ -7619,7 +7790,9 @@ export const translations = {
       createWithAI: 'AI로 생성',
       aiPowered: 'AI 기반',
       filterNsfw: 'NSFW',
-      filterSfw: 'SFW'
+      filterSfw: 'SFW',
+      importedCharacter: "가져온 캐릭터",
+      importedDescription: "가져온 캐릭터"
     },
     aiCharacterBuilder: {
       title: 'AI 캐릭터 빌더',
@@ -7936,7 +8109,14 @@ export const translations = {
       allErrorsCopied: "모든 오류가 클립보드에 복사되었습니다",
       errorsCleared: "모든 오류가 지워졌습니다",
       allStable: "모두 안정적",
-      noErrorsSinceStart: "앱 시작 이후 오류가 감지되지 않았습니다"
+      noErrorsSinceStart: "앱 시작 이후 오류가 감지되지 않았습니다",
+      copyFailed: "복사 실패",
+      noErrorsToExport: "내보낼 오류가 없습니다",
+      logExported: "로그 내보내기 완료!",
+      filterErrors: "오류",
+      filterWarnings: "경고",
+      exportLog: "내보내기 .log",
+      copied: "복사됨!"
     },
     characters: {
       alice_maid: {
@@ -8199,7 +8379,11 @@ export const translations = {
       failedToExport: "فشل التصدير",
       timeout: "انتهت مهلة الطلب. قد يكون Ollama مثقلاً — حاول مرة أخرى.",
       sendError: "فشل الحصول على رد. يرجى المحاولة مرة أخرى.",
-      noOllamaResponse: "أعاد النموذج استجابة فارغة (وضع التفكير). تمت إعادة المحاولة تلقائياً — أرسل مرة أخرى."
+      noOllamaResponse: "أعاد النموذج استجابة فارغة (وضع التفكير). تمت إعادة المحاولة تلقائياً — أرسل مرة أخرى.",
+      copyFailed: "فشل النسخ",
+      resetPassion: "إعادة تعيين الشغف",
+      imageGeneration: "توليد الصور",
+      promptTooLarge: "موجه الشخصية كبير جداً — قد يتسبب في استجابات بطيئة"
     },
     commands: {
       helpTitle: "── الأوامر ──",
@@ -8396,7 +8580,12 @@ export const translations = {
       continue: "متابعة",
       yes: "نعم",
       no: "لا",
-      ok: "موافق"
+      ok: "موافق",
+      minimize: "تصغير",
+      maximize: "تكبير",
+      close: "إغلاق",
+      select: "اختيار...",
+      normalMode: "الوضع العادي"
     },
     characterSelect: {
       selectCharacter: "اختر شخصية",
@@ -8420,7 +8609,9 @@ export const translations = {
       createWithAI: 'إنشاء بالذكاء الاصطناعي',
       aiPowered: 'مدعوم بالذكاء الاصطناعي',
       filterNsfw: 'NSFW',
-      filterSfw: 'SFW'
+      filterSfw: 'SFW',
+      importedCharacter: "شخصية مستوردة",
+      importedDescription: "شخصية مستوردة"
     },
     aiCharacterBuilder: {
       title: 'منشئ الشخصيات بالذكاء الاصطناعي',
@@ -8737,7 +8928,14 @@ export const translations = {
       allErrorsCopied: "تم نسخ جميع الأخطاء إلى الحافظة",
       errorsCleared: "تم مسح جميع الأخطاء",
       allStable: "كل شيء مستقر",
-      noErrorsSinceStart: "لم يتم اكتشاف أي أخطاء منذ بدء التطبيق"
+      noErrorsSinceStart: "لم يتم اكتشاف أي أخطاء منذ بدء التطبيق",
+      copyFailed: "فشل النسخ",
+      noErrorsToExport: "لا توجد أخطاء للتصدير",
+      logExported: "تم تصدير السجل!",
+      filterErrors: "أخطاء",
+      filterWarnings: "تحذيرات",
+      exportLog: "تصدير .log",
+      copied: "تم النسخ!"
     },
     characters: {
       alice_maid: {
@@ -9000,7 +9198,11 @@ export const translations = {
       failedToExport: "निर्यात विफल",
       timeout: "अनुरोध टाइम आउट। Ollama अधिभारित हो सकता है — पुनः प्रयास करें।",
       sendError: "प्रतिक्रिया प्राप्त करने में विफल। कृपया पुनः प्रयास करें।",
-      noOllamaResponse: "मॉडल ने खाली प्रतिक्रिया दी (थिंक मोड)। स्वचालित रूप से पुनः प्रयास किया — कृपया फिर से भेजें।"
+      noOllamaResponse: "मॉडल ने खाली प्रतिक्रिया दी (थिंक मोड)। स्वचालित रूप से पुनः प्रयास किया — कृपया फिर से भेजें।",
+      copyFailed: "कॉपी विफल",
+      resetPassion: "जुनून रीसेट करें",
+      imageGeneration: "छवि निर्माण",
+      promptTooLarge: "चरित्र प्रॉम्प्ट बहुत बड़ा है — इससे धीमी प्रतिक्रिया हो सकती है"
     },
     commands: {
       helpTitle: "── कमांड ──",
@@ -9197,7 +9399,12 @@ export const translations = {
       continue: "जारी रखें",
       yes: "हाँ",
       no: "नहीं",
-      ok: "ठीक है"
+      ok: "ठीक है",
+      minimize: "छोटा करें",
+      maximize: "बड़ा करें",
+      close: "बंद करें",
+      select: "चुनें...",
+      normalMode: "सामान्य मोड"
     },
     characterSelect: {
       selectCharacter: "चरित्र चुनें",
@@ -9221,7 +9428,9 @@ export const translations = {
       createWithAI: 'AI से बनाएं',
       aiPowered: 'AI संचालित',
       filterNsfw: 'NSFW',
-      filterSfw: 'SFW'
+      filterSfw: 'SFW',
+      importedCharacter: "आयातित चरित्र",
+      importedDescription: "एक आयातित चरित्र"
     },
     aiCharacterBuilder: {
       title: 'AI चरित्र निर्माता',
@@ -9538,7 +9747,14 @@ export const translations = {
       allErrorsCopied: "सभी त्रुटियाँ क्लिपबोर्ड पर कॉपी की गईं",
       errorsCleared: "सभी त्रुटियाँ साफ़ की गईं",
       allStable: "सब स्थिर है",
-      noErrorsSinceStart: "ऐप शुरू होने के बाद से कोई त्रुटि नहीं मिली"
+      noErrorsSinceStart: "ऐप शुरू होने के बाद से कोई त्रुटि नहीं मिली",
+      copyFailed: "कॉपी विफल",
+      noErrorsToExport: "निर्यात के लिए कोई त्रुटि नहीं",
+      logExported: "लॉग निर्यात किया!",
+      filterErrors: "त्रुटियाँ",
+      filterWarnings: "चेतावनियाँ",
+      exportLog: "निर्यात .log",
+      copied: "कॉपी किया!"
     },
     characters: {
       alice_maid: {
@@ -9801,7 +10017,11 @@ export const translations = {
       failedToExport: "Dışa aktarma başarısız",
       timeout: "İstek zaman aşımına uğradı. Ollama aşırı yüklenmiş olabilir — tekrar deneyin.",
       sendError: "Yanıt alınamadı. Lütfen tekrar deneyin.",
-      noOllamaResponse: "Model boş yanıt döndürdü (düşünme modu). Otomatik olarak yeniden denendi — lütfen tekrar gönderin."
+      noOllamaResponse: "Model boş yanıt döndürdü (düşünme modu). Otomatik olarak yeniden denendi — lütfen tekrar gönderin.",
+      copyFailed: "Kopyalama başarısız",
+      resetPassion: "Tutkuyu Sıfırla",
+      imageGeneration: "Görsel Oluşturma",
+      promptTooLarge: "Karakter istemi çok büyük — bu yavaş yanıtlara neden olabilir"
     },
     commands: {
       helpTitle: "── Komutlar ──",
@@ -9998,7 +10218,12 @@ export const translations = {
       continue: "Devam",
       yes: "Evet",
       no: "Hayır",
-      ok: "Tamam"
+      ok: "Tamam",
+      minimize: "Küçült",
+      maximize: "Büyüt",
+      close: "Kapat",
+      select: "Seç...",
+      normalMode: "Normal Mod"
     },
     characterSelect: {
       selectCharacter: "Karakter Seç",
@@ -10022,7 +10247,9 @@ export const translations = {
       createWithAI: 'AI ile Oluştur',
       aiPowered: 'AI Destekli',
       filterNsfw: 'NSFW',
-      filterSfw: 'SFW'
+      filterSfw: 'SFW',
+      importedCharacter: "İçe Aktarılan Karakter",
+      importedDescription: "İçe aktarılan bir karakter"
     },
     aiCharacterBuilder: {
       title: 'AI Karakter Oluşturucu',
@@ -10339,7 +10566,14 @@ export const translations = {
       allErrorsCopied: "Tüm hatalar panoya kopyalandı",
       errorsCleared: "Tüm hatalar temizlendi",
       allStable: "Her Şey Kararlı",
-      noErrorsSinceStart: "Uygulama başlangıcından beri hata tespit edilmedi"
+      noErrorsSinceStart: "Uygulama başlangıcından beri hata tespit edilmedi",
+      copyFailed: "Kopyalama başarısız",
+      noErrorsToExport: "Dışa aktarılacak hata yok",
+      logExported: "Log dışa aktarıldı!",
+      filterErrors: "Hatalar",
+      filterWarnings: "Uyarılar",
+      exportLog: "Dışa aktar .log",
+      copied: "Kopyalandı!"
     },
     characters: {
       alice_maid: {

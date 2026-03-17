@@ -1,6 +1,8 @@
 // ARIA v1.0 RELEASE - TitleBar (Rose Noir Theme)
+import { useLanguage } from '../context/LanguageContext';
 
 function TitleBar() {
+  const { t } = useLanguage();
   const handleMinimize = () => {
     if (window.electronAPI?.minimize) {
       window.electronAPI.minimize();
@@ -44,8 +46,8 @@ function TitleBar() {
         <button
           onClick={handleMinimize}
           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-all duration-200 group"
-          title="Minimize"
-          aria-label="Minimize"
+          title={t.common?.minimize || 'Minimize'}
+          aria-label={t.common?.minimize || 'Minimize'}
         >
           <svg
             className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-200 transition-colors"
@@ -62,8 +64,8 @@ function TitleBar() {
         <button
           onClick={handleMaximize}
           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-all duration-200 group"
-          title="Maximize"
-          aria-label="Maximize"
+          title={t.common?.maximize || 'Maximize'}
+          aria-label={t.common?.maximize || 'Maximize'}
         >
           <svg
             className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-200 transition-colors"
@@ -80,8 +82,8 @@ function TitleBar() {
         <button
           onClick={handleClose}
           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-rose-500/20 transition-all duration-200 group"
-          title="Close"
-          aria-label="Close"
+          title={t.common?.close || 'Close'}
+          aria-label={t.common?.close || 'Close'}
         >
           <svg
             className="w-3.5 h-3.5 text-zinc-500 group-hover:text-rose-400 transition-colors"

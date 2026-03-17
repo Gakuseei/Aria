@@ -121,8 +121,8 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
       const newCharacter = {
         id: `custom_${Date.now()}`,
         name: importData.name,
-        subtitle: importData.subtitle || 'Imported Character',
-        description: importData.description || 'An imported character',
+        subtitle: importData.subtitle || (t.characterSelect?.importedCharacter || 'Imported Character'),
+        description: importData.description || (t.characterSelect?.importedDescription || 'An imported character'),
         systemPrompt: importData.systemPrompt,
         instructions: importData.instructions || '',
         scenario: importData.scenario || '',

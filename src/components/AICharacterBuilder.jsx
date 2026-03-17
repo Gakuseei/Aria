@@ -208,6 +208,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
   const handleSave = () => {
     if (!generatedCharacter) return;
 
+    const trimmedStartingMessage = generatedCharacter.startingMessage?.trim() || '';
     const character = {
       id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name: generatedCharacter.name?.trim() || 'Unnamed',
@@ -220,7 +221,8 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       exampleDialogues: [],
       themeColor: generatedCharacter.themeColor || '#ef4444',
       avatarBase64: avatarBase64 || null,
-      startingMessage: generatedCharacter.startingMessage?.trim() || '',
+      startingMessage: trimmedStartingMessage,
+      greeting: trimmedStartingMessage,
       type: selectedType,
       passionEnabled: selectedType === 'bot' ? false : passionEnabled,
       passionSpeed: generatedCharacter.passionSpeed || 'normal',

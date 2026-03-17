@@ -166,7 +166,7 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
             <button
               onClick={() => onSpeak(message.content || '')}
               className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-zinc-400 hover:text-cyan-400 transition-all duration-200"
-              title="Play Audio"
+              title={t.chat?.playAudio || 'Play Audio'}
             >
               <Volume2 size={14} strokeWidth={1.5} />
             </button>
@@ -175,7 +175,7 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
           <button
             onClick={() => onCopy(message.content || '')}
             className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-zinc-400 hover:text-white transition-all duration-200"
-            title="Copy"
+            title={t.chat?.copy || 'Copy'}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
@@ -1237,7 +1237,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       .then(() => toast.success(t.chat?.copied || 'Copied'))
       .catch(err => {
         console.error('Failed to copy:', err);
-        toast.error('Copy failed');
+        toast.error(t.chat?.copyFailed || 'Copy failed');
       });
   };
 
@@ -1384,9 +1384,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                   />
                 </div>
                 <div className="text-xs text-zinc-500 mb-3">
-                  Speed: {(() => {
+                  {t.chat?.voiceSettings?.speed || 'Speed'}: {(() => {
                     const sp = character?.passionSpeed || 'normal';
-                    return sp.charAt(0).toUpperCase() + sp.slice(1);
+                    return t.characterCreator?.['passionSpeed_' + sp] || sp.charAt(0).toUpperCase() + sp.slice(1);
                   })()}
                 </div>
                 <button
@@ -1398,7 +1398,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                   }}
                   className="w-full text-xs text-zinc-500 hover:text-rose-400 py-1.5 transition-colors cursor-pointer"
                 >
-                  Reset Passion
+                  {t.chat?.resetPassion || 'Reset Passion'}
                 </button>
               </div>
             )}
@@ -1412,8 +1412,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             className={`p-3 hover:bg-white/10 active:scale-95 rounded-xl transition-all duration-200 ${
               imageGenEnabled ? 'text-purple-400 hover:text-purple-300' : 'text-zinc-600'
             }`}
-            title="Image Generation"
-            aria-label="Image Generation"
+            title={t.chat?.imageGeneration || 'Image Generation'}
+            aria-label={t.chat?.imageGeneration || 'Image Generation'}
           >
             <ImageIcon size={22} strokeWidth={1.5} />
           </button>
@@ -1425,8 +1425,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
               className={`p-3 hover:bg-white/10 active:scale-95 rounded-xl transition-all duration-200 ${
                 voiceEnabled === true ? 'text-cyan-400 hover:text-cyan-300' : 'text-zinc-600'
               }`}
-              title="Voice Settings"
-              aria-label="Voice Settings"
+              title={t.chat?.voiceSettings?.title || 'Voice Settings'}
+              aria-label={t.chat?.voiceSettings?.title || 'Voice Settings'}
             >
               <Volume2 size={22} strokeWidth={1.5} />
             </button>
@@ -1990,7 +1990,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
               <button
                 onClick={() => setShowBioModal(false)}
                 className="p-2 hover:bg-zinc-800 rounded-lg transition-all text-zinc-400 hover:text-white"
-                title="Close"
+                title={t.common?.close || 'Close'}
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

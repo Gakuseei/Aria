@@ -232,7 +232,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
 
   const textareaFields = useMemo(() => {
     const fields = [
-      { key: 'systemPrompt', label: selectedType === 'bot' ? (t.characterCreator?.botInstructions || 'Bot Instructions') : (t.aiCharacterBuilder?.fieldSystemPrompt || 'System Prompt (W++)'), rows: 10, mono: true },
+      { key: 'systemPrompt', label: selectedType === 'bot' ? (t.characterCreator?.botInstructions || 'Bot Instructions') : (t.aiCharacterBuilder?.fieldSystemPrompt || 'System Prompt'), rows: 10, mono: true },
       { key: 'instructions', label: t.aiCharacterBuilder?.fieldInstructions || 'Instructions', rows: 4, mono: false },
       { key: 'scenario', label: t.aiCharacterBuilder?.fieldScenario || 'Scenario', rows: 4, mono: false },
     ];

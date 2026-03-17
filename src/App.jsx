@@ -8,6 +8,7 @@ import CreativeWriting from './components/CreativeWriting';
 import LoadGame from './components/LoadGame';
 import Settings from './components/Settings';
 import CharacterCreator from './components/CharacterCreator';
+import AICharacterBuilder from './components/AICharacterBuilder';
 import DebugConsole from './components/DebugConsole';
 import OledToggleButton from './components/OledToggleButton';
 import { testOllamaConnection, autoDetectAndSetModel } from './lib/api';
@@ -20,6 +21,7 @@ const VIEWS = {
   MODE_SELECT: 'mode_select',
   CHARACTER_SELECT: 'character_select',
   CHARACTER_CREATOR: 'character_creator',
+  AI_CHARACTER_BUILDER: 'ai_character_builder',
   CHAT_INTERFACE: 'chat_interface',
   CREATIVE_WRITING: 'creative_writing',
   LOAD_GAME: 'load_game',
@@ -344,6 +346,10 @@ function App() {
     navigate(VIEWS.CHARACTER_CREATOR);
   };
 
+  const handleAICharacterBuilder = () => {
+    navigate(VIEWS.AI_CHARACTER_BUILDER);
+  };
+
   // Handle saving new character
   const handleSaveCharacter = (character) => {
     try {
@@ -397,6 +403,9 @@ function App() {
       case VIEWS.CHARACTER_CREATOR:
         navigate(VIEWS.CHARACTER_SELECT);
         break;
+      case VIEWS.AI_CHARACTER_BUILDER:
+        navigate(VIEWS.CHARACTER_SELECT);
+        break;
       case VIEWS.CHAT_INTERFACE:
         navigate(VIEWS.CHARACTER_SELECT);
         break;
@@ -439,6 +448,7 @@ function App() {
             onSelect={handleCharacterSelect}
             onBack={handleBack}
             onCreateCharacter={handleCreateCharacter}
+            onAIBuilder={handleAICharacterBuilder}
           />
         );
       
@@ -449,7 +459,16 @@ function App() {
             onBack={handleBack}
           />
         );
-      
+
+      case VIEWS.AI_CHARACTER_BUILDER:
+        return (
+          <AICharacterBuilder
+            onSave={handleSaveCharacter}
+            onBack={handleBack}
+            settings={settings}
+          />
+        );
+
       case VIEWS.CHAT_INTERFACE:
         return (
           <ChatInterface

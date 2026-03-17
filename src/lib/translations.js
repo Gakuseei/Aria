@@ -12,7 +12,8 @@ export const translations = {
       debugConsole: "Debug Console",
       exit: "Exit",
       premiumSupporter: "✨ Premium Supporter",
-      footer: "100% LOCAL • UNCENSORED • DRIVEN BY PASSION"
+      footer: "100% LOCAL • UNCENSORED • DRIVEN BY PASSION",
+      tagline: '100% Local • Uncensored • Offline'
     },
     settings: {
       title: "Settings",
@@ -92,7 +93,18 @@ export const translations = {
       zonosTestSuccessAlert: "Zonos test successful!",
       zonosTestFailedAlert: "Zonos test failed.",
       unknownError: "Something went wrong. Try restarting Ollama.",
-      makeSureZonosRunning: "Make sure Zonos is running on localhost:7860."
+      makeSureZonosRunning: "Make sure Zonos is running on localhost:7860.",
+      versionTagline: 'v1.0 Release • Local Only',
+      imageQualityTier: 'Quality Tier',
+      imageFlux: 'FLUX.1 (12GB+ VRAM)',
+      imageSdxl: 'SDXL (4-8GB VRAM)',
+      imageStandard: 'Standard',
+      imagePremium: 'Premium',
+      voiceEngine: 'Voice Engine',
+      voiceZonos: 'Zonos (4GB+ VRAM)',
+      voicePiper: 'Piper TTS (CPU)',
+      voiceStandard: 'Standard',
+      voicePremium: 'Premium'
     },
     chat: {
       passion: "Passion",
@@ -396,7 +408,9 @@ export const translations = {
       failedToExport: "Failed to export character",
       custom: "Custom",
       createWithAI: 'Create with AI',
-      aiPowered: 'AI-Powered'
+      aiPowered: 'AI-Powered',
+      filterNsfw: 'NSFW',
+      filterSfw: 'SFW'
     },
     aiCharacterBuilder: {
       title: 'AI Character Builder',
@@ -801,7 +815,8 @@ export const translations = {
       debugConsole: "Debug-Konsole",
       exit: "Beenden",
       premiumSupporter: "✨ Premium Supporter",
-      footer: "100% LOKAL • UNZENSIERT • VON LEIDENSCHAFT GETRIEBEN"
+      footer: "100% LOKAL • UNZENSIERT • VON LEIDENSCHAFT GETRIEBEN",
+      tagline: '100% Lokal • Unzensiert • Offline'
     },
     settings: {
       title: "Einstellungen",
@@ -881,7 +896,18 @@ export const translations = {
       zonosTestSuccessAlert: "Zonos-Test erfolgreich!",
       zonosTestFailedAlert: "Zonos-Test fehlgeschlagen.",
       unknownError: "Etwas ist schiefgelaufen. Versuche Ollama neu zu starten.",
-      makeSureZonosRunning: "Stelle sicher, dass Zonos auf localhost:7860 läuft."
+      makeSureZonosRunning: "Stelle sicher, dass Zonos auf localhost:7860 läuft.",
+      versionTagline: 'v1.0 Release • Nur Lokal',
+      imageQualityTier: 'Qualitätsstufe',
+      imageFlux: 'FLUX.1 (12GB+ VRAM)',
+      imageSdxl: 'SDXL (4-8GB VRAM)',
+      imageStandard: 'Standard',
+      imagePremium: 'Premium',
+      voiceEngine: 'Sprachausgabe',
+      voiceZonos: 'Zonos (4GB+ VRAM)',
+      voicePiper: 'Piper TTS (CPU)',
+      voiceStandard: 'Standard',
+      voicePremium: 'Premium'
     },
     chat: {
       passion: "Leidenschaft",
@@ -1183,7 +1209,9 @@ export const translations = {
       failedToExport: "Charakter konnte nicht exportiert werden",
       custom: "Benutzerdefiniert",
       createWithAI: 'Mit KI erstellen',
-      aiPowered: 'KI-gestützt'
+      aiPowered: 'KI-gestützt',
+      filterNsfw: 'NSFW',
+      filterSfw: 'SFW'
     },
     aiCharacterBuilder: {
       title: 'KI-Charakter-Builder',
@@ -1588,7 +1616,8 @@ export const translations = {
       debugConsole: "Consola de Debug",
       exit: "Salir",
       premiumSupporter: "✨ Premium Supporter",
-      footer: "100% LOCAL • SIN CENSURA • IMPULSADO POR PASIÓN"
+      footer: "100% LOCAL • SIN CENSURA • IMPULSADO POR PASIÓN",
+      tagline: '100% Local • Sin Censura • Sin Conexión'
     },
     settings: {
       title: "Configuración",
@@ -1668,7 +1697,18 @@ export const translations = {
       zonosTestSuccessAlert: "¡Prueba de Zonos exitosa!",
       zonosTestFailedAlert: "Prueba de Zonos fallida.",
       unknownError: "Algo salió mal. Intenta reiniciar Ollama.",
-      makeSureZonosRunning: "Asegúrate de que Zonos esté ejecutándose en localhost:7860."
+      makeSureZonosRunning: "Asegúrate de que Zonos esté ejecutándose en localhost:7860.",
+      versionTagline: 'v1.0 Release • Solo Local',
+      imageQualityTier: 'Nivel de Calidad',
+      imageFlux: 'FLUX.1 (12GB+ VRAM)',
+      imageSdxl: 'SDXL (4-8GB VRAM)',
+      imageStandard: 'Estándar',
+      imagePremium: 'Premium',
+      voiceEngine: 'Motor de Voz',
+      voiceZonos: 'Zonos (4GB+ VRAM)',
+      voicePiper: 'Piper TTS (CPU)',
+      voiceStandard: 'Estándar',
+      voicePremium: 'Premium'
     },
     chat: {
       passion: "Pasión",
@@ -1970,7 +2010,9 @@ export const translations = {
       failedToExport: "Error al exportar",
       custom: "Personalizado",
       createWithAI: 'Crear con IA',
-      aiPowered: 'Impulsado por IA'
+      aiPowered: 'Impulsado por IA',
+      filterNsfw: 'NSFW',
+      filterSfw: 'SFW'
     },
     aiCharacterBuilder: {
       title: 'Constructor de Personaje IA',
@@ -2375,7 +2417,8 @@ export const translations = {
       debugConsole: "调试控制台",
       exit: "退出",
       premiumSupporter: "✨ 高级支持者",
-      footer: "100% 本地 • 无审查 • 由激情驱动"
+      footer: "100% 本地 • 无审查 • 由激情驱动",
+      tagline: '100%本地 • 无审查 • 离线'
     },
     settings: {
       title: "设置",
@@ -2455,7 +2498,18 @@ export const translations = {
       zonosTestSuccessAlert: "Zonos 测试成功！",
       zonosTestFailedAlert: "Zonos 测试失败。",
       unknownError: "出错了。请尝试重启Ollama。",
-      makeSureZonosRunning: "请确保 Zonos 在 localhost:7860 上运行。"
+      makeSureZonosRunning: "请确保 Zonos 在 localhost:7860 上运行。",
+      versionTagline: 'v1.0 发布 • 仅本地',
+      imageQualityTier: '质量等级',
+      imageFlux: 'FLUX.1 (12GB+ VRAM)',
+      imageSdxl: 'SDXL (4-8GB VRAM)',
+      imageStandard: '标准',
+      imagePremium: '高级',
+      voiceEngine: '语音引擎',
+      voiceZonos: 'Zonos (4GB+ VRAM)',
+      voicePiper: 'Piper TTS (CPU)',
+      voiceStandard: '标准',
+      voicePremium: '高级'
     },
     chat: {
       passion: "激情",
@@ -2757,7 +2811,9 @@ export const translations = {
       failedToExport: "导出失败",
       custom: "自定义",
       createWithAI: '用AI创建',
-      aiPowered: 'AI驱动'
+      aiPowered: 'AI驱动',
+      filterNsfw: 'NSFW',
+      filterSfw: 'SFW'
     },
     aiCharacterBuilder: {
       title: 'AI角色构建器',
@@ -3162,7 +3218,8 @@ export const translations = {
       debugConsole: "Console de Débogage",
       exit: "Quitter",
       premiumSupporter: "✨ Supporter Premium",
-      footer: "100% LOCAL • NON CENSURÉ • ANIMÉ PAR LA PASSION"
+      footer: "100% LOCAL • NON CENSURÉ • ANIMÉ PAR LA PASSION",
+      tagline: '100% Local • Non Censuré • Hors Ligne'
     },
     settings: {
       title: "Paramètres",
@@ -3242,7 +3299,18 @@ export const translations = {
       zonosTestSuccessAlert: "Test Zonos réussi !",
       zonosTestFailedAlert: "Test Zonos échoué.",
       unknownError: "Une erreur est survenue. Essayez de redémarrer Ollama.",
-      makeSureZonosRunning: "Assurez-vous que Zonos fonctionne sur localhost:7860."
+      makeSureZonosRunning: "Assurez-vous que Zonos fonctionne sur localhost:7860.",
+      versionTagline: 'v1.0 Release • Local Uniquement',
+      imageQualityTier: 'Niveau de Qualité',
+      imageFlux: 'FLUX.1 (12GB+ VRAM)',
+      imageSdxl: 'SDXL (4-8GB VRAM)',
+      imageStandard: 'Standard',
+      imagePremium: 'Premium',
+      voiceEngine: 'Moteur Vocal',
+      voiceZonos: 'Zonos (4GB+ VRAM)',
+      voicePiper: 'Piper TTS (CPU)',
+      voiceStandard: 'Standard',
+      voicePremium: 'Premium'
     },
     chat: {
       passion: "Passion",
@@ -3544,7 +3612,9 @@ export const translations = {
       failedToExport: "Échec de l'exportation",
       custom: "Perso.",
       createWithAI: 'Créer avec l\'IA',
-      aiPowered: 'Propulsé par l\'IA'
+      aiPowered: 'Propulsé par l\'IA',
+      filterNsfw: 'NSFW',
+      filterSfw: 'SFW'
     },
     aiCharacterBuilder: {
       title: 'Créateur de Personnage IA',
@@ -3949,7 +4019,8 @@ export const translations = {
       debugConsole: "Console di Debug",
       exit: "Esci",
       premiumSupporter: "✨ Supporter Premium",
-      footer: "100% LOCALE • SENZA CENSURA • GUIDATO DALLA PASSIONE"
+      footer: "100% LOCALE • SENZA CENSURA • GUIDATO DALLA PASSIONE",
+      tagline: '100% Locale • Senza Censura • Offline'
     },
     settings: {
       title: "Impostazioni",
@@ -4029,7 +4100,18 @@ export const translations = {
       zonosTestSuccessAlert: "Test Zonos riuscito!",
       zonosTestFailedAlert: "Test Zonos fallito.",
       unknownError: "Qualcosa è andato storto. Prova a riavviare Ollama.",
-      makeSureZonosRunning: "Assicurati che Zonos sia in esecuzione su localhost:7860."
+      makeSureZonosRunning: "Assicurati che Zonos sia in esecuzione su localhost:7860.",
+      versionTagline: 'v1.0 Release • Solo Locale',
+      imageQualityTier: 'Livello Qualità',
+      imageFlux: 'FLUX.1 (12GB+ VRAM)',
+      imageSdxl: 'SDXL (4-8GB VRAM)',
+      imageStandard: 'Standard',
+      imagePremium: 'Premium',
+      voiceEngine: 'Motore Vocale',
+      voiceZonos: 'Zonos (4GB+ VRAM)',
+      voicePiper: 'Piper TTS (CPU)',
+      voiceStandard: 'Standard',
+      voicePremium: 'Premium'
     },
     chat: {
       passion: "Passione",
@@ -4331,7 +4413,9 @@ export const translations = {
       failedToExport: "Errore esportazione",
       custom: "Pers.",
       createWithAI: 'Crea con IA',
-      aiPowered: 'Basato su IA'
+      aiPowered: 'Basato su IA',
+      filterNsfw: 'NSFW',
+      filterSfw: 'SFW'
     },
     aiCharacterBuilder: {
       title: 'Costruttore Personaggio IA',
@@ -4736,7 +4820,8 @@ export const translations = {
       debugConsole: "Console",
       exit: "Sair",
       premiumSupporter: "✨ Apoiador Premium",
-      footer: "100% LOCAL • SEM CENSURA • MOVIDO POR PAIXÃO"
+      footer: "100% LOCAL • SEM CENSURA • MOVIDO POR PAIXÃO",
+      tagline: '100% Local • Sem Censura • Offline'
     },
     settings: {
       title: "Configurações",
@@ -4816,7 +4901,18 @@ export const translations = {
       zonosTestSuccessAlert: "Teste Zonos bem-sucedido!",
       zonosTestFailedAlert: "Teste Zonos falhou.",
       unknownError: "Algo deu errado. Tente reiniciar o Ollama.",
-      makeSureZonosRunning: "Certifique-se de que o Zonos está rodando em localhost:7860."
+      makeSureZonosRunning: "Certifique-se de que o Zonos está rodando em localhost:7860.",
+      versionTagline: 'v1.0 Release • Apenas Local',
+      imageQualityTier: 'Nível de Qualidade',
+      imageFlux: 'FLUX.1 (12GB+ VRAM)',
+      imageSdxl: 'SDXL (4-8GB VRAM)',
+      imageStandard: 'Padrão',
+      imagePremium: 'Premium',
+      voiceEngine: 'Motor de Voz',
+      voiceZonos: 'Zonos (4GB+ VRAM)',
+      voicePiper: 'Piper TTS (CPU)',
+      voiceStandard: 'Padrão',
+      voicePremium: 'Premium'
     },
     chat: {
       passion: "Paixão",
@@ -5118,7 +5214,9 @@ export const translations = {
       failedToExport: "Erro export",
       custom: "Custom",
       createWithAI: 'Criar com IA',
-      aiPowered: 'Alimentado por IA'
+      aiPowered: 'Alimentado por IA',
+      filterNsfw: 'NSFW',
+      filterSfw: 'SFW'
     },
     aiCharacterBuilder: {
       title: 'Construtor de Personagem IA',
@@ -5523,7 +5621,8 @@ export const translations = {
       debugConsole: "Консоль",
       exit: "Выход",
       premiumSupporter: "✨ Premium",
-      footer: "100% ЛОКАЛЬНО • БЕЗ ЦЕНЗУРЫ • ДВИЖИМО СТРАСТЬЮ"
+      footer: "100% ЛОКАЛЬНО • БЕЗ ЦЕНЗУРЫ • ДВИЖИМО СТРАСТЬЮ",
+      tagline: '100% Локально • Без Цензуры • Офлайн'
     },
     settings: {
       title: "Настройки",
@@ -5603,7 +5702,18 @@ export const translations = {
       zonosTestSuccessAlert: "Тест Zonos успешен!",
       zonosTestFailedAlert: "Тест Zonos не пройден.",
       unknownError: "Что-то пошло не так. Попробуйте перезапустить Ollama.",
-      makeSureZonosRunning: "Убедитесь, что Zonos запущен на localhost:7860."
+      makeSureZonosRunning: "Убедитесь, что Zonos запущен на localhost:7860.",
+      versionTagline: 'v1.0 Релиз • Только Локально',
+      imageQualityTier: 'Уровень Качества',
+      imageFlux: 'FLUX.1 (12GB+ VRAM)',
+      imageSdxl: 'SDXL (4-8GB VRAM)',
+      imageStandard: 'Стандарт',
+      imagePremium: 'Премиум',
+      voiceEngine: 'Голосовой Движок',
+      voiceZonos: 'Zonos (4GB+ VRAM)',
+      voicePiper: 'Piper TTS (CPU)',
+      voiceStandard: 'Стандарт',
+      voicePremium: 'Премиум'
     },
     chat: {
       passion: "Страсть",
@@ -5905,7 +6015,9 @@ export const translations = {
       failedToExport: "Ошибка",
       custom: "Свой",
       createWithAI: 'Создать с ИИ',
-      aiPowered: 'На базе ИИ'
+      aiPowered: 'На базе ИИ',
+      filterNsfw: 'NSFW',
+      filterSfw: 'SFW'
     },
     aiCharacterBuilder: {
       title: 'Конструктор персонажей ИИ',
@@ -6310,7 +6422,8 @@ export const translations = {
       debugConsole: "デバッグ",
       exit: "終了",
       premiumSupporter: "✨ プレミアムサポーター",
-      footer: "100% ローカル • 無検閲 • 情熱が原動力"
+      footer: "100% ローカル • 無検閲 • 情熱が原動力",
+      tagline: '100%ローカル • 無検閲 • オフライン'
     },
     settings: {
       title: "設定",
@@ -6390,7 +6503,18 @@ export const translations = {
       zonosTestSuccessAlert: "Zonosテスト成功！",
       zonosTestFailedAlert: "Zonosテスト失敗。",
       unknownError: "エラーが発生しました。Ollamaを再起動してみてください。",
-      makeSureZonosRunning: "Zonosがlocalhost:7860で実行中か確認してください。"
+      makeSureZonosRunning: "Zonosがlocalhost:7860で実行中か確認してください。",
+      versionTagline: 'v1.0 リリース • ローカルのみ',
+      imageQualityTier: '品質レベル',
+      imageFlux: 'FLUX.1 (12GB+ VRAM)',
+      imageSdxl: 'SDXL (4-8GB VRAM)',
+      imageStandard: 'スタンダード',
+      imagePremium: 'プレミアム',
+      voiceEngine: '音声エンジン',
+      voiceZonos: 'Zonos (4GB+ VRAM)',
+      voicePiper: 'Piper TTS (CPU)',
+      voiceStandard: 'スタンダード',
+      voicePremium: 'プレミアム'
     },
     chat: {
       passion: "情熱",
@@ -6692,7 +6816,9 @@ export const translations = {
       failedToExport: "失敗",
       custom: "カスタム",
       createWithAI: 'AIで作成',
-      aiPowered: 'AI搭載'
+      aiPowered: 'AI搭載',
+      filterNsfw: 'NSFW',
+      filterSfw: 'SFW'
     },
     aiCharacterBuilder: {
       title: 'AIキャラクタービルダー',
@@ -7097,7 +7223,8 @@ export const translations = {
       debugConsole: "디버그",
       exit: "종료",
       premiumSupporter: "✨ 프리미엄 후원",
-      footer: "100% 로컬 • 무검열 • 열정으로 구동"
+      footer: "100% 로컬 • 무검열 • 열정으로 구동",
+      tagline: '100% 로컬 • 무검열 • 오프라인'
     },
     settings: {
       title: "설정",
@@ -7177,7 +7304,18 @@ export const translations = {
       zonosTestSuccessAlert: "Zonos 테스트 성공!",
       zonosTestFailedAlert: "Zonos 테스트 실패.",
       unknownError: "오류가 발생했습니다. Ollama를 재시작해 보세요.",
-      makeSureZonosRunning: "Zonos가 localhost:7860에서 실행 중인지 확인하세요."
+      makeSureZonosRunning: "Zonos가 localhost:7860에서 실행 중인지 확인하세요.",
+      versionTagline: 'v1.0 릴리스 • 로컬 전용',
+      imageQualityTier: '품질 등급',
+      imageFlux: 'FLUX.1 (12GB+ VRAM)',
+      imageSdxl: 'SDXL (4-8GB VRAM)',
+      imageStandard: '표준',
+      imagePremium: '프리미엄',
+      voiceEngine: '음성 엔진',
+      voiceZonos: 'Zonos (4GB+ VRAM)',
+      voicePiper: 'Piper TTS (CPU)',
+      voiceStandard: '표준',
+      voicePremium: '프리미엄'
     },
     chat: {
       passion: "열정",
@@ -7479,7 +7617,9 @@ export const translations = {
       failedToExport: "실패",
       custom: "커스텀",
       createWithAI: 'AI로 생성',
-      aiPowered: 'AI 기반'
+      aiPowered: 'AI 기반',
+      filterNsfw: 'NSFW',
+      filterSfw: 'SFW'
     },
     aiCharacterBuilder: {
       title: 'AI 캐릭터 빌더',
@@ -7884,7 +8024,8 @@ export const translations = {
       debugConsole: "وحدة التحكم",
       exit: "خروج",
       premiumSupporter: "✨ داعم مميز",
-      footer: "100% محلي • بدون رقابة • مدفوع بالشغف"
+      footer: "100% محلي • بدون رقابة • مدفوع بالشغف",
+      tagline: '100% محلي • بدون رقابة • بدون إنترنت'
     },
     settings: {
       title: "الإعدادات",
@@ -7964,7 +8105,18 @@ export const translations = {
       zonosTestSuccessAlert: "اختبار Zonos ناجح!",
       zonosTestFailedAlert: "فشل اختبار Zonos.",
       unknownError: "حدث خطأ. حاول إعادة تشغيل Ollama.",
-      makeSureZonosRunning: "تأكد من أن Zonos يعمل على localhost:7860."
+      makeSureZonosRunning: "تأكد من أن Zonos يعمل على localhost:7860.",
+      versionTagline: 'v1.0 إصدار • محلي فقط',
+      imageQualityTier: 'مستوى الجودة',
+      imageFlux: 'FLUX.1 (12GB+ VRAM)',
+      imageSdxl: 'SDXL (4-8GB VRAM)',
+      imageStandard: 'قياسي',
+      imagePremium: 'متميز',
+      voiceEngine: 'محرك الصوت',
+      voiceZonos: 'Zonos (4GB+ VRAM)',
+      voicePiper: 'Piper TTS (CPU)',
+      voiceStandard: 'قياسي',
+      voicePremium: 'متميز'
     },
     chat: {
       passion: "الشغف",
@@ -8266,7 +8418,9 @@ export const translations = {
       failedToExport: "فشل التصدير",
       custom: "مخصص",
       createWithAI: 'إنشاء بالذكاء الاصطناعي',
-      aiPowered: 'مدعوم بالذكاء الاصطناعي'
+      aiPowered: 'مدعوم بالذكاء الاصطناعي',
+      filterNsfw: 'NSFW',
+      filterSfw: 'SFW'
     },
     aiCharacterBuilder: {
       title: 'منشئ الشخصيات بالذكاء الاصطناعي',
@@ -8671,7 +8825,8 @@ export const translations = {
       debugConsole: "डीबग कंसोल",
       exit: "बाहर निकलें",
       premiumSupporter: "✨ प्रीमियम समर्थक",
-      footer: "100% स्थानीय • सेंसर-रहित • जुनून से संचालित"
+      footer: "100% स्थानीय • सेंसर-रहित • जुनून से संचालित",
+      tagline: '100% स्थानीय • बिना सेंसर • ऑफलाइन'
     },
     settings: {
       title: "सेटिंग्स",
@@ -8751,7 +8906,18 @@ export const translations = {
       zonosTestSuccessAlert: "Zonos परीक्षण सफल!",
       zonosTestFailedAlert: "Zonos परीक्षण विफल।",
       unknownError: "कुछ गलत हुआ। Ollama पुनः आरंभ करें।",
-      makeSureZonosRunning: "सुनिश्चित करें कि Zonos localhost:7860 पर चल रहा है।"
+      makeSureZonosRunning: "सुनिश्चित करें कि Zonos localhost:7860 पर चल रहा है।",
+      versionTagline: 'v1.0 रिलीज़ • केवल स्थानीय',
+      imageQualityTier: 'गुणवत्ता स्तर',
+      imageFlux: 'FLUX.1 (12GB+ VRAM)',
+      imageSdxl: 'SDXL (4-8GB VRAM)',
+      imageStandard: 'मानक',
+      imagePremium: 'प्रीमियम',
+      voiceEngine: 'वॉइस इंजन',
+      voiceZonos: 'Zonos (4GB+ VRAM)',
+      voicePiper: 'Piper TTS (CPU)',
+      voiceStandard: 'मानक',
+      voicePremium: 'प्रीमियम'
     },
     chat: {
       passion: "जुनून",
@@ -9053,7 +9219,9 @@ export const translations = {
       failedToExport: "निर्यात विफल",
       custom: "कस्टम",
       createWithAI: 'AI से बनाएं',
-      aiPowered: 'AI संचालित'
+      aiPowered: 'AI संचालित',
+      filterNsfw: 'NSFW',
+      filterSfw: 'SFW'
     },
     aiCharacterBuilder: {
       title: 'AI चरित्र निर्माता',
@@ -9458,7 +9626,8 @@ export const translations = {
       debugConsole: "Hata Ayıklama Konsolu",
       exit: "Çıkış",
       premiumSupporter: "✨ Premium Destekçi",
-      footer: "100% YEREL • SANSÜRSÜZ • TUTKU İLE ÇALIŞIR"
+      footer: "100% YEREL • SANSÜRSÜZ • TUTKU İLE ÇALIŞIR",
+      tagline: '100% Yerel • Sansürsüz • Çevrimdışı'
     },
     settings: {
       title: "Ayarlar",
@@ -9538,7 +9707,18 @@ export const translations = {
       zonosTestSuccessAlert: "Zonos testi başarılı!",
       zonosTestFailedAlert: "Zonos testi başarısız.",
       unknownError: "Bir hata oluştu. Ollama'yı yeniden başlatmayı deneyin.",
-      makeSureZonosRunning: "Zonos'un localhost:7860 üzerinde çalıştığından emin olun."
+      makeSureZonosRunning: "Zonos'un localhost:7860 üzerinde çalıştığından emin olun.",
+      versionTagline: 'v1.0 Sürüm • Yalnızca Yerel',
+      imageQualityTier: 'Kalite Seviyesi',
+      imageFlux: 'FLUX.1 (12GB+ VRAM)',
+      imageSdxl: 'SDXL (4-8GB VRAM)',
+      imageStandard: 'Standart',
+      imagePremium: 'Premium',
+      voiceEngine: 'Ses Motoru',
+      voiceZonos: 'Zonos (4GB+ VRAM)',
+      voicePiper: 'Piper TTS (CPU)',
+      voiceStandard: 'Standart',
+      voicePremium: 'Premium'
     },
     chat: {
       passion: "Tutku",
@@ -9840,7 +10020,9 @@ export const translations = {
       failedToExport: "Dışa aktarma başarısız",
       custom: "Özel",
       createWithAI: 'AI ile Oluştur',
-      aiPowered: 'AI Destekli'
+      aiPowered: 'AI Destekli',
+      filterNsfw: 'NSFW',
+      filterSfw: 'SFW'
     },
     aiCharacterBuilder: {
       title: 'AI Karakter Oluşturucu',

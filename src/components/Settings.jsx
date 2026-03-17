@@ -182,7 +182,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
               }`}>
                 {t.settings.title}
               </h1>
-              <p className="text-sm text-zinc-500 mt-0.5">v1.0 Release • Local Only</p>
+              <p className="text-sm text-zinc-500 mt-0.5">{t.settings?.versionTagline || 'v1.0 Release • Local Only'}</p>
             </div>
           </div>
 
@@ -464,9 +464,9 @@ export default function Settings({ settings, onSettingChange, onClose }) {
               {settings.imageGenEnabled && (
                 <div className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg">
                   <div>
-                    <span className="text-sm text-zinc-300">Quality Tier</span>
+                    <span className="text-sm text-zinc-300">{t.settings?.imageQualityTier || 'Quality Tier'}</span>
                     <p className="text-xs text-zinc-500 mt-0.5">
-                      {settings.imageGenTier === 'premium' ? 'FLUX.1 (12GB+ VRAM)' : 'SDXL (4-8GB VRAM)'}
+                      {settings.imageGenTier === 'premium' ? (t.settings?.imageFlux || 'FLUX.1 (12GB+ VRAM)') : (t.settings?.imageSdxl || 'SDXL (4-8GB VRAM)')}
                     </p>
                   </div>
                   <div className="flex bg-zinc-900/50 p-1 rounded-lg border border-white/10">
@@ -478,7 +478,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                           : 'text-zinc-500 hover:text-zinc-300'
                       }`}
                     >
-                      Standard
+                      {t.settings?.imageStandard || 'Standard'}
                     </button>
                     <button
                       onClick={() => onSettingChange('imageGenTier', 'premium')}
@@ -488,7 +488,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                           : 'text-zinc-500 hover:text-zinc-300'
                       }`}
                     >
-                      Premium
+                      {t.settings?.imagePremium || 'Premium'}
                     </button>
                   </div>
                 </div>
@@ -578,9 +578,9 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                 {settings.voiceEnabled && (
                   <div className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg">
                     <div>
-                      <span className="text-sm text-zinc-300">Voice Engine</span>
+                      <span className="text-sm text-zinc-300">{t.settings?.voiceEngine || 'Voice Engine'}</span>
                       <p className="text-xs text-zinc-500 mt-0.5">
-                        {settings.voiceTier === 'premium' ? 'Zonos (4GB+ VRAM)' : 'Piper TTS (CPU)'}
+                        {settings.voiceTier === 'premium' ? (t.settings?.voiceZonos || 'Zonos (4GB+ VRAM)') : (t.settings?.voicePiper || 'Piper TTS (CPU)')}
                       </p>
                     </div>
                     <div className="flex bg-zinc-900/50 p-1 rounded-lg border border-white/10">
@@ -592,7 +592,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                             : 'text-zinc-500 hover:text-zinc-300'
                         }`}
                       >
-                        Standard
+                        {t.settings?.voiceStandard || 'Standard'}
                       </button>
                       <button
                         onClick={() => onSettingChange('voiceTier', 'premium')}
@@ -602,7 +602,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                             : 'text-zinc-500 hover:text-zinc-300'
                         }`}
                       >
-                        Premium
+                        {t.settings?.voicePremium || 'Premium'}
                       </button>
                     </div>
                   </div>

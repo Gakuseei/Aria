@@ -332,8 +332,8 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
       <div className="flex items-center gap-2 mb-6">
         {[
           { key: 'all', label: t.characterSelect.filterAll },
-          { key: 'nsfw', label: 'NSFW' },
-          { key: 'sfw', label: 'SFW' },
+          { key: 'nsfw', label: t.characterSelect?.filterNsfw || 'NSFW' },
+          { key: 'sfw', label: t.characterSelect?.filterSfw || 'SFW' },
           ...(customCharacters.length > 0 ? [{ key: 'custom', label: t.characterSelect.custom || 'Custom' }] : []),
         ].map(({ key, label }) => {
           const isActive = filter === key;

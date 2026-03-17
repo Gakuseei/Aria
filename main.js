@@ -323,14 +323,14 @@ ipcMain.handle('test-image-gen', async (event, url) => {
   } catch (error) {
     console.error('[V1.0 ImageGen Test] Error:', error);
     
-    let errorMessage = 'Verbindung fehlgeschlagen.\n\n';
-    
+    let errorMessage = 'Connection failed.\n\n';
+
     if (error.name === 'AbortError' || error.message.includes('timeout')) {
-      errorMessage += 'Zeitüberschreitung - Die API reagiert nicht.\n\n';
-      errorMessage += 'Prüfe:\n• Läuft Stability Matrix?\n• Ist die WebUI gestartet (Launch Button)?\n• Warte 30 Sekunden nach dem Start!';
+      errorMessage += 'Timeout - The API is not responding.\n\n';
+      errorMessage += 'Check:\n• Is Stability Matrix running?\n• Is the WebUI started (Launch Button)?\n• Wait 30 seconds after starting!';
     } else if (error.message.includes('Failed to fetch') || error.message.includes('ECONNREFUSED')) {
-      errorMessage += 'Kann nicht verbinden.\n\n';
-      errorMessage += 'Prüfe:\n• Ist Stability Matrix geöffnet?\n• Ist die WebUI gestartet?\n• Siehst du die WebUI im Browser (http://127.0.0.1:7860)?';
+      errorMessage += 'Cannot connect.\n\n';
+      errorMessage += 'Check:\n• Is Stability Matrix open?\n• Is the WebUI started?\n• Can you see the WebUI in the browser (http://127.0.0.1:7860)?';
     } else {
       errorMessage += error.message;
     }

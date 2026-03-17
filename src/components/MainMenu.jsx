@@ -80,7 +80,7 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
         </h1>
 
         <p className="text-zinc-500 text-xs tracking-[0.3em] uppercase font-medium">
-          100% Local • Uncensored • Offline
+          {t.mainMenu?.tagline || '100% Local • Uncensored • Offline'}
         </p>
       </div>
 

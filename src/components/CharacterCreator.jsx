@@ -16,6 +16,7 @@ function CharacterCreator({ onSave, onBack }) {
     themeColor: '#ef4444',
     avatarBase64: '',
     startingMessage: '',
+    type: 'character',
     passionEnabled: true,
     passionSpeed: 'normal',
   });
@@ -121,7 +122,8 @@ function CharacterCreator({ onSave, onBack }) {
       themeColor: formData.themeColor,
       avatarBase64: formData.avatarBase64 || null,
       startingMessage: formData.startingMessage.trim(),
-      passionEnabled: formData.passionEnabled,
+      type: formData.type,
+      passionEnabled: formData.type === 'bot' ? false : formData.passionEnabled,
       passionSpeed: formData.passionSpeed,
       isCustom: true,
     };
@@ -244,6 +246,38 @@ function CharacterCreator({ onSave, onBack }) {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Type Toggle */}
+            <div className="bg-zinc-800/30 rounded-xl p-5 border border-zinc-700/30">
+              <h3 className="text-sm font-medium text-zinc-400 mb-3">{t.characterCreator?.characterType || 'Type'}</h3>
+              <div className="flex gap-3">
+                {['character', 'bot'].map(type => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => {
+                      handleChange('type', type);
+                      if (type === 'bot') handleChange('passionEnabled', false);
+                      if (type === 'character') handleChange('passionEnabled', true);
+                    }}
+                    className={`flex-1 px-4 py-2 rounded-lg text-sm transition-all ${
+                      formData.type === type
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        : 'bg-zinc-700/30 text-zinc-300 hover:bg-zinc-700/50 border border-transparent'
+                    }`}
+                  >
+                    {type === 'character'
+                      ? (t.characterCreator?.typeCharacter || 'Character')
+                      : (t.characterCreator?.typeBot || 'Bot / Tool')}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-zinc-500 mt-2">
+                {formData.type === 'character'
+                  ? (t.characterCreator?.typeCharacterDesc || 'Roleplay persona with personality and backstory')
+                  : (t.characterCreator?.typeBotDesc || 'Utility bot, scenario, or tool — no roleplay framing')}
+              </p>
             </div>
 
             {/* Basic Info */}
@@ -372,7 +406,9 @@ function CharacterCreator({ onSave, onBack }) {
 
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t.characterCreator.systemPrompt}
+                  {formData.type === 'bot'
+                    ? (t.characterCreator?.botInstructions || 'Bot Instructions')
+                    : t.characterCreator.systemPrompt}
                 </label>
                 <div className="mb-2 p-3 bg-red-900/20 border border-red-700/30 rounded-lg">
                   <div className="flex items-start gap-2 text-xs text-red-400">
@@ -421,6 +457,7 @@ function CharacterCreator({ onSave, onBack }) {
                 </p>
               </div>
 
+              {formData.type !== 'bot' && (
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
                   {t.characterCreator.exampleDialogues}
@@ -482,6 +519,7 @@ function CharacterCreator({ onSave, onBack }) {
                   <p className="mt-2 text-xs text-zinc-500">{t.characterCreator.maxExamplesReached}</p>
                 )}
               </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
@@ -517,7 +555,7 @@ function CharacterCreator({ onSave, onBack }) {
                 </p>
               </div>
 
-              {/* Passion System */}
+              {formData.type !== 'bot' && (
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-sm font-medium text-zinc-300">
@@ -562,6 +600,7 @@ function CharacterCreator({ onSave, onBack }) {
                   </div>
                 )}
               </div>
+              )}
             </div>
 
             {/* Tips */}

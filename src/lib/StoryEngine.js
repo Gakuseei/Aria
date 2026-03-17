@@ -45,10 +45,10 @@ const LANGUAGE_NAMES = {
  * @param {string} params.language - Language code
  * @returns {string}
  */
-export function buildStoryPrompt({ genre = null, authorNote = null, storySummary = null, language = 'en' }) {
+export function buildStoryPrompt({ genre = null, storySummary = null, language = 'en' }) {
   const parts = [];
 
-  // ATTG Block — no "Author:" field to prevent model roleplaying as a persona
+  // ATTG Block
   if (genre && GENRE_PRESETS[genre]) {
     const preset = GENRE_PRESETS[genre];
     parts.push(`[Genre: ${preset.label}; Tags: ${preset.tags}; Rating: Explicit]`);
@@ -75,11 +75,6 @@ Write a vivid, immersive story based on the user's prompt.
   // Story summary for continuation context
   if (storySummary) {
     parts.push(`\n[Story so far: ${storySummary}]`);
-  }
-
-  // Author's Note — near end for maximum influence
-  if (authorNote && authorNote.trim()) {
-    parts.push(`\n[Author's Note: ${authorNote.trim()}]`);
   }
 
   // Language enforcement (non-English only)
@@ -160,10 +155,17 @@ export async function generateStory({ prompt, genre = null, authorNote = null, o
   }
 
   try {
-    const systemPrompt = buildStoryPrompt({ genre, authorNote, language });
+    const systemPrompt = buildStoryPrompt({ genre, language });
+
+    // Build user message — Author's Note injected HERE for maximum influence
+    let userContent = prompt.trim();
+    if (authorNote?.trim()) {
+      userContent += `\n\n[Author's Direction: ${authorNote.trim()}]\n\nFollow the Author's Direction above.`;
+    }
+
     const messages = [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: prompt.trim() }
+      { role: 'user', content: userContent }
     ];
 
     const promptTokens = estimateTokens(systemPrompt) + estimateTokens(prompt);
@@ -253,8 +255,14 @@ export async function continueStory({ storyText, genre = null, authorNote = null
   const contextChars = Math.min(storyText.length, 4200);
   const storyContext = storyText.slice(-contextChars);
 
-  const systemPrompt = buildStoryPrompt({ genre, authorNote, storySummary, language });
-  const userMessage = `Continue this story naturally from where it left off. Maintain the same style, tone, and pacing:\n\n${storyContext}`;
+  const systemPrompt = buildStoryPrompt({ genre, storySummary, language });
+
+  // Author's Note injected in user message — after context, before continue instruction
+  let userMessage = storyContext;
+  if (authorNote?.trim()) {
+    userMessage += `\n\n[Author's Direction: ${authorNote.trim()}]`;
+  }
+  userMessage += '\n\nContinue this story naturally from where it left off. Maintain the same style, tone, and pacing. Follow any Author\'s Direction above.';
 
   const promptTokens = estimateTokens(systemPrompt) + estimateTokens(userMessage);
   const numPredict = Math.max(512, Math.min(1500, numCtx - promptTokens - 128));

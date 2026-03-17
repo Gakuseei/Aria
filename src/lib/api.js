@@ -184,7 +184,7 @@ const CTX_PRESETS = {
  * Compute the capped num_ctx for a given model.
  * Centralised so every Ollama request uses the same value.
  */
-async function getModelCtx(ollamaUrl, model, contextPreset = 'medium') {
+export async function getModelCtx(ollamaUrl, model, contextPreset = 'medium') {
   const caps = await getModelCapabilities(ollamaUrl, model);
   const paramB = parseFloat(caps.parameterSize) || 7;
   const sizeKey = paramB <= 3 ? 'small' : paramB <= 10 ? 'medium' : 'large';

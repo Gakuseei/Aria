@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { generateStory, continueStory, GENRE_PRESETS } from '../lib/StoryEngine';
-import { saveSession, generateSessionId, autoDetectAndSetModel } from '../lib/api';
+import { generateStory, continueStory } from '../lib/StoryEngine';
+import { saveSession, generateSessionId, autoDetectAndSetModel, getModelCtx } from '../lib/api';
 import { GAME_MODES } from '../App';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
@@ -161,12 +161,13 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
       const language = localStorage.getItem('language') || 'en';
       const ollamaUrl = parentSettings?.ollamaUrl || OLLAMA_DEFAULT_URL;
       const model = parentSettings?.ollamaModel || currentModel;
+      const numCtx = await getModelCtx(ollamaUrl, model, parentSettings?.contextSize || 'medium');
 
       const result = await generateStory({
         prompt: prompt.trim(),
         genre,
         authorNote: authorNote.trim() || null,
-        options: { ollamaUrl, model, language, onToken: handleToken, requestId }
+        options: { ollamaUrl, model, language, onToken: handleToken, requestId, numCtx }
       });
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -230,13 +231,14 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
       const language = localStorage.getItem('language') || 'en';
       const ollamaUrl = parentSettings?.ollamaUrl || OLLAMA_DEFAULT_URL;
       const model = parentSettings?.ollamaModel || currentModel;
+      const numCtx = await getModelCtx(ollamaUrl, model, parentSettings?.contextSize || 'medium');
 
       const result = await continueStory({
         storyText: story,
         genre,
         authorNote: authorNote.trim() || null,
         summary,
-        options: { ollamaUrl, model, language, onToken: handleToken, requestId }
+        options: { ollamaUrl, model, language, onToken: handleToken, requestId, numCtx }
       });
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }

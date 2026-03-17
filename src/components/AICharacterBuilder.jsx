@@ -4,6 +4,7 @@ import { MAX_FILE_SIZE_BYTES } from '../lib/defaults';
 import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
+import CustomDropdown from './CustomDropdown';
 
 function RegenerateButton({ field, regeneratingField, onRegenerate, t }) {
   return (
@@ -307,35 +308,28 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
                   {t.aiCharacterBuilder?.modelLabel || 'AI Model'}
                 </label>
-                <select
+                <CustomDropdown
                   value={selectedModel}
                   onChange={(e) => setSelectedModel(e.target.value)}
-                  className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 appearance-none cursor-pointer"
-                >
-                  {availableModels.length === 0 && (
-                    <option value="">{t.aiCharacterBuilder?.noModels || 'No models installed'}</option>
-                  )}
-                  {availableModels.map((model) => (
-                    <option key={model} value={model}>{model}</option>
-                  ))}
-                </select>
+                  options={availableModels.length > 0
+                    ? availableModels.map(m => ({ value: m, label: m }))
+                    : [{ value: '', label: t.aiCharacterBuilder?.noModels || 'No models installed' }]
+                  }
+                />
               </div>
 
               <div className="w-48">
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
                   {t.aiCharacterBuilder?.languageLabel || 'Output Language'}
                 </label>
-                <select
+                <CustomDropdown
                   value={selectedLanguage}
                   onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 appearance-none cursor-pointer"
-                >
-                  {LANGUAGES.map((lang) => (
-                    <option key={lang.code} value={lang.code}>
-                      {lang.label}{lang.beta ? ' (Beta)' : ''}
-                    </option>
-                  ))}
-                </select>
+                  options={LANGUAGES.map(lang => ({
+                    value: lang.code,
+                    label: `${lang.label}${lang.beta ? ' (Beta)' : ''}`
+                  }))}
+                />
               </div>
             </div>
 

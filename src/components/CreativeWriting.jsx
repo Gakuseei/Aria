@@ -53,13 +53,17 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   };
 
   useEffect(() => {
-    mountedRef.current = true;
-    const closeModelPicker = (e) => {
-      if (showModelPicker && !e.target.closest('[data-model-picker]')) setShowModelPicker(false);
+    if (!showModelPicker) return;
+    const close = (e) => {
+      if (!e.target.closest('[data-model-picker]')) setShowModelPicker(false);
     };
-    document.addEventListener('click', closeModelPicker);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [showModelPicker]);
+
+  useEffect(() => {
+    mountedRef.current = true;
     return () => {
-      document.removeEventListener('click', closeModelPicker);
       mountedRef.current = false;
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);

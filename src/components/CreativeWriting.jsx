@@ -94,9 +94,11 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
       const models = await fetchOllamaModels(ollamaUrl);
       if (models.length > 0) setAvailableModels(models);
 
-      const savedModel = parentSettings?.ollamaModel;
-      if (savedModel && models.includes(savedModel)) {
-        setCurrentModel(savedModel);
+      const sessionModel = loadedSession?.model;
+      const settingsModel = parentSettings?.ollamaModel;
+      const preferredModel = sessionModel || settingsModel;
+      if (preferredModel && models.includes(preferredModel)) {
+        setCurrentModel(preferredModel);
       } else {
         const autoDetectResult = await autoDetectAndSetModel(ollamaUrl);
         if (autoDetectResult.success) {

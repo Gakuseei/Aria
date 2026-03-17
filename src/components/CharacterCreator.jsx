@@ -146,6 +146,7 @@ function CharacterCreator({ onSave, onBack }) {
     {
       name: t.characterCreator.blankTemplate,
       data: {
+        type: 'character',
         name: '',
         subtitle: '',
         description: '',
@@ -163,6 +164,7 @@ function CharacterCreator({ onSave, onBack }) {
     {
       name: t.characterCreator.nsfwTemplate,
       data: {
+        type: 'character',
         name: '',
         subtitle: '',
         description: '',
@@ -248,8 +250,7 @@ function CharacterCreator({ onSave, onBack }) {
               </div>
             </div>
 
-            {/* Type Toggle */}
-            <div className="bg-zinc-800/30 rounded-xl p-5 border border-zinc-700/30">
+<div className="bg-zinc-800/30 rounded-xl p-5 border border-zinc-700/30">
               <h3 className="text-sm font-medium text-zinc-400 mb-3">{t.characterCreator?.characterType || 'Type'}</h3>
               <div className="flex gap-3">
                 {['character', 'bot'].map(type => (

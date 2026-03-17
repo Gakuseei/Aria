@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { generateStory, continueStory } from '../lib/StoryEngine';
+import { generateStory, continueStory, cleanStoryOutput } from '../lib/StoryEngine';
 import { saveSession, generateSessionId, autoDetectAndSetModel, getModelCtx, fetchOllamaModels } from '../lib/api';
 import { GAME_MODES } from '../App';
 import { version as appVersion } from '../../package.json';
@@ -191,7 +191,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
 
       if (result.success) {
-        const finalContent = result.content || streamBufferRef.current;
+        const finalContent = result.content || cleanStoryOutput(streamBufferRef.current);
         setStory(prev => prev ? prev + '\n\n' + finalContent : finalContent);
         setPromptCollapsed(true);
         setTimeout(() => {
@@ -261,7 +261,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
 
       if (result.success) {
-        const finalContent = result.content || streamBufferRef.current;
+        const finalContent = result.content || cleanStoryOutput(streamBufferRef.current);
         setStory(prev => prev + '\n\n' + finalContent);
         if (result.summary) setSummary(result.summary);
       } else {

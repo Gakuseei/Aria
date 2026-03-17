@@ -40,7 +40,6 @@ const LANGUAGE_NAMES = {
  * Build the system prompt from slots.
  * @param {object} params
  * @param {string|null} params.genre - Genre key or null
- * @param {string|null} params.authorNote - Optional steering note
  * @param {string|null} params.storySummary - Auto-generated story summary
  * @param {string} params.language - Language code
  * @returns {string}
@@ -168,7 +167,7 @@ export async function generateStory({ prompt, genre = null, authorNote = null, o
       { role: 'user', content: userContent }
     ];
 
-    const promptTokens = estimateTokens(systemPrompt) + estimateTokens(prompt);
+    const promptTokens = estimateTokens(systemPrompt) + estimateTokens(userContent);
     const numPredict = Math.max(512, Math.min(1500, numCtx - promptTokens - 128));
 
     const chatOptions = {
@@ -205,9 +204,8 @@ export async function generateStory({ prompt, genre = null, authorNote = null, o
       if (!result?.success) return { success: false, error: result?.error || 'Generation failed', requestId };
       return { success: true, content: cleanStoryOutput(result.content || ''), requestId };
     } else if (window.electronAPI?.aiChat) {
-      // NON-STREAMING fallback (IPC only, no direct HTTP)
       const result = await window.electronAPI.aiChat({
-        messages: [{ role: 'user', content: prompt.trim() }],
+        messages: [{ role: 'user', content: userContent }],
         systemPrompt,
         model,
         isOllama: true,

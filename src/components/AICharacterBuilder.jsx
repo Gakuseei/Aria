@@ -63,6 +63,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
   const [regeneratingField, setRegeneratingField] = useState(null);
   const [avatarBase64, setAvatarBase64] = useState('');
   const [passionEnabled, setPassionEnabled] = useState(true);
+  const [selectedType, setSelectedType] = useState('character');
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -98,6 +99,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       description: description.trim(),
       model: selectedModel,
       language: selectedLanguage,
+      type: selectedType,
       ollamaUrl: settings.ollamaUrl,
     });
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -116,6 +118,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
             description: description.trim(),
             model: selectedModel,
             language: selectedLanguage,
+            type: selectedType,
             field: fieldName,
             existingCharacter: character,
             ollamaUrl: settings.ollamaUrl,
@@ -153,6 +156,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       description: description.trim(),
       model: selectedModel,
       language: selectedLanguage,
+      type: selectedType,
       field: fieldName,
       existingCharacter: generatedCharacter,
       ollamaUrl: settings.ollamaUrl,
@@ -217,7 +221,8 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       themeColor: generatedCharacter.themeColor || '#ef4444',
       avatarBase64: avatarBase64 || null,
       startingMessage: generatedCharacter.startingMessage?.trim() || '',
-      passionEnabled,
+      type: selectedType,
+      passionEnabled: selectedType === 'bot' ? false : passionEnabled,
       passionSpeed: generatedCharacter.passionSpeed || 'normal',
       isCustom: true,
     };
@@ -225,13 +230,18 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
     onSave(character);
   };
 
-  const textareaFields = useMemo(() => [
-    { key: 'systemPrompt', label: t.aiCharacterBuilder?.fieldSystemPrompt || 'System Prompt (W++)', rows: 10, mono: true },
-    { key: 'instructions', label: t.aiCharacterBuilder?.fieldInstructions || 'Instructions', rows: 4, mono: false },
-    { key: 'scenario', label: t.aiCharacterBuilder?.fieldScenario || 'Scenario', rows: 4, mono: false },
-    { key: 'exampleDialogue', label: t.aiCharacterBuilder?.fieldExampleDialogue || 'Example Dialogue', rows: 4, mono: true },
-    { key: 'startingMessage', label: t.aiCharacterBuilder?.fieldStartingMessage || 'Starting Message', rows: 4, mono: false },
-  ], [t]);
+  const textareaFields = useMemo(() => {
+    const fields = [
+      { key: 'systemPrompt', label: t.aiCharacterBuilder?.fieldSystemPrompt || 'System Prompt (W++)', rows: 10, mono: true },
+      { key: 'instructions', label: t.aiCharacterBuilder?.fieldInstructions || 'Instructions', rows: 4, mono: false },
+      { key: 'scenario', label: t.aiCharacterBuilder?.fieldScenario || 'Scenario', rows: 4, mono: false },
+    ];
+    if (selectedType !== 'bot') {
+      fields.push({ key: 'exampleDialogue', label: t.aiCharacterBuilder?.fieldExampleDialogue || 'Example Dialogue', rows: 4, mono: true });
+    }
+    fields.push({ key: 'startingMessage', label: t.aiCharacterBuilder?.fieldStartingMessage || 'Starting Message', rows: 4, mono: false });
+    return fields;
+  }, [t, selectedType]);
 
   return (
     <div className={`h-full w-full flex flex-col p-8 bg-gradient-to-br from-zinc-900 via-zinc-900 to-black transition-all duration-300 ${
@@ -311,6 +321,40 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       <div className="flex-1 flex items-center justify-center overflow-hidden">
         {currentStep === 1 && (
           <div className="w-full max-w-2xl space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                {t.aiCharacterBuilder?.characterType || 'Type'}
+              </label>
+              <div className="flex gap-2">
+                {['character', 'bot'].map(type => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => {
+                      setSelectedType(type);
+                      setPassionEnabled(type === 'character');
+                    }}
+                    className={`flex-1 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                      selectedType === type
+                        ? isGoldMode
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          : 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
+                        : 'bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50 border border-transparent'
+                    }`}
+                  >
+                    {type === 'character'
+                      ? (t.aiCharacterBuilder?.typeCharacter || 'Character')
+                      : (t.aiCharacterBuilder?.typeBot || 'Bot / Tool')}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-zinc-500 mt-2">
+                {selectedType === 'character'
+                  ? (t.aiCharacterBuilder?.typeCharacterDesc || 'Roleplay persona with personality and backstory')
+                  : (t.aiCharacterBuilder?.typeBotDesc || 'Utility bot, scenario, or tool — no roleplay framing')}
+              </p>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-zinc-300 mb-2">
                 {t.aiCharacterBuilder?.descriptionLabel || 'Describe your character'}
@@ -486,6 +530,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
                 </div>
               ))}
 
+              {selectedType !== 'bot' && (
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-sm font-medium text-zinc-300">
@@ -524,6 +569,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
                   </div>
                 )}
               </div>
+              )}
 
               <div className="flex justify-between pt-4 border-t border-zinc-800">
                 <button

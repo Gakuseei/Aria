@@ -305,6 +305,7 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
     let content = '';
 
     if (isElectron()) {
+      let timeoutId;
       const result = await Promise.race([
         window.electronAPI.aiChat({
           messages: [{ role: 'user', content: scoringPrompt }],
@@ -317,10 +318,11 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
           num_ctx: modelCtx
         }),
         new Promise((_, reject) => {
-          const t = setTimeout(() => reject(new Error('timeout')), PASSION_SCORING_TIMEOUT_MS);
-          if (typeof t === 'object' && t.unref) t.unref();
+          timeoutId = setTimeout(() => reject(new Error('timeout')), PASSION_SCORING_TIMEOUT_MS);
+          if (typeof timeoutId === 'object' && timeoutId.unref) timeoutId.unref();
         })
       ]);
+      clearTimeout(timeoutId);
       if (!result.success) return 0;
       content = result.content?.trim() || '';
     } else {
@@ -553,6 +555,10 @@ Rules:
           console.log(`[API] Suggestions retry: ${retrySuggestions.length} from "${retryRaw.trim().slice(0, 120)}"`);
           const best = retrySuggestions.length >= suggestions.length ? retrySuggestions : suggestions;
           callback(best.length > 0 ? best : null);
+        }).catch(retryErr => {
+          if (retryErr?.message === 'aborted') return;
+          console.warn('[API] Suggestion retry failed:', retryErr?.message);
+          callback(suggestions.length > 0 ? suggestions : null);
         });
       })
       .catch(err => {

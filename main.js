@@ -259,7 +259,7 @@ function createWindow() {
   // Open external links in default browser
   ipcMain.on('open-external', (event, url) => {
     if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
-      shell.openExternal(url);
+      shell.openExternal(url).catch(err => console.error('Failed to open external URL:', err));
     }
   });
 
@@ -268,7 +268,7 @@ function createWindow() {
     const toolsPath = path.join(__dirname, 'tools');
     shell.openPath(toolsPath).then((err) => {
       if (err) console.error('Failed to open tools folder:', err);
-    });
+    }).catch(err => console.error('Failed to open tools folder:', err));
   });
 
 }

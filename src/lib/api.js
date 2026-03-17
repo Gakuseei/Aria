@@ -1576,8 +1576,19 @@ export const saveCustomCharacter = (characterData) => {
       });
     }
     
-    localStorage.setItem('customCharacters', JSON.stringify(characters));
-    
+    try {
+      localStorage.setItem('customCharacters', JSON.stringify(characters));
+    } catch (storageError) {
+      if (storageError.name === 'QuotaExceededError' || storageError.code === 22) {
+        console.error('[CharacterSave] localStorage quota exceeded');
+        window.dispatchEvent(new CustomEvent('show-toast', {
+          detail: { message: 'Storage full — try removing some character avatars to free space', type: 'error' }
+        }));
+        return { success: false, error: 'Storage quota exceeded' };
+      }
+      throw storageError;
+    }
+
     return { success: true, character: characterData };
   } catch (error) {
     console.error('[v8.1 Character] Error saving:', error);

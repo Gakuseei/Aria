@@ -577,6 +577,7 @@ export const translations = {
       typeBot: 'Bot / Scenario',
       typeCharacterDesc: 'Roleplay persona with personality and backstory',
       typeBotDesc: 'Utility bot, scenario, or tool — no roleplay framing',
+      storageFull: 'Storage full — try removing some character avatars to free space',
       botInstructions: 'Bot Instructions',
     },
     creative: {
@@ -1396,6 +1397,7 @@ export const translations = {
       typeBot: 'Bot / Szenario',
       typeCharacterDesc: 'Rollenspielfigur mit Persönlichkeit und Hintergrundgeschichte',
       typeBotDesc: 'Utility-Bot, Szenario oder Tool — kein Rollenspiel',
+      storageFull: 'Speicher voll — entferne einige Charakter-Avatare um Platz zu schaffen',
       botInstructions: 'Bot-Anweisungen',
     },
     creative: {
@@ -2215,6 +2217,7 @@ export const translations = {
       typeBot: 'Bot / Escenario',
       typeCharacterDesc: 'Personaje de rol con personalidad e historia',
       typeBotDesc: 'Bot utilitario, escenario o herramienta — sin marco de rol',
+      storageFull: 'Almacenamiento lleno — elimina algunos avatares de personaje para liberar espacio',
       botInstructions: 'Instrucciones del bot',
     },
     creative: {
@@ -3034,6 +3037,7 @@ export const translations = {
       typeBot: '机器人 / 场景',
       typeCharacterDesc: '拥有个性和背景故事的角色扮演角色',
       typeBotDesc: '实用机器人、场景或工具 — 无角色扮演',
+      storageFull: '存储空间已满 — 尝试删除一些角色头像以释放空间',
       botInstructions: '机器人指令',
     },
     creative: {
@@ -3853,6 +3857,7 @@ export const translations = {
       typeBot: 'Bot / Scénario',
       typeCharacterDesc: 'Personnage de jeu de rôle avec personnalité et histoire',
       typeBotDesc: 'Bot utilitaire, scénario ou outil — sans cadre de jeu de rôle',
+      storageFull: 'Stockage plein — supprimez des avatars de personnage pour libérer de l\'espace',
       botInstructions: 'Instructions du bot',
     },
     creative: {
@@ -4672,6 +4677,7 @@ export const translations = {
       typeBot: 'Bot / Scenario',
       typeCharacterDesc: 'Personaggio di roleplay con personalità e storia',
       typeBotDesc: 'Bot utilitario, scenario o strumento — senza ruolo',
+      storageFull: 'Spazio esaurito — rimuovi alcuni avatar dei personaggi per liberare spazio',
       botInstructions: 'Istruzioni del bot',
     },
     creative: {
@@ -5491,6 +5497,7 @@ export const translations = {
       typeBot: 'Bot / Cenário',
       typeCharacterDesc: 'Personagem de roleplay com personalidade e história',
       typeBotDesc: 'Bot utilitário, cenário ou ferramenta — sem enquadramento de roleplay',
+      storageFull: 'Armazenamento cheio — remova alguns avatares de personagem para liberar espaço',
       botInstructions: 'Instruções do bot',
     },
     creative: {
@@ -6310,6 +6317,7 @@ export const translations = {
       typeBot: 'Бот / Сценарий',
       typeCharacterDesc: 'Персонаж для ролевой игры с характером и историей',
       typeBotDesc: 'Утилитарный бот, сценарий или инструмент — без ролевой игры',
+      storageFull: 'Хранилище заполнено — удалите аватары персонажей для освобождения места',
       botInstructions: 'Инструкции бота',
     },
     creative: {
@@ -7129,6 +7137,7 @@ export const translations = {
       typeBot: 'ボット / シナリオ',
       typeCharacterDesc: '個性とバックストーリーを持つロールプレイキャラクター',
       typeBotDesc: 'ユーティリティボット、シナリオ、ツール — ロールプレイなし',
+      storageFull: 'ストレージが満杯です — キャラクターアバターを削除して空き容量を確保してください',
       botInstructions: 'ボットの指示',
     },
     creative: {
@@ -7948,6 +7957,7 @@ export const translations = {
       typeBot: '봇 / 시나리오',
       typeCharacterDesc: '개성과 배경을 가진 롤플레이 캐릭터',
       typeBotDesc: '유틸리티 봇, 시나리오 또는 도구 — 롤플레이 없음',
+      storageFull: '저장 공간이 가득 찼습니다 — 캐릭터 아바타를 삭제하여 공간을 확보하세요',
       botInstructions: '봇 지침',
     },
     creative: {
@@ -8767,6 +8777,7 @@ export const translations = {
       typeBot: 'بوت / سيناريو',
       typeCharacterDesc: 'شخصية لعب أدوار مع شخصية وقصة خلفية',
       typeBotDesc: 'بوت مساعد، سيناريو، أو أداة — بدون لعب أدوار',
+      storageFull: 'التخزين ممتلئ — حاول إزالة بعض صور الشخصيات لتحرير المساحة',
       botInstructions: 'تعليمات البوت',
     },
     creative: {
@@ -9586,6 +9597,7 @@ export const translations = {
       typeBot: 'बॉट / परिदृश्य',
       typeCharacterDesc: 'व्यक्तित्व और पृष्ठभूमि कहानी के साथ भूमिका निभाने वाला चरित्र',
       typeBotDesc: 'उपयोगिता बॉट, परिदृश्य, या टूल — कोई भूमिका नहीं',
+      storageFull: 'स्टोरेज भरा हुआ है — जगह खाली करने के लिए कुछ किरदार अवतार हटाएँ',
       botInstructions: 'बॉट निर्देश',
     },
     creative: {
@@ -10405,6 +10417,7 @@ export const translations = {
       typeBot: 'Bot / Senaryo',
       typeCharacterDesc: 'Kişilik ve arka plana sahip rol yapma karakteri',
       typeBotDesc: 'Yardımcı bot, senaryo veya araç — rol yapma yok',
+      storageFull: 'Depolama dolu — yer açmak için bazı karakter avatarlarını kaldırın',
       botInstructions: 'Bot Talimatları',
     },
     creative: {

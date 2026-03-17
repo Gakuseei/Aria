@@ -13,6 +13,7 @@ import DebugConsole from './components/DebugConsole';
 import OledToggleButton from './components/OledToggleButton';
 import { testOllamaConnection, autoDetectAndSetModel } from './lib/api';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from './lib/defaults';
+import { useLanguage } from './context/LanguageContext';
 import OllamaSetup from './components/tutorials/OllamaSetup';
 
 // App views
@@ -36,7 +37,11 @@ export const GAME_MODES = {
 
 // v0.2.5: Onboarding Modal removed - Replaced by OllamaSetup.jsx
 
+/** RTL languages that require dir="rtl" on the root element */
+const RTL_LANGUAGES = new Set(['ar']);
+
 function App() {
+  const { language } = useLanguage();
   const [currentView, setCurrentView] = useState(VIEWS.MAIN_MENU);
   const [, setSelectedMode] = useState(null);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
@@ -523,7 +528,7 @@ function App() {
   };
 
   return (
-    <div className="app-container h-screen w-screen overflow-hidden bg-zinc-950 text-white">
+    <div dir={RTL_LANGUAGES.has(language) ? 'rtl' : 'ltr'} className="app-container h-screen w-screen overflow-hidden bg-zinc-950 text-white">
       {/* v0.2.5: Onboarding Modal - Replaced by Premium OllamaSetup */}
       {showOnboarding && (
          <OllamaSetup 

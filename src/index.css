@@ -887,3 +887,12 @@ body:not(.oled-mode) .passion-glow-high {
 .mood-transition {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* RTL Support for Arabic */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .flex-row {
+  flex-direction: row-reverse;
+}

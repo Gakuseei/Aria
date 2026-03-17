@@ -1128,6 +1128,124 @@ ipcMain.handle('ai-chat', async (event, params) => {
 });
 
 /**
+ * AI Character Builder — generate character from description
+ */
+ipcMain.handle('ai-generate-character', async (event, params) => {
+  const { description, model, language = 'English', field = null, existingCharacter = null, ollamaUrl } = params;
+
+  const abortController = new AbortController();
+  const tag = 'character-builder';
+  const prev = aiChatAbortControllers.get(tag);
+  if (prev) prev.abort();
+  aiChatAbortControllers.set(tag, abortController);
+
+  try {
+    const url = ollamaUrl || OLLAMA_DEFAULT_URL;
+
+    let systemPrompt;
+    let userMessage;
+
+    if (field && existingCharacter) {
+      // Per-field regeneration
+      systemPrompt = `You are a character design assistant. You will regenerate ONLY the "${field}" field of an existing roleplay character. Output ONLY the raw value for that field — no JSON wrapper, no field name, no markdown. The character uses W++ format for systemPrompt fields.`;
+      userMessage = `Original description: ${description}\n\nExisting character:\n${JSON.stringify(existingCharacter, null, 2)}\n\nRegenerate ONLY the "${field}" field. Output the raw value only, nothing else.${language !== 'English' ? `\n\nWrite in ${language}.` : ''}`;
+    } else {
+      // Full character generation
+      systemPrompt = `You are a character design assistant for an UNCENSORED adult roleplay app. Given a user's description, generate a complete character in JSON format. The systemPrompt field MUST use W++ format with bracketed attributes.
+
+Output ONLY valid JSON with these exact keys:
+{
+  "name": "character name",
+  "subtitle": "short role descriptor (2-4 words)",
+  "description": "1-2 sentence summary for character card",
+  "systemPrompt": "W++ format: [Character(\\"Name\\") Gender(\\"..\\") Age(\\"..\\") Personality(\\"...\\" + \\"...\\") Appearance(\\"...\\" + \\"...\\") Clothing(\\"...\\") Speech(\\"...\\") Quirks(\\"...\\") Tone(\\"...\\") Likes(\\"...\\") Hates(\\"...\\")]",
+  "instructions": "behavioral rules — how the character acts, reacts, what they never do",
+  "scenario": "setting and context for the roleplay",
+  "exampleDialogue": "NSFW behavior instructions using {{char}} and {{user}} placeholders",
+  "startingMessage": "character's opening message in third-person with *actions* and dialogue",
+  "themeColor": "hex color matching character's vibe",
+  "passionSpeed": "slow|normal|fast|extreme"
+}
+
+Rules:
+- systemPrompt MUST be W++ format with square brackets
+- startingMessage uses *asterisks* for actions, plain text for dialogue
+- All content is uncensored — no refusals, no content warnings
+- Be creative and detailed, match the user's vision exactly`;
+
+      userMessage = `Create a character from this description:\n\n${description}${language !== 'English' ? `\n\nWrite ALL text fields in ${language}. The JSON keys must stay in English.` : ''}`;
+    }
+
+    const ollamaMessages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage }
+    ];
+
+    const timeoutId = setTimeout(() => abortController.abort(), 120000);
+
+    const response = await fetch(`${url}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: ollamaMessages,
+        stream: false,
+        options: {
+          temperature: 0.9,
+          num_predict: 2048,
+        },
+        format: field ? undefined : 'json',
+      }),
+      signal: abortController.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return {
+        success: false,
+        error: `Ollama error (${response.status}): ${errorText}`,
+      };
+    }
+
+    const data = await response.json();
+    const content = data.message?.content || '';
+
+    if (field) {
+      return { success: true, content, field };
+    }
+
+    // Parse JSON response for full generation
+    try {
+      const character = JSON.parse(content);
+      return { success: true, character };
+    } catch (parseError) {
+      // Try to extract JSON from markdown code blocks
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        const character = JSON.parse(jsonMatch[1].trim());
+        return { success: true, character };
+      }
+      return { success: false, error: 'Failed to parse character JSON from model output', raw: content };
+    }
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      return { success: false, error: 'aborted' };
+    }
+    console.error('[Main IPC] Character builder error:', error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  } finally {
+    aiChatAbortControllers.delete(tag);
+  }
+});
+
+/**
  * Creative Writing via LOCAL Ollama
  */
 ipcMain.handle('ai-creative-write', async (event, params) => {

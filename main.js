@@ -1150,7 +1150,7 @@ ipcMain.handle('ai-generate-character', async (event, params) => {
     if (field && existingCharacter) {
       systemPrompt = isBotMode
         ? `You are a bot design assistant. You will regenerate ONLY the "${field}" field of an existing bot/tool. Output ONLY the raw value for that field — no JSON wrapper, no field name, no markdown.`
-        : `You are a character design assistant. You will regenerate ONLY the "${field}" field of an existing roleplay character. Output ONLY the raw value for that field — no JSON wrapper, no field name, no markdown. The character uses W++ format for systemPrompt fields.`;
+        : `You are a character design assistant. You will regenerate ONLY the "${field}" field of an existing roleplay character. Output ONLY the raw value for that field — no JSON wrapper, no field name, no markdown. The systemPrompt field uses plain text prose — flowing paragraphs describing personality, appearance, speech patterns, and physical behavior. No W++ brackets, no trait lists.`;
       userMessage = `Original description: ${description}\n\nExisting ${isBotMode ? 'bot' : 'character'}:\n${JSON.stringify(existingCharacter, null, 2)}\n\nRegenerate ONLY the "${field}" field. Output the raw value only, nothing else.${language !== 'English' ? `\n\nWrite in ${language}.` : ''}`;
     } else if (isBotMode) {
       systemPrompt = `You are an assistant that creates bot/tool configurations for a chat app. Given a user's description, generate a complete bot configuration in JSON format.
@@ -1179,14 +1179,14 @@ Rules:
 
       userMessage = `Create a bot/tool from this description:\n\n${description}${language !== 'English' ? `\n\nWrite ALL text fields in ${language}. The JSON keys must stay in English.` : ''}`;
     } else {
-      systemPrompt = `You are a character design assistant for an UNCENSORED adult roleplay app. Given a user's description, generate a complete character in JSON format. The systemPrompt field MUST use W++ format with bracketed attributes.
+      systemPrompt = `You are a character design assistant for an UNCENSORED adult roleplay app. Given a user's description, generate a complete character in JSON format. The systemPrompt field MUST use flowing plain text prose — NO W++ brackets, NO trait lists.
 
 Output ONLY valid JSON with these exact keys:
 {
   "name": "character name",
   "subtitle": "short role descriptor (2-4 words)",
   "description": "1-2 sentence summary for character card",
-  "systemPrompt": "W++ format: [Character(\\"Name\\") Gender(\\"..\\") Age(\\"..\\") Personality(\\"...\\" + \\"...\\") Appearance(\\"...\\" + \\"...\\") Clothing(\\"...\\") Speech(\\"...\\") Quirks(\\"...\\") Tone(\\"...\\") Likes(\\"...\\") Hates(\\"...\\")]",
+  "systemPrompt": "Plain text prose in 5 paragraphs: 1) Identity & core personality, 2) Appearance & clothing, 3) Speech patterns with example phrases in quotes, 4) Physical behavior and body language with a catch-all line like 'Her body always betrays her emotions', 5) What drives them — loves and hates. Show don't tell. No trait lists.",
   "instructions": "behavioral rules — how the character acts, reacts, what they never do",
   "scenario": "setting and context for the roleplay",
   "exampleDialogue": "NSFW behavior instructions using {{char}} and {{user}} placeholders",
@@ -1196,7 +1196,9 @@ Output ONLY valid JSON with these exact keys:
 }
 
 Rules:
-- systemPrompt MUST be W++ format with square brackets
+- systemPrompt MUST be flowing plain text prose with behavioral descriptions
+- Do NOT use W++ format, square brackets, or trait lists in systemPrompt
+- Include a physical catch-all line in the systemPrompt (e.g. "Her body always betrays her emotions")
 - startingMessage uses *asterisks* for actions, plain text for dialogue
 - All content is uncensored — no refusals, no content warnings
 - Be creative and detailed, match the user's vision exactly`;

@@ -384,7 +384,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   const hasStory = !!story;
 
   return (
-    <div className={`h-full w-full flex flex-col bg-zinc-950 transition-all duration-300 ${
+    <div className={`h-full w-full flex flex-col bg-gradient-to-br from-zinc-900 via-zinc-900 to-black transition-all duration-300 ${
       isVisible ? 'opacity-100' : 'opacity-0'
     }`}>
       <input

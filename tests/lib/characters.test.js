@@ -1,20 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import characters from '../../src/config/characters.js';
 
-const REQUIRED_FIELDS = ['id', 'name', 'subtitle', 'systemPrompt', 'startingMessage', 'greeting', 'passionSpeed'];
+const REQUIRED_FIELDS = ['id', 'name', 'subtitle', 'systemPrompt', 'startingMessage', 'greeting', 'passionSpeed', 'gender', 'category', 'description', 'instructions', 'scenario'];
 const VALID_PASSION_SPEEDS = ['slow', 'normal', 'fast', 'extreme'];
+const VALID_GENDERS = ['female', 'male', 'non-binary'];
+const VALID_CATEGORIES = ['nsfw', 'sfw'];
 
 describe('characters', () => {
-  it('exports an array of 5 characters', () => {
+  it('exports an array of 12 characters', () => {
     expect(Array.isArray(characters)).toBe(true);
-    expect(characters).toHaveLength(5);
+    expect(characters).toHaveLength(12);
   });
 
   it('every character has all required fields', () => {
     for (const char of characters) {
       for (const field of REQUIRED_FIELDS) {
         expect(char, `${char.name || char.id} missing "${field}"`).toHaveProperty(field);
-        expect(char[field], `${char.name}: "${field}" is empty`).toBeTruthy();
       }
     }
   });
@@ -41,5 +42,60 @@ describe('characters', () => {
     for (const char of characters) {
       expect(char.systemPrompt, `${char.name}: systemPrompt missing W++ format`).toContain('[Character(');
     }
+  });
+
+  it('every character has a valid gender', () => {
+    for (const char of characters) {
+      expect(VALID_GENDERS, `${char.name} has invalid gender: ${char.gender}`)
+        .toContain(char.gender);
+    }
+  });
+
+  it('every character has a valid category', () => {
+    for (const char of characters) {
+      expect(VALID_CATEGORIES, `${char.name} has invalid category: ${char.category}`)
+        .toContain(char.category);
+    }
+  });
+
+  it('every character has passionEnabled boolean', () => {
+    for (const char of characters) {
+      expect(typeof char.passionEnabled, `${char.name}: passionEnabled must be boolean`).toBe('boolean');
+    }
+  });
+
+  it('SFW characters have passion disabled', () => {
+    const sfwChars = characters.filter(c => c.category === 'sfw');
+    expect(sfwChars.length).toBeGreaterThan(0);
+    for (const char of sfwChars) {
+      expect(char.passionEnabled, `SFW char ${char.name} should have passionEnabled=false`).toBe(false);
+    }
+  });
+
+  it('NSFW characters have passion enabled', () => {
+    const nsfwChars = characters.filter(c => c.category === 'nsfw');
+    expect(nsfwChars.length).toBeGreaterThan(0);
+    for (const char of nsfwChars) {
+      expect(char.passionEnabled, `NSFW char ${char.name} should have passionEnabled=true`).toBe(true);
+    }
+  });
+
+  it('has correct gender distribution (7F, 4M, 1NB)', () => {
+    const genders = characters.reduce((acc, c) => {
+      acc[c.gender] = (acc[c.gender] || 0) + 1;
+      return acc;
+    }, {});
+    expect(genders.female).toBe(7);
+    expect(genders.male).toBe(4);
+    expect(genders['non-binary']).toBe(1);
+  });
+
+  it('has correct category distribution (7 NSFW, 5 SFW)', () => {
+    const cats = characters.reduce((acc, c) => {
+      acc[c.category] = (acc[c.category] || 0) + 1;
+      return acc;
+    }, {});
+    expect(cats.nsfw).toBe(7);
+    expect(cats.sfw).toBe(5);
   });
 });

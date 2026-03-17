@@ -207,12 +207,18 @@ function App() {
   useEffect(() => {
     const handleApiStats = (event) => {
       const stats = event.detail;
+
+      if (stats.builderEvent) {
+        addEventToLog('builder', stats.builderEvent);
+        return;
+      }
+
       setLastApiResponseTime(stats.responseTime);
       setLastResponseWords(stats.wordCount);
       setLastResponseTokens(stats.tokens);
       setLastApiModel(stats.model);
       setLastApiWPS(stats.wordsPerSecond);
-      
+
       addEventToLog('api', `Response: ${stats.responseTime}ms, ${stats.wordCount} words, ${stats.wordsPerSecond} WPS`);
       if (stats.passionRaw !== null && stats.passionRaw !== undefined) {
         addEventToLog('passion', `Level: ${stats.passionLevel}% | raw=${stats.passionRaw} | adjusted=${stats.passionAdjusted !== null ? stats.passionAdjusted.toFixed(1) : '0'}`);

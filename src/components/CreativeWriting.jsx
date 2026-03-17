@@ -31,6 +31,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   const [showAuthorNote, setShowAuthorNote] = useState(false);
   const [promptCollapsed, setPromptCollapsed] = useState(false);
   const [availableModels, setAvailableModels] = useState([]);
+  const [showModelPicker, setShowModelPicker] = useState(false);
 
   const streamBufferRef = useRef('');
   const rafRef = useRef(null);
@@ -53,7 +54,12 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
 
   useEffect(() => {
     mountedRef.current = true;
+    const closeModelPicker = (e) => {
+      if (showModelPicker && !e.target.closest('[data-model-picker]')) setShowModelPicker(false);
+    };
+    document.addEventListener('click', closeModelPicker);
     return () => {
+      document.removeEventListener('click', closeModelPicker);
       mountedRef.current = false;
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
@@ -462,16 +468,40 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
             </button>
 
             {availableModels.length > 1 && (
-              <select
-                value={currentModel || ''}
-                onChange={(e) => setCurrentModel(e.target.value)}
-                disabled={isLoading || isStreaming}
-                className="ml-auto px-3 py-1.5 rounded-full text-sm bg-zinc-800/50 border-2 border-transparent text-zinc-400 focus:border-rose-500 focus:outline-none disabled:opacity-50 appearance-none cursor-pointer"
-              >
-                {availableModels.map((m) => (
-                  <option key={m} value={m}>{m.split(':')[0].split('/').pop()}</option>
-                ))}
-              </select>
+              <div className="relative ml-auto" data-model-picker>
+                <button
+                  onClick={() => setShowModelPicker(!showModelPicker)}
+                  disabled={isLoading || isStreaming}
+                  className={`px-4 py-1.5 rounded-full text-sm transition-all border-2 flex items-center gap-2 disabled:opacity-50 ${
+                    showModelPicker
+                      ? 'bg-rose-500/20 border-rose-500 text-rose-300'
+                      : 'border-transparent bg-zinc-800/50 text-zinc-400 hover:border-rose-500 hover:text-zinc-200'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+                  </svg>
+                  {currentModel ? currentModel.split(':')[0].split('/').pop() : '...'}
+                </button>
+                {showModelPicker && (
+                  <div className="absolute top-full right-0 mt-2 w-64 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl shadow-black/50 z-50 py-1 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700">
+                    {availableModels.map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => { setCurrentModel(m); setShowModelPicker(false); }}
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                          m === currentModel
+                            ? 'bg-rose-500/20 text-rose-300'
+                            : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                        }`}
+                      >
+                        {m.split(':')[0].split('/').pop()}
+                        {m === currentModel && <span className="ml-2 text-rose-500">•</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </div>
 

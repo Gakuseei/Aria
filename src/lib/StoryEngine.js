@@ -106,11 +106,11 @@ function estimateTokens(text) {
  * @param {string} params.prompt - User's story prompt
  * @param {string|null} params.genre - Genre key
  * @param {string|null} params.authorNote - Optional note
- * @param {object} params.options - { ollamaUrl, model, language, onToken }
- * @returns {Promise<{success: boolean, content?: string, error?: string}>}
+ * @param {object} params.options - { ollamaUrl, model, language, numCtx, onToken }
+ * @returns {Promise<{success: boolean, content?: string, requestId?: string, error?: string}>}
  */
 export async function generateStory({ prompt, genre = null, authorNote = null, options = {} }) {
-  const { ollamaUrl = OLLAMA_DEFAULT_URL, model = DEFAULT_MODEL_NAME, language = 'en', onToken = null } = options;
+  const { ollamaUrl = OLLAMA_DEFAULT_URL, model = DEFAULT_MODEL_NAME, language = 'en', numCtx = 8192, onToken = null } = options;
 
   if (!prompt?.trim()) {
     return { success: false, error: 'Story prompt cannot be empty' };
@@ -124,12 +124,12 @@ export async function generateStory({ prompt, genre = null, authorNote = null, o
     ];
 
     const promptTokens = estimateTokens(systemPrompt) + estimateTokens(prompt);
-    const numPredict = Math.max(512, Math.min(1500, 8192 - promptTokens - 128));
+    const numPredict = Math.max(512, Math.min(1500, numCtx - promptTokens - 128));
 
     const chatOptions = {
       temperature: 0.9,
       num_predict: numPredict,
-      num_ctx: 8192,
+      num_ctx: numCtx,
       top_p: 0.95,
       top_k: 40,
       repeat_penalty: 1.1
@@ -143,23 +143,22 @@ export async function generateStory({ prompt, genre = null, authorNote = null, o
       });
       const abortTimer = setTimeout(() => window.electronAPI.ollamaStreamAbort(requestId), 180000);
 
+      let result;
       try {
-        const result = await window.electronAPI.ollamaChatStream({
+        result = await window.electronAPI.ollamaChatStream({
           requestId,
           ollamaUrl,
           model,
           messages,
           options: chatOptions
         });
+      } finally {
         clearTimeout(abortTimer);
         cleanup();
-        if (!result.success) return { success: false, error: result.error || 'Generation failed' };
-        return { success: true, content: (result.content || '').trim() };
-      } catch (err) {
-        clearTimeout(abortTimer);
-        cleanup();
-        throw err;
       }
+      if (result?.aborted) return { success: false, error: 'Generation aborted', requestId };
+      if (!result?.success) return { success: false, error: result?.error || 'Generation failed', requestId };
+      return { success: true, content: (result.content || '').trim(), requestId };
     } else if (window.electronAPI?.aiChat) {
       // NON-STREAMING fallback (IPC only, no direct HTTP)
       const result = await window.electronAPI.aiChat({
@@ -171,8 +170,8 @@ export async function generateStory({ prompt, genre = null, authorNote = null, o
         temperature: 0.9,
         maxTokens: numPredict
       });
-      if (!result.success) return { success: false, error: result.error || 'Generation failed' };
-      return { success: true, content: (result.content || '').trim() };
+      if (!result.success) return { success: false, error: result.error || 'Generation failed', requestId: null };
+      return { success: true, content: (result.content || '').trim(), requestId: null };
     }
 
     return { success: false, error: 'Electron API not available' };
@@ -193,11 +192,11 @@ export async function generateStory({ prompt, genre = null, authorNote = null, o
  * @param {string|null} params.genre - Genre key
  * @param {string|null} params.authorNote - Optional steering note
  * @param {string|null} params.summary - Cached summary
- * @param {object} params.options - { ollamaUrl, model, language, onToken }
- * @returns {Promise<{success: boolean, content?: string, summary?: string, error?: string}>}
+ * @param {object} params.options - { ollamaUrl, model, language, numCtx, onToken }
+ * @returns {Promise<{success: boolean, content?: string, summary?: string, requestId?: string, error?: string}>}
  */
 export async function continueStory({ storyText, genre = null, authorNote = null, summary = null, options = {} }) {
-  const { ollamaUrl = OLLAMA_DEFAULT_URL, model = DEFAULT_MODEL_NAME, language = 'en', onToken = null } = options;
+  const { ollamaUrl = OLLAMA_DEFAULT_URL, model = DEFAULT_MODEL_NAME, language = 'en', numCtx = 8192, onToken = null } = options;
 
   if (!storyText?.trim()) {
     return { success: false, error: 'No story to continue' };
@@ -222,7 +221,7 @@ export async function continueStory({ storyText, genre = null, authorNote = null
   const userMessage = `Continue this story naturally from where it left off. Maintain the same style, tone, and pacing:\n\n${storyContext}`;
 
   const promptTokens = estimateTokens(systemPrompt) + estimateTokens(userMessage);
-  const numPredict = Math.max(512, Math.min(1500, 8192 - promptTokens - 128));
+  const numPredict = Math.max(512, Math.min(1500, numCtx - promptTokens - 128));
 
   const messages = [
     { role: 'system', content: systemPrompt },
@@ -232,7 +231,7 @@ export async function continueStory({ storyText, genre = null, authorNote = null
   const chatOptions = {
     temperature: 0.9,
     num_predict: numPredict,
-    num_ctx: 8192,
+    num_ctx: numCtx,
     top_p: 0.95,
     top_k: 40,
     repeat_penalty: 1.1
@@ -246,23 +245,22 @@ export async function continueStory({ storyText, genre = null, authorNote = null
       });
       const abortTimer = setTimeout(() => window.electronAPI.ollamaStreamAbort(requestId), 180000);
 
+      let result;
       try {
-        const result = await window.electronAPI.ollamaChatStream({
+        result = await window.electronAPI.ollamaChatStream({
           requestId,
           ollamaUrl,
           model,
           messages,
           options: chatOptions
         });
+      } finally {
         clearTimeout(abortTimer);
         cleanup();
-        if (!result.success) return { success: false, error: result.error || 'Continuation failed' };
-        return { success: true, content: (result.content || '').trim(), summary: storySummary };
-      } catch (err) {
-        clearTimeout(abortTimer);
-        cleanup();
-        throw err;
       }
+      if (result?.aborted) return { success: false, error: 'Generation aborted', requestId };
+      if (!result?.success) return { success: false, error: result?.error || 'Continuation failed', requestId };
+      return { success: true, content: (result.content || '').trim(), summary: storySummary, requestId };
     } else if (window.electronAPI?.aiChat) {
       const result = await window.electronAPI.aiChat({
         messages: [{ role: 'user', content: userMessage }],
@@ -273,8 +271,8 @@ export async function continueStory({ storyText, genre = null, authorNote = null
         temperature: 0.9,
         maxTokens: numPredict
       });
-      if (!result.success) return { success: false, error: result.error || 'Continuation failed' };
-      return { success: true, content: (result.content || '').trim(), summary: storySummary };
+      if (!result.success) return { success: false, error: result.error || 'Continuation failed', requestId: null };
+      return { success: true, content: (result.content || '').trim(), summary: storySummary, requestId: null };
     }
 
     return { success: false, error: 'Electron API not available' };
@@ -297,6 +295,10 @@ export async function continueStory({ storyText, genre = null, authorNote = null
  * @returns {Promise<{success: boolean, summary?: string}>}
  */
 export async function generateSummary({ storyText, ollamaUrl = OLLAMA_DEFAULT_URL, model = DEFAULT_MODEL_NAME }) {
+  if (!window.electronAPI?.aiChat) {
+    return { success: false };
+  }
+
   try {
     const textForSummary = storyText.slice(-3000);
 
@@ -314,8 +316,8 @@ export async function generateSummary({ storyText, ollamaUrl = OLLAMA_DEFAULT_UR
       return { success: true, summary: result.content.trim() };
     }
     return { success: false };
-  } catch {
+  } catch (error) {
+    console.error('[StoryEngine] Summary error:', error);
     return { success: false };
   }
 }
-

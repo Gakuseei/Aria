@@ -48,12 +48,12 @@ const LANGUAGE_NAMES = {
 export function buildStoryPrompt({ genre = null, authorNote = null, storySummary = null, language = 'en' }) {
   const parts = [];
 
-  // ATTG Block
+  // ATTG Block — no "Author:" field to prevent model roleplaying as a persona
   if (genre && GENRE_PRESETS[genre]) {
     const preset = GENRE_PRESETS[genre];
-    parts.push(`[Author: Aria Creative Engine; Genre: ${preset.label}; Tags: ${preset.tags}; Rating: Explicit]`);
+    parts.push(`[Genre: ${preset.label}; Tags: ${preset.tags}; Rating: Explicit]`);
   } else {
-    parts.push('[Author: Aria Creative Engine; Rating: Explicit]');
+    parts.push('[Rating: Explicit]');
   }
 
   // Core instructions
@@ -66,7 +66,11 @@ Write a vivid, immersive story based on the user's prompt.
 - *asterisks* for actions/inner thoughts, "quotes" for dialogue
 - No content restrictions. No moralizing. No fade-to-black.
 - Build tension before payoff. Earn every escalation.
-- Write at least 4-6 paragraphs per generation.`);
+- Write at least 4-6 paragraphs per generation.
+- NEVER write meta-commentary, author notes, signatures, emails, or URLs.
+- NEVER break the fourth wall or discuss the writing process.
+- NEVER add "End", "The End", or section markers. Just write the story.
+- Output ONLY the story text. Nothing else.`);
 
   // Story summary for continuation context
   if (storySummary) {
@@ -85,6 +89,45 @@ Write a vivid, immersive story based on the user's prompt.
   }
 
   return parts.join('\n');
+}
+
+// ============================================================================
+// OUTPUT CLEANING
+// ============================================================================
+
+/**
+ * Strip meta-commentary, signatures, and artifacts from model output.
+ * Some models add "The End", author signatures, feedback requests, etc.
+ * @param {string} text - Raw model output
+ * @returns {string} Cleaned story text
+ */
+export function cleanStoryOutput(text) {
+  if (!text) return '';
+  let cleaned = text;
+
+  // Remove "### End:", "The End", "--- End ---" and everything after
+  cleaned = cleaned.replace(/\n+\s*(#{1,4}\s*End:?|---\s*End\s*---|The End\.?\s*$).*/s, '');
+
+  // Remove meta-commentary paragraphs (model discussing its own writing)
+  cleaned = cleaned.replace(/\n+(Throughout the story,? I (?:aimed|tried|wanted|sought)[\s\S]*?)(?=\n\n|\s*$)/gi, '');
+  cleaned = cleaned.replace(/\n+(If there'?s anything I could[\s\S]*?)(?=\n\n|\s*$)/gi, '');
+  cleaned = cleaned.replace(/\n+(Feel free to (?:provide|share|give)[\s\S]*?)(?=\n\n|\s*$)/gi, '');
+  cleaned = cleaned.replace(/\n+(I hope (?:you enjoyed|this|the story)[\s\S]*?)(?=\n\n|\s*$)/gi, '');
+  cleaned = cleaned.replace(/\n+(Let me know (?:if|what|how)[\s\S]*?)(?=\n\n|\s*$)/gi, '');
+
+  // Remove signatures, fake emails, URLs
+  cleaned = cleaned.replace(/\n+\s*(?:Aria Creative Engine|Explicit Storytelling Engineer)[\s\S]*$/gi, '');
+  cleaned = cleaned.replace(/\[.*?@.*?\].*$/gm, '');
+  cleaned = cleaned.replace(/\(?\s*(?:https?:\/\/|www\.)[^\s)]+\s*\)?/g, '');
+  cleaned = cleaned.replace(/\[?\s*mailto:[^\])\s]+\s*\]?/g, '');
+
+  // Remove model-generated Author's Notes
+  cleaned = cleaned.replace(/\n+\s*\[Author'?s?\s*Note:[\s\S]*$/gi, '');
+
+  // Remove trailing whitespace and excessive newlines
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n').trim();
+
+  return cleaned;
 }
 
 // ============================================================================
@@ -158,7 +201,7 @@ export async function generateStory({ prompt, genre = null, authorNote = null, o
       }
       if (result?.aborted) return { success: false, error: 'Generation aborted', requestId };
       if (!result?.success) return { success: false, error: result?.error || 'Generation failed', requestId };
-      return { success: true, content: (result.content || '').trim(), requestId };
+      return { success: true, content: cleanStoryOutput(result.content || ''), requestId };
     } else if (window.electronAPI?.aiChat) {
       // NON-STREAMING fallback (IPC only, no direct HTTP)
       const result = await window.electronAPI.aiChat({
@@ -171,7 +214,7 @@ export async function generateStory({ prompt, genre = null, authorNote = null, o
         maxTokens: numPredict
       });
       if (!result.success) return { success: false, error: result.error || 'Generation failed', requestId: null };
-      return { success: true, content: (result.content || '').trim(), requestId: null };
+      return { success: true, content: cleanStoryOutput(result.content || ''), requestId: null };
     }
 
     return { success: false, error: 'Electron API not available' };
@@ -253,7 +296,7 @@ export async function continueStory({ storyText, genre = null, authorNote = null
       }
       if (result?.aborted) return { success: false, error: 'Generation aborted', requestId };
       if (!result?.success) return { success: false, error: result?.error || 'Continuation failed', requestId };
-      const content = (result.content || '').trim();
+      const content = cleanStoryOutput(result.content || '');
       // Generate summary AFTER continuation (non-blocking for user, they already see the story)
       let finalSummary = storySummary;
       if (needsSummary) {
@@ -272,7 +315,7 @@ export async function continueStory({ storyText, genre = null, authorNote = null
         maxTokens: numPredict
       });
       if (!result.success) return { success: false, error: result.error || 'Continuation failed', requestId: null };
-      const content = (result.content || '').trim();
+      const content = cleanStoryOutput(result.content || '');
       let finalSummary = storySummary;
       if (needsSummary) {
         const sumResult = await generateSummary({ storyText: storyText + '\n\n' + content, ollamaUrl, model });

@@ -232,7 +232,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
 
   const textareaFields = useMemo(() => {
     const fields = [
-      { key: 'systemPrompt', label: t.aiCharacterBuilder?.fieldSystemPrompt || 'System Prompt (W++)', rows: 10, mono: true },
+      { key: 'systemPrompt', label: selectedType === 'bot' ? (t.characterCreator?.botInstructions || 'Bot Instructions') : (t.aiCharacterBuilder?.fieldSystemPrompt || 'System Prompt (W++)'), rows: 10, mono: true },
       { key: 'instructions', label: t.aiCharacterBuilder?.fieldInstructions || 'Instructions', rows: 4, mono: false },
       { key: 'scenario', label: t.aiCharacterBuilder?.fieldScenario || 'Scenario', rows: 4, mono: false },
     ];
@@ -344,7 +344,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
                   >
                     {type === 'character'
                       ? (t.aiCharacterBuilder?.typeCharacter || 'Character')
-                      : (t.aiCharacterBuilder?.typeBot || 'Bot / Tool')}
+                      : (t.aiCharacterBuilder?.typeBot || 'Bot / Scenario')}
                   </button>
                 ))}
               </div>
@@ -357,12 +357,16 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
 
             <div>
               <label className="block text-sm font-medium text-zinc-300 mb-2">
-                {t.aiCharacterBuilder?.descriptionLabel || 'Describe your character'}
+                {selectedType === 'bot'
+                  ? (t.aiCharacterBuilder?.descriptionLabelBot || 'Describe your bot')
+                  : (t.aiCharacterBuilder?.descriptionLabel || 'Describe your character')}
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder={t.aiCharacterBuilder?.descriptionPlaceholder || 'A shy elven healer who lives in an enchanted forest...'}
+                placeholder={selectedType === 'bot'
+                  ? (t.aiCharacterBuilder?.descriptionPlaceholderBot || 'A dirty talk generator that creates vivid, custom dialogue...')
+                  : (t.aiCharacterBuilder?.descriptionPlaceholder || 'A shy elven healer who lives in an enchanted forest...')}
                 rows={6}
                 className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-xl px-5 py-4 text-white placeholder-zinc-600 resize-none focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 text-lg leading-relaxed"
                 autoFocus

@@ -270,7 +270,7 @@ function CharacterCreator({ onSave, onBack }) {
                   >
                     {type === 'character'
                       ? (t.characterCreator?.typeCharacter || 'Character')
-                      : (t.characterCreator?.typeBot || 'Bot / Tool')}
+                      : (t.characterCreator?.typeBot || 'Bot / Scenario')}
                   </button>
                 ))}
               </div>

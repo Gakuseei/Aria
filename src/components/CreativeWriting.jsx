@@ -37,6 +37,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   const importFileRef = useRef(null);
   const promptRef = useRef(null);
   const mountedRef = useRef(true);
+  const activeRequestIdRef = useRef(null);
 
   const isVisible = useEntranceAnimation(50);
 
@@ -56,6 +57,10 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
+      }
+      if (activeRequestIdRef.current) {
+        window.electronAPI?.ollamaStreamAbort(activeRequestIdRef.current);
+        activeRequestIdRef.current = null;
       }
     };
   }, []);
@@ -112,10 +117,20 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     t.creative.prompts.prompt4,
   ] : [];
 
+  const handleStop = () => {
+    if (activeRequestIdRef.current) {
+      window.electronAPI?.ollamaStreamAbort(activeRequestIdRef.current);
+      activeRequestIdRef.current = null;
+    }
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim() || isLoading || isStreaming) return;
     setIsLoading(true);
     setError(null);
+
+    const requestId = `story-${Date.now()}`;
+    activeRequestIdRef.current = requestId;
 
     let firstToken = true;
     streamBufferRef.current = '';
@@ -151,7 +166,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
         prompt: prompt.trim(),
         genre,
         authorNote: authorNote.trim() || null,
-        options: { ollamaUrl, model, language, onToken: handleToken }
+        options: { ollamaUrl, model, language, onToken: handleToken, requestId }
       });
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -160,6 +175,9 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
         const finalContent = result.content || streamBufferRef.current;
         setStory(prev => prev ? prev + '\n\n' + finalContent : finalContent);
         setPromptCollapsed(true);
+        setTimeout(() => {
+          contentRef.current?.scrollTo({ top: contentRef.current.scrollHeight, behavior: 'smooth' });
+        }, 100);
       } else {
         setError(result.error);
       }
@@ -168,6 +186,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
       setError(err.message);
     } finally {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+      activeRequestIdRef.current = null;
       setIsStreaming(false);
       setStreamingContent('');
       setIsLoading(false);
@@ -178,6 +197,9 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     if (!story || isLoading || isStreaming) return;
     setIsLoading(true);
     setError(null);
+
+    const requestId = `story-${Date.now()}`;
+    activeRequestIdRef.current = requestId;
 
     let firstToken = true;
     streamBufferRef.current = '';
@@ -214,7 +236,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
         genre,
         authorNote: authorNote.trim() || null,
         summary,
-        options: { ollamaUrl, model, language, onToken: handleToken }
+        options: { ollamaUrl, model, language, onToken: handleToken, requestId }
       });
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -231,6 +253,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
       setError(err.message);
     } finally {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+      activeRequestIdRef.current = null;
       setIsStreaming(false);
       setStreamingContent('');
       setIsLoading(false);
@@ -444,31 +467,48 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
                 ref={promptRef}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && !isLoading && !isStreaming) {
+                    e.preventDefault();
+                    handleGenerate();
+                  }
+                }}
                 placeholder={t.creative.enterStoryPrompt}
                 disabled={isLoading || isStreaming}
                 rows={4}
                 className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-700 disabled:opacity-50 resize-none text-sm"
               />
               <div className="flex items-center justify-between mt-2">
-                <button
-                  onClick={handleGenerate}
-                  disabled={!prompt.trim() || isLoading || isStreaming}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-br from-rose-600 to-pink-700 hover:from-rose-500 hover:to-pink-600 text-white font-medium transition-all disabled:opacity-30 flex items-center gap-2 shadow-lg shadow-rose-900/30"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>{t.creative.generating}</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      <span>{t.creative.generate}</span>
-                    </>
-                  )}
-                </button>
+                {isStreaming ? (
+                  <button
+                    onClick={handleStop}
+                    className="px-6 py-2.5 rounded-xl bg-zinc-700 hover:bg-zinc-600 text-white font-medium transition-all flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleGenerate}
+                    disabled={!prompt.trim() || isLoading}
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-br from-rose-600 to-pink-700 hover:from-rose-500 hover:to-pink-600 text-white font-medium transition-all disabled:opacity-30 flex items-center gap-2 shadow-lg shadow-rose-900/30"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>{t.creative.generating}</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <span>{t.creative.generate}</span>
+                      </>
+                    )}
+                  </button>
+                )}
                 {promptCollapsed === false && hasStory && (
                   <button
                     onClick={() => setPromptCollapsed(true)}
@@ -548,24 +588,44 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
               >
                 {t.creative.authorNote}
               </button>
+              <button
+                onClick={() => navigator.clipboard.writeText(story)}
+                className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 transition-colors"
+                title={t.creative.copyToClipboard}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                </svg>
+              </button>
               <span className="text-xs text-zinc-600">
                 {t.creative.wordsCount.replace('{count}', wordCount.toLocaleString())}
               </span>
             </div>
-            <button
-              onClick={handleContinue}
-              disabled={isLoading || isStreaming}
-              className="px-5 py-2 rounded-xl bg-gradient-to-br from-rose-600 to-pink-700 hover:from-rose-500 hover:to-pink-600 text-white font-medium transition-all disabled:opacity-30 flex items-center gap-2 text-sm shadow-lg shadow-rose-900/30"
-            >
-              {isLoading ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>{t.creative.generating}</span>
-                </>
-              ) : (
-                <span>{t.creative.continueStory}</span>
-              )}
-            </button>
+            {isStreaming ? (
+              <button
+                onClick={handleStop}
+                className="px-5 py-2 rounded-xl bg-zinc-700 hover:bg-zinc-600 text-white font-medium transition-all flex items-center gap-2 text-sm"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                onClick={handleContinue}
+                disabled={isLoading}
+                className="px-5 py-2 rounded-xl bg-gradient-to-br from-rose-600 to-pink-700 hover:from-rose-500 hover:to-pink-600 text-white font-medium transition-all disabled:opacity-30 flex items-center gap-2 text-sm shadow-lg shadow-rose-900/30"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>{t.creative.generating}</span>
+                  </>
+                ) : (
+                  <span>{t.creative.continueStory}</span>
+                )}
+              </button>
+            )}
           </div>
         </div>
       )}

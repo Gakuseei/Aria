@@ -137,7 +137,7 @@ export async function generateStory({ prompt, genre = null, authorNote = null, o
 
     if (window.electronAPI?.ollamaChatStream && onToken) {
       // STREAMING path
-      const requestId = `story-${Date.now()}`;
+      const requestId = options.requestId || `story-${Date.now()}`;
       const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
         if (rid === requestId) onToken(token);
       });
@@ -239,7 +239,7 @@ export async function continueStory({ storyText, genre = null, authorNote = null
 
   try {
     if (window.electronAPI?.ollamaChatStream && onToken) {
-      const requestId = `story-${Date.now()}`;
+      const requestId = options.requestId || `story-${Date.now()}`;
       const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
         if (rid === requestId) onToken(token);
       });

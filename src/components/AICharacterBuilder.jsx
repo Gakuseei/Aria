@@ -1,9 +1,34 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { fileToBase64 } from '../lib/api';
 import { MAX_FILE_SIZE_BYTES } from '../lib/defaults';
 import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
+
+function RegenerateButton({ field, regeneratingField, onRegenerate, t }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onRegenerate(field)}
+      disabled={regeneratingField === field}
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all ${
+        regeneratingField === field
+          ? 'bg-violet-500/10 text-violet-400'
+          : 'text-zinc-500 hover:text-violet-400 hover:bg-violet-500/10'
+      }`}
+      title={t.aiCharacterBuilder?.regenerate || 'Regenerate'}
+    >
+      {regeneratingField === field ? (
+        <div className="w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+      ) : (
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M4.031 9.865" />
+        </svg>
+      )}
+      <span>{regeneratingField === field ? (t.aiCharacterBuilder?.regenerating || 'Regenerating...') : (t.aiCharacterBuilder?.regenerate || 'Regenerate')}</span>
+    </button>
+  );
+}
 
 const LANGUAGES = [
   { code: 'English', label: 'English', beta: false },
@@ -44,13 +69,19 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       const result = await window.electronAPI.ollamaModels({ ollamaUrl: settings.ollamaUrl });
       if (result.success) {
         setAvailableModels(result.models);
-        if (result.models.length > 0 && !selectedModel) {
-          setSelectedModel(settings.ollamaModel || result.models[0]);
+        if (result.models.length > 0) {
+          setSelectedModel(prev => prev || settings.ollamaModel || result.models[0]);
         }
       }
     }
     loadModels();
-  }, []);
+  }, [settings.ollamaUrl, settings.ollamaModel]);
+
+  const dispatchBuilderEvent = useCallback((type, message) => {
+    window.dispatchEvent(new CustomEvent('aria-api-stats', {
+      detail: { responseTime: 0, wordCount: 0, tokens: 0, model: selectedModel, wordsPerSecond: 0, passionRaw: null, builderEvent: `[CharBuilder] ${type}: ${message}` }
+    }));
+  }, [selectedModel]);
 
   const handleGenerate = async () => {
     if (!description.trim() || !selectedModel) return;
@@ -58,25 +89,30 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
     setLoading(true);
     setError(null);
     setCurrentStep(2);
+    dispatchBuilderEvent('generate', `Starting with ${selectedModel}, lang=${selectedLanguage}`);
 
+    const startTime = Date.now();
     const result = await window.electronAPI.aiGenerateCharacter({
       description: description.trim(),
       model: selectedModel,
       language: selectedLanguage,
       ollamaUrl: settings.ollamaUrl,
     });
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
     setLoading(false);
 
     if (result.success) {
       setGeneratedCharacter(result.character);
       setCurrentStep(3);
+      dispatchBuilderEvent('success', `Generated "${result.character?.name}" in ${elapsed}s`);
     } else {
       const errorMsg = result.raw
         ? `${result.error}\n\nRaw output:\n${result.raw.substring(0, 500)}`
         : (result.error || 'Generation failed');
       setError(errorMsg);
       setCurrentStep(1);
+      dispatchBuilderEvent('error', `Failed after ${elapsed}s: ${result.error}`);
     }
   };
 
@@ -88,6 +124,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
 
   const handleRegenerateField = async (fieldName) => {
     setRegeneratingField(fieldName);
+    dispatchBuilderEvent('regenerate', `Regenerating "${fieldName}"`);
 
     const result = await window.electronAPI.aiGenerateCharacter({
       description: description.trim(),
@@ -100,6 +137,12 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
 
     if (result.success) {
       setGeneratedCharacter(prev => ({ ...prev, [fieldName]: result.content.trim() }));
+      dispatchBuilderEvent('regenerate-ok', `"${fieldName}" regenerated`);
+    } else {
+      window.dispatchEvent(new CustomEvent('show-toast', {
+        detail: { message: `${t.aiCharacterBuilder?.generationFailed || 'Regeneration failed'}: ${result.error}`, type: 'error' }
+      }));
+      dispatchBuilderEvent('regenerate-fail', `"${fieldName}" failed: ${result.error}`);
     }
 
     setRegeneratingField(null);
@@ -129,6 +172,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       setAvatarBase64(base64);
     } catch (err) {
       console.error('Image upload error:', err);
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: t.characterCreator?.failedToUpload || 'Failed to upload image', type: 'error' } }));
     } finally {
       setUploadingImage(false);
     }
@@ -158,36 +202,13 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
     onSave(character);
   };
 
-  const RegenerateButton = ({ field }) => (
-    <button
-      type="button"
-      onClick={() => handleRegenerateField(field)}
-      disabled={regeneratingField === field}
-      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all ${
-        regeneratingField === field
-          ? 'bg-violet-500/10 text-violet-400'
-          : 'text-zinc-500 hover:text-violet-400 hover:bg-violet-500/10'
-      }`}
-      title={t.aiCharacterBuilder?.regenerate || 'Regenerate'}
-    >
-      {regeneratingField === field ? (
-        <div className="w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
-      ) : (
-        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M4.031 9.865" />
-        </svg>
-      )}
-      <span>{regeneratingField === field ? (t.aiCharacterBuilder?.regenerating || 'Regenerating...') : (t.aiCharacterBuilder?.regenerate || 'Regenerate')}</span>
-    </button>
-  );
-
-  const TEXTAREA_FIELDS = [
+  const textareaFields = useMemo(() => [
     { key: 'systemPrompt', label: t.aiCharacterBuilder?.fieldSystemPrompt || 'System Prompt (W++)', rows: 10, mono: true },
     { key: 'instructions', label: t.aiCharacterBuilder?.fieldInstructions || 'Instructions', rows: 4, mono: false },
     { key: 'scenario', label: t.aiCharacterBuilder?.fieldScenario || 'Scenario', rows: 4, mono: false },
     { key: 'exampleDialogue', label: t.aiCharacterBuilder?.fieldExampleDialogue || 'Example Dialogue', rows: 4, mono: true },
     { key: 'startingMessage', label: t.aiCharacterBuilder?.fieldStartingMessage || 'Starting Message', rows: 4, mono: false },
-  ];
+  ], [t]);
 
   return (
     <div className={`h-full w-full flex flex-col p-8 bg-gradient-to-br from-zinc-900 via-zinc-900 to-black transition-all duration-300 ${
@@ -381,7 +402,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-zinc-300">{t.aiCharacterBuilder?.fieldName || 'Name'}</label>
-                    <RegenerateButton field="name" />
+                    <RegenerateButton regeneratingField={regeneratingField} onRegenerate={handleRegenerateField} t={t} field="name" />
                   </div>
                   <input
                     type="text"
@@ -393,7 +414,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-zinc-300">{t.aiCharacterBuilder?.fieldSubtitle || 'Subtitle'}</label>
-                    <RegenerateButton field="subtitle" />
+                    <RegenerateButton regeneratingField={regeneratingField} onRegenerate={handleRegenerateField} t={t} field="subtitle" />
                   </div>
                   <input
                     type="text"
@@ -424,7 +445,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-sm font-medium text-zinc-300">{t.aiCharacterBuilder?.fieldDescription || 'Description'}</label>
-                  <RegenerateButton field="description" />
+                  <RegenerateButton regeneratingField={regeneratingField} onRegenerate={handleRegenerateField} t={t} field="description" />
                 </div>
                 <textarea
                   value={generatedCharacter.description || ''}
@@ -434,11 +455,11 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
                 />
               </div>
 
-              {TEXTAREA_FIELDS.map(({ key, label, rows, mono }) => (
+              {textareaFields.map(({ key, label, rows, mono }) => (
                 <div key={key}>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-zinc-300">{label}</label>
-                    <RegenerateButton field={key} />
+                    <RegenerateButton regeneratingField={regeneratingField} onRegenerate={handleRegenerateField} t={t} field={key} />
                   </div>
                   <textarea
                     value={generatedCharacter[key] || ''}

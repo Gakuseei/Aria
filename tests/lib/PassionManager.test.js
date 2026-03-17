@@ -104,8 +104,8 @@ describe('getSpeedMultiplier', () => {
     expect(getSpeedMultiplier('fast')).toBe(1.5);
   });
 
-  it('returns 2.5 for extreme', () => {
-    expect(getSpeedMultiplier('extreme')).toBe(2.5);
+  it('returns 1.8 for extreme', () => {
+    expect(getSpeedMultiplier('extreme')).toBe(1.8);
   });
 
   it('returns 1.0 for undefined/null (default)', () => {

@@ -3,6 +3,7 @@ import { listSessions, deleteSession } from '../lib/api';
 import { GAME_MODES } from '../App';
 import { useLanguage } from '../context/LanguageContext';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
+import CustomDropdown from './CustomDropdown';
 
 const LOCALE_MAP = {
   en: 'en-US', de: 'de-DE', es: 'es-ES', zh: 'zh-CN', fr: 'fr-FR',
@@ -181,17 +182,15 @@ function LoadGame({ onLoad, onBack }) {
         </div>
 
         {(filter === 'all' || filter === GAME_MODES.CHARACTER_CHAT) && characterNames.length > 0 && (
-          <select
+          <CustomDropdown
             value={characterFilter}
             onChange={(e) => setCharacterFilter(e.target.value)}
-            className="px-4 py-2.5 rounded-xl text-sm font-medium bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 hover:border-rose-500/30 hover:bg-zinc-800 transition-all duration-200 outline-none focus:border-rose-500/50 cursor-pointer appearance-none"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a1a1aa' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: '32px' }}
-          >
-            <option value="all">{t.loadGame.allCharacters}</option>
-            {characterNames.map(name => (
-              <option key={name} value={name}>{name}</option>
-            ))}
-          </select>
+            className="!w-auto min-w-[160px]"
+            options={[
+              { value: 'all', label: t.loadGame.allCharacters },
+              ...characterNames.map(name => ({ value: name, label: name }))
+            ]}
+          />
         )}
 
         {filteredSessions.length > 0 && (

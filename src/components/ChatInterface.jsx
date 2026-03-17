@@ -17,6 +17,7 @@ import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
 import downloadBlob from '../utils/downloadBlob';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from '../lib/defaults';
+import CustomDropdown from './CustomDropdown';
 
 // ============================================================================
 // TEXT FORMATTING - BLOCK 4 FIX: Apostroph-Bug behoben
@@ -1489,7 +1490,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                   {voiceEnabled === true && (
                     <div>
                       <label className="block text-xs text-zinc-400 mb-1">{t.chat.voiceSettings.voiceModel}</label>
-                      <select
+                      <CustomDropdown
                         value={settings.modelPath || ''}
                         onChange={async (e) => {
                           const selectedPath = e.target.value;
@@ -1508,16 +1509,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                             await window.electronAPI.saveSettings(newSettings);
                           }
                         }}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                      >
-                        <option value="">{t.chat.voiceSettings.selectModel}</option>
-                        {availableVoiceModels.map(model => (
-                          <option key={model.path} value={model.path}>
-                            {model.name}
-                          </option>
-                        ))}
-                        <option value="__browse__">{t.chat.voiceSettings.browse}</option>
-                      </select>
+                        options={[
+                          { value: '', label: t.chat.voiceSettings.selectModel },
+                          ...availableVoiceModels.map(model => ({ value: model.path, label: model.name })),
+                          { value: '__browse__', label: t.chat.voiceSettings.browse }
+                        ]}
+                      />
                     </div>
                   )}
 

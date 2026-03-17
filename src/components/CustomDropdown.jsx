@@ -1,13 +1,17 @@
-// ARIA v1.0 BLOCK 7.2 - CustomDropdown (React Portal Solution)
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 /**
- * CustomDropdown - OLED-Friendly Custom Select Component
- * BLOCK 7.2: Uses React Portal to render menu outside modal hierarchy
- * This guarantees the menu floats above ALL content without clipping
+ * CustomDropdown — Dark theme select component using React Portal.
+ * Renders menu outside modal hierarchy to avoid clipping.
+ * @param {object} props
+ * @param {string} props.value - Current selected value
+ * @param {Function} props.onChange - Called with { target: { value } } on selection
+ * @param {Array<{value: string, label: string}>} props.options - Available options
+ * @param {string} [props.className] - Additional classes for the button
+ * @param {boolean} [props.disabled] - Disable the dropdown
  */
 export default function CustomDropdown({ value, onChange, options, className = '', disabled = false }) {
   const { t } = useLanguage();
@@ -15,33 +19,26 @@ export default function CustomDropdown({ value, onChange, options, className = '
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
   const buttonRef = useRef(null);
 
-  // Calculate position when opening
   useEffect(() => {
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const menuHeight = Math.min(options.length * 40, 280);
+      const openAbove = spaceBelow < menuHeight && rect.top > menuHeight;
+
       setMenuPosition({
-        top: rect.bottom + window.scrollY + 8,
+        top: openAbove ? rect.top + window.scrollY - menuHeight - 4 : rect.bottom + window.scrollY + 4,
         left: rect.left + window.scrollX,
-        width: rect.width
+        width: Math.max(rect.width, 200)
       });
     }
-  }, [isOpen]);
+  }, [isOpen, options.length]);
 
-  // Close on escape key
   useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
+    if (!isOpen) return;
+    const handleKey = (e) => { if (e.key === 'Escape') setIsOpen(false); };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
   }, [isOpen]);
 
   const selectedOption = options.find(opt => opt.value === value);
@@ -52,78 +49,65 @@ export default function CustomDropdown({ value, onChange, options, className = '
     setIsOpen(false);
   };
 
-  const handleBackdropClick = () => {
-    setIsOpen(false);
-  };
-
   return (
     <>
-      {/* Dropdown Button */}
       <button
         ref={buttonRef}
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`
-          w-full px-4 py-3
-          bg-zinc-900 border rounded-xl
-          text-white text-left
-          flex items-center justify-between
+          w-full px-4 py-2.5
+          bg-zinc-900 border-2 rounded-xl
+          text-left flex items-center justify-between
           transition-all duration-200
           ${className}
           ${isOpen
-            ? 'border-rose-500 ring-1 ring-rose-500/50'
-            : 'border-white/10'
+            ? 'border-rose-500 text-white'
+            : 'border-zinc-800 text-zinc-300 hover:border-zinc-700'
           }
-          ${disabled
-            ? 'opacity-50 cursor-not-allowed'
-            : 'hover:border-rose-500/50 focus:outline-none'
-          }
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         `}
       >
         <span className="truncate text-sm">{selectedLabel}</span>
         <ChevronDown
           size={16}
-          className={`text-zinc-500 transition-transform duration-200 flex-shrink-0 ml-2 ${isOpen ? 'rotate-180 text-rose-400' : ''}`}
+          className={`flex-shrink-0 ml-2 transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-rose-400' : 'text-zinc-600'
+          }`}
         />
       </button>
 
-      {/* BLOCK 7.2: Portal-based Dropdown Menu */}
       {isOpen && !disabled && createPortal(
         <>
-          {/* Invisible Backdrop for click-outside detection */}
+          <div className="fixed inset-0 z-[10001]" onClick={() => setIsOpen(false)} />
           <div
-            className="fixed inset-0 z-[10001]"
-            onClick={handleBackdropClick}
-          />
-
-          {/* Floating Menu */}
-          <div
-            className="fixed z-[10002] bg-zinc-950 border border-white/10 rounded-xl shadow-2xl shadow-rose-900/20 overflow-hidden min-w-[200px]"
+            className="fixed z-[10002] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl shadow-black/50 overflow-hidden"
             style={{
               top: `${menuPosition.top}px`,
               left: `${menuPosition.left}px`,
               width: `${menuPosition.width}px`
             }}
           >
-            <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent" role="listbox">
+            <div className="max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent py-1">
               {options.map((option) => (
-                <div
+                <button
                   key={option.value}
+                  type="button"
                   onClick={() => handleSelect(option.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(option.value); } }}
-                  role="option"
-                  tabIndex={0}
-                  aria-selected={value === option.value}
                   className={`
-                    p-3 text-sm cursor-pointer transition-colors
+                    w-full text-left px-4 py-2 text-sm transition-colors
                     ${value === option.value
-                      ? 'bg-white/5 text-rose-400 font-medium'
-                      : 'text-zinc-300 hover:bg-rose-500/20 hover:text-white'}
+                      ? 'bg-rose-500/20 text-rose-300'
+                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                    }
                   `}
                 >
-                  {option.label}
-                </div>
+                  <span className="flex items-center justify-between">
+                    {option.label}
+                    {value === option.value && <span className="text-rose-500 text-xs">●</span>}
+                  </span>
+                </button>
               ))}
             </div>
           </div>

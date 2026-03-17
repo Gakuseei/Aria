@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Download, Check, RefreshCw, Star, Loader2, AlertCircle, Power, XCircle, FileText } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import TutorialLayout from './TutorialLayout';
+import CustomDropdown from '../CustomDropdown';
 
 export default function VoiceSetup({ onClose, onVerified }) {
   const { t } = useLanguage();
@@ -317,19 +318,17 @@ export default function VoiceSetup({ onClose, onVerified }) {
                      <h3 className="font-bold text-white mb-4">Step 3: Configuration & Path</h3>
                      <div className="bg-black/40 p-4 rounded-xl border border-white/5 mb-4">
                         <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Voice Model Path:</label>
-                        <select 
+                        <CustomDropdown
                            value={modelPath}
                            onChange={(e) => {
                               setModelPath(e.target.value);
                               saveSetting('modelPath', e.target.value);
                            }}
-                           className="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-sm text-white focus:border-cyan-500 outline-none"
-                        >
-                           <option value="">Select a downloaded voice...</option>
-                           {localModels.map(m => (
-                              <option key={m.path} value={m.path}>{m.name.replace('.onnx','')}</option>
-                           ))}
-                        </select>
+                           options={[
+                              { value: '', label: 'Select a downloaded voice...' },
+                              ...localModels.map(m => ({ value: m.path, label: m.name.replace('.onnx','') }))
+                           ]}
+                        />
                      </div>
                      
                      <button

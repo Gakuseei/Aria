@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Download, Check, RefreshCw, Copy, Zap } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import TutorialLayout from './TutorialLayout';
+import CustomDropdown from '../CustomDropdown';
 import { OLLAMA_DEFAULT_URL } from '../../lib/defaults';
 
 /**
@@ -99,25 +100,26 @@ export default function OllamaSetup({ onClose, isOnboarding = false, onComplete 
                  {/* Language Selector for Onboarding */}
                  <div className="flex items-center gap-2">
                     <span className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Language:</span>
-                    <select
+                    <CustomDropdown
                         value={language}
                         onChange={(e) => setLanguage(e.target.value)}
-                        className="bg-zinc-800 border border-white/10 rounded-lg px-2 py-1 text-sm text-zinc-300 focus:outline-none focus:border-rose-500"
-                    >
-                         <option value="en">🇺🇸 English</option>
-                         <option value="de">🇩🇪 Deutsch</option>
-                         <option value="es">🇪🇸 Español</option>
-                         <option value="fr">🇫🇷 Français</option>
-                         <option value="it">🇮🇹 Italiano</option>
-                         <option value="pt">🇵🇹 Português</option>
-                         <option value="ru">🇷🇺 Русский</option>
-                         <option value="ja">🇯🇵 日本語</option>
-                         <option value="ko">🇰🇷 한국어</option>
-                         <option value="zh">🇨🇳 中文</option>
-                         <option value="ar">🇸🇦 العربية</option>
-                         <option value="hi">🇮🇳 हिंदी</option>
-                         <option value="tr">🇹🇷 Türkçe</option>
-                    </select>
+                        className="!w-auto min-w-[150px] !py-1.5"
+                        options={[
+                          { value: 'en', label: 'English' },
+                          { value: 'de', label: 'Deutsch' },
+                          { value: 'es', label: 'Español' },
+                          { value: 'fr', label: 'Français' },
+                          { value: 'it', label: 'Italiano' },
+                          { value: 'pt', label: 'Português' },
+                          { value: 'ru', label: 'Русский' },
+                          { value: 'ja', label: '日本語' },
+                          { value: 'ko', label: '한국어' },
+                          { value: 'zh', label: '中文' },
+                          { value: 'ar', label: 'العربية' },
+                          { value: 'hi', label: 'हिंदी' },
+                          { value: 'tr', label: 'Türkçe' }
+                        ]}
+                    />
                  </div>
 
                  {currentStep < 3 ? (

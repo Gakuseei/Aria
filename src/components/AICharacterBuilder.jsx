@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { fileToBase64, saveCustomCharacter } from '../lib/api';
+import { MAX_FILE_SIZE_BYTES } from '../lib/defaults';
 import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
@@ -33,6 +35,9 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
   const [error, setError] = useState(null);
   const [generatedCharacter, setGeneratedCharacter] = useState(null);
   const [regeneratingField, setRegeneratingField] = useState(null);
+  const [avatarBase64, setAvatarBase64] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     async function loadModels() {
@@ -99,6 +104,60 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
 
   const handleCharacterFieldChange = (field, value) => {
     setGeneratedCharacter(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: t.characterCreator?.pleaseSelectImage || 'Please select an image file', type: 'error' } }));
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: t.characterCreator?.imageTooLarge || 'Image too large (max 2MB)', type: 'error' } }));
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const base64 = await fileToBase64(file);
+      setAvatarBase64(base64);
+    } catch (err) {
+      console.error('Image upload error:', err);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleSave = () => {
+    if (!generatedCharacter) return;
+
+    const character = {
+      id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: generatedCharacter.name?.trim() || 'Unnamed',
+      subtitle: generatedCharacter.subtitle?.trim() || '',
+      description: generatedCharacter.description?.trim() || '',
+      systemPrompt: generatedCharacter.systemPrompt?.trim() || '',
+      instructions: generatedCharacter.instructions?.trim() || '',
+      scenario: generatedCharacter.scenario?.trim() || '',
+      exampleDialogue: generatedCharacter.exampleDialogue?.trim() || '',
+      exampleDialogues: [],
+      themeColor: generatedCharacter.themeColor || '#ef4444',
+      avatarBase64: avatarBase64 || null,
+      startingMessage: generatedCharacter.startingMessage?.trim() || '',
+      passionEnabled: true,
+      passionSpeed: generatedCharacter.passionSpeed || 'normal',
+      isCustom: true,
+    };
+
+    const saved = saveCustomCharacter(character);
+    if (saved) {
+      onSave(character);
+    } else {
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: t.characterCreator?.failedToSave || 'Failed to save character', type: 'error' } }));
+    }
   };
 
   const RegenerateButton = ({ field }) => (
@@ -421,8 +480,107 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
             </div>
           </div>
         )}
-        {currentStep === 4 && (
-          <div className="text-zinc-500">Save (to be implemented)</div>
+        {currentStep === 4 && generatedCharacter && (
+          <div className="w-full max-w-2xl space-y-8">
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+              aria-label="Upload character avatar"
+            />
+
+            {/* Preview Card */}
+            <div className="relative aspect-[3/4] max-w-xs mx-auto bg-zinc-900/80 rounded-2xl overflow-hidden border-2 border-transparent hover:border-violet-500/50 transition-all">
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
+                {avatarBase64 ? (
+                  <img src={avatarBase64} alt={generatedCharacter.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div
+                    className="w-32 h-32 rounded-full flex items-center justify-center text-4xl font-bold text-white shadow-2xl"
+                    style={{
+                      background: `linear-gradient(135deg, ${generatedCharacter.themeColor || '#ef4444'}, ${generatedCharacter.themeColor || '#ef4444'}88)`,
+                      boxShadow: `0 0 60px ${generatedCharacter.themeColor || '#ef4444'}40`
+                    }}
+                  >
+                    {(generatedCharacter.name || '?').charAt(0)}
+                  </div>
+                )}
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-zinc-950 via-zinc-950/90 to-transparent p-6 pt-16">
+                <h3 className="text-lg font-bold text-white mb-1">{generatedCharacter.name || 'Unnamed'}</h3>
+                <p className="text-sm font-medium mb-2" style={{ color: generatedCharacter.themeColor || '#ef4444' }}>
+                  {generatedCharacter.subtitle || ''}
+                </p>
+                <p className="text-zinc-400 text-xs leading-relaxed line-clamp-2">
+                  {generatedCharacter.description || ''}
+                </p>
+              </div>
+              <div className="absolute top-4 left-4">
+                <span className="px-2 py-1 rounded-full bg-purple-600/80 text-white text-xs font-medium backdrop-blur-sm">
+                  {t.characterSelect?.custom || 'Custom'}
+                </span>
+              </div>
+            </div>
+
+            {/* Avatar Upload */}
+            <div className="flex justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImage}
+                className="px-5 py-2.5 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 hover:text-white hover:border-zinc-600 transition-all flex items-center gap-2"
+              >
+                {uploadingImage ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-zinc-400 border-t-white rounded-full animate-spin" />
+                    <span>{t.characterCreator?.uploading || 'Uploading...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>{t.aiCharacterBuilder?.uploadAvatar || 'Upload Avatar'}</span>
+                  </>
+                )}
+              </button>
+              {avatarBase64 && (
+                <button
+                  type="button"
+                  onClick={() => setAvatarBase64('')}
+                  className="px-4 py-2.5 rounded-xl bg-red-900/20 border border-red-700/30 text-red-400 hover:bg-red-900/30 transition-all"
+                >
+                  {t.aiCharacterBuilder?.removeAvatar || 'Remove'}
+                </button>
+              )}
+            </div>
+
+            {/* Navigation */}
+            <div className="flex justify-between pt-4 border-t border-zinc-800">
+              <button
+                onClick={() => setCurrentStep(3)}
+                className="px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 hover:text-white hover:border-zinc-600 transition-all"
+              >
+                {t.aiCharacterBuilder?.backToDescription || 'Back to Review'}
+              </button>
+              <button
+                onClick={handleSave}
+                className={`px-8 py-3 rounded-xl font-medium transition-all flex items-center gap-2 ${
+                  isGoldMode
+                    ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-black hover:from-amber-400 hover:to-yellow-400'
+                    : 'bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-500 hover:to-purple-500'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                {t.aiCharacterBuilder?.saveCharacter || 'Save Character'}
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

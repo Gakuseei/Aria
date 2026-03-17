@@ -218,29 +218,43 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {[1, 2, 3, 4].map((step) => (
-            <div key={step} className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${
-                step === currentStep
-                  ? isGoldMode
-                    ? 'bg-amber-500 text-black'
-                    : 'bg-violet-500 text-white'
-                  : step < currentStep
+        <div className="flex items-center gap-2">
+          {[
+            { num: 1, label: t.aiCharacterBuilder?.step1 || 'Describe' },
+            { num: 2, label: t.aiCharacterBuilder?.step2 || 'Generate' },
+            { num: 3, label: t.aiCharacterBuilder?.step3 || 'Review' },
+            { num: 4, label: t.aiCharacterBuilder?.step4 || 'Save' },
+          ].map(({ num, label }) => (
+            <div key={num} className="flex items-center gap-2">
+              <div className="flex flex-col items-center gap-1">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${
+                  num === currentStep
                     ? isGoldMode
-                      ? 'bg-amber-500/20 text-amber-400'
-                      : 'bg-violet-500/20 text-violet-400'
-                    : 'bg-zinc-800 text-zinc-500'
-              }`}>
-                {step < currentStep ? (
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : step}
+                      ? 'bg-amber-500 text-black shadow-[0_0_12px_rgba(245,158,11,0.4)]'
+                      : 'bg-violet-500 text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]'
+                    : num < currentStep
+                      ? isGoldMode
+                        ? 'bg-amber-500/20 text-amber-400'
+                        : 'bg-violet-500/20 text-violet-400'
+                      : 'bg-zinc-800 text-zinc-500'
+                }`}>
+                  {num < currentStep ? (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : num}
+                </div>
+                <span className={`text-[10px] font-medium transition-colors ${
+                  num === currentStep
+                    ? isGoldMode ? 'text-amber-400' : 'text-violet-400'
+                    : num < currentStep
+                      ? 'text-zinc-500'
+                      : 'text-zinc-600'
+                }`}>{label}</span>
               </div>
-              {step < 4 && (
-                <div className={`w-8 h-0.5 transition-all duration-300 ${
-                  step < currentStep
+              {num < 4 && (
+                <div className={`w-8 h-0.5 mb-5 transition-all duration-300 ${
+                  num < currentStep
                     ? isGoldMode ? 'bg-amber-500/40' : 'bg-violet-500/40'
                     : 'bg-zinc-800'
                 }`} />
@@ -480,7 +494,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
         )}
         {currentStep === 4 && generatedCharacter && (
           <div className="w-full max-w-2xl space-y-8">
-<input
+            <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
@@ -489,7 +503,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
               aria-label="Upload character avatar"
             />
 
-<div className="relative aspect-[3/4] max-w-xs mx-auto bg-zinc-900/80 rounded-2xl overflow-hidden border-2 border-transparent hover:border-violet-500/50 transition-all">
+            <div className="relative aspect-[3/4] max-w-xs mx-auto bg-zinc-900/80 rounded-2xl overflow-hidden border-2 border-transparent hover:border-violet-500/50 transition-all">
               <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
                 {avatarBase64 ? (
                   <img src={avatarBase64} alt={generatedCharacter.name} className="w-full h-full object-cover" />
@@ -521,7 +535,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
               </div>
             </div>
 
-<div className="flex justify-center gap-3">
+            <div className="flex justify-center gap-3">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -553,7 +567,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
               )}
             </div>
 
-<div className="flex justify-between pt-4 border-t border-zinc-800">
+            <div className="flex justify-between pt-4 border-t border-zinc-800">
               <button
                 onClick={() => setCurrentStep(3)}
                 className="px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 hover:text-white hover:border-zinc-600 transition-all"

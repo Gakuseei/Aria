@@ -27,7 +27,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   const [wordCount, setWordCount] = useState(0);
   const [error, setError] = useState(null);
   const [currentModel, setCurrentModel] = useState(null);
-  const [sessionId, setSessionId] = useState(null);
+  const [sessionId, setSessionId] = useState(() => loadedSession?.sessionId || generateSessionId());
   const [showAuthorNote, setShowAuthorNote] = useState(false);
   const [promptCollapsed, setPromptCollapsed] = useState(false);
   const [availableModels, setAvailableModels] = useState([]);
@@ -79,15 +79,12 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   useEffect(() => {
     const init = async () => {
       if (loadedSession) {
-        setSessionId(loadedSession.sessionId);
         setStory(loadedSession.content || '');
         setPrompt(loadedSession.lastPrompt || '');
         setGenre(loadedSession.genre || null);
         setAuthorNote(loadedSession.authorNote || '');
         setSummary(loadedSession.summary || null);
         if (loadedSession.content) setPromptCollapsed(true);
-      } else {
-        setSessionId(generateSessionId());
       }
 
       const ollamaUrl = parentSettings?.ollamaUrl || OLLAMA_DEFAULT_URL;

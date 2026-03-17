@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { generateStory, continueStory } from '../lib/StoryEngine';
-import { saveSession, generateSessionId, autoDetectAndSetModel, getModelCtx } from '../lib/api';
+import { saveSession, generateSessionId, autoDetectAndSetModel, getModelCtx, fetchOllamaModels } from '../lib/api';
 import { GAME_MODES } from '../App';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
@@ -30,6 +30,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   const [sessionId, setSessionId] = useState(null);
   const [showAuthorNote, setShowAuthorNote] = useState(false);
   const [promptCollapsed, setPromptCollapsed] = useState(false);
+  const [availableModels, setAvailableModels] = useState([]);
 
   const streamBufferRef = useRef('');
   const rafRef = useRef(null);
@@ -79,9 +80,18 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
         setSessionId(generateSessionId());
       }
 
-      const autoDetectResult = await autoDetectAndSetModel();
-      if (autoDetectResult.success) {
-        setCurrentModel(autoDetectResult.model);
+      const ollamaUrl = parentSettings?.ollamaUrl || OLLAMA_DEFAULT_URL;
+      const models = await fetchOllamaModels(ollamaUrl);
+      if (models.length > 0) setAvailableModels(models);
+
+      const savedModel = parentSettings?.ollamaModel;
+      if (savedModel && models.includes(savedModel)) {
+        setCurrentModel(savedModel);
+      } else {
+        const autoDetectResult = await autoDetectAndSetModel(ollamaUrl);
+        if (autoDetectResult.success) {
+          setCurrentModel(autoDetectResult.model);
+        }
       }
     };
     init();
@@ -125,8 +135,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   };
 
   const handleGenerate = async () => {
-    const model = parentSettings?.ollamaModel || currentModel;
-    if (!prompt.trim() || isLoading || isStreaming || !model) return;
+    if (!prompt.trim() || isLoading || isStreaming || !currentModel) return;
     setIsLoading(true);
     setError(null);
 
@@ -161,13 +170,13 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     try {
       const language = localStorage.getItem('language') || 'en';
       const ollamaUrl = parentSettings?.ollamaUrl || OLLAMA_DEFAULT_URL;
-      const numCtx = await getModelCtx(ollamaUrl, model, parentSettings?.contextSize || 'medium');
+      const numCtx = await getModelCtx(ollamaUrl, currentModel, parentSettings?.contextSize || 'medium');
 
       const result = await generateStory({
         prompt: prompt.trim(),
         genre,
         authorNote: authorNote.trim() || null,
-        options: { ollamaUrl, model, language, onToken: handleToken, requestId, numCtx }
+        options: { ollamaUrl, model: currentModel, language, onToken: handleToken, requestId, numCtx }
       });
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -195,8 +204,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
   };
 
   const handleContinue = async () => {
-    const model = parentSettings?.ollamaModel || currentModel;
-    if (!story || isLoading || isStreaming || !model) return;
+    if (!story || isLoading || isStreaming || !currentModel) return;
     setIsLoading(true);
     setError(null);
 
@@ -231,14 +239,14 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     try {
       const language = localStorage.getItem('language') || 'en';
       const ollamaUrl = parentSettings?.ollamaUrl || OLLAMA_DEFAULT_URL;
-      const numCtx = await getModelCtx(ollamaUrl, model, parentSettings?.contextSize || 'medium');
+      const numCtx = await getModelCtx(ollamaUrl, currentModel, parentSettings?.contextSize || 'medium');
 
       const result = await continueStory({
         storyText: story,
         genre,
         authorNote: authorNote.trim() || null,
         summary,
-        options: { ollamaUrl, model, language, onToken: handleToken, requestId, numCtx }
+        options: { ollamaUrl, model: currentModel, language, onToken: handleToken, requestId, numCtx }
       });
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -452,6 +460,19 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
             >
               {t.creative.genreNone}
             </button>
+
+            {availableModels.length > 1 && (
+              <select
+                value={currentModel || ''}
+                onChange={(e) => setCurrentModel(e.target.value)}
+                disabled={isLoading || isStreaming}
+                className="ml-auto px-3 py-1.5 rounded-full text-sm bg-zinc-800/50 border-2 border-transparent text-zinc-400 focus:border-rose-500 focus:outline-none disabled:opacity-50 appearance-none cursor-pointer"
+              >
+                {availableModels.map((m) => (
+                  <option key={m} value={m}>{m.split(':')[0].split('/').pop()}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           {promptCollapsed ? (

@@ -871,7 +871,6 @@ function buildSystemPrompt({ character, userName = 'User', passionLevel = 0, unc
 export const sendMessage = async (
   userMessage,
   character,
-  characterContext,
   conversationHistory = [],
   sessionId = null,
   unchainedMode = false,

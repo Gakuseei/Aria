@@ -861,7 +861,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const response = await sendMessage(
         safeMessageText,
         character,
-        '',
         historyForApi,
         sessionId,
         isUnchainedMode,
@@ -1170,7 +1169,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const response = await sendMessage(
         lastUserMessage,
         character,
-        '',
         regenHistoryForApi,
         sessionId,
         isUnchainedMode,

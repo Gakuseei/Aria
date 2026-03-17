@@ -119,6 +119,10 @@ function CharacterCreator({ onSave, onBack }) {
       instructions: formData.instructions.trim() || '',
       scenario: formData.scenario.trim() || '',
       exampleDialogues: formData.exampleDialogues.filter(d => d.user && d.character),
+      exampleDialogue: formData.exampleDialogues
+        .filter(d => d.user && d.character)
+        .map(d => `{{user}}: ${d.user}\n{{char}}: ${d.character}`)
+        .join('\n'),
       themeColor: formData.themeColor,
       avatarBase64: formData.avatarBase64 || null,
       startingMessage: formData.startingMessage.trim(),

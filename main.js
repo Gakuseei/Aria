@@ -1181,60 +1181,64 @@ Rules:
       { role: 'user', content: userMessage }
     ];
 
-    const timeoutId = setTimeout(() => abortController.abort(), CHARACTER_BUILDER_TIMEOUT_MS);
+    const maxAttempts = field ? 1 : 2;
+    let lastRaw = '';
 
-    const response = await fetch(`${url}/api/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        messages: ollamaMessages,
-        stream: false,
-        options: {
-          temperature: CHARACTER_BUILDER_TEMPERATURE,
-          num_predict: CHARACTER_BUILDER_MAX_TOKENS,
-          num_ctx: CHARACTER_BUILDER_CTX,
-        },
-        format: field ? undefined : 'json',
-      }),
-      signal: abortController.signal,
-    });
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const timeoutId = setTimeout(() => abortController.abort(), CHARACTER_BUILDER_TIMEOUT_MS);
 
-    clearTimeout(timeoutId);
+      const response = await fetch(`${url}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages: ollamaMessages,
+          stream: false,
+          options: {
+            temperature: CHARACTER_BUILDER_TEMPERATURE,
+            num_predict: CHARACTER_BUILDER_MAX_TOKENS,
+            num_ctx: CHARACTER_BUILDER_CTX,
+          },
+          format: field ? undefined : 'json',
+        }),
+        signal: abortController.signal,
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      return {
-        success: false,
-        error: `Ollama error (${response.status}): ${errorText}`,
-      };
-    }
+      clearTimeout(timeoutId);
 
-    const data = await response.json();
-    const content = data.message?.content || '';
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { success: false, error: `Ollama error (${response.status}): ${errorText}` };
+      }
 
-    if (field) {
-      return { success: true, content, field };
-    }
+      const data = await response.json();
+      const content = data.message?.content || '';
 
-    // Parse JSON response for full generation
-    try {
-      const character = JSON.parse(content);
-      return { success: true, character };
-    } catch (parseError) {
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (jsonMatch) {
-        try {
-          const character = JSON.parse(jsonMatch[1].trim());
-          return { success: true, character };
-        } catch (innerParseError) {
-          // Code block found but still not valid JSON
+      if (field) {
+        return { success: true, content, field };
+      }
+
+      try {
+        const character = JSON.parse(content);
+        return { success: true, character };
+      } catch (parseError) {
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jsonMatch) {
+          try {
+            const character = JSON.parse(jsonMatch[1].trim());
+            return { success: true, character };
+          } catch (innerParseError) {
+            // Code block but invalid JSON
+          }
+        }
+        lastRaw = content;
+        if (attempt < maxAttempts) {
+          console.log(`[CharBuilder] Parse failed on attempt ${attempt}, retrying...`);
         }
       }
-      return { success: false, error: 'Failed to parse character JSON from model output', raw: content };
     }
+
+    return { success: false, error: 'Failed to parse character JSON after 2 attempts', raw: lastRaw };
   } catch (error) {
     if (error.name === 'AbortError') {
       return { success: false, error: 'aborted' };

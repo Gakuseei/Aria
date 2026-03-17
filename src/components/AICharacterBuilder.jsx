@@ -62,6 +62,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
   const [generatedCharacter, setGeneratedCharacter] = useState(null);
   const [regeneratingField, setRegeneratingField] = useState(null);
   const [avatarBase64, setAvatarBase64] = useState('');
+  const [passionEnabled, setPassionEnabled] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -104,9 +105,30 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
     setLoading(false);
 
     if (result.success) {
-      setGeneratedCharacter(result.character);
+      let character = result.character;
+      const requiredFields = ['name', 'systemPrompt', 'startingMessage'];
+      const missingFields = requiredFields.filter(f => !character[f]?.trim());
+
+      if (missingFields.length > 0) {
+        dispatchBuilderEvent('auto-heal', `Fixing missing fields: ${missingFields.join(', ')}`);
+        for (const fieldName of missingFields) {
+          const healResult = await window.electronAPI.aiGenerateCharacter({
+            description: description.trim(),
+            model: selectedModel,
+            language: selectedLanguage,
+            field: fieldName,
+            existingCharacter: character,
+            ollamaUrl: settings.ollamaUrl,
+          });
+          if (healResult.success) {
+            character = { ...character, [fieldName]: healResult.content.trim() };
+          }
+        }
+      }
+
+      setGeneratedCharacter(character);
       setCurrentStep(3);
-      dispatchBuilderEvent('success', `Generated "${result.character?.name}" in ${elapsed}s`);
+      dispatchBuilderEvent('success', `Generated "${character?.name}" in ${elapsed}s${missingFields.length > 0 ? ` (healed: ${missingFields.join(', ')})` : ''}`);
     } else {
       const errorMsg = result.raw
         ? `${result.error}\n\nRaw output:\n${result.raw.substring(0, 500)}`
@@ -195,7 +217,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       themeColor: generatedCharacter.themeColor || '#ef4444',
       avatarBase64: avatarBase64 || null,
       startingMessage: generatedCharacter.startingMessage?.trim() || '',
-      passionEnabled: true,
+      passionEnabled,
       passionSpeed: generatedCharacter.passionSpeed || 'normal',
       isCustom: true,
     };
@@ -465,25 +487,42 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
               ))}
 
               <div>
-                <label className="text-sm font-medium text-zinc-300 mb-2 block">{t.aiCharacterBuilder?.fieldPassionSpeed || 'Passion Speed'}</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {['slow', 'normal', 'fast', 'extreme'].map(speed => (
-                    <button
-                      key={speed}
-                      type="button"
-                      onClick={() => handleCharacterFieldChange('passionSpeed', speed)}
-                      className={`px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer ${
-                        generatedCharacter.passionSpeed === speed
-                          ? isGoldMode
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
-                          : 'bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50 border border-transparent'
-                      }`}
-                    >
-                      {t.characterCreator?.[`passionSpeed_${speed}`] || speed.charAt(0).toUpperCase() + speed.slice(1)}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-zinc-300">
+                    {t.characterCreator?.passionSystem || 'Passion System'}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setPassionEnabled(!passionEnabled)}
+                    className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${
+                      passionEnabled ? isGoldMode ? 'bg-amber-500' : 'bg-violet-500' : 'bg-zinc-700'
+                    }`}
+                  >
+                    <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                      passionEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`} />
+                  </button>
                 </div>
+                {passionEnabled && (
+                  <div className="grid grid-cols-4 gap-2">
+                    {['slow', 'normal', 'fast', 'extreme'].map(speed => (
+                      <button
+                        key={speed}
+                        type="button"
+                        onClick={() => handleCharacterFieldChange('passionSpeed', speed)}
+                        className={`px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer ${
+                          generatedCharacter.passionSpeed === speed
+                            ? isGoldMode
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              : 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
+                            : 'bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50 border border-transparent'
+                        }`}
+                      >
+                        {t.characterCreator?.[`passionSpeed_${speed}`] || speed.charAt(0).toUpperCase() + speed.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-between pt-4 border-t border-zinc-800">

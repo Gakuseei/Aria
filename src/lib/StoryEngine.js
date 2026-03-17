@@ -319,20 +319,3 @@ export async function generateSummary({ storyText, ollamaUrl = OLLAMA_DEFAULT_UR
   }
 }
 
-// ============================================================================
-// BACKWARDS COMPAT (removed in Task 3 when CreativeWriting.jsx is rewritten)
-// ============================================================================
-
-/**
- * Legacy wrapper for CreativeWriting.jsx v1 call signature.
- * @param {string} prompt
- * @param {string} ollamaUrl
- * @param {string} model
- * @param {boolean} _streaming - ignored (streaming handled internally)
- * @param {number} _passion - removed
- * @param {string} language
- * @returns {Promise<{success: boolean, content?: string, error?: string}>}
- */
-export async function generateCreativeWriting(prompt, ollamaUrl, model, _streaming, _passion, language) {
-  return generateStory({ prompt, options: { ollamaUrl, model, language } });
-}

@@ -77,7 +77,7 @@ function formatTimestamp(timestamp) {
   return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
-const MessageBubble = memo(function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false }) {
+const MessageBubble = memo(function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false, t = {} }) {
   const formattedParts = useMemo(
     () => formatMessageText(message.content || '', isGoldMode && !isUser),
     [message.content, isGoldMode, isUser]
@@ -1689,6 +1689,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                 voiceEnabled={voiceEnabled}
                 fontSize={fontSize}
                 isGoldMode={isGoldMode}
+                t={t}
               />
             )
           ))}

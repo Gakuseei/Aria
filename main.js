@@ -9,7 +9,7 @@ const fs = require('fs');
 const https = require('https');
 const dotenv = require('dotenv');
 const platform = require('./lib/platform');
-const { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, DATA_VERSION, KNOWN_OLD_DEFAULT_MODELS } = require('./lib/defaults');
+const { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, DATA_VERSION, KNOWN_OLD_DEFAULT_MODELS, CHARACTER_BUILDER_TIMEOUT_MS, CHARACTER_BUILDER_TEMPERATURE, CHARACTER_BUILDER_MAX_TOKENS, CHARACTER_BUILDER_CTX } = require('./lib/defaults');
 
 function ensureDir(dirPath) {
   if (!fs.existsSync(dirPath)) {
@@ -1181,7 +1181,7 @@ Rules:
       { role: 'user', content: userMessage }
     ];
 
-    const timeoutId = setTimeout(() => abortController.abort(), 120000);
+    const timeoutId = setTimeout(() => abortController.abort(), CHARACTER_BUILDER_TIMEOUT_MS);
 
     const response = await fetch(`${url}/api/chat`, {
       method: 'POST',
@@ -1193,9 +1193,9 @@ Rules:
         messages: ollamaMessages,
         stream: false,
         options: {
-          temperature: 0.9,
-          num_predict: 2048,
-          num_ctx: 4096,
+          temperature: CHARACTER_BUILDER_TEMPERATURE,
+          num_predict: CHARACTER_BUILDER_MAX_TOKENS,
+          num_ctx: CHARACTER_BUILDER_CTX,
         },
         format: field ? undefined : 'json',
       }),

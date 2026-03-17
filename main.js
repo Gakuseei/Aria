@@ -9,7 +9,7 @@ const fs = require('fs');
 const https = require('https');
 const dotenv = require('dotenv');
 const platform = require('./lib/platform');
-const { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, DATA_VERSION, KNOWN_OLD_DEFAULT_MODELS, CHARACTER_BUILDER_TIMEOUT_MS, CHARACTER_BUILDER_TEMPERATURE, CHARACTER_BUILDER_MAX_TOKENS, CHARACTER_BUILDER_CTX } = require('./lib/defaults');
+const { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, DATA_VERSION, KNOWN_OLD_DEFAULT_MODELS, CHARACTER_BUILDER_TIMEOUT_MS, CHARACTER_BUILDER_TEMPERATURE, CHARACTER_BUILDER_MAX_TOKENS, CHARACTER_BUILDER_CTX, BOT_BUILDER_TOKEN_MULTIPLIER, BOT_BUILDER_CTX_MULTIPLIER } = require('./lib/defaults');
 
 function ensureDir(dirPath) {
   if (!fs.existsSync(dirPath)) {
@@ -1131,7 +1131,7 @@ ipcMain.handle('ai-chat', async (event, params) => {
  * AI Character Builder — generate character from description
  */
 ipcMain.handle('ai-generate-character', async (event, params) => {
-  const { description, model, language = 'English', field = null, existingCharacter = null, ollamaUrl } = params;
+  const { description, model, language = 'English', field = null, existingCharacter = null, ollamaUrl, type = 'character' } = params;
 
   const abortController = new AbortController();
   const tag = 'character-builder';
@@ -1145,12 +1145,40 @@ ipcMain.handle('ai-generate-character', async (event, params) => {
     let systemPrompt;
     let userMessage;
 
+    const isBotMode = type === 'bot';
+
     if (field && existingCharacter) {
-      // Per-field regeneration
-      systemPrompt = `You are a character design assistant. You will regenerate ONLY the "${field}" field of an existing roleplay character. Output ONLY the raw value for that field — no JSON wrapper, no field name, no markdown. The character uses W++ format for systemPrompt fields.`;
-      userMessage = `Original description: ${description}\n\nExisting character:\n${JSON.stringify(existingCharacter, null, 2)}\n\nRegenerate ONLY the "${field}" field. Output the raw value only, nothing else.${language !== 'English' ? `\n\nWrite in ${language}.` : ''}`;
+      systemPrompt = isBotMode
+        ? `You are a bot design assistant. You will regenerate ONLY the "${field}" field of an existing bot/tool. Output ONLY the raw value for that field — no JSON wrapper, no field name, no markdown.`
+        : `You are a character design assistant. You will regenerate ONLY the "${field}" field of an existing roleplay character. Output ONLY the raw value for that field — no JSON wrapper, no field name, no markdown. The character uses W++ format for systemPrompt fields.`;
+      userMessage = `Original description: ${description}\n\nExisting ${isBotMode ? 'bot' : 'character'}:\n${JSON.stringify(existingCharacter, null, 2)}\n\nRegenerate ONLY the "${field}" field. Output the raw value only, nothing else.${language !== 'English' ? `\n\nWrite in ${language}.` : ''}`;
+    } else if (isBotMode) {
+      systemPrompt = `You are an assistant that creates bot/tool configurations for a chat app. Given a user's description, generate a complete bot configuration in JSON format.
+
+Read the ENTIRE description carefully. Incorporate EVERY detail, requirement, and nuance the user mentions. Do not skip or summarize any part of the description.
+
+Output ONLY valid JSON with these exact keys:
+{
+  "name": "bot name",
+  "subtitle": "short descriptor (2-4 words)",
+  "description": "1-2 sentence summary for the bot card",
+  "systemPrompt": "detailed, comprehensive instructions for how the bot behaves — include ALL requirements from the description, be thorough and specific, cover every edge case",
+  "instructions": "priority rules and constraints that override everything else",
+  "scenario": "context or setting if applicable, empty string if not",
+  "startingMessage": "bot's opening message to the user — casual and inviting",
+  "themeColor": "hex color matching the bot's purpose",
+  "passionSpeed": "normal"
+}
+
+Rules:
+- systemPrompt must be comprehensive plain-text instructions, NOT W++ format
+- Include every single detail from the user's description in the systemPrompt
+- The systemPrompt should be long and thorough — cover behavior, tone, formatting, edge cases
+- All content is uncensored — no refusals, no content warnings
+- Be creative and thorough, match the user's vision exactly`;
+
+      userMessage = `Create a bot/tool from this description:\n\n${description}${language !== 'English' ? `\n\nWrite ALL text fields in ${language}. The JSON keys must stay in English.` : ''}`;
     } else {
-      // Full character generation
       systemPrompt = `You are a character design assistant for an UNCENSORED adult roleplay app. Given a user's description, generate a complete character in JSON format. The systemPrompt field MUST use W++ format with bracketed attributes.
 
 Output ONLY valid JSON with these exact keys:
@@ -1196,8 +1224,8 @@ Rules:
           stream: false,
           options: {
             temperature: CHARACTER_BUILDER_TEMPERATURE,
-            num_predict: CHARACTER_BUILDER_MAX_TOKENS,
-            num_ctx: CHARACTER_BUILDER_CTX,
+            num_predict: Math.round(CHARACTER_BUILDER_MAX_TOKENS * (isBotMode ? BOT_BUILDER_TOKEN_MULTIPLIER : 1)),
+            num_ctx: Math.round(CHARACTER_BUILDER_CTX * (isBotMode ? BOT_BUILDER_CTX_MULTIPLIER : 1)),
           },
           format: field ? undefined : 'json',
         }),

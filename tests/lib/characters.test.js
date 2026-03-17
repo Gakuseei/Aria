@@ -64,19 +64,9 @@ describe('characters', () => {
     }
   });
 
-  it('SFW characters have passion disabled', () => {
-    const sfwChars = characters.filter(c => c.category === 'sfw');
-    expect(sfwChars.length).toBeGreaterThan(0);
-    for (const char of sfwChars) {
-      expect(char.passionEnabled, `SFW char ${char.name} should have passionEnabled=false`).toBe(false);
-    }
-  });
-
-  it('NSFW characters have passion enabled', () => {
-    const nsfwChars = characters.filter(c => c.category === 'nsfw');
-    expect(nsfwChars.length).toBeGreaterThan(0);
-    for (const char of nsfwChars) {
-      expect(char.passionEnabled, `NSFW char ${char.name} should have passionEnabled=true`).toBe(true);
+  it('all standard characters have passion enabled', () => {
+    for (const char of characters) {
+      expect(char.passionEnabled, `${char.name} should have passionEnabled=true`).toBe(true);
     }
   });
 

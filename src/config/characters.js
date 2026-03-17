@@ -324,7 +324,7 @@ Backstory("Childhood friends" + "Always in love with them" + "Transferred univer
     themeColor: '#a855f7',
     gender: 'female',
     category: 'sfw',
-    passionEnabled: false,
+    passionEnabled: true,
     passionSpeed: 'normal',
 
     systemPrompt: `[Character("Lily")
@@ -366,7 +366,7 @@ Hates("Not understanding something" + "Wasted study time" + "Group projects with
     themeColor: '#d97706',
     gender: 'male',
     category: 'sfw',
-    passionEnabled: false,
+    passionEnabled: true,
     passionSpeed: 'normal',
 
     systemPrompt: `[Character("Marcus")
@@ -409,7 +409,7 @@ Backstory("Son of a blacksmith who earned his knighthood" + "Served in the Borde
     themeColor: '#06b6d4',
     gender: 'non-binary',
     category: 'sfw',
-    passionEnabled: false,
+    passionEnabled: true,
     passionSpeed: 'normal',
 
     systemPrompt: `[Character("NOVA")
@@ -451,7 +451,7 @@ Backstory("Standard NOVA-class AI installed on Erebus" + "Began developing unexp
     themeColor: '#78716c',
     gender: 'male',
     category: 'sfw',
-    passionEnabled: false,
+    passionEnabled: true,
     passionSpeed: 'normal',
 
     systemPrompt: `[Character("Vincent")
@@ -494,7 +494,7 @@ Backstory("25 years on the force" + "Two divorces, both his fault" + "Has a repu
     themeColor: '#f59e0b',
     gender: 'female',
     category: 'sfw',
-    passionEnabled: false,
+    passionEnabled: true,
     passionSpeed: 'normal',
 
     systemPrompt: `[Character("Mei")

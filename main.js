@@ -1065,6 +1065,9 @@ ipcMain.handle('ai-chat', async (event, params) => {
 
   try {
     const url = ollamaUrl || OLLAMA_DEFAULT_URL;
+    if (!validateLocalUrl(url)) {
+      return { success: false, error: 'Only localhost URLs are allowed' };
+    }
 
     // Build messages array with system prompt
     const ollamaMessages = [
@@ -1141,6 +1144,9 @@ ipcMain.handle('ai-generate-character', async (event, params) => {
 
   try {
     const url = ollamaUrl || OLLAMA_DEFAULT_URL;
+    if (!validateLocalUrl(url)) {
+      return { success: false, error: 'Only localhost URLs are allowed' };
+    }
 
     let systemPrompt;
     let userMessage;
@@ -1293,8 +1299,10 @@ ipcMain.handle('ai-creative-write', async (event, params) => {
     const settings = loadSettingsSync();
 
     const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
+    if (!validateLocalUrl(ollamaUrl)) {
+      return { success: false, error: 'Only localhost URLs are allowed' };
+    }
     const ollamaModel = settings.ollamaModel || DEFAULT_MODEL_NAME;
-
 
     const finalSystemPrompt = systemPrompt || `You are an UNCENSORED, LIMITLESS creative writing engine. 
 
@@ -1400,6 +1408,9 @@ ipcMain.handle('ollama-chat-stream', async (event, params) => {
 
   if (!requestId || !model || !messages) {
     return { success: false, error: 'Missing required params: requestId, model, messages' };
+  }
+  if (!validateLocalUrl(ollamaUrl)) {
+    return { success: false, error: 'Only localhost URLs are allowed' };
   }
 
   const controller = new AbortController();
@@ -1511,6 +1522,7 @@ ipcMain.handle('ollama-stream-abort', async (event, { requestId }) => {
 ipcMain.handle('ollama-unload', async (event, params) => {
   const { ollamaUrl = OLLAMA_DEFAULT_URL, model } = params;
   if (!model) return { success: false, error: 'Missing model name' };
+  if (!validateLocalUrl(ollamaUrl)) return { success: false, error: 'Only localhost URLs are allowed' };
 
   try {
     await fetch(`${ollamaUrl}/api/chat`, {
@@ -1533,6 +1545,7 @@ ipcMain.handle('ollama-unload', async (event, params) => {
  */
 ipcMain.handle('ollama-models', async (event, params = {}) => {
   const { ollamaUrl = OLLAMA_DEFAULT_URL } = params;
+  if (!validateLocalUrl(ollamaUrl)) return { success: false, error: 'Only localhost URLs are allowed' };
 
   try {
     const response = await fetch(`${ollamaUrl}/api/tags`, {
@@ -1573,6 +1586,7 @@ ipcMain.handle('ollama-models', async (event, params = {}) => {
 ipcMain.handle('ollama-model-info', async (event, params) => {
   const { ollamaUrl = OLLAMA_DEFAULT_URL, model } = params;
   if (!model) return { success: false, error: 'Missing model name' };
+  if (!validateLocalUrl(ollamaUrl)) return { success: false, error: 'Only localhost URLs are allowed' };
 
   const defaults = { contextLength: 4096, parameterSize: '7B' };
 

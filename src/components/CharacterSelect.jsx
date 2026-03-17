@@ -12,8 +12,7 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
   const [selectedId, setSelectedId] = useState(null);
   const [customCharacters, setCustomCharacters] = useState([]);
   const [allCharacters, setAllCharacters] = useState([]);
-  const [standardOpen, setStandardOpen] = useState(true);
-  const [customOpen, setCustomOpen] = useState(true);
+  const [filter, setFilter] = useState('all');
   const isVisible = useEntranceAnimation(50);
   const isGoldMode = useGoldMode();
   const importFileRef = useRef(null);
@@ -329,108 +328,92 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
         </button>
       </div>
 
-      {/* Scrollable Content */}
+      {/* Filter Buttons */}
+      <div className="flex items-center gap-2 mb-6">
+        {[
+          { key: 'all', label: t.characterSelect.filterAll },
+          { key: 'nsfw', label: 'NSFW' },
+          { key: 'sfw', label: 'SFW' },
+          ...(customCharacters.length > 0 ? [{ key: 'custom', label: t.characterSelect.custom || 'Custom' }] : []),
+        ].map(({ key, label }) => {
+          const isActive = filter === key;
+          const activeColor = isGoldMode ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-rose-500/20 border-rose-500/50 text-rose-300';
+          return (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition-all duration-200 ${
+                isActive ? activeColor : 'border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300'
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Scrollable Character Grid */}
       <div className="flex-1 overflow-y-auto pb-28 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
-        <div className="max-w-6xl mx-auto w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-6xl">
+          {allCharacters
+            .filter((c) => {
+              if (filter === 'all') return true;
+              if (filter === 'custom') return c.isCustom;
+              return c.category === filter;
+            })
+            .map((character) => renderCharacterCard(character))}
 
-          {/* Standard Personas Section */}
-          <div className="mb-6">
-            <button
-              onClick={() => setStandardOpen(!standardOpen)}
-              className="flex items-center gap-3 mb-4 group w-full text-left"
-            >
-              <svg className={`w-4 h-4 text-zinc-500 transition-transform duration-200 ${standardOpen ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          {/* Create with AI Card */}
+          <button
+            onClick={onAIBuilder}
+            className={`
+              relative aspect-[3/4] rounded-2xl
+              border-2 border-dashed
+              flex flex-col items-center justify-center
+              transition-all duration-200 cursor-pointer group
+              bg-zinc-950/30 backdrop-blur-sm
+              ${isGoldMode
+                ? 'border-zinc-800 text-zinc-500 hover:border-amber-400 hover:text-amber-400'
+                : 'border-zinc-800 text-zinc-500 hover:border-violet-500 hover:text-violet-500'
+              }
+            `}
+          >
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${
+              isGoldMode ? 'bg-amber-500/10 group-hover:bg-amber-500/20' : 'bg-violet-500/10 group-hover:bg-violet-500/20'
+            }`}>
+              <svg className={`w-8 h-8 ${isGoldMode ? 'text-amber-400' : 'text-violet-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
               </svg>
-              <span className={`text-sm font-semibold uppercase tracking-wider ${isGoldMode ? 'text-amber-400/70' : 'text-zinc-500'}`}>
-                {t.characterSelect.standardPersonas || 'Standard Personas'}
-              </span>
-              <span className="text-xs text-zinc-600">{characters.length}</span>
-              <div className="flex-1 h-px bg-zinc-800/50" />
-            </button>
+            </div>
+            <span className="text-sm font-medium">{t.characterSelect.createWithAI || 'Create with AI'}</span>
+            <span className="text-xs opacity-50 mt-1">{t.characterSelect.aiPowered || 'AI-Powered'}</span>
+          </button>
 
-            {standardOpen && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {characters.map((character) => renderCharacterCard(character))}
-              </div>
-            )}
-          </div>
-
-          {/* Custom Characters Section */}
-          <div className="mb-6">
-            <button
-              onClick={() => setCustomOpen(!customOpen)}
-              className="flex items-center gap-3 mb-4 group w-full text-left"
-            >
-              <svg className={`w-4 h-4 text-zinc-500 transition-transform duration-200 ${customOpen ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          {/* Create New Card */}
+          <button
+            onClick={handleCreateNew}
+            className={`
+              relative aspect-[3/4] rounded-2xl
+              border-2 border-dashed
+              flex flex-col items-center justify-center
+              transition-all duration-200 cursor-pointer group
+              bg-zinc-950/30 backdrop-blur-sm
+              ${isGoldMode
+                ? 'border-zinc-800 text-zinc-500 hover:border-amber-400 hover:text-amber-400'
+                : 'border-zinc-800 text-zinc-500 hover:border-rose-500 hover:text-rose-500'
+              }
+            `}
+          >
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${
+              isGoldMode ? 'bg-amber-500/10 group-hover:bg-amber-500/20' : 'bg-rose-500/10 group-hover:bg-rose-500/20'
+            }`}>
+              <svg className={`w-8 h-8 ${isGoldMode ? 'text-amber-400' : 'text-rose-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              <span className={`text-sm font-semibold uppercase tracking-wider ${isGoldMode ? 'text-amber-400/70' : 'text-zinc-500'}`}>
-                {t.characterSelect.customCharacters || 'Custom'}
-              </span>
-              <span className="text-xs text-zinc-600">{customCharacters.length}</span>
-              <div className="flex-1 h-px bg-zinc-800/50" />
-            </button>
-
-            {customOpen && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {customCharacters.map((character) => renderCharacterCard(character))}
-
-                {/* Create with AI Card */}
-                <button
-                  onClick={onAIBuilder}
-                  className={`
-                    relative aspect-[3/4] rounded-2xl
-                    border-2 border-dashed
-                    flex flex-col items-center justify-center
-                    transition-all duration-200 cursor-pointer group
-                    bg-zinc-950/30 backdrop-blur-sm
-                    ${isGoldMode
-                      ? 'border-zinc-800 text-zinc-500 hover:border-amber-400 hover:text-amber-400'
-                      : 'border-zinc-800 text-zinc-500 hover:border-violet-500 hover:text-violet-500'
-                    }
-                  `}
-                >
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${
-                    isGoldMode ? 'bg-amber-500/10 group-hover:bg-amber-500/20' : 'bg-violet-500/10 group-hover:bg-violet-500/20'
-                  }`}>
-                    <svg className={`w-8 h-8 ${isGoldMode ? 'text-amber-400' : 'text-violet-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium">{t.characterSelect.createWithAI || 'Create with AI'}</span>
-                  <span className="text-xs opacity-50 mt-1">{t.characterSelect.aiPowered || 'AI-Powered'}</span>
-                </button>
-
-                {/* Create New Card */}
-                <button
-                  onClick={handleCreateNew}
-                  className={`
-                    relative aspect-[3/4] rounded-2xl
-                    border-2 border-dashed
-                    flex flex-col items-center justify-center
-                    transition-all duration-200 cursor-pointer group
-                    bg-zinc-950/30 backdrop-blur-sm
-                    ${isGoldMode
-                      ? 'border-zinc-800 text-zinc-500 hover:border-amber-400 hover:text-amber-400'
-                      : 'border-zinc-800 text-zinc-500 hover:border-rose-500 hover:text-rose-500'
-                    }
-                  `}
-                >
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${
-                    isGoldMode ? 'bg-amber-500/10 group-hover:bg-amber-500/20' : 'bg-rose-500/10 group-hover:bg-rose-500/20'
-                  }`}>
-                    <svg className={`w-8 h-8 ${isGoldMode ? 'text-amber-400' : 'text-rose-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium">{t.characterSelect.createNew}</span>
-                  <span className="text-xs opacity-50 mt-1">{t.characterSelect.custom}</span>
-                </button>
-              </div>
-            )}
-          </div>
-
+            </div>
+            <span className="text-sm font-medium">{t.characterSelect.createNew}</span>
+            <span className="text-xs opacity-50 mt-1">{t.characterSelect.custom}</span>
+          </button>
         </div>
       </div>
 

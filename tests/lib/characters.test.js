@@ -38,9 +38,11 @@ describe('characters', () => {
     }
   });
 
-  it('systemPrompt contains W++ Character definition', () => {
+  it('systemPrompt uses plain text prose (no W++ brackets)', () => {
     for (const char of characters) {
-      expect(char.systemPrompt, `${char.name}: systemPrompt missing W++ format`).toContain('[Character(');
+      expect(char.systemPrompt.length, `${char.name}: systemPrompt too short`).toBeGreaterThan(200);
+      expect(char.systemPrompt, `${char.name}: systemPrompt still contains W++ brackets`).not.toContain('[Character(');
+      expect(char.systemPrompt.split('\n\n').length, `${char.name}: systemPrompt should have multiple paragraphs`).toBeGreaterThanOrEqual(4);
     }
   });
 

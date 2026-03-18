@@ -190,18 +190,25 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
 
-      if (result.success) {
-        const finalContent = result.content || cleanStoryOutput(streamBufferRef.current);
+      const finalContent = result.success
+        ? (result.content || cleanStoryOutput(streamBufferRef.current))
+        : cleanStoryOutput(streamBufferRef.current);
+
+      if (finalContent) {
         setStory(prev => prev ? prev + '\n\n' + finalContent : finalContent);
         setPromptCollapsed(true);
         setTimeout(() => {
           contentRef.current?.scrollTo({ top: contentRef.current.scrollHeight, behavior: 'smooth' });
         }, 100);
-      } else {
+      } else if (!result.success) {
         setError(result.error);
       }
     } catch (err) {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+      const buffered = cleanStoryOutput(streamBufferRef.current);
+      if (buffered) {
+        setStory(prev => prev ? prev + '\n\n' + buffered : buffered);
+      }
       setError(err.message);
     } finally {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -260,15 +267,22 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
 
-      if (result.success) {
-        const finalContent = result.content || cleanStoryOutput(streamBufferRef.current);
+      const finalContent = result.success
+        ? (result.content || cleanStoryOutput(streamBufferRef.current))
+        : cleanStoryOutput(streamBufferRef.current);
+
+      if (finalContent) {
         setStory(prev => prev + '\n\n' + finalContent);
         if (result.summary) setSummary(result.summary);
-      } else {
+      } else if (!result.success) {
         setError(result.error);
       }
     } catch (err) {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+      const buffered = cleanStoryOutput(streamBufferRef.current);
+      if (buffered) {
+        setStory(prev => prev + '\n\n' + buffered);
+      }
       setError(err.message);
     } finally {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }

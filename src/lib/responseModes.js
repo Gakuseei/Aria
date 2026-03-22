@@ -7,7 +7,7 @@ const RESPONSE_MODE_CONFIG = {
     sentenceMax: 6,
     paragraphMax: 1,
     charMax: 450,
-    promptInstruction: 'Default to 2-4 sentences and one short paragraph at most. Do not ramble or add extra scene narration unless the user explicitly asks for more detail.',
+    promptInstruction: 'Default to 2-4 sentences and one short paragraph at most. Keep replies complete and characterful even when the user sends a very short message. Do not mirror their brevity unless they explicitly ask for a shorter reply. Do not ramble or add extra scene narration unless the user explicitly asks for more detail.',
     rewriteInstruction: 'Rewrite the reply as one short paragraph with no more than 4 sentences. Keep only the strongest details unless the user explicitly asked for detail.'
   },
   normal: {
@@ -50,6 +50,7 @@ const MORE_DETAIL_PATTERNS = [
 ];
 
 const SHORTER_REPLY_PATTERNS = [
+  /\bshort answer\b/i,
   /\bshorter\b/i,
   /\bbrief\b/i,
   /\bconcise\b/i,
@@ -79,7 +80,7 @@ function requestedMoreDetail(userMessage) {
   return MORE_DETAIL_PATTERNS.some((pattern) => pattern.test(userMessage || ''));
 }
 
-function requestedShorterReply(userMessage) {
+export function didUserRequestShortReply(userMessage) {
   return SHORTER_REPLY_PATTERNS.some((pattern) => pattern.test(userMessage || ''));
 }
 
@@ -104,7 +105,7 @@ export function getBaseResponseMode(character) {
 export function getEffectiveResponseMode(character, userMessage = '') {
   const baseMode = getBaseResponseMode(character);
 
-  if (requestedShorterReply(userMessage)) return 'short';
+  if (didUserRequestShortReply(userMessage)) return 'short';
   if (requestedMoreDetail(userMessage)) {
     if (baseMode === 'short') return 'normal';
     return 'long';

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveTemplates, cleanTranscriptArtifacts, shouldAutoStopStreamingResponse } from '../../src/lib/api.js';
+import { resolveTemplates, cleanTranscriptArtifacts, isUnderfilledShortReply, shouldAutoStopStreamingResponse } from '../../src/lib/api.js';
 
 describe('resolveTemplates', () => {
   it('replaces {{char}} with character name', () => {
@@ -122,6 +122,11 @@ describe('shouldAutoStopStreamingResponse', () => {
     expect(shouldAutoStopStreamingResponse(text, 'short')).toBe(true);
   });
 
+  it('does not auto-stop terse mirrored short replies', () => {
+    expect(shouldAutoStopStreamingResponse('Drink first.', 'short')).toBe(false);
+    expect(shouldAutoStopStreamingResponse('Always.', 'short')).toBe(false);
+  });
+
   it('waits when the short reply still ends mid-thought', () => {
     const text = '*She slips in close, her lips brushing your ear as she smiles to herself.* "You really do make it hard';
     expect(shouldAutoStopStreamingResponse(text, 'short')).toBe(false);
@@ -134,6 +139,19 @@ describe('shouldAutoStopStreamingResponse', () => {
 
   it('treats a finished paragraph break as a safe short-stop point', () => {
     const text = 'She smiles and drags her fingertips down your chest. "Stay still for me."\n\n';
-    expect(shouldAutoStopStreamingResponse(text, 'short')).toBe(true);
+    expect(shouldAutoStopStreamingResponse(text, 'short')).toBe(false);
+  });
+});
+
+describe('isUnderfilledShortReply', () => {
+  it('flags mirrored or underdeveloped short replies for repair', () => {
+    expect(isUnderfilledShortReply('Drink first.', 'Hey', 'short')).toBe(true);
+    expect(isUnderfilledShortReply('Always.', 'Will I be welcome tomorrow?', 'short')).toBe(true);
+  });
+
+  it('does not flag full short replies or explicit short-answer requests', () => {
+    const fullReply = '*She nudges the mug closer and watches him over the rim of her glasses.* "Drink first. Then talk if you still want to."';
+    expect(isUnderfilledShortReply(fullReply, 'Hey', 'short')).toBe(false);
+    expect(isUnderfilledShortReply('Always.', 'Short answer: am I welcome here tomorrow?', 'short')).toBe(false);
   });
 });

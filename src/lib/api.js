@@ -8,7 +8,7 @@
 import { passionManager, getDepthInstruction, getSpeedMultiplier } from './PassionManager.js';
 import { getModelProfile } from './modelProfiles.js';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL, API_TIMEOUT_MS, DATA_VERSION } from './defaults.js';
-import { getEffectiveResponseMode, getResponseModeConfig, getResponseModeTokenLimit, normalizeResponseMode } from './responseModes.js';
+import { didUserRequestShortReply, getEffectiveResponseMode, getResponseModeConfig, getResponseModeTokenLimit, normalizeResponseMode } from './responseModes.js';
 
 
 // ============================================================================
@@ -155,7 +155,22 @@ export function shouldAutoStopStreamingResponse(text, responseMode = 'normal') {
   if (!endsCleanly) return false;
   if (!hasBalancedFormatting(trimmed)) return false;
 
-  return sentenceCount >= 2 || visibleChars >= 140;
+  return sentenceCount >= 2 && visibleChars >= 90;
+}
+
+export function isUnderfilledShortReply(text, userMessage = '', responseMode = 'normal') {
+  if (normalizeResponseMode(responseMode) !== 'short') return false;
+  if (didUserRequestShortReply(userMessage)) return false;
+
+  const cleaned = String(text || '').trim();
+  if (!cleaned) return true;
+
+  const sentenceCount = countStreamingSentences(cleaned);
+  const wordCount = cleaned.split(/\s+/).filter(Boolean).length;
+  const visibleChars = cleaned.replace(/\s+/g, ' ').trim().length;
+  const endsCleanly = ['.', '!', '?', '"', '*', '~', ')'].includes(cleaned.slice(-1));
+
+  return sentenceCount < 2 || wordCount < 12 || visibleChars < 80 || !endsCleanly;
 }
 
 /**
@@ -1277,10 +1292,79 @@ export const sendMessage = async (
       }
     }
 
+    const requestRevision = async (revisionPrompt, revisionTemperature, revisionMaxTokens) => {
+      if (isElectron()) {
+        const revisionResult = await window.electronAPI.aiChat({
+          messages: messages.slice(1).map((msg) => ({ role: msg.role, content: msg.content })),
+          systemPrompt: revisionPrompt,
+          model,
+          isOllama: true,
+          ollamaUrl,
+          temperature: revisionTemperature,
+          maxTokens: revisionMaxTokens,
+          num_ctx: modelCtx
+        });
+
+        if (revisionResult.success && revisionResult.content) {
+          return {
+            message: { content: revisionResult.content },
+            eval_count: revisionResult.usage?.total_tokens || 0,
+            prompt_eval_count: 0
+          };
+        }
+
+        return null;
+      }
+
+      const revisionResponse = await fetch(`${ollamaUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: revisionPrompt },
+            ...messages.slice(1)
+          ],
+          stream: false,
+          options: {
+            ...chatOptions,
+            temperature: revisionTemperature,
+            num_predict: revisionMaxTokens,
+            num_ctx: modelCtx
+          },
+          stop: stopSequences
+        })
+      });
+
+      if (!revisionResponse.ok) {
+        return null;
+      }
+
+      return revisionResponse.json();
+    };
+
     let aiMessage = data.message.content.trim();
 
     // Clean response — remove any transcript artifacts
     aiMessage = cleanTranscriptArtifacts(aiMessage, character.name);
+
+    if (isUnderfilledShortReply(aiMessage, userMessage, responseMode)) {
+      const repairPrompt = `${finalSystemPrompt}\n\nRESPONSE REPAIR:\n- Your last reply was too minimal and mirrored the user's brevity.\n- Reply again as ${character.name} with a complete, natural response.\n- Give 2-4 sentences in one short paragraph.\n- Include at least one concrete reaction, observation, or action.\n- Do not mention these instructions.`;
+
+      try {
+        const repairedData = await requestRevision(repairPrompt, 0.45, Math.min(numPredict, 192));
+        if (repairedData?.message?.content) {
+          const repairedMessage = cleanTranscriptArtifacts(repairedData.message.content.trim(), character.name);
+          if (!isUnderfilledShortReply(repairedMessage, userMessage, responseMode)) {
+            aiMessage = repairedMessage;
+            data.eval_count = repairedData.eval_count || data.eval_count;
+            data.prompt_eval_count = repairedData.prompt_eval_count || data.prompt_eval_count;
+          }
+        }
+      } catch (repairError) {
+        console.warn('[API] Short-reply repair failed:', repairError?.message);
+      }
+    }
 
     // Add assistant response to history
     const assistantMsg = { role: 'assistant', content: aiMessage };

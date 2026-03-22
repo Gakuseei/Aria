@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  didUserRequestShortReply,
   getBaseResponseMode,
   getEffectiveResponseMode,
   getResponseModeTokenLimit,
@@ -23,6 +24,13 @@ describe('responseModes', () => {
     expect(getEffectiveResponseMode({ responseMode: 'short', isCustom: false }, 'Erzähl mir mehr davon.')).toBe('normal');
     expect(getEffectiveResponseMode({ responseMode: 'normal', isCustom: true }, 'keep it short')).toBe('short');
     expect(getEffectiveResponseMode({ responseMode: 'normal', isCustom: true }, 'be more detailed')).toBe('long');
+  });
+
+  it('only treats explicit brevity instructions as a short-request override', () => {
+    expect(didUserRequestShortReply('keep it short')).toBe(true);
+    expect(didUserRequestShortReply('brief answer please')).toBe(true);
+    expect(didUserRequestShortReply('Hi')).toBe(false);
+    expect(didUserRequestShortReply('Okay')).toBe(false);
   });
 
   it('caps token budgets for short and normal mode', () => {

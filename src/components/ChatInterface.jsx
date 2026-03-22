@@ -127,8 +127,8 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
         className={`max-w-[75%] rounded-2xl px-5 py-3.5 relative transition-all duration-200 ${
           isUser
             ? (isGoldMode
-                ? 'bg-gradient-to-br from-zinc-900 to-amber-950/40 border border-amber-500/30 shadow-[0_0_15px_-3px_rgba(245,158,11,0.1)] text-white'
-                : 'bg-gradient-to-br from-rose-800/90 via-rose-700/80 to-rose-900 border border-rose-500/15 text-white shadow-lg')
+                ? 'bg-gradient-to-br from-zinc-900 to-amber-950/40 border border-amber-500/30 text-white'
+                : 'bg-gradient-to-br from-[#6f2740]/92 via-[#5c2237]/88 to-zinc-900 border border-white/10 text-white')
             : 'glass hover:border-white/10'
         }`}
       >
@@ -1827,6 +1827,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             ref={inputRef}
             value={input}
             rows={1}
+            spellCheck={false}
+            autoCorrect="off"
             onChange={(e) => {
               if (isImpersonating) {
                 abortImpersonateCall();
@@ -1929,6 +1931,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                     <label className="block text-sm font-medium text-zinc-400 mb-2">{t.chat.imagePrompt}</label>
                     <textarea
                       value={imagePrompt}
+                      spellCheck={false}
+                      autoCorrect="off"
                       onChange={(e) => setImagePrompt(e.target.value)}
                       className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white resize-none"
                       rows={4}

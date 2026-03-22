@@ -1,5 +1,13 @@
 import { compileCharacterRuntimeCard, resolveRuntimeCardTemplates } from './compiler.js';
-import { compactHistoryText, estimateTokens, pickSentenceByKeywords, trimPromptSnippet, truncateMiddle } from './text.js';
+import {
+  compactHistoryText,
+  estimateTokens,
+  normalizeWhitespace,
+  pickSentenceByKeywords,
+  splitSentences,
+  trimPromptSnippet,
+  truncateMiddle
+} from './text.js';
 
 const PROFILE_HISTORY_SHARE = {
   reply: 0.58,
@@ -26,6 +34,72 @@ const RELATIONSHIP_KEYWORDS = [
   'service',
   'tension',
   'attracted'
+];
+
+const SETTING_KEYWORDS = [
+  'room',
+  'house',
+  'estate',
+  'apartment',
+  'office',
+  'bar',
+  'cafe',
+  'manor',
+  'road',
+  'hallway',
+  'building',
+  'doorway',
+  'balcony',
+  'street',
+  'kitchen',
+  'bed',
+  'couch',
+  'desk',
+  'counter',
+  'stool',
+  'night',
+  'evening',
+  'morning'
+];
+
+const CONTINUITY_KEYWORDS = [
+  'still',
+  'again',
+  'continue',
+  'closer',
+  'against',
+  'around',
+  'between',
+  'lean',
+  'hold',
+  'held',
+  'kiss',
+  'touch',
+  'follow',
+  'wait',
+  'watch',
+  'promise',
+  'stay',
+  'keep',
+  'come',
+  'inside',
+  'outside',
+  'doorway',
+  'counter',
+  'bed',
+  'couch',
+  'chair',
+  'desk',
+  'breath',
+  'voice',
+  'shiver',
+  'chin',
+  'waist',
+  'hand',
+  'fingers',
+  'throat',
+  'chest',
+  'step'
 ];
 
 function normalizeHistory(history) {
@@ -151,6 +225,108 @@ function deriveRecentSceneDigest(history, charName, userName) {
     .join(' | ');
 }
 
+function findLatestTurn(history, role) {
+  return [...history].reverse().find((message) => message.role === role)?.content || '';
+}
+
+function pickRecentSentenceByKeywords(history, keywords, maxLength = 150) {
+  const loweredKeywords = keywords.map((keyword) => keyword.toLowerCase());
+
+  for (let index = history.length - 1; index >= 0; index -= 1) {
+    const sentences = splitSentences(history[index]?.content || '');
+    for (const sentence of sentences) {
+      const loweredSentence = sentence.toLowerCase();
+      if (loweredKeywords.some((keyword) => loweredSentence.includes(keyword))) {
+        return trimPromptSnippet(sentence, maxLength);
+      }
+    }
+  }
+
+  return '';
+}
+
+function deriveSettingAnchor(history, sceneSeed) {
+  const historyAnchor = pickRecentSentenceByKeywords(history, SETTING_KEYWORDS, 150);
+  if (historyAnchor) {
+    return { value: historyAnchor, source: 'history' };
+  }
+
+  const seedAnchor = pickSentenceByKeywords(sceneSeed, SETTING_KEYWORDS, 150) || trimPromptSnippet(sceneSeed, 150);
+  if (seedAnchor) {
+    return { value: seedAnchor, source: 'seed' };
+  }
+
+  return { value: '', source: 'none' };
+}
+
+function deriveRelationshipAnchor(history, compiledRuntimeCard) {
+  const historyAnchor = pickRecentSentenceByKeywords(history, RELATIONSHIP_KEYWORDS, 150);
+  if (historyAnchor) {
+    return { value: historyAnchor, source: 'history' };
+  }
+
+  const seedText = `${compiledRuntimeCard.sceneSeed || ''}\n${compiledRuntimeCard.characterCore || ''}`;
+  const seedAnchor = pickSentenceByKeywords(seedText, RELATIONSHIP_KEYWORDS, 150) || trimPromptSnippet(compiledRuntimeCard.sceneSeed || '', 150);
+  if (seedAnchor) {
+    return { value: seedAnchor, source: 'seed' };
+  }
+
+  return { value: '', source: 'none' };
+}
+
+function scoreContinuitySentence(sentence) {
+  const lowered = sentence.toLowerCase();
+  let score = 0;
+
+  if (sentence.length >= 28) score += 1;
+  if (sentence.includes('*')) score += 2;
+  if (/[?!"']/.test(sentence)) score += 1;
+  if (CONTINUITY_KEYWORDS.some((keyword) => lowered.includes(keyword))) score += 2;
+  if (/\b(please|can you|could you|show me|tell me|stay|come|kiss|touch|hold|take|keep going|don't stop)\b/i.test(sentence)) score += 2;
+
+  return score;
+}
+
+function collectContinuityFacts(history, charName, userName, recentSceneDigest, excludedTurns = []) {
+  const facts = [];
+  const seen = new Set(
+    excludedTurns
+      .map((turn) => normalizeWhitespace(turn).toLowerCase())
+      .filter(Boolean)
+  );
+  const recentHistory = history.slice(-8);
+
+  for (let index = recentHistory.length - 1; index >= 0; index -= 1) {
+    const message = recentHistory[index];
+    const speaker = message.role === 'user' ? userName : charName;
+    const sentenceCandidates = splitSentences(message.content);
+    const candidates = sentenceCandidates.length > 0
+      ? sentenceCandidates
+      : [trimPromptSnippet(message.content, 130)];
+
+    for (const candidate of candidates) {
+      const clipped = trimPromptSnippet(candidate, 130);
+      if (!clipped) continue;
+
+      const normalized = normalizeWhitespace(clipped).toLowerCase();
+      if (seen.has(normalized)) continue;
+      if (scoreContinuitySentence(clipped) < 3) continue;
+
+      seen.add(normalized);
+      facts.push(`${speaker}: ${clipped}`);
+      if (facts.length >= 4) {
+        return facts;
+      }
+    }
+  }
+
+  if (facts.length === 0 && recentSceneDigest) {
+    facts.push(trimPromptSnippet(recentSceneDigest, 160));
+  }
+
+  return facts;
+}
+
 function deriveOpenThread(latestUserTurn, latestAssistantTurn) {
   const latestUser = String(latestUserTurn || '').trim();
   const latestAssistant = String(latestAssistantTurn || '').trim();
@@ -172,24 +348,48 @@ function deriveOpenThread(latestUserTurn, latestAssistantTurn) {
   return 'Continue the current beat without resetting the scene.';
 }
 
-function deriveActiveScene({ compiledRuntimeCard, history, charName, userName }) {
-  const latestUserTurn = [...history].reverse().find((message) => message.role === 'user')?.content || '';
-  const latestAssistantTurn = [...history].reverse().find((message) => message.role === 'assistant')?.content || '';
+function deriveSceneState({ compiledRuntimeCard, history, charName, userName }) {
+  const latestUserTurn = findLatestTurn(history, 'user');
+  const latestAssistantTurn = findLatestTurn(history, 'assistant');
   const recentSceneDigest = deriveRecentSceneDigest(history, charName, userName);
-  const sceneSeed = compiledRuntimeCard.sceneSeed || '';
-  const historyLocation = pickSentenceByKeywords(
-    `${latestAssistantTurn}\n${latestUserTurn}`,
-    ['in the', 'into the', 'onto the', 'inside', 'outside', 'hallway', 'balcony', 'bar', 'cafe', 'room', 'office', 'door', 'window', 'street'],
-    150
+  const settingAnchor = deriveSettingAnchor(history, compiledRuntimeCard.sceneSeed || '');
+  const relationshipAnchor = deriveRelationshipAnchor(history, compiledRuntimeCard);
+  const continuityFacts = collectContinuityFacts(
+    history,
+    charName,
+    userName,
+    recentSceneDigest,
+    [latestAssistantTurn, latestUserTurn]
   );
 
   return {
-    location_or_setting: historyLocation || pickSentenceByKeywords(sceneSeed, ['room', 'house', 'estate', 'apartment', 'office', 'bar', 'cafe', 'manor', 'road', 'hallway', 'building', 'night', 'evening', 'morning'], 150) || trimPromptSnippet(sceneSeed, 150),
-    immediate_situation: trimPromptSnippet(recentSceneDigest || sceneSeed || latestAssistantTurn || latestUserTurn, 170),
-    relationship_state: pickSentenceByKeywords(`${sceneSeed}\n${compiledRuntimeCard.characterCore || ''}`, RELATIONSHIP_KEYWORDS, 150) || trimPromptSnippet(sceneSeed, 150),
-    latest_character_action_or_reaction: trimPromptSnippet(latestAssistantTurn, 170),
-    latest_user_action_or_request: trimPromptSnippet(latestUserTurn, 160),
-    open_thread: deriveOpenThread(latestUserTurn, latestAssistantTurn)
+    setting_anchor: settingAnchor.value,
+    relationship_anchor: relationshipAnchor.value,
+    continuity_facts: continuityFacts,
+    current_exchange: {
+      latest_character_action_or_reaction: trimPromptSnippet(latestAssistantTurn, 170),
+      latest_user_action_or_request: trimPromptSnippet(latestUserTurn, 160)
+    },
+    open_thread: deriveOpenThread(latestUserTurn, latestAssistantTurn),
+    debug: {
+      settingSource: settingAnchor.source,
+      relationshipSource: relationshipAnchor.source
+    }
+  };
+}
+
+function buildActiveScene(sceneState, recentSceneDigest = '') {
+  const continuity = sceneState.continuity_facts.join(' | ');
+  const immediateSituation = continuity || recentSceneDigest || sceneState.setting_anchor || sceneState.open_thread;
+
+  return {
+    location_or_setting: sceneState.setting_anchor,
+    immediate_situation: trimPromptSnippet(immediateSituation, 180),
+    relationship_state: sceneState.relationship_anchor,
+    continuity: trimPromptSnippet(continuity, 220),
+    latest_character_action_or_reaction: sceneState.current_exchange.latest_character_action_or_reaction,
+    latest_user_action_or_request: sceneState.current_exchange.latest_user_action_or_request,
+    open_thread: sceneState.open_thread
   };
 }
 
@@ -200,6 +400,10 @@ function shouldUseExampleSeed({ history, compiledRuntimeCard, profile }) {
   const recentAssistantText = assistantTurns.slice(-2).map((message) => message.content).join('\n');
   const coldChat = assistantTurns.length <= 1;
   const sparseCadenceEvidence = recentAssistantText.replace(/\s+/g, ' ').trim().length < 220;
+
+  if (compiledRuntimeCard.runtimeDefaults.type === 'bot') {
+    return assistantTurns.length === 0 && compiledRuntimeCard.runtimeDefaults.voiceDependsOnExamples;
+  }
 
   return coldChat || compiledRuntimeCard.runtimeDefaults.voiceDependsOnExamples || sparseCadenceEvidence;
 }
@@ -215,25 +419,32 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
   const charName = String(character?.name || 'Character').trim() || 'Character';
   const totalBudget = Math.max(320, runtimeSteering.availableContextTokens || 2048);
   const profile = runtimeSteering.profile || 'reply';
+  const normalizedHistory = normalizeHistory(history);
   const compiledRuntimeCard = resolveRuntimeCardTemplates(compileCharacterRuntimeCard(character), charName, userName);
   const historyBudget = calculateHistoryBudget(totalBudget, profile);
-  const selectedRecentHistory = selectRecentHistory(history, historyBudget);
-  const activeScene = deriveActiveScene({
+  const selectedRecentHistory = selectRecentHistory(normalizedHistory, historyBudget);
+  const sceneHistory = selectedRecentHistory.messages.map((message) => ({
+    role: message.role,
+    content: message.content
+  }));
+  const sceneState = deriveSceneState({
     compiledRuntimeCard,
-    history: normalizeHistory(history),
+    history: sceneHistory,
     charName,
     userName
   });
+  const activeScene = buildActiveScene(sceneState, deriveRecentSceneDigest(sceneHistory, charName, userName));
 
   return {
     compiledRuntimeCard,
+    sceneState,
     activeScene,
     selectedRecentHistory,
     runtimeSteering,
     userName,
     characterName: charName,
     exampleEligibility: shouldUseExampleSeed({
-      history: normalizeHistory(history),
+      history: normalizedHistory,
       compiledRuntimeCard,
       profile
     })
@@ -245,6 +456,7 @@ export function renderActiveScene(activeScene, { compact = false } = {}) {
     ? [
         ['Setting', activeScene.location_or_setting],
         ['Situation', activeScene.immediate_situation],
+        ['Continuity', activeScene.continuity],
         ['Character Beat', activeScene.latest_character_action_or_reaction],
         ['User Beat', activeScene.latest_user_action_or_request],
         ['Open Thread', activeScene.open_thread]
@@ -253,6 +465,7 @@ export function renderActiveScene(activeScene, { compact = false } = {}) {
         ['Setting', activeScene.location_or_setting],
         ['Situation', activeScene.immediate_situation],
         ['Relationship', activeScene.relationship_state],
+        ['Continuity', activeScene.continuity],
         ['Character Beat', activeScene.latest_character_action_or_reaction],
         ['User Beat', activeScene.latest_user_action_or_request],
         ['Open Thread', activeScene.open_thread]

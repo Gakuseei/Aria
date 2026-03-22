@@ -68,6 +68,7 @@ describe('buildRuntimeState', () => {
     expect(runtimeState.activeScene.latest_character_action_or_reaction).toContain('I was hoping you were home');
     expect(runtimeState.activeScene.latest_user_action_or_request).toContain('Come inside');
     expect(runtimeState.activeScene.open_thread).toContain('Come inside');
+    expect(runtimeState.activeScene.continuity).toContain('doorway');
   });
 
   it('protects the current beat under budget pressure', () => {
@@ -96,6 +97,36 @@ describe('buildRuntimeState', () => {
     const keptText = runtimeState.selectedRecentHistory.messages.map((message) => message.content).join('\n');
     expect(keptText).toContain('Then kiss me.');
     expect(keptText).toContain('I am.');
+  });
+
+  it('builds a rolling scene state that keeps continuity anchors from recent history', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Mei',
+        systemPrompt: 'Mei is dry, observant, and quietly protective.',
+        instructions: 'Stay blunt but gentle.',
+        scenario: 'Rainy cafe afternoon.'
+      },
+      history: [
+        { role: 'assistant', content: '*She slides a mug across the cafe counter and taps the empty stool beside it.* "Your usual."' },
+        { role: 'user', content: 'You always keep the corner stool for me.' },
+        { role: 'assistant', content: '*She nudges your shoulder with hers.* "You are still my favorite partner, trouble."' },
+        { role: 'user', content: 'Then stay with me until the rain stops.' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: {
+        profile: 'reply',
+        availableContextTokens: 900,
+        responseMode: 'normal'
+      }
+    });
+
+    expect(runtimeState.sceneState.setting_anchor).toMatch(/counter|stool/i);
+    expect(runtimeState.sceneState.relationship_anchor).toContain('favorite partner');
+    expect(runtimeState.sceneState.debug.settingSource).toBe('history');
+    expect(runtimeState.sceneState.debug.relationshipSource).toBe('history');
+    expect(runtimeState.sceneState.continuity_facts.length).toBeGreaterThan(0);
+    expect(runtimeState.activeScene.continuity).toMatch(/counter|stool|favorite partner/i);
   });
 });
 
@@ -167,5 +198,37 @@ describe('assembleRuntimeContext', () => {
     expect(suggestionContext.userPrompt).toContain('Current beat:');
     expect(impersonateContext.systemPrompt).toContain('Character Reference:');
     expect(impersonateContext.userPrompt).toContain("Write Erik's next reply");
+  });
+
+  it('uses an explicit lightweight bot runtime path without roleplay-only reply steering', () => {
+    const botState = buildRuntimeState({
+      character: {
+        name: 'DeskBot',
+        type: 'bot',
+        systemPrompt: 'DeskBot handles scheduling requests with crisp answers.',
+        instructions: 'Ask for the missing time window before committing.',
+        scenario: 'Office planning assistant.'
+      },
+      history: [
+        { role: 'assistant', content: 'I can help schedule that.' },
+        { role: 'user', content: 'Book a 30-minute check-in for tomorrow.' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: {
+        profile: 'reply',
+        availableContextTokens: 900,
+        responseMode: 'normal'
+      }
+    });
+
+    const replyContext = assembleRuntimeContext({ profile: 'reply', runtimeState: botState });
+    const suggestionState = { ...botState, runtimeSteering: { ...botState.runtimeSteering, profile: 'suggestions', avoidSuggestions: [] } };
+    const suggestionContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState: suggestionState });
+
+    expect(replyContext.systemPrompt).toContain('Respond as the configured bot or scenario without roleplay framing.');
+    expect(replyContext.systemPrompt).not.toContain('Keep actions in third person inside *asterisks*');
+    expect(replyContext.systemPrompt).not.toContain('Continue the active scene with DeskBot');
+    expect(suggestionContext.systemPrompt).toContain('same exchange with DeskBot');
+    expect(suggestionContext.userPrompt).toContain('same exchange');
   });
 });

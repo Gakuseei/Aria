@@ -250,6 +250,24 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('Explicit intimacy is allowed when the scene leads there.');
     expect((prompt.match(/immediate in-character physical compliance/g) || [])).toHaveLength(1);
   });
+
+  it('uses a lean bot runtime prompt without roleplay-only reply rules', () => {
+    const prompt = buildSystemPrompt({
+      character: {
+        name: 'DeskBot',
+        type: 'bot',
+        systemPrompt: 'DeskBot handles scheduling requests with crisp answers.',
+        instructions: 'Ask for the missing time window before committing.',
+        scenario: 'Office planning assistant.'
+      },
+      userName: 'Erik',
+      responseMode: 'normal'
+    });
+
+    expect(prompt).toContain('Respond as the configured bot or scenario without roleplay framing.');
+    expect(prompt).not.toContain('Keep actions in third person inside *asterisks* and dialogue in plain text.');
+    expect(prompt).not.toContain('Continue the active scene with DeskBot instead of summarizing or resetting it.');
+  });
 });
 
 describe('suggestions stabilization', () => {
@@ -410,6 +428,7 @@ describe('buildRoleplaySceneContext', () => {
     expect(context.sceneSummary).toContain('Setting:');
     expect(context.sceneSummary).toContain('Situation:');
     expect(context.sceneSummary).toContain('Relationship:');
+    expect(context.sceneSummary).toContain('Continuity:');
     expect(context.sceneSummary).toContain('User Beat:');
     expect(context.currentBeat).toContain('Mei: *She wipes the counter.* "Long day?"');
     expect(context.currentBeat).toContain('Erik: Yeah. I barely slept.');
@@ -474,7 +493,6 @@ describe('sendMessage abort cleanup', () => {
         instructions: 'Stay grounded in the moment.',
         scenario: 'Rainy cafe after closing time.'
       },
-      '',
       [{ role: 'user', content: 'Stay with me.' }],
       null,
       false,

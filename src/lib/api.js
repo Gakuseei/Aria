@@ -1022,7 +1022,6 @@ export function buildSystemPrompt({ character, userName = 'User', passionLevel =
 export const sendMessage = async (
   userMessage,
   character,
-  characterContext,
   conversationHistory = [],
   sessionId = null,
   unchainedMode = false,
@@ -1074,16 +1073,8 @@ export const sendMessage = async (
     const responseMode = getEffectiveResponseMode(character, userMessage);
     const baseNumPredict = settings.maxResponseTokens ?? profile.maxResponseTokens ?? 512;
     const numPredict = getResponseModeTokenLimit(baseNumPredict, responseMode);
-    const runtimeCharacter = characterContext && typeof characterContext === 'object'
-      ? {
-          ...character,
-          systemPrompt: character.systemPrompt || characterContext.systemPrompt || characterContext.description || '',
-          instructions: character.instructions || characterContext.instructions || '',
-          scenario: character.scenario || characterContext.scenario || ''
-        }
-      : character;
     const runtimeState = buildRuntimeState({
-      character: runtimeCharacter,
+      character,
       history: historyToUse,
       userName,
       runtimeSteering: {

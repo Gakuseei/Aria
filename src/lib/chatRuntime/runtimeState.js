@@ -1,6 +1,5 @@
 import { compileCharacterRuntimeCard, resolveRuntimeCardTemplates } from './compiler.js';
 import {
-  compactHistoryText,
   estimateTokens,
   normalizeWhitespace,
   pickSentenceByKeywords,
@@ -218,13 +217,6 @@ function selectRecentHistory(history, budgetTokens) {
   };
 }
 
-function deriveRecentSceneDigest(history, charName, userName) {
-  const recentTail = history.slice(-4);
-  return recentTail
-    .map((message) => `${message.role === 'user' ? userName : charName}: ${compactHistoryText(message.content, 180)}`)
-    .join(' | ');
-}
-
 function findLatestTurn(history, role) {
   return [...history].reverse().find((message) => message.role === role)?.content || '';
 }
@@ -245,15 +237,27 @@ function pickRecentSentenceByKeywords(history, keywords, maxLength = 150) {
   return '';
 }
 
+function sanitizeSceneAnchor(text, keywords = [], maxLength = 150) {
+  const flattened = String(text || '')
+    .replace(/[*"]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const loweredKeywords = keywords.map((keyword) => keyword.toLowerCase());
+  const matchingSentence = splitSentences(flattened)
+    .find((sentence) => loweredKeywords.some((keyword) => sentence.toLowerCase().includes(keyword)));
+
+  return trimPromptSnippet(matchingSentence || flattened || text, maxLength);
+}
+
 function deriveSettingAnchor(history, sceneSeed) {
   const historyAnchor = pickRecentSentenceByKeywords(history, SETTING_KEYWORDS, 150);
   if (historyAnchor) {
-    return { value: historyAnchor, source: 'history' };
+    return { value: sanitizeSceneAnchor(historyAnchor, SETTING_KEYWORDS, 150), source: 'history' };
   }
 
   const seedAnchor = pickSentenceByKeywords(sceneSeed, SETTING_KEYWORDS, 150) || trimPromptSnippet(sceneSeed, 150);
   if (seedAnchor) {
-    return { value: seedAnchor, source: 'seed' };
+    return { value: sanitizeSceneAnchor(seedAnchor, SETTING_KEYWORDS, 150), source: 'seed' };
   }
 
   return { value: '', source: 'none' };
@@ -262,13 +266,13 @@ function deriveSettingAnchor(history, sceneSeed) {
 function deriveRelationshipAnchor(history, compiledRuntimeCard) {
   const historyAnchor = pickRecentSentenceByKeywords(history, RELATIONSHIP_KEYWORDS, 150);
   if (historyAnchor) {
-    return { value: historyAnchor, source: 'history' };
+    return { value: sanitizeSceneAnchor(historyAnchor, RELATIONSHIP_KEYWORDS, 150), source: 'history' };
   }
 
   const seedText = `${compiledRuntimeCard.sceneSeed || ''}\n${compiledRuntimeCard.characterCore || ''}`;
   const seedAnchor = pickSentenceByKeywords(seedText, RELATIONSHIP_KEYWORDS, 150) || trimPromptSnippet(compiledRuntimeCard.sceneSeed || '', 150);
   if (seedAnchor) {
-    return { value: seedAnchor, source: 'seed' };
+    return { value: sanitizeSceneAnchor(seedAnchor, RELATIONSHIP_KEYWORDS, 150), source: 'seed' };
   }
 
   return { value: '', source: 'none' };
@@ -287,7 +291,36 @@ function scoreContinuitySentence(sentence) {
   return score;
 }
 
-function collectContinuityFacts(history, charName, userName, recentSceneDigest, excludedTurns = []) {
+function stripQuotedDialogue(text) {
+  return String(text || '')
+    .replace(/"[^"]*"/g, ' ')
+    .replace(/\*+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractContinuityFact(message, candidate, maxLength = 110) {
+  const actionMatch = String(message?.content || '').match(/\*([^*]+)\*/);
+  if (actionMatch?.[1]) {
+    return trimPromptSnippet(actionMatch[1], maxLength);
+  }
+
+  const plainCandidate = stripQuotedDialogue(candidate);
+  if (!plainCandidate) return '';
+
+  if (message?.role === 'user' && !/[.*]/.test(message.content || '')) {
+    const loweredPlain = plainCandidate.toLowerCase();
+    const carriesSceneFact = SETTING_KEYWORDS.some((keyword) => loweredPlain.includes(keyword))
+      || CONTINUITY_KEYWORDS.some((keyword) => loweredPlain.includes(keyword));
+    if (!carriesSceneFact) {
+      return '';
+    }
+  }
+
+  return trimPromptSnippet(plainCandidate, maxLength);
+}
+
+function collectContinuityFacts(history, excludedTurns = []) {
   const facts = [];
   const seen = new Set(
     excludedTurns
@@ -298,30 +331,26 @@ function collectContinuityFacts(history, charName, userName, recentSceneDigest, 
 
   for (let index = recentHistory.length - 1; index >= 0; index -= 1) {
     const message = recentHistory[index];
-    const speaker = message.role === 'user' ? userName : charName;
     const sentenceCandidates = splitSentences(message.content);
     const candidates = sentenceCandidates.length > 0
       ? sentenceCandidates
       : [trimPromptSnippet(message.content, 130)];
 
     for (const candidate of candidates) {
-      const clipped = trimPromptSnippet(candidate, 130);
-      if (!clipped) continue;
+      if (scoreContinuitySentence(candidate) < 3) continue;
 
-      const normalized = normalizeWhitespace(clipped).toLowerCase();
+      const fact = extractContinuityFact(message, candidate, 110);
+      if (!fact) continue;
+
+      const normalized = normalizeWhitespace(fact).toLowerCase();
       if (seen.has(normalized)) continue;
-      if (scoreContinuitySentence(clipped) < 3) continue;
 
       seen.add(normalized);
-      facts.push(`${speaker}: ${clipped}`);
-      if (facts.length >= 4) {
+      facts.push(fact);
+      if (facts.length >= 3) {
         return facts;
       }
     }
-  }
-
-  if (facts.length === 0 && recentSceneDigest) {
-    facts.push(trimPromptSnippet(recentSceneDigest, 160));
   }
 
   return facts;
@@ -351,14 +380,10 @@ function deriveOpenThread(latestUserTurn, latestAssistantTurn) {
 function deriveSceneState({ compiledRuntimeCard, history, charName, userName }) {
   const latestUserTurn = findLatestTurn(history, 'user');
   const latestAssistantTurn = findLatestTurn(history, 'assistant');
-  const recentSceneDigest = deriveRecentSceneDigest(history, charName, userName);
   const settingAnchor = deriveSettingAnchor(history, compiledRuntimeCard.sceneSeed || '');
   const relationshipAnchor = deriveRelationshipAnchor(history, compiledRuntimeCard);
   const continuityFacts = collectContinuityFacts(
     history,
-    charName,
-    userName,
-    recentSceneDigest,
     [latestAssistantTurn, latestUserTurn]
   );
 
@@ -378,15 +403,24 @@ function deriveSceneState({ compiledRuntimeCard, history, charName, userName }) 
   };
 }
 
-function buildActiveScene(sceneState, recentSceneDigest = '') {
+function buildActiveScene(sceneState) {
   const continuity = sceneState.continuity_facts.join(' | ');
-  const immediateSituation = continuity || recentSceneDigest || sceneState.setting_anchor || sceneState.open_thread;
+  const normalizedSetting = normalizeWhitespace(sceneState.setting_anchor).toLowerCase();
+  const normalizedContinuity = normalizeWhitespace(continuity).toLowerCase();
+  const distinctContinuity = normalizedContinuity && normalizedContinuity !== normalizedSetting
+    ? continuity
+    : '';
+  const immediateSituation = distinctContinuity
+    || sceneState.current_exchange.latest_user_action_or_request
+    || sceneState.current_exchange.latest_character_action_or_reaction
+    || sceneState.open_thread
+    || sceneState.setting_anchor;
 
   return {
     location_or_setting: sceneState.setting_anchor,
-    immediate_situation: trimPromptSnippet(immediateSituation, 180),
+    immediate_situation: trimPromptSnippet(immediateSituation, 140),
     relationship_state: sceneState.relationship_anchor,
-    continuity: trimPromptSnippet(continuity, 220),
+    continuity: trimPromptSnippet(distinctContinuity, 170),
     latest_character_action_or_reaction: sceneState.current_exchange.latest_character_action_or_reaction,
     latest_user_action_or_request: sceneState.current_exchange.latest_user_action_or_request,
     open_thread: sceneState.open_thread
@@ -433,7 +467,7 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
     charName,
     userName
   });
-  const activeScene = buildActiveScene(sceneState, deriveRecentSceneDigest(sceneHistory, charName, userName));
+  const activeScene = buildActiveScene(sceneState);
 
   return {
     compiledRuntimeCard,

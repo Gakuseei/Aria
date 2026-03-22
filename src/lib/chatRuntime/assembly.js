@@ -65,6 +65,36 @@ function trimHistoryForBudget(history, budgetTokens) {
   return kept;
 }
 
+function clipStructuredSceneText(text, tokenTarget, maxLineLength = 150) {
+  const lines = String(text || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) return '';
+
+  const targetChars = Math.max(120, Math.floor(tokenTarget * 3.5));
+  const kept = [];
+  let usedChars = 0;
+
+  for (const line of lines) {
+    const remainingChars = targetChars - usedChars;
+    if (remainingChars <= 24) break;
+
+    const clippedLine = trimPromptSnippet(line, Math.min(maxLineLength, remainingChars));
+    if (!clippedLine) continue;
+
+    if (kept.length > 0 && clippedLine.length + 1 > remainingChars) {
+      break;
+    }
+
+    kept.push(clippedLine);
+    usedChars += clippedLine.length + 1;
+  }
+
+  return kept.join('\n');
+}
+
 function buildReplyLateSteering(runtimeState) {
   const { runtimeSteering, compiledRuntimeCard, characterName, userName } = runtimeState;
   const responseMode = runtimeSteering.responseMode ?? compiledRuntimeCard.runtimeDefaults.defaultResponseMode;
@@ -91,9 +121,12 @@ function buildReplyLateSteering(runtimeState) {
 
   return [
     unchainedRule,
+    `Write ${characterName}'s next in-character reply to ${userName}.`,
+    'Lead with the reply itself. Keep scene notes brief and only use them when they help the reply land naturally.',
     promptInstruction,
     `Respond directly to what ${userName} just said or did.`,
-    `Continue the active scene with ${characterName} instead of summarizing or resetting it.`,
+    'Prefer in-character action and dialogue over detached observer-style scene summary.',
+    `Keep the active scene intact with ${characterName} instead of summarizing or resetting it from the outside.`,
     ...modeRules,
     depthInstruction || 'Match the current closeness of the scene without forcing escalation.'
   ].filter(Boolean).join('\n');
@@ -161,7 +194,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     const activeSceneFull = renderActiveScene(runtimeState.activeScene, { compact: false });
     const activeSceneCompact = renderActiveScene(runtimeState.activeScene, { compact: true });
     const lateSteering = clipToTokenTarget(buildReplyLateSteering(runtimeState), targets.lateSteering);
-    let activeScene = clipToTokenTarget(activeSceneFull, targets.activeScene);
+    let activeScene = clipStructuredSceneText(activeSceneFull, targets.activeScene, 145);
     let exampleSeed = runtimeState.exampleEligibility ? clipToTokenTarget(runtimeState.compiledRuntimeCard.exampleSeed, targets.exampleSeed) : '';
 
     blocks.push(buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)));
@@ -201,7 +234,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     }
 
     if (totalTokens > totalBudget) {
-      activeScene = clipToTokenTarget(activeSceneCompact, 95);
+      activeScene = clipStructuredSceneText(activeSceneCompact, 95, 120);
       debug.droppedBlocks.push('Active Scene Support');
       systemPrompt = [
         buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)),
@@ -236,7 +269,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     ].filter(Boolean).join('\n');
     const systemPrompt = [
       buildPlainTextBlock('Character Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)),
-      buildPlainTextBlock('Active Scene', clipToTokenTarget(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene)),
+      buildPlainTextBlock('Active Scene', clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene, 115)),
       buildPlainTextBlock('Late Steering', clipToTokenTarget(buildSuggestionLateSteering(runtimeState), targets.lateSteering))
     ].filter(Boolean).join('\n\n');
 
@@ -257,7 +290,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
   const recentTail = runtimeState.selectedRecentHistory.messages.slice(-4);
   const minimalCharacterReference = clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore);
   const systemPrompt = [
-    buildPlainTextBlock('Active Scene', clipToTokenTarget(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene)),
+    buildPlainTextBlock('Active Scene', clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene, 115)),
     buildPlainTextBlock('Character Reference', minimalCharacterReference),
     buildPlainTextBlock('Late Steering', clipToTokenTarget(buildImpersonateLateSteering(runtimeState), targets.lateSteering))
   ].filter(Boolean).join('\n\n');

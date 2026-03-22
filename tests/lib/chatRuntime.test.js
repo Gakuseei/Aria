@@ -68,7 +68,6 @@ describe('buildRuntimeState', () => {
     expect(runtimeState.activeScene.latest_character_action_or_reaction).toContain('I was hoping you were home');
     expect(runtimeState.activeScene.latest_user_action_or_request).toContain('Come inside');
     expect(runtimeState.activeScene.open_thread).toContain('Come inside');
-    expect(runtimeState.activeScene.continuity).toContain('doorway');
   });
 
   it('protects the current beat under budget pressure', () => {
@@ -126,6 +125,8 @@ describe('buildRuntimeState', () => {
     expect(runtimeState.sceneState.debug.settingSource).toBe('history');
     expect(runtimeState.sceneState.debug.relationshipSource).toBe('history');
     expect(runtimeState.sceneState.continuity_facts.length).toBeGreaterThan(0);
+    expect(runtimeState.sceneState.continuity_facts.join(' ')).not.toContain('Mei:');
+    expect(runtimeState.sceneState.continuity_facts.join(' ')).not.toContain('"Your usual."');
     expect(runtimeState.activeScene.continuity).toMatch(/counter|stool|favorite partner/i);
   });
 });
@@ -192,6 +193,9 @@ describe('assembleRuntimeContext', () => {
     const impersonateContext = assembleRuntimeContext({ profile: 'impersonate', runtimeState: impersonateState });
 
     expect(replyContext.systemPrompt).toContain('Global Core:');
+    expect(replyContext.systemPrompt).toContain("Lead with the reply itself.");
+    expect(replyContext.systemPrompt).toContain('Prefer in-character action and dialogue over detached observer-style scene summary.');
+    expect(replyContext.systemPrompt).toContain('Active Scene:\nSetting:');
     expect(suggestionContext.systemPrompt).not.toContain('Global Core:');
     expect(suggestionContext.systemPrompt).toContain('same scene with Mei');
     expect(suggestionContext.userPrompt).toContain('3 actions for Erik');

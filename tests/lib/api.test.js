@@ -228,6 +228,8 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('Keep the interaction non-explicit.');
     expect(prompt).toContain('Erik: How was your day?');
     expect(prompt).toContain('Mei: *She wipes the counter.* "Busy."');
+    expect(prompt).toContain("Lead with the reply itself.");
+    expect(prompt).toContain('Prefer in-character action and dialogue over detached observer-style scene summary.');
   });
 
   it('ignores bracketed meta exampleDialogue blocks and adds unchained mode rules cleanly', () => {

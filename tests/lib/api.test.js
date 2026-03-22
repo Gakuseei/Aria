@@ -164,7 +164,7 @@ describe('isUnderfilledShortReply', () => {
 });
 
 describe('buildSystemPrompt', () => {
-  it('builds structured plain-text sections and real examples for roleplay characters', () => {
+  it('builds runtime blocks and preserves example seed text for roleplay characters', () => {
     const prompt = buildSystemPrompt({
       character: {
         name: 'Mei',
@@ -182,14 +182,11 @@ describe('buildSystemPrompt', () => {
       responseMode: 'normal'
     });
 
-    expect(prompt).toContain('Identity:');
-    expect(prompt).toContain('Behavior:');
-    expect(prompt).toContain('Scene:');
-    expect(prompt).toContain('Relationship and Context:');
-    expect(prompt).toContain('Examples:');
-    expect(prompt).toContain('Priority Notes:');
-    expect(prompt).toContain('Response Rules:');
-    expect(prompt).toContain('Mode Rules:');
+    expect(prompt).toContain('Global Core:');
+    expect(prompt).toContain('Character Core:');
+    expect(prompt).toContain('Active Scene:');
+    expect(prompt).toContain('Example Seed:');
+    expect(prompt).toContain('Late Steering:');
     expect(prompt).toContain('Keep the interaction non-explicit.');
     expect(prompt).toContain('Erik: How was your day?');
     expect(prompt).toContain('Mei: *She wipes the counter.* "Busy."');
@@ -218,7 +215,7 @@ describe('buildSystemPrompt', () => {
 });
 
 describe('buildRoleplaySceneContext', () => {
-  it('includes scenario, behavior hints, and the latest beat for helper grounding', () => {
+  it('includes active-scene lines and the latest beat for helper grounding', () => {
     const context = buildRoleplaySceneContext(
       [
         { role: 'assistant', content: '*She wipes the counter.* "Long day?"' },
@@ -231,10 +228,10 @@ describe('buildRoleplaySceneContext', () => {
       'She gives blunt comfort and notices small details.'
     );
 
-    expect(context.sceneSummary).toContain('Character tone:');
-    expect(context.sceneSummary).toContain('Behavior hint:');
-    expect(context.sceneSummary).toContain('Current setting:');
-    expect(context.sceneSummary).toContain('User just said or did:');
+    expect(context.sceneSummary).toContain('Setting:');
+    expect(context.sceneSummary).toContain('Situation:');
+    expect(context.sceneSummary).toContain('Relationship:');
+    expect(context.sceneSummary).toContain('User Beat:');
     expect(context.currentBeat).toContain('Mei: *She wipes the counter.* "Long day?"');
     expect(context.currentBeat).toContain('Erik: Yeah. I barely slept.');
   });

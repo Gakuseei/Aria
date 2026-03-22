@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel } from '../lib/api';
+import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, abortPassionScoring, resolveTemplates, unloadOllamaModel } from '../lib/api';
 import { passionManager, getTierKey, PASSION_TIERS } from '../lib/PassionManager';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
@@ -337,6 +337,11 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const rafRef = useRef(null);
   const settingsRef = useRef(parentSettings);
   const mountedRef = useRef(true);
+  const messagesRef = useRef([]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     settingsRef.current = parentSettings;
@@ -364,6 +369,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       }
       abortSuggestionCall();
       abortImpersonateCall();
+      abortPassionScoring();
       unloadOllamaModel(settingsRef.current);
     };
   }, []);
@@ -627,9 +633,16 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     setMessages([greetingMsg]);
 
     if (settings.smartSuggestionsEnabled) {
+      const sourceAssistantTimestamp = greetingMsg.timestamp;
       setIsGeneratingSuggestions(true);
-      generateSuggestionsBackground([greetingMsg], character.name, character.description || '', userName, settings, (suggestions) => {
+      generateSuggestionsBackground([greetingMsg], character, userName, settings, (suggestions) => {
         const result = (suggestions && suggestions.length > 0) ? suggestions : [];
+        const latestAssistantTimestamp = [...messagesRef.current].reverse().find((message) => message.role === 'assistant')?.timestamp ?? sourceAssistantTimestamp;
+        if (latestAssistantTimestamp !== sourceAssistantTimestamp) {
+          console.log('[ChatInterface] Discarded stale greeting suggestions');
+          setIsGeneratingSuggestions(false);
+          return;
+        }
         setSmartSuggestions(result);
         setIsGeneratingSuggestions(false);
         if (result.length > 0) {
@@ -641,7 +654,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             return updated;
           });
         }
-      }, [], 0, character.scenario || '', character.instructions || '');
+      }, [], 0);
     }
   };
 
@@ -725,17 +738,17 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const handleImpersonate = async () => {
     if (isLoading || isStreaming || isImpersonating) return;
     clearSuggestionsState();
+    abortPassionScoring();
     setIsImpersonating(true);
     setInput('');
     try {
       const cleaned = await impersonateUser(
         chatMessages,
-        character.name,
+        character,
         userName,
         passionLevel,
         settings,
-        (_token, display) => setInput(display),
-        character
+        (_token, display) => setInput(display)
       );
       if (cleaned) {
         setInput(cleaned);
@@ -796,12 +809,18 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const triggerSuggestions = (updatedMessages, currentPassionLevel) => {
     if (!settings.smartSuggestionsEnabled) return;
     const rollingAvoid = suggestionsHistoryRef.current.slice(-30);
+    const sourceAssistantTimestamp = [...updatedMessages].reverse().find((message) => message.role === 'assistant')?.timestamp ?? null;
     const suggestStart = Date.now();
     setIsGeneratingSuggestions(true);
-    generateSuggestionsBackground(updatedMessages, character.name, character.description || '', userName, settings, (suggestions) => {
+    generateSuggestionsBackground(updatedMessages, character, userName, settings, (suggestions) => {
       const suggestTime = ((Date.now() - suggestStart) / 1000).toFixed(1);
       setIsGeneratingSuggestions(false);
       const result = (suggestions && suggestions.length > 0) ? suggestions : [];
+      const latestAssistantTimestamp = [...messagesRef.current].reverse().find((message) => message.role === 'assistant')?.timestamp ?? sourceAssistantTimestamp;
+      if (sourceAssistantTimestamp && latestAssistantTimestamp !== sourceAssistantTimestamp) {
+        console.log('[ChatInterface] Discarded stale suggestions');
+        return;
+      }
       console.log(`[API] Suggestions ready: ${result.length} in ${suggestTime}s`);
       setSmartSuggestions(result);
       if (result.length > 0) {
@@ -817,7 +836,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         updated[lastIdx] = { ...updated[lastIdx], suggestions: result.length > 0 ? result : undefined, suggestTime: parseFloat(suggestTime) };
         return updated;
       });
-    }, rollingAvoid, currentPassionLevel ?? passionLevel, character.scenario || '', character.instructions || '');
+    }, rollingAvoid, currentPassionLevel ?? passionLevel);
   };
 
   const handleSend = async (messageText = input) => {
@@ -835,6 +854,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
     clearSuggestionsState();
     abortImpersonateCall();
+    abortPassionScoring();
     setIsImpersonating(false);
 
     if (abortRef.current) abortRef.current.abort();
@@ -1163,6 +1183,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
     clearSuggestionsState();
     abortImpersonateCall();
+    abortPassionScoring();
     setIsImpersonating(false);
 
     setMessages(messagesUpToLastUser);

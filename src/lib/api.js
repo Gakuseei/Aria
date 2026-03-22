@@ -8,7 +8,7 @@
 import { passionManager, getDepthInstruction, getSpeedMultiplier } from './PassionManager.js';
 import { getModelProfile } from './modelProfiles.js';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL, API_TIMEOUT_MS, DATA_VERSION } from './defaults.js';
-import { getEffectiveResponseMode, getResponseModeConfig, getResponseModeTokenLimit, getResponseQualityIssues, normalizeResponseMode } from './responseModes.js';
+import { getEffectiveResponseMode, getResponseModeConfig, getResponseModeTokenLimit, normalizeResponseMode } from './responseModes.js';
 
 
 // ============================================================================
@@ -43,7 +43,7 @@ export function cleanTranscriptArtifacts(text, charName = '') {
   for (const pattern of stopPatterns) {
     const match = cleaned.match(pattern);
     if (match) {
-      console.warn('[Cleaner] Found transcript artifact, cutting at:', match[0]);
+      console.info('[Cleaner] Found transcript artifact, cutting at:', match[0]);
       cleaned = cleaned.substring(0, match.index).trim();
     }
   }
@@ -87,7 +87,7 @@ export function cleanTranscriptArtifacts(text, charName = '') {
       cleaned.lastIndexOf('?')
     );
     if (sentenceEnd > 0 && sentenceEnd > cleaned.length * 0.5) {
-      console.warn(`[Cleaner] Trimmed incomplete sentence (cut at ${sentenceEnd}/${cleaned.length})`);
+      console.info(`[Cleaner] Trimmed incomplete sentence (cut at ${sentenceEnd}/${cleaned.length})`);
       cleaned = cleaned.substring(0, sentenceEnd + 1);
     }
   }
@@ -99,6 +99,63 @@ export function cleanTranscriptArtifacts(text, charName = '') {
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
 
   return cleaned.trim();
+}
+
+function stripStreamingArtifacts(text) {
+  if (!text || typeof text !== 'string') return '';
+
+  let cleaned = text
+    .replace(/<\|[^|]*\|>/g, '')
+    .replace(/\[TOOL_CALLS\]/g, '');
+
+  const stopPatterns = [
+    /\n\s*User\s*:/i,
+    /\n\s*Human\s*:/i,
+    /\n\s*Assistant\s*:/i,
+    /\n\s*AI\s*:/i,
+    /\n\s*Character\s*:/i
+  ];
+
+  for (const pattern of stopPatterns) {
+    const match = cleaned.match(pattern);
+    if (match) {
+      cleaned = cleaned.substring(0, match.index).trimEnd();
+      break;
+    }
+  }
+
+  return cleaned.replace(/^[./]+(?=\*)/gm, '').trimEnd();
+}
+
+function countStreamingSentences(text) {
+  const normalized = String(text || '')
+    .replace(/[*"_~`]/g, ' ');
+
+  return (normalized.match(/[.!?]+/g) || []).length;
+}
+
+function hasBalancedFormatting(text) {
+  const candidate = String(text || '');
+  const markerPairs = ['*', '"', '_', '~', '`'];
+  return markerPairs.every((marker) => ((candidate.match(new RegExp(`\\${marker}`, 'g')) || []).length % 2) === 0);
+}
+
+export function shouldAutoStopStreamingResponse(text, responseMode = 'normal') {
+  if (normalizeResponseMode(responseMode) !== 'short') return false;
+
+  const cleaned = stripStreamingArtifacts(text);
+  if (!cleaned) return false;
+
+  const trimmed = cleaned.trimEnd();
+  const visibleChars = trimmed.replace(/\s+/g, ' ').trim().length;
+  const sentenceCount = countStreamingSentences(trimmed);
+  const lastChar = trimmed.slice(-1);
+  const endsCleanly = ['.', '!', '?', '"', '*', '~', ')'].includes(lastChar);
+
+  if (!endsCleanly) return false;
+  if (!hasBalancedFormatting(trimmed)) return false;
+
+  return sentenceCount >= 2 || visibleChars >= 140;
 }
 
 /**
@@ -879,7 +936,8 @@ export const sendMessage = async (
   unchainedMode = false,
   onApiStats = null,  // v0.2.5: NEW - Callback for API Monitor stats
   settingsOverride = null,  // v0.2.5: FIX - Accept settings directly to avoid race conditions
-  onToken = null  // Streaming callback — receives each token chunk as string
+  onToken = null,  // Streaming callback — receives each token chunk as string
+  streamAbortHandle = null
 ) => {
   const startTime = Date.now();  // v0.2.5: Track response time
   
@@ -965,14 +1023,35 @@ export const sendMessage = async (
     const stopSequences = ['\nUser:', '\nHuman:', `\n${userName}:`, `\n${character.name}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>', '<|start_header_id|>'];
 
     let data;
+    let streamTerminationReason = 'natural';
+
+    const bindStreamAbort = (abortFn) => {
+      if (streamAbortHandle && typeof streamAbortHandle.setAbortImpl === 'function') {
+        streamAbortHandle.setAbortImpl(abortFn);
+      }
+    };
 
     if (isElectron() && onToken) {
       // STREAMING via IPC
       const requestId = `chat-${Date.now()}`;
+      let abortIssued = false;
+      let streamedContent = '';
+      const abortStream = (reason = 'user') => {
+        if (abortIssued) return;
+        abortIssued = true;
+        streamTerminationReason = reason;
+        window.electronAPI.ollamaStreamAbort(requestId, reason).catch(() => {});
+      };
+      bindStreamAbort(abortStream);
       const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
-        if (rid === requestId) onToken(token);
+        if (rid !== requestId || typeof token !== 'string') return;
+        streamedContent += token;
+        onToken(token);
+        if (!abortIssued && shouldAutoStopStreamingResponse(streamedContent, responseMode)) {
+          abortStream('auto-length');
+        }
       });
-      const abortTimer = setTimeout(() => window.electronAPI.ollamaStreamAbort(requestId), 120000);
+      const abortTimer = setTimeout(() => abortStream('timeout'), 120000);
 
       try {
         const result = await window.electronAPI.ollamaChatStream({
@@ -984,15 +1063,28 @@ export const sendMessage = async (
           stop: stopSequences
         });
 
-        if (!result.success) throw new Error(result.error || 'Stream failed');
+        if (!result.success) {
+          if (result.aborted) {
+            const abortReason = result.abortedBy || streamTerminationReason;
+            if (abortReason === 'user') {
+              return { success: false, error: 'The operation was aborted', aborted: true };
+            }
+            if (abortReason === 'timeout') {
+              throw new Error('The operation was aborted');
+            }
+          }
+          throw new Error(result.error || 'Stream failed');
+        }
 
         data = {
-          message: { content: result.content },
+          message: { content: result.content || streamedContent },
           eval_count: result.evalCount,
           prompt_eval_count: result.promptEvalCount
         };
+        streamTerminationReason = result.abortedBy || result.doneReason || streamTerminationReason;
       } finally {
         clearTimeout(abortTimer);
+        bindStreamAbort(null);
         cleanup();
       }
     } else if (isElectron()) {
@@ -1047,6 +1139,14 @@ export const sendMessage = async (
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let abortIssued = false;
+        const abortStream = (reason = 'user') => {
+          if (abortIssued) return;
+          abortIssued = true;
+          streamTerminationReason = reason;
+          fetchController.abort();
+        };
+        bindStreamAbort(abortStream);
 
         try {
           while (true) {
@@ -1054,6 +1154,9 @@ export const sendMessage = async (
             try {
               readResult = await reader.read();
             } catch (readErr) {
+              if (streamTerminationReason === 'auto-length' || streamTerminationReason === 'user') {
+                break;
+              }
               console.warn('[API] Chat stream interrupted:', readErr.message);
               break;
             }
@@ -1069,6 +1172,9 @@ export const sendMessage = async (
                 if (chunk.message?.content) {
                   contentChunks.push(chunk.message.content);
                   onToken(chunk.message.content);
+                  if (!abortIssued && shouldAutoStopStreamingResponse(contentChunks.join(''), responseMode)) {
+                    abortStream('auto-length');
+                  }
                 }
                 if (chunk.done) finalChunk = chunk;
               } catch { /* skip malformed lines */ }
@@ -1077,11 +1183,15 @@ export const sendMessage = async (
           if (buffer.trim()) {
             try {
               const chunk = JSON.parse(buffer);
-              if (chunk.message?.content) { contentChunks.push(chunk.message.content); onToken(chunk.message.content); }
+              if (chunk.message?.content) {
+                contentChunks.push(chunk.message.content);
+                onToken(chunk.message.content);
+              }
               if (chunk.done) finalChunk = chunk;
             } catch { /* skip */ }
           }
         } finally {
+          bindStreamAbort(null);
           reader.cancel().catch(() => {});
         }
         const fullContent = contentChunks.join('');
@@ -1167,110 +1277,10 @@ export const sendMessage = async (
       }
     }
 
-    const requestCorrection = async (correctionPrompt, correctionTemperature, correctionMaxTokens) => {
-      if (isElectron()) {
-        const correctionResult = await window.electronAPI.aiChat({
-          messages: messages.slice(1).map((msg) => ({ role: msg.role, content: msg.content })),
-          systemPrompt: correctionPrompt,
-          model,
-          isOllama: true,
-          ollamaUrl,
-          temperature: correctionTemperature,
-          maxTokens: correctionMaxTokens,
-          num_ctx: modelCtx
-        });
-
-        if (correctionResult.success && correctionResult.content) {
-          return {
-            message: { content: correctionResult.content },
-            eval_count: correctionResult.usage?.total_tokens || 0,
-            prompt_eval_count: 0
-          };
-        }
-
-        return null;
-      }
-
-      const correctionResponse = await fetch(`${ollamaUrl}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: correctionPrompt },
-            ...messages.slice(1)
-          ],
-          stream: false,
-          options: {
-            ...chatOptions,
-            temperature: correctionTemperature,
-            num_predict: correctionMaxTokens,
-            num_ctx: modelCtx
-          },
-          stop: stopSequences
-        })
-      });
-
-      if (!correctionResponse.ok) {
-        return null;
-      }
-
-      return correctionResponse.json();
-    };
-
     let aiMessage = data.message.content.trim();
 
     // Clean response — remove any transcript artifacts
     aiMessage = cleanTranscriptArtifacts(aiMessage, character.name);
-
-    let qualityIssues = getResponseQualityIssues({
-      responseMode,
-      userMessage,
-      aiMessage
-    });
-    const maxCorrectionAttempts = responseMode === 'short' ? 2 : 1;
-    let correctionAttempt = 0;
-
-    while (qualityIssues.shouldRetry && correctionAttempt < maxCorrectionAttempts) {
-      correctionAttempt += 1;
-
-      const correctionModeLine = responseMode === 'short'
-        ? correctionAttempt === 1
-          ? 'Return exactly one short paragraph and no more than 4 sentences.'
-          : 'Make it even tighter: 2-3 sentences if possible, still one short paragraph maximum.'
-        : responseMode === 'normal'
-          ? 'Keep the rewrite to 1-2 short paragraphs.'
-          : 'Keep the rewrite focused and avoid padding.';
-      const correctionTemperature = responseMode === 'short'
-        ? correctionAttempt === 1 ? 0.35 : 0.25
-        : 0.55;
-      const correctionMaxTokens = responseMode === 'short'
-        ? correctionAttempt === 1 ? Math.min(numPredict, 128) : Math.min(numPredict, 96)
-        : responseMode === 'normal'
-          ? Math.min(numPredict, 320)
-          : numPredict;
-      const correctionPrompt = `${finalSystemPrompt}\n\nCRITICAL RESPONSE CORRECTION:\n- ${qualityIssues.issues.join('\n- ')}\n- ${correctionModeLine}\n- Preserve the same character voice, scene intent, and directness.\n- Reply directly to the user's latest message.`;
-
-      try {
-        const correctionData = await requestCorrection(correctionPrompt, correctionTemperature, correctionMaxTokens);
-
-        if (!correctionData?.message?.content) {
-          break;
-        }
-
-        aiMessage = cleanTranscriptArtifacts(correctionData.message.content.trim(), character.name);
-        data.eval_count = correctionData.eval_count || data.eval_count;
-        data.prompt_eval_count = correctionData.prompt_eval_count || data.prompt_eval_count;
-        qualityIssues = getResponseQualityIssues({
-          responseMode,
-          userMessage,
-          aiMessage
-        });
-      } catch (correctionError) {
-        console.warn('[API] Response correction failed:', correctionError?.message);
-        break;
-      }
-    }
 
     // Add assistant response to history
     const assistantMsg = { role: 'assistant', content: aiMessage };
@@ -1315,11 +1325,19 @@ export const sendMessage = async (
         tokens: responseTokens,
         promptTokens: promptTokens_actual,
         model,
-        responseMode
+        responseMode,
+        terminatedBy: streamTerminationReason
       }
     };
 
   } catch (error) {
+    if (error?.message === 'The operation was aborted') {
+      return {
+        success: false,
+        error: 'The operation was aborted',
+        aborted: true
+      };
+    }
     console.error('[v8.1 API] ❌ Fatal error:', error);
     return {
       success: false,

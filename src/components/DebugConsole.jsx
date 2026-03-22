@@ -78,8 +78,10 @@ export default function DebugConsole({
       const message = args.map(arg => 
         typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
       ).join(' ');
-      
-      captureError('warning', message, new Error().stack, 'Console Warning');
+
+      if (!message.startsWith('[Cleaner] ')) {
+        captureError('warning', message, new Error().stack, 'Console Warning');
+      }
       originalWarn(...args);
     };
 

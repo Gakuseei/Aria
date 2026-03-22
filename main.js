@@ -1390,6 +1390,7 @@ Write VIVID, EXPLICIT, IMMERSIVE prose with minimal dialogue.`;
 
 /** Active streaming abort controllers keyed by requestId */
 const streamAbortControllers = new Map();
+const streamAbortReasons = new Map();
 
 /**
  * Streaming chat — pushes NDJSON chunks to renderer via IPC events.
@@ -1416,6 +1417,9 @@ ipcMain.handle('ollama-chat-stream', async (event, params) => {
   const controller = new AbortController();
   streamAbortControllers.set(requestId, controller);
 
+  let fullContent = '';
+  let finalChunk = null;
+
   try {
     const response = await fetch(`${ollamaUrl}/api/chat`, {
       method: 'POST',
@@ -1438,8 +1442,6 @@ ipcMain.handle('ollama-chat-stream', async (event, params) => {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
-    let fullContent = '';
-    let finalChunk = null;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -1489,25 +1491,37 @@ ipcMain.handle('ollama-chat-stream', async (event, params) => {
       success: true,
       content: fullContent,
       evalCount: finalChunk?.eval_count || 0,
-      promptEvalCount: finalChunk?.prompt_eval_count || 0
+      promptEvalCount: finalChunk?.prompt_eval_count || 0,
+      doneReason: finalChunk?.done_reason || null
     };
   } catch (error) {
     if (error.name === 'AbortError') {
-      return { success: false, error: 'Request aborted', aborted: true };
+      const abortedBy = streamAbortReasons.get(requestId) || 'user';
+      return {
+        success: abortedBy === 'auto-length',
+        error: abortedBy === 'timeout' ? 'Request timed out' : 'Request aborted',
+        aborted: true,
+        abortedBy,
+        content: fullContent,
+        evalCount: finalChunk?.eval_count || 0,
+        promptEvalCount: finalChunk?.prompt_eval_count || 0
+      };
     }
     console.error('[IPC] ollama-chat-stream error:', error);
     return { success: false, error: error.message };
   } finally {
     streamAbortControllers.delete(requestId);
+    streamAbortReasons.delete(requestId);
   }
 });
 
 /**
  * Abort an active streaming request by requestId.
  */
-ipcMain.handle('ollama-stream-abort', async (event, { requestId }) => {
+ipcMain.handle('ollama-stream-abort', async (event, { requestId, reason = 'user' }) => {
   const controller = streamAbortControllers.get(requestId);
   if (controller) {
+    streamAbortReasons.set(requestId, reason);
     controller.abort();
     streamAbortControllers.delete(requestId);
     return { success: true };

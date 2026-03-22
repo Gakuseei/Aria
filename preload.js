@@ -33,7 +33,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Ollama IPC (streaming, model management)
   ollamaChatStream: (params) => ipcRenderer.invoke('ollama-chat-stream', params),
-  ollamaStreamAbort: (requestId) => ipcRenderer.invoke('ollama-stream-abort', { requestId }),
+  ollamaStreamAbort: (requestId, reason = 'user') => ipcRenderer.invoke('ollama-stream-abort', { requestId, reason }),
   onOllamaStreamToken: createIpcListener('ollama-stream-token'),
   ollamaUnload: (params) => ipcRenderer.invoke('ollama-unload', params),
   ollamaModels: (params) => ipcRenderer.invoke('ollama-models', params),

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveTemplates, cleanTranscriptArtifacts } from '../../src/lib/api.js';
+import { resolveTemplates, cleanTranscriptArtifacts, shouldAutoStopStreamingResponse } from '../../src/lib/api.js';
 
 describe('resolveTemplates', () => {
   it('replaces {{char}} with character name', () => {
@@ -107,5 +107,33 @@ describe('cleanTranscriptArtifacts', () => {
   it('handles clean text without modifications', () => {
     const clean = '*She looks up and smiles.* "Hey there!"';
     expect(cleanTranscriptArtifacts(clean)).toBe(clean);
+  });
+});
+
+describe('shouldAutoStopStreamingResponse', () => {
+  it('only auto-stops short mode replies', () => {
+    const text = 'She steps closer and smiles softly. "Come here."';
+    expect(shouldAutoStopStreamingResponse(text, 'normal')).toBe(false);
+    expect(shouldAutoStopStreamingResponse(text, 'long')).toBe(false);
+  });
+
+  it('auto-stops short replies once they end cleanly with enough substance', () => {
+    const text = '*She slips in close, her lips brushing your ear as she smiles to herself while her fingertips drag slowly down your chest and linger there just long enough to make you shiver.* "You really do make it hard to behave."';
+    expect(shouldAutoStopStreamingResponse(text, 'short')).toBe(true);
+  });
+
+  it('waits when the short reply still ends mid-thought', () => {
+    const text = '*She slips in close, her lips brushing your ear as she smiles to herself.* "You really do make it hard';
+    expect(shouldAutoStopStreamingResponse(text, 'short')).toBe(false);
+  });
+
+  it('waits when formatting markers are still unbalanced', () => {
+    const text = '*She slips in close and smiles. "You really do make it hard to behave.';
+    expect(shouldAutoStopStreamingResponse(text, 'short')).toBe(false);
+  });
+
+  it('treats a finished paragraph break as a safe short-stop point', () => {
+    const text = 'She smiles and drags her fingertips down your chest. "Stay still for me."\n\n';
+    expect(shouldAutoStopStreamingResponse(text, 'short')).toBe(true);
   });
 });

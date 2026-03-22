@@ -26,8 +26,8 @@ describe('responseModes', () => {
   });
 
   it('caps token budgets for short and normal mode', () => {
-    expect(getResponseModeTokenLimit(512, 'short')).toBe(128);
-    expect(getResponseModeTokenLimit(512, 'normal')).toBe(320);
+    expect(getResponseModeTokenLimit(512, 'short')).toBe(192);
+    expect(getResponseModeTokenLimit(512, 'normal')).toBe(384);
     expect(getResponseModeTokenLimit(512, 'long')).toBe(512);
   });
 

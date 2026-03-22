@@ -78,6 +78,25 @@ function formatTimestamp(timestamp) {
   return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
+function createStreamAbortHandle() {
+  return {
+    aborted: false,
+    reason: null,
+    abortImpl: null,
+    setAbortImpl(nextAbort) {
+      this.abortImpl = typeof nextAbort === 'function' ? nextAbort : null;
+    },
+    abort(reason = 'user') {
+      if (this.aborted) return;
+      this.aborted = true;
+      this.reason = reason;
+      if (typeof this.abortImpl === 'function') {
+        this.abortImpl(reason);
+      }
+    }
+  };
+}
+
 const MessageBubble = memo(function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false, t = {} }) {
   const formattedParts = useMemo(
     () => formatMessageText(message.content || '', isGoldMode && !isUser),
@@ -818,7 +837,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     setIsImpersonating(false);
 
     if (abortRef.current) abortRef.current.abort();
-    abortRef.current = new AbortController();
+    const activeAbortHandle = createStreamAbortHandle();
+    abortRef.current = activeAbortHandle;
 
     const userMessage = {
       role: 'user',
@@ -868,7 +888,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         isUnchainedMode,
         handleApiStats,
         settings,
-        handleToken
+        handleToken,
+        activeAbortHandle
       );
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -917,7 +938,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       }
     } catch (error) {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-      if (abortRef.current?.signal?.aborted) return;
+      if (activeAbortHandle.aborted && activeAbortHandle.reason === 'user') return;
       console.error('[ChatInterface] Send error:', error);
       const errorMsg = error?.message === 'The operation was aborted'
         ? (t.chat?.timeout || 'Request timed out')
@@ -926,6 +947,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           : (t.chat?.sendError || error?.message || 'Failed to get response');
       toast.error(errorMsg);
     } finally {
+      if (abortRef.current === activeAbortHandle) {
+        abortRef.current = null;
+      }
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       setIsLoading(false);
       setIsStreaming(false);
@@ -1142,6 +1166,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
     setMessages(messagesUpToLastUser);
     setIsLoading(true);
+    if (abortRef.current) abortRef.current.abort();
+    const activeAbortHandle = createStreamAbortHandle();
+    abortRef.current = activeAbortHandle;
 
     try {
       let firstToken = true;
@@ -1177,7 +1204,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         isUnchainedMode,
         null,
         settings,
-        handleToken
+        handleToken,
+        activeAbortHandle
       );
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -1220,9 +1248,16 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         }, 6000);
       }
     } catch (error) {
+      if (activeAbortHandle.aborted && activeAbortHandle.reason === 'user') return;
       console.error('[ChatInterface] Regeneration error:', error);
-      toast.error(t.chat?.sendError || 'Failed to regenerate response');
+      const errorMsg = error?.message === 'The operation was aborted'
+        ? (t.chat?.timeout || 'Request timed out')
+        : (t.chat?.sendError || 'Failed to regenerate response');
+      toast.error(errorMsg);
     } finally {
+      if (abortRef.current === activeAbortHandle) {
+        abortRef.current = null;
+      }
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       setIsLoading(false);
       setIsStreaming(false);

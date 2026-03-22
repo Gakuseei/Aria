@@ -15,13 +15,13 @@ describe('responseModes', () => {
     expect(normalizeResponseMode('expansive')).toBe('long');
   });
 
-  it('defaults built-in characters to short and custom characters to normal', () => {
-    expect(getBaseResponseMode({ responseMode: '', isCustom: false })).toBe('short');
+  it('defaults both built-in and custom characters to normal when no explicit mode is set', () => {
+    expect(getBaseResponseMode({ responseMode: '', isCustom: false })).toBe('normal');
     expect(getBaseResponseMode({ responseMode: '', isCustom: true })).toBe('normal');
   });
 
   it('lets explicit user intent temporarily override the base response mode', () => {
-    expect(getEffectiveResponseMode({ responseMode: 'short', isCustom: false }, 'Erzähl mir mehr davon.')).toBe('normal');
+    expect(getEffectiveResponseMode({ responseMode: 'normal', isCustom: false }, 'Erzähl mir mehr davon.')).toBe('long');
     expect(getEffectiveResponseMode({ responseMode: 'normal', isCustom: true }, 'keep it short')).toBe('short');
     expect(getEffectiveResponseMode({ responseMode: 'normal', isCustom: true }, 'be more detailed')).toBe('long');
   });

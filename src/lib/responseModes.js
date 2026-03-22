@@ -98,7 +98,7 @@ export function getResponseModeConfig(mode) {
 }
 
 export function getBaseResponseMode(character) {
-  const fallback = character?.isCustom ? 'normal' : 'short';
+  const fallback = 'normal';
   return normalizeResponseMode(character?.responseMode ?? character?.responseStyle, fallback);
 }
 

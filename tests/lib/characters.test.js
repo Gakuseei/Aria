@@ -40,9 +40,9 @@ describe('characters', () => {
     }
   });
 
-  it('all built-in characters default to short replies', () => {
+  it('all built-in characters default to normal replies', () => {
     for (const char of characters) {
-      expect(char.responseMode, `${char.name} should default to short response mode`).toBe('short');
+      expect(char.responseMode, `${char.name} should default to normal response mode`).toBe('normal');
     }
   });
 
@@ -57,6 +57,13 @@ describe('characters', () => {
       expect(char.systemPrompt.length, `${char.name}: systemPrompt too short`).toBeGreaterThan(200);
       expect(char.systemPrompt, `${char.name}: systemPrompt still contains W++ brackets`).not.toContain('[Character(');
       expect(char.systemPrompt.split('\n\n').length, `${char.name}: systemPrompt should have multiple paragraphs`).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  it('built-in exampleDialogue fields do not contain bracketed meta instructions', () => {
+    for (const char of characters) {
+      if (!char.exampleDialogue) continue;
+      expect(char.exampleDialogue, `${char.name}: exampleDialogue should be real example text, not prompt metadata`).not.toMatch(/^\[(?:instructions?|note|notes)\s*:/i);
     }
   });
 

@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { fileToBase64, saveCustomCharacter } from '../lib/api';
 import { useLanguage } from '../context/LanguageContext';
 import { MAX_FILE_SIZE_BYTES } from '../lib/defaults';
+import { normalizeResponseMode } from '../lib/responseModes';
+import ResponseModeField from './ResponseModeField';
 
 function CharacterCreator({ onSave, onBack }) {
   const { t } = useLanguage();
@@ -17,6 +19,7 @@ function CharacterCreator({ onSave, onBack }) {
     avatarBase64: '',
     startingMessage: '',
     type: 'character',
+    responseMode: 'normal',
     passionEnabled: true,
     passionSpeed: 'normal',
   });
@@ -125,6 +128,7 @@ function CharacterCreator({ onSave, onBack }) {
       startingMessage: trimmedStartingMessage,
       greeting: trimmedStartingMessage,
       type: formData.type,
+      responseMode: normalizeResponseMode(formData.responseMode, 'normal'),
       passionEnabled: formData.type === 'bot' ? false : formData.passionEnabled,
       passionSpeed: formData.passionSpeed,
       isCustom: true,
@@ -159,6 +163,7 @@ function CharacterCreator({ onSave, onBack }) {
         themeColor: '#ef4444',
         avatarBase64: '',
         startingMessage: t.characterCreator.blankTemplateStartingMessage || '*smiles warmly* "Hello! How can I help you today?"',
+        responseMode: 'normal',
         passionEnabled: true,
         passionSpeed: 'normal',
       },
@@ -177,6 +182,7 @@ function CharacterCreator({ onSave, onBack }) {
         themeColor: '#dc2626',
         avatarBase64: '',
         startingMessage: t.characterCreator.nsfwTemplateStartingMessage || '*leans closer with a sly grin* "Hey there... what brings you here?"',
+        responseMode: 'normal',
         passionEnabled: true,
         passionSpeed: 'fast',
       },
@@ -553,6 +559,13 @@ function CharacterCreator({ onSave, onBack }) {
                   {t.characterCreator.startingMessageTipV2 || t.characterCreator.startingMessageTip}
                 </p>
               </div>
+
+              <ResponseModeField
+                value={formData.responseMode}
+                onChange={(value) => handleChange('responseMode', value)}
+                accent="rose"
+                idPrefix="character-creator-response-mode"
+              />
 
               {formData.type !== 'bot' && (
               <div>

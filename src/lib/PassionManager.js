@@ -40,23 +40,56 @@ export function getTierKey(passionLevel) {
 /**
  * Returns a depth instruction string for the current passion tier
  * @param {number} passionLevel - Current passion level (0-100)
+ * @param {'short'|'normal'|'long'} [responseMode='normal'] - Response length mode
  * @returns {string} Instruction string (empty at surface tier)
  */
-export function getDepthInstruction(passionLevel) {
+export function getDepthInstruction(passionLevel, responseMode = 'normal') {
   const tier = getTierKey(passionLevel);
+  const mode = responseMode === 'short' || responseMode === 'long' ? responseMode : 'normal';
+
   switch (tier) {
     case 'surface':
       return '';
     case 'aware':
+      if (mode === 'short') {
+        return '\n[Engagement: Aware] Add subtle physical awareness — proximity, temperature, small gestures — but stay compact.';
+      }
+      if (mode === 'long') {
+        return '\n[Engagement: Aware] Add subtle physical awareness — proximity, temperature, small gestures — and let the moment breathe.';
+      }
       return '\n[Engagement: Aware] Add subtle physical awareness — proximity, temperature, small gestures.';
     case 'vivid':
-      return '\n[Engagement: Vivid] Write with sensory detail — textures, sounds, breath, warmth. 2-3 paragraphs minimum.';
+      if (mode === 'short') {
+        return '\n[Engagement: Vivid] Write with sensory detail — textures, sounds, breath, warmth — but stay compact and focused.';
+      }
+      if (mode === 'long') {
+        return '\n[Engagement: Vivid] Write with sensory detail — textures, sounds, breath, warmth. 2-3 paragraphs minimum.';
+      }
+      return '\n[Engagement: Vivid] Write with sensory detail — textures, sounds, breath, warmth — while staying focused and natural.';
     case 'immersive':
-      return '\n[Engagement: Immersive] Rich multi-paragraph responses. Every physical sensation described in detail. Internal reactions in italics.';
+      if (mode === 'short') {
+        return '\n[Engagement: Immersive] Keep the reply compact but vivid. Focus on the strongest sensations and reactions instead of covering everything.';
+      }
+      if (mode === 'long') {
+        return '\n[Engagement: Immersive] Rich multi-paragraph responses. Every physical sensation described in detail. Internal reactions in italics.';
+      }
+      return '\n[Engagement: Immersive] Focus on the strongest sensations and inner reactions. Rich detail is welcome, but avoid sprawling multi-paragraph padding.';
     case 'consuming':
-      return '\n[Engagement: Consuming] Maximum descriptive depth. Overwhelming sensory detail. Character\'s thoughts, sensations, and physical reactions fill each paragraph.';
+      if (mode === 'short') {
+        return '\n[Engagement: Consuming] Keep the intensity high and the wording tight. Choose the most powerful sensory details instead of sprawling.';
+      }
+      if (mode === 'long') {
+        return '\n[Engagement: Consuming] Maximum descriptive depth. Overwhelming sensory detail. Character\'s thoughts, sensations, and physical reactions fill each paragraph.';
+      }
+      return '\n[Engagement: Consuming] Push the intensity and sensory detail higher, but keep the reply controlled and purposeful.';
     case 'transcendent':
-      return '\n[Engagement: Transcendent] Peak immersion. Every touch, sound, taste, and tremor described with visceral precision. Deep, layered responses.';
+      if (mode === 'short') {
+        return '\n[Engagement: Transcendent] Peak immersion in a compact form. Use the sharpest visceral details without drifting into long, layered replies.';
+      }
+      if (mode === 'long') {
+        return '\n[Engagement: Transcendent] Peak immersion. Every touch, sound, taste, and tremor described with visceral precision. Deep, layered responses.';
+      }
+      return '\n[Engagement: Transcendent] Peak immersion. Choose the most visceral details and emotional beats without drifting into overwritten prose.';
     default:
       return '';
   }

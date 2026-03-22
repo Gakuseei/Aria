@@ -5,6 +5,8 @@ import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
 import CustomDropdown from './CustomDropdown';
+import ResponseModeField from './ResponseModeField';
+import { normalizeResponseMode } from '../lib/responseModes';
 
 function RegenerateButton({ field, regeneratingField, onRegenerate, t }) {
   return (
@@ -129,7 +131,10 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
         }
       }
 
-      setGeneratedCharacter(character);
+      setGeneratedCharacter({
+        ...character,
+        responseMode: normalizeResponseMode(character.responseMode ?? character.responseStyle, 'normal')
+      });
       setCurrentStep(3);
       dispatchBuilderEvent('success', `Generated "${character?.name}" in ${elapsed}s${missingFields.length > 0 ? ` (healed: ${missingFields.join(', ')})` : ''}`);
     } else {
@@ -224,6 +229,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       startingMessage: trimmedStartingMessage,
       greeting: trimmedStartingMessage,
       type: selectedType,
+      responseMode: normalizeResponseMode(generatedCharacter.responseMode, 'normal'),
       passionEnabled: selectedType === 'bot' ? false : passionEnabled,
       passionSpeed: generatedCharacter.passionSpeed || 'normal',
       isCustom: true,
@@ -520,6 +526,13 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
                   className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-4 py-3 text-white resize-none focus:outline-none focus:border-violet-500/50"
                 />
               </div>
+
+              <ResponseModeField
+                value={generatedCharacter.responseMode}
+                onChange={(value) => handleCharacterFieldChange('responseMode', value)}
+                accent={isGoldMode ? 'amber' : 'violet'}
+                idPrefix="ai-character-builder-response-mode"
+              />
 
               {textareaFields.map(({ key, label, rows, mono }) => (
                 <div key={key}>

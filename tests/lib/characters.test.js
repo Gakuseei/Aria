@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import characters from '../../src/config/characters.js';
 
-const REQUIRED_FIELDS = ['id', 'name', 'subtitle', 'systemPrompt', 'startingMessage', 'greeting', 'passionSpeed', 'gender', 'category', 'description', 'instructions', 'scenario'];
+const REQUIRED_FIELDS = ['id', 'name', 'subtitle', 'systemPrompt', 'startingMessage', 'greeting', 'passionSpeed', 'responseMode', 'gender', 'category', 'description', 'instructions', 'scenario'];
 const VALID_PASSION_SPEEDS = ['slow', 'normal', 'fast', 'extreme'];
+const VALID_RESPONSE_MODES = ['short', 'normal', 'long'];
 const VALID_GENDERS = ['female', 'male', 'non-binary'];
 const VALID_CATEGORIES = ['nsfw', 'sfw'];
 
@@ -29,6 +30,19 @@ describe('characters', () => {
     for (const char of characters) {
       expect(VALID_PASSION_SPEEDS, `${char.name} has invalid passionSpeed: ${char.passionSpeed}`)
         .toContain(char.passionSpeed);
+    }
+  });
+
+  it('every character has a valid responseMode', () => {
+    for (const char of characters) {
+      expect(VALID_RESPONSE_MODES, `${char.name} has invalid responseMode: ${char.responseMode}`)
+        .toContain(char.responseMode);
+    }
+  });
+
+  it('all built-in characters default to short replies', () => {
+    for (const char of characters) {
+      expect(char.responseMode, `${char.name} should default to short response mode`).toBe('short');
     }
   });
 

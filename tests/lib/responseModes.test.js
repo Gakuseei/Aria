@@ -1,0 +1,55 @@
+import { describe, expect, it } from 'vitest';
+import {
+  getBaseResponseMode,
+  getEffectiveResponseMode,
+  getResponseModeTokenLimit,
+  getResponseQualityIssues,
+  normalizeResponseMode
+} from '../../src/lib/responseModes.js';
+
+describe('responseModes', () => {
+  it('normalizes legacy response styles into response modes', () => {
+    expect(normalizeResponseMode('concise')).toBe('short');
+    expect(normalizeResponseMode('default')).toBe('normal');
+    expect(normalizeResponseMode('expansive')).toBe('long');
+  });
+
+  it('defaults built-in characters to short and custom characters to normal', () => {
+    expect(getBaseResponseMode({ responseMode: '', isCustom: false })).toBe('short');
+    expect(getBaseResponseMode({ responseMode: '', isCustom: true })).toBe('normal');
+  });
+
+  it('lets explicit user intent temporarily override the base response mode', () => {
+    expect(getEffectiveResponseMode({ responseMode: 'short', isCustom: false }, 'Erzähl mir mehr davon.')).toBe('normal');
+    expect(getEffectiveResponseMode({ responseMode: 'normal', isCustom: true }, 'keep it short')).toBe('short');
+    expect(getEffectiveResponseMode({ responseMode: 'normal', isCustom: true }, 'be more detailed')).toBe('long');
+  });
+
+  it('caps token budgets for short and normal mode', () => {
+    expect(getResponseModeTokenLimit(512, 'short')).toBe(128);
+    expect(getResponseModeTokenLimit(512, 'normal')).toBe(320);
+    expect(getResponseModeTokenLimit(512, 'long')).toBe(512);
+  });
+
+  it('flags overlong replies for compact modes', () => {
+    const issues = getResponseQualityIssues({
+      responseMode: 'short',
+      userMessage: 'Hi',
+      aiMessage: 'One. Two. Three. Four. Five. Six. Seven. Eight. Nine.\n\nSecond paragraph with even more detail.'
+    });
+
+    expect(issues.shouldRetry).toBe(true);
+    expect(issues.issues).toContain('Rewrite the reply as one short paragraph with no more than 4 sentences. Keep only the strongest details unless the user explicitly asked for detail.');
+  });
+
+  it('does not flag long mode just for being long', () => {
+    const issues = getResponseQualityIssues({
+      responseMode: 'long',
+      userMessage: 'Tell me more.',
+      aiMessage: 'Paragraph one.\n\nParagraph two.\n\nParagraph three.\n\nParagraph four.'
+    });
+
+    expect(issues.shouldRetry).toBe(false);
+    expect(issues.issues).toEqual([]);
+  });
+});

@@ -85,9 +85,31 @@ describe('getDepthInstruction', () => {
     const consuming = getDepthInstruction(85);
     const transcendent = getDepthInstruction(95);
     expect(vivid.length).toBeGreaterThan(aware.length);
-    expect(consuming.length).toBeGreaterThan(vivid.length);
+    expect(consuming).toContain('intensity');
+    expect(consuming).toContain('sensory detail');
     expect(transcendent.length).toBeGreaterThan(0);
     expect(immersive.length).toBeGreaterThan(0);
+  });
+
+  it('keeps short mode vivid without forcing multi-paragraph replies', () => {
+    const vivid = getDepthInstruction(45, 'short');
+    const immersive = getDepthInstruction(65, 'short');
+    const transcendent = getDepthInstruction(95, 'short');
+
+    expect(vivid).not.toContain('2-3 paragraphs minimum');
+    expect(immersive).not.toContain('Rich multi-paragraph responses');
+    expect(transcendent).not.toContain('Deep, layered responses');
+    expect(vivid).toContain('stay compact');
+  });
+
+  it('keeps normal mode detailed without forcing longform minimums', () => {
+    expect(getDepthInstruction(45, 'normal')).not.toContain('2-3 paragraphs minimum');
+    expect(getDepthInstruction(65, 'normal')).not.toContain('Rich multi-paragraph responses');
+  });
+
+  it('preserves longform instructions when long mode is requested', () => {
+    expect(getDepthInstruction(45, 'long')).toContain('2-3 paragraphs minimum');
+    expect(getDepthInstruction(65, 'long')).toContain('Rich multi-paragraph responses');
   });
 });
 

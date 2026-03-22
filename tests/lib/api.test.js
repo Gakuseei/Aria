@@ -333,6 +333,64 @@ describe('suggestions stabilization', () => {
     ]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  it('keeps a usable 2-option retry instead of collapsing the UI result to null', async () => {
+    const fetchMock = vi.fn(async (url) => {
+      if (String(url).endsWith('/api/show')) {
+        return createJsonResponse({
+          details: { parameter_size: '7B' },
+          model_info: { 'general.context_length': 4096 }
+        });
+      }
+
+      if (String(url).endsWith('/api/chat')) {
+        const callIndex = fetchMock.mock.calls.filter(([calledUrl]) => String(calledUrl).endsWith('/api/chat')).length;
+        if (callIndex === 1) {
+          return createJsonResponse({
+            message: { content: 'Here are some ideas: | Explain what you want more clearly' }
+          });
+        }
+
+        return createJsonResponse({
+          message: { content: 'Hold her gaze | Lean closer across the bar' }
+        });
+      }
+
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    global.fetch = fetchMock;
+
+    const suggestions = await new Promise(async (resolve) => {
+      await generateSuggestionsBackground(
+        [
+          { role: 'assistant', content: '*She keeps your chin tilted up.* "Ask nicely."' },
+          { role: 'user', content: 'Then give me something worth asking for.' }
+        ],
+        {
+          name: 'Sarah',
+          category: 'nsfw',
+          systemPrompt: 'Sarah is dominant, poised, and exacting.',
+          instructions: 'Stay in the active beat.',
+          scenario: 'Private lounge at night.'
+        },
+        'Erik',
+        {
+          ollamaUrl: 'http://127.0.0.1:11434',
+          ollamaModel: 'test-model',
+          contextSize: 'medium'
+        },
+        resolve,
+        [],
+        35
+      );
+    });
+
+    expect(suggestions).toEqual([
+      'Hold her gaze',
+      'Lean closer across the bar'
+    ]);
+  });
 });
 
 describe('buildRoleplaySceneContext', () => {

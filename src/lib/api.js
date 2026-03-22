@@ -513,6 +513,7 @@ export function scorePassionBackground(userMessage, aiMessage, settings, modelCt
  */
 let suggestionAbortController = null;
 let suggestionRequestId = 0;
+const MIN_USABLE_SUGGESTIONS = 2;
 
 const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|note|options?|suggestions?)\b/i;
 const SUGGESTION_NON_ACTION_PATTERN = /^(?:explain|describe|clarify|suggest|propose)\b/i;
@@ -730,7 +731,7 @@ export async function generateSuggestionsBackground(history, character, userName
         const raw = result.content || '';
         const suggestions = parseSuggestions(raw);
         console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
-        if (suggestions.length >= 3) {
+        if (suggestions.length >= MIN_USABLE_SUGGESTIONS) {
           callback(suggestions);
           return;
         }
@@ -741,7 +742,7 @@ export async function generateSuggestionsBackground(history, character, userName
           const retrySuggestions = parseSuggestions(retryRaw);
           console.log(`[API] Suggestions retry: ${retrySuggestions.length} from "${retryRaw.trim().slice(0, 120)}"`);
           const best = retrySuggestions.length >= suggestions.length ? retrySuggestions : suggestions;
-          callback(best.length >= 3 ? best : null);
+          callback(best.length >= MIN_USABLE_SUGGESTIONS ? best : null);
         });
       })
       .catch(err => {
@@ -779,7 +780,7 @@ export async function generateSuggestionsBackground(history, character, userName
         const raw = data.message?.content || '';
         const suggestions = parseSuggestions(raw);
         console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
-        if (suggestions.length >= 3) {
+        if (suggestions.length >= MIN_USABLE_SUGGESTIONS) {
           suggestionAbortController = null;
           callback(suggestions);
           return;
@@ -794,7 +795,7 @@ export async function generateSuggestionsBackground(history, character, userName
             const retrySuggestions = parseSuggestions(retryRaw);
             console.log(`[API] Suggestions retry: ${retrySuggestions.length} from "${retryRaw.trim().slice(0, 120)}"`);
             const best = retrySuggestions.length >= suggestions.length ? retrySuggestions : suggestions;
-            callback(best.length >= 3 ? best : null);
+            callback(best.length >= MIN_USABLE_SUGGESTIONS ? best : null);
           });
       })
       .catch(err => {
@@ -1124,6 +1125,7 @@ export const sendMessage = async (
 
     let data;
     let streamTerminationReason = 'natural';
+    const wasUserAborted = () => streamAbortHandle?.aborted && streamAbortHandle.reason === 'user';
 
     const bindStreamAbort = (abortFn) => {
       if (streamAbortHandle && typeof streamAbortHandle.setAbortImpl === 'function') {
@@ -1144,7 +1146,7 @@ export const sendMessage = async (
       };
       bindStreamAbort(abortStream);
       const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
-        if (rid !== requestId || typeof token !== 'string') return;
+        if (rid !== requestId || typeof token !== 'string' || wasUserAborted()) return;
         streamedContent += token;
         onToken(token);
         if (!abortIssued && shouldAutoStopStreamingResponse(streamedContent, responseMode)) {
@@ -1162,6 +1164,10 @@ export const sendMessage = async (
           options: chatOptions,
           stop: stopSequences
         });
+
+        if (wasUserAborted()) {
+          return { success: false, error: 'The operation was aborted', aborted: true };
+        }
 
         if (!result.success) {
           if (result.aborted) {
@@ -1270,6 +1276,7 @@ export const sendMessage = async (
               try {
                 const chunk = JSON.parse(line);
                 if (chunk.message?.content) {
+                  if (wasUserAborted()) continue;
                   contentChunks.push(chunk.message.content);
                   onToken(chunk.message.content);
                   if (!abortIssued && shouldAutoStopStreamingResponse(contentChunks.join(''), responseMode)) {
@@ -1284,8 +1291,12 @@ export const sendMessage = async (
             try {
               const chunk = JSON.parse(buffer);
               if (chunk.message?.content) {
-                contentChunks.push(chunk.message.content);
-                onToken(chunk.message.content);
+                if (wasUserAborted()) {
+                  buffer = '';
+                } else {
+                  contentChunks.push(chunk.message.content);
+                  onToken(chunk.message.content);
+                }
               }
               if (chunk.done) finalChunk = chunk;
             } catch { /* skip */ }
@@ -1312,6 +1323,14 @@ export const sendMessage = async (
         }
       }
 	    }
+
+    if (wasUserAborted()) {
+      return {
+        success: false,
+        error: 'The operation was aborted',
+        aborted: true
+      };
+    }
 
     // Check for empty response
     if (data.message?.content && typeof data.message.content === 'string') {

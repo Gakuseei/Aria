@@ -351,21 +351,17 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
       if (abortRef.current) {
         abortRef.current.abort();
         abortRef.current = null;
       }
-      if (passionTimerRef.current) {
-        clearTimeout(passionTimerRef.current);
-        passionTimerRef.current = null;
-      }
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
+      }
+      if (passionTimerRef.current) {
+        clearTimeout(passionTimerRef.current);
+        passionTimerRef.current = null;
       }
       abortSuggestionCall();
       abortImpersonateCall();
@@ -373,6 +369,45 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       unloadOllamaModel(settingsRef.current);
     };
   }, []);
+
+  const isForegroundRequestObsolete = useCallback((requestHandle) => (
+    !mountedRef.current || !requestHandle || requestHandle.aborted || abortRef.current !== requestHandle
+  ), []);
+
+  const abortActiveChatWork = useCallback((reason = 'user') => {
+    if (abortRef.current) {
+      abortRef.current.abort(reason);
+      abortRef.current = null;
+    }
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (passionTimerRef.current) {
+      clearTimeout(passionTimerRef.current);
+      passionTimerRef.current = null;
+    }
+
+    streamBufferRef.current = '';
+    abortSuggestionCall();
+    abortImpersonateCall();
+    abortPassionScoring();
+    suggestionsHistoryRef.current = [];
+
+    if (!mountedRef.current) return;
+
+    setSmartSuggestions([]);
+    setIsGeneratingSuggestions(false);
+    setIsImpersonating(false);
+    setIsLoading(false);
+    setIsStreaming(false);
+    setStreamingContent('');
+  }, []);
+
+  const handleBackNavigation = useCallback(() => {
+    abortActiveChatWork('user');
+    onBack();
+  }, [abortActiveChatWork, onBack]);
 
   // BLOCK 6.9.2: Close Chat Options when clicking outside
   useEffect(() => {
@@ -814,6 +849,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     setIsGeneratingSuggestions(true);
     generateSuggestionsBackground(updatedMessages, character, userName, settings, (suggestions) => {
       const suggestTime = ((Date.now() - suggestStart) / 1000).toFixed(1);
+      if (!mountedRef.current) return;
       setIsGeneratingSuggestions(false);
       const result = (suggestions && suggestions.length > 0) ? suggestions : [];
       const latestAssistantTimestamp = [...messagesRef.current].reverse().find((message) => message.role === 'assistant')?.timestamp ?? sourceAssistantTimestamp;
@@ -873,6 +909,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
     try {
       const handleApiStats = (stats) => {
+        if (isForegroundRequestObsolete(activeAbortHandle)) return;
         window.dispatchEvent(new CustomEvent('aria-api-stats', { detail: stats }));
       };
 
@@ -880,12 +917,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       streamBufferRef.current = '';
       rafRef.current = null;
       const flushBuffer = () => {
-        if (!mountedRef.current) return;
+        if (isForegroundRequestObsolete(activeAbortHandle)) return;
         setStreamingContent(streamBufferRef.current);
         rafRef.current = null;
       };
       const handleToken = (token) => {
-        if (typeof token !== 'string') return;
+        if (typeof token !== 'string' || isForegroundRequestObsolete(activeAbortHandle)) return;
         streamBufferRef.current += token;
         if (firstToken) {
           firstToken = false;
@@ -914,6 +951,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       );
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+      if (isForegroundRequestObsolete(activeAbortHandle)) return;
 
       if (!response.success) {
         setIsStreaming(false);
@@ -937,6 +975,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       setIsStreaming(false);
       setStreamingContent('');
 
+      if (isForegroundRequestObsolete(activeAbortHandle)) return;
+
       const newPassion = response.passionLevel ?? passionLevel;
       triggerSuggestions(updatedMessages, newPassion);
 
@@ -959,7 +999,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       }
     } catch (error) {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-      if (activeAbortHandle.aborted && activeAbortHandle.reason === 'user') return;
+      if (isForegroundRequestObsolete(activeAbortHandle)) return;
       console.error('[ChatInterface] Send error:', error);
       const errorMsg = error?.message === 'The operation was aborted'
         ? (t.chat?.timeout || 'Request timed out')
@@ -1197,12 +1237,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       streamBufferRef.current = '';
       rafRef.current = null;
       const flushBuffer = () => {
-        if (!mountedRef.current) return;
+        if (isForegroundRequestObsolete(activeAbortHandle)) return;
         setStreamingContent(streamBufferRef.current);
         rafRef.current = null;
       };
       const handleToken = (token) => {
-        if (typeof token !== 'string') return;
+        if (typeof token !== 'string' || isForegroundRequestObsolete(activeAbortHandle)) return;
         streamBufferRef.current += token;
         if (firstToken) {
           firstToken = false;
@@ -1231,6 +1271,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       );
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+      if (isForegroundRequestObsolete(activeAbortHandle)) return;
 
       if (!response.success) {
         setIsStreaming(false);
@@ -1253,6 +1294,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       setIsStreaming(false);
       setStreamingContent('');
 
+      if (isForegroundRequestObsolete(activeAbortHandle)) return;
+
       const newPassion = response.passionLevel ?? passionLevel;
       triggerSuggestions(updatedMessages, newPassion);
 
@@ -1270,7 +1313,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         }, 6000);
       }
     } catch (error) {
-      if (activeAbortHandle.aborted && activeAbortHandle.reason === 'user') return;
+      if (isForegroundRequestObsolete(activeAbortHandle)) return;
       console.error('[ChatInterface] Regeneration error:', error);
       const errorMsg = error?.message === 'The operation was aborted'
         ? (t.chat?.timeout || 'Request timed out')
@@ -1370,7 +1413,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         <div className="flex items-center gap-5">
           {/* Back Button */}
           <button
-            onClick={onBack}
+            onClick={handleBackNavigation}
             className="p-3 hover:bg-white/5 rounded-xl transition-all duration-200 text-zinc-500 hover:text-white"
             title={t.chat.back}
             aria-label={t.chat.back}

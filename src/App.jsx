@@ -15,6 +15,7 @@ import { testOllamaConnection, autoDetectAndSetModel } from './lib/api';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from './lib/defaults';
 import { useLanguage } from './context/LanguageContext';
 import OllamaSetup from './components/tutorials/OllamaSetup';
+import { normalizeResponseMode } from './lib/responseModes';
 
 // App views
 const VIEWS = {
@@ -364,13 +365,25 @@ function App() {
   // Handle saving new character
   const handleSaveCharacter = (character) => {
     try {
-      // Get existing custom characters
-      const stored = localStorage.getItem('custom_characters');
-      const existing = stored ? JSON.parse(stored) : [];
-      
-      // Add new character
-      const updated = [...existing, character];
+      const normalizedCharacter = {
+        ...character,
+        responseMode: normalizeResponseMode(character?.responseMode ?? character?.responseStyle, character?.isCustom ? 'normal' : 'short')
+      };
+      const canonical = localStorage.getItem('custom_characters');
+      const legacy = localStorage.getItem('customCharacters');
+      const existing = [...(canonical ? JSON.parse(canonical) : []), ...(legacy ? JSON.parse(legacy) : [])];
+      const uniqueExisting = existing.filter((item, index, array) => item?.id && array.findIndex((candidate) => candidate?.id === item.id) === index);
+      const existingIndex = uniqueExisting.findIndex((item) => item.id === normalizedCharacter.id);
+      const updated = [...uniqueExisting];
+
+      if (existingIndex >= 0) {
+        updated[existingIndex] = normalizedCharacter;
+      } else {
+        updated.push(normalizedCharacter);
+      }
+
       localStorage.setItem('custom_characters', JSON.stringify(updated));
+      localStorage.removeItem('customCharacters');
       
       // Navigate back to character select
       navigate(VIEWS.CHARACTER_SELECT);

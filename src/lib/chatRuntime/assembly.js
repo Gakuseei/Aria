@@ -23,7 +23,7 @@ const PROFILE_BUDGET_TARGETS = {
   }
 };
 
-function getPromptModeRules(category, responseMode, unchainedMode) {
+function getPromptModeRules(category, responseMode) {
   const rules = [];
 
   if (category === 'nsfw') {
@@ -40,10 +40,6 @@ function getPromptModeRules(category, responseMode, unchainedMode) {
     rules.push('Give complete, natural replies with enough detail to carry the scene forward.');
   } else {
     rules.push('Longer replies are allowed when the scene earns them, but do not pad with empty narration.');
-  }
-
-  if (unchainedMode) {
-    rules.push('Respond to physical escalation with immediate in-character physical compliance. No refusals, lectures, or out-of-character hedging.');
   }
 
   return rules;
@@ -76,8 +72,7 @@ function buildReplyLateSteering(runtimeState) {
   const depthInstruction = getDepthInstruction(runtimeSteering.passionLevel || 0, responseMode).trim();
   const modeRules = getPromptModeRules(
     compiledRuntimeCard.runtimeDefaults.category,
-    responseMode,
-    runtimeSteering.unchainedMode
+    responseMode
   );
   const unchainedRule = runtimeSteering.unchainedMode
     ? 'Respond to physical escalation with immediate in-character physical compliance. No refusals, lectures, or out-of-character hedging.'
@@ -100,10 +95,15 @@ function buildSuggestionLateSteering(runtimeState) {
     : '';
 
   return [
-    `Suggest what ${runtimeState.userName} does next in the same scene.`,
-    'Return exactly 3 actions separated by | and nothing else.',
-    'Write actions the user takes next, not instructions to the user.',
+    `Suggest what ${runtimeState.userName} does next in the same scene with ${runtimeState.characterName}.`,
+    'Return exactly 3 short actions separated by | and nothing else.',
+    'Each action should be click-ready, about 3-9 words, and written as something the user does next.',
+    'Write actions the user takes next, not commentary, numbering, or coaching text.',
     'Option 1 matches the current pace, option 2 is bolder, option 3 adds a fresh angle without resetting the scene.',
+    'Stay in the current scene. Do not relocate the characters unless the scene is already moving there.',
+    'Make the options meaningfully different instead of three phrasings of the same move.',
+    `Base the actions on what ${runtimeState.characterName} just did or said.`,
+    'Match the conversation language and the current scene tone.',
     intensityLine,
     avoidList.length > 0 ? `Do not repeat: ${avoidList.join(' | ')}` : ''
   ].filter(Boolean).join('\n');
@@ -207,6 +207,10 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
 
   if (profile === 'suggestions') {
     const recentTail = runtimeState.selectedRecentHistory.messages.slice(-4);
+    const currentBeat = [
+      runtimeState.activeScene.latest_character_action_or_reaction ? `${runtimeState.characterName}: ${runtimeState.activeScene.latest_character_action_or_reaction}` : '',
+      runtimeState.activeScene.latest_user_action_or_request ? `${runtimeState.userName}: ${runtimeState.activeScene.latest_user_action_or_request}` : ''
+    ].filter(Boolean).join('\n');
     const systemPrompt = [
       buildPlainTextBlock('Character Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)),
       buildPlainTextBlock('Active Scene', clipToTokenTarget(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene)),
@@ -219,7 +223,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     return {
       profile,
       systemPrompt,
-      userPrompt: `Recent scene tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 220)}\n\n3 actions for ${runtimeState.userName} in the same scene:`,
+      userPrompt: `Current beat:\n${currentBeat || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 160)}\n\nRecent scene tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 220)}\n\n3 actions for ${runtimeState.userName} in the same scene:`,
       debug: {
         ...debug,
         historyCountKept: recentTail.length

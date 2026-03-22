@@ -162,7 +162,9 @@ describe('assembleRuntimeContext', () => {
 
     expect(replyContext.systemPrompt).toContain('Global Core:');
     expect(suggestionContext.systemPrompt).not.toContain('Global Core:');
+    expect(suggestionContext.systemPrompt).toContain('same scene with Mei');
     expect(suggestionContext.userPrompt).toContain('3 actions for Erik');
+    expect(suggestionContext.userPrompt).toContain('Current beat:');
     expect(impersonateContext.systemPrompt).toContain('Character Reference:');
     expect(impersonateContext.userPrompt).toContain("Write Erik's next reply");
   });

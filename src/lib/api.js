@@ -514,6 +514,142 @@ export function scorePassionBackground(userMessage, aiMessage, settings, modelCt
 let suggestionAbortController = null;
 let suggestionRequestId = 0;
 
+const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|note|options?|suggestions?)\b/i;
+const SUGGESTION_NON_ACTION_PATTERN = /^(?:explain|describe|clarify|suggest|propose)\b/i;
+const SUGGESTION_LABEL_PATTERN = /^(?:option\s*\d+|action\s*\d+|match the current pace|current pace|same scene|bolder(?: or more forward)?|fresh angle|unexpected(?: angle)?)\s*[:\-]\s*/i;
+
+function cleanSuggestionCandidate(part) {
+  let candidate = String(part || '').trim();
+  if (!candidate) return '';
+
+  candidate = candidate
+    .replace(/^[-•]\s*/, '')
+    .replace(/^['"“”`*:.\-\d)\s]+/, '')
+    .replace(/['"“”`:,|.\-\s]+$/, '')
+    .replace(SUGGESTION_LABEL_PATTERN, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  if (/^[A-Za-z][A-Za-z\s]{1,24}:\s+/.test(candidate)) {
+    const [prefix, rest] = candidate.split(/:\s+/, 2);
+    if (/\b(option|action|pace|scene|angle|move)\b/i.test(prefix || '')) {
+      candidate = String(rest || '').trim();
+    }
+  }
+
+  return candidate;
+}
+
+function compactSuggestionCandidate(candidate) {
+  let compact = String(candidate || '').trim();
+  if (!compact) return '';
+
+  const wordCount = compact.split(/\s+/).filter(Boolean).length;
+  if (compact.length <= 96 && wordCount <= 14) {
+    return compact;
+  }
+
+  const sentenceCut = compact.search(/[.!?](?:\s|$)/);
+  if (sentenceCut > 0) {
+    compact = compact.slice(0, sentenceCut).trim();
+  }
+
+  if (compact.length > 96 || compact.split(/\s+/).filter(Boolean).length > 14) {
+    const clauseParts = compact
+      .split(/(?:\s+-\s+|;\s+|,\s+(?=[A-Z"']))/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (clauseParts.length > 1) {
+      compact = clauseParts[0];
+    }
+  }
+
+  if (compact.length > 96 || compact.split(/\s+/).filter(Boolean).length > 14) {
+    compact = compact.split(/\s+/).slice(0, 12).join(' ');
+  }
+
+  compact = compact
+    .replace(/\b(?:and|or|to|with|into|onto|from|for|of|on|at|my|your|his|her|the|a|an)$/i, '')
+    .replace(/['"“”`:,|.\-\s]+$/, '')
+    .trim();
+
+  return compact;
+}
+
+function dedupeSuggestionAgainstHistory(candidate, lastUserMsg, previousSuggestions = []) {
+  if (lastUserMsg) {
+    const candidateLower = candidate.toLowerCase().trim();
+    const lastUserLower = lastUserMsg.toLowerCase().trim();
+    if (lastUserLower.includes(candidateLower) || candidateLower.includes(lastUserLower)) {
+      return false;
+    }
+  }
+
+  const stopWords = new Set(['her', 'his', 'him', 'she', 'the', 'your', 'you', 'my', 'and', 'into', 'with', 'from', 'that', 'this', 'then', 'them', 'their', 'its', 'our', 'for']);
+  const toWords = (text) => text
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, '')
+    .split(/\s+/)
+    .filter((word) => word.length > 2 && !stopWords.has(word));
+  const candidateWords = toWords(candidate);
+
+  if (candidateWords.length === 0) {
+    return true;
+  }
+
+  return !previousSuggestions.some((previous) => {
+    const previousWords = toWords(previous);
+    if (previousWords.length === 0) {
+      return false;
+    }
+    const overlap = candidateWords.filter((word) => previousWords.includes(word)).length;
+    const shorter = Math.min(candidateWords.length, previousWords.length);
+    const threshold = shorter <= 3 ? 0.5 : 0.7;
+    return overlap >= shorter * threshold;
+  });
+}
+
+export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestions = []) {
+  const cleaned = String(raw || '').trim()
+    .replace(/\[TOOL_CALLS\]/gi, '')
+    .replace(/<\/?s>/gi, '')
+    .replace(/\bassistant\b/gi, '')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/\*/g, '')
+    .replace(/"/g, '')
+    .trim();
+
+  let parts = cleaned
+    .split(/[|\n]/)
+    .map((part) => cleanSuggestionCandidate(part))
+    .filter(Boolean);
+
+  if (parts.length < 2) {
+    parts = cleaned
+      .split(/\d+[.)]\s*/)
+      .map((part) => cleanSuggestionCandidate(part))
+      .filter(Boolean);
+  }
+
+  if (parts.length < 2) {
+    parts = cleaned
+      .split(/\s*;\s*/)
+      .map((part) => cleanSuggestionCandidate(part))
+      .filter(Boolean);
+  }
+
+  return parts
+    .map((part) => compactSuggestionCandidate(part))
+    .filter(Boolean)
+    .filter((part) => {
+      const wordCount = part.split(/\s+/).filter(Boolean).length;
+      return part.length >= 2 && part.length <= 96 && wordCount >= 2 && wordCount <= 14;
+    })
+    .filter((part) => !SUGGESTION_META_PATTERN.test(part) && !SUGGESTION_NON_ACTION_PATTERN.test(part))
+    .filter((part) => dedupeSuggestionAgainstHistory(part, lastUserMsg, previousSuggestions))
+    .slice(0, 3);
+}
+
 /**
  * Abort any in-flight suggestion generation.
  * Call before sendMessage/regenerate so Ollama is free for the chat stream.
@@ -561,46 +697,8 @@ export async function generateSuggestionsBackground(history, character, userName
     }
   });
   const runtimeContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState });
-  const charName = character?.name || 'Character';
-
-  const parseSuggestions = (raw) => {
-    const cleaned = raw.trim()
-      .replace(/\[TOOL_CALLS\]/gi, '')
-      .replace(/<\/?s>/gi, '')
-      .replace(/\bassistant\b/gi, '')
-      .replace(/```[\s\S]*?```/g, '')
-      .replace(/\*/g, '')
-      .replace(/"/g, '')
-      .trim();
-    let parts = cleaned.split(/[|\n]/).map(s => s.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
-    if (parts.length < 2) parts = cleaned.split(/\d+[.)]\s*/).filter(Boolean);
-    const metaPattern = /^(here|these|sure|okay|option|suggestion|note)/i;
-    const metaVerbPattern = /^(guide|encourage|explain|suggest|clarify|offer|continue|describe|share|propose)\b/i;
-    return parts
-      .map(s => s.replace(/^[':.\-\d)]+|[':.\-,|]+$/g, '').replace(/^(?:match the current pace|more forward|unexpected|option \d|bolder)[:\-]\s*/i, '').trim())
-      .filter(s => s.length >= 2 && s.length <= 80 && s.split(/\s+/).length >= 2 && s.split(/\s+/).length <= 12 && !metaPattern.test(s) && !metaVerbPattern.test(s))
-      .filter(s => {
-        if (!lastUserMsg) return true;
-        const sLow = s.toLowerCase().trim();
-        const msgLow = lastUserMsg.toLowerCase().trim();
-        return !msgLow.includes(sLow) && !sLow.includes(msgLow);
-      })
-      .filter(s => {
-        const stopWords = new Set(['her','his','him','she','the','your','you','my','and','into','with','from','that','this','then','them','their','its','our','for']);
-        const toWords = (t) => t.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w));
-        const sWords = toWords(s);
-        if (sWords.length === 0) return true;
-        return !previousSuggestions.some(prev => {
-          const pWords = toWords(prev);
-          if (pWords.length === 0) return false;
-          const overlap = sWords.filter(w => pWords.includes(w)).length;
-          const shorter = Math.min(sWords.length, pWords.length);
-          const threshold = shorter <= 3 ? 0.5 : 0.7;
-          return overlap >= shorter * threshold;
-        });
-      })
-      .slice(0, 3);
-	  };
+  const retrySystemPrompt = `${runtimeContext.systemPrompt}\n\nFORMAT CHECK:\n- Return exactly 3 short actions separated by |.\n- No numbering, labels, commentary, or explanations.\n- Keep every action in the same current scene and make it directly clickable.`;
+  const parseSuggestions = (raw) => parseSuggestionResponse(raw, lastUserMsg, previousSuggestions);
 
   const chatParams = {
     messages: [{ role: 'user', content: runtimeContext.userPrompt }],
@@ -609,8 +707,13 @@ export async function generateSuggestionsBackground(history, character, userName
     isOllama: true,
     ollamaUrl,
     temperature: 0.8,
-    maxTokens: 120,
+    maxTokens: 96,
     num_ctx: numCtx
+  };
+  const retryChatParams = {
+    ...chatParams,
+    systemPrompt: retrySystemPrompt,
+    temperature: 0.65
   };
 
   console.log('[API] Suggestions runtime:', runtimeContext.debug);
@@ -618,6 +721,7 @@ export async function generateSuggestionsBackground(history, character, userName
   if (isElectron()) {
     suggestionAbortController = null;
     const taggedParams = { ...chatParams, tag: 'suggestions' };
+    const retryTaggedParams = { ...retryChatParams, tag: 'suggestions' };
 
     window.electronAPI.aiChat(taggedParams)
       .then(result => {
@@ -631,7 +735,7 @@ export async function generateSuggestionsBackground(history, character, userName
           return;
         }
         console.log(`[API] Suggestions: retrying (got ${suggestions.length})`);
-        return window.electronAPI.aiChat(taggedParams).then(retryResult => {
+        return window.electronAPI.aiChat(retryTaggedParams).then(retryResult => {
           if (currentRequestId !== suggestionRequestId) return;
           const retryRaw = retryResult.success ? retryResult.content || '' : '';
           const retrySuggestions = parseSuggestions(retryRaw);
@@ -646,24 +750,29 @@ export async function generateSuggestionsBackground(history, character, userName
         callback(null);
       });
   } else {
-    const fetchOpts = {
+    const buildFetchOpts = (params, signal) => ({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal,
       body: JSON.stringify({
-        model,
+        model: params.model,
         messages: [
-          { role: 'system', content: runtimeContext.systemPrompt },
-          { role: 'user', content: runtimeContext.userPrompt }
+          { role: 'system', content: params.systemPrompt },
+          { role: 'user', content: params.messages[0].content }
         ],
         stream: false,
-        options: { num_predict: 120, temperature: 0.8, num_ctx: numCtx }
+        options: {
+          num_predict: params.maxTokens,
+          temperature: params.temperature,
+          num_ctx: params.num_ctx
+        }
       })
-    };
+    });
 
     const controller = new AbortController();
     suggestionAbortController = controller;
 
-    fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: controller.signal })
+    fetch(`${ollamaUrl}/api/chat`, buildFetchOpts(chatParams, controller.signal))
       .then(res => res.json())
       .then(data => {
         if (currentRequestId !== suggestionRequestId) { suggestionAbortController = null; return; }
@@ -676,7 +785,7 @@ export async function generateSuggestionsBackground(history, character, userName
           return;
         }
         console.log(`[API] Suggestions: retrying (got ${suggestions.length})`);
-        return fetch(`${ollamaUrl}/api/chat`, { ...fetchOpts, signal: controller.signal })
+        return fetch(`${ollamaUrl}/api/chat`, buildFetchOpts(retryChatParams, controller.signal))
           .then(r => r.json())
           .then(d => {
             suggestionAbortController = null;
@@ -1184,6 +1293,13 @@ export const sendMessage = async (
         } finally {
           bindStreamAbort(null);
           reader.cancel().catch(() => {});
+        }
+        if (streamTerminationReason === 'user' || (streamAbortHandle?.aborted && streamAbortHandle.reason === 'user')) {
+          return {
+            success: false,
+            error: 'The operation was aborted',
+            aborted: true
+          };
         }
         const fullContent = contentChunks.join('');
         data = { message: { content: fullContent }, eval_count: finalChunk?.eval_count, prompt_eval_count: finalChunk?.prompt_eval_count };

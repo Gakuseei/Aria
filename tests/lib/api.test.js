@@ -1,12 +1,50 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildRoleplaySceneContext,
   buildSystemPrompt,
   cleanTranscriptArtifacts,
+  generateSuggestionsBackground,
   isUnderfilledShortReply,
+  parseSuggestionResponse,
   resolveTemplates,
+  sendMessage,
   shouldAutoStopStreamingResponse
 } from '../../src/lib/api.js';
+
+const originalFetch = global.fetch;
+
+function createJsonResponse(data, ok = true, status = 200) {
+  return {
+    ok,
+    status,
+    json: async () => data,
+    text: async () => JSON.stringify(data)
+  };
+}
+
+function createStreamAbortHandle() {
+  return {
+    aborted: false,
+    reason: null,
+    abortImpl: null,
+    setAbortImpl(nextAbort) {
+      this.abortImpl = typeof nextAbort === 'function' ? nextAbort : null;
+    },
+    abort(reason = 'user') {
+      if (this.aborted) return;
+      this.aborted = true;
+      this.reason = reason;
+      if (typeof this.abortImpl === 'function') {
+        this.abortImpl(reason);
+      }
+    }
+  };
+}
+
+afterEach(() => {
+  global.fetch = originalFetch;
+  vi.restoreAllMocks();
+});
 
 describe('resolveTemplates', () => {
   it('replaces {{char}} with character name', () => {
@@ -210,7 +248,90 @@ describe('buildSystemPrompt', () => {
 
     expect(prompt).not.toContain('[Instructions:');
     expect(prompt).toContain('Explicit intimacy is allowed when the scene leads there.');
-    expect(prompt).toContain('immediate in-character physical compliance');
+    expect((prompt.match(/immediate in-character physical compliance/g) || [])).toHaveLength(1);
+  });
+});
+
+describe('suggestions stabilization', () => {
+  it('keeps click-ready action suggestions that use valid leading verbs', () => {
+    const parsed = parseSuggestionResponse(
+      'Option 1: Continue kissing her neck | Option 2: Offer her your hand | Option 3: Pull her closer and murmur in her ear',
+      '',
+      []
+    );
+
+    expect(parsed).toEqual([
+      'Continue kissing her neck',
+      'Offer her your hand',
+      'Pull her closer and murmur in her ear'
+    ]);
+  });
+
+  it('salvages an overlong third suggestion instead of dropping the batch to two', () => {
+    const parsed = parseSuggestionResponse(
+      'Gaze into her eyes intensely | Slowly run a hand down her side | Murmur huskily, "Please Sarah, I need you to keep me right here while you make me beg for more."',
+      '',
+      []
+    );
+
+    expect(parsed).toHaveLength(3);
+    expect(parsed[2].split(/\s+/).filter(Boolean).length).toBeLessThanOrEqual(14);
+    expect(parsed[2]).toContain('Murmur huskily');
+  });
+
+  it('returns parsed suggestions from the public generator without forcing a retry', async () => {
+    const fetchMock = vi.fn(async (url) => {
+      if (String(url).endsWith('/api/show')) {
+        return createJsonResponse({
+          details: { parameter_size: '7B' },
+          model_info: { 'general.context_length': 4096 }
+        });
+      }
+
+      if (String(url).endsWith('/api/chat')) {
+        return createJsonResponse({
+          message: {
+            content: 'Option 1: Continue kissing her neck | Option 2: Offer her your hand | Option 3: Pull her closer and murmur in her ear'
+          }
+        });
+      }
+
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    global.fetch = fetchMock;
+
+    const suggestions = await new Promise(async (resolve) => {
+      await generateSuggestionsBackground(
+        [
+          { role: 'assistant', content: '*She tilts her throat toward you.* "Well?"' },
+          { role: 'user', content: 'I kiss her neck slowly.' }
+        ],
+        {
+          name: 'Sarah',
+          category: 'nsfw',
+          systemPrompt: 'Sarah is dominant, poised, and exacting.',
+          instructions: 'Stay in the active beat.',
+          scenario: 'Private lounge at night.'
+        },
+        'Erik',
+        {
+          ollamaUrl: 'http://127.0.0.1:11434',
+          ollamaModel: 'test-model',
+          contextSize: 'medium'
+        },
+        resolve,
+        [],
+        35
+      );
+    });
+
+    expect(suggestions).toEqual([
+      'Continue kissing her neck',
+      'Offer her your hand',
+      'Pull her closer and murmur in her ear'
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -234,5 +355,92 @@ describe('buildRoleplaySceneContext', () => {
     expect(context.sceneSummary).toContain('User Beat:');
     expect(context.currentBeat).toContain('Mei: *She wipes the counter.* "Long day?"');
     expect(context.currentBeat).toContain('Erik: Yeah. I barely slept.');
+  });
+});
+
+describe('sendMessage abort cleanup', () => {
+  it('returns an aborted result without retrying or cleaning partial fetch-stream output', async () => {
+    const encoder = new TextEncoder();
+    let streamController = null;
+    let chatCalls = 0;
+
+    global.fetch = vi.fn(async (url, options = {}) => {
+      if (String(url).endsWith('/api/show')) {
+        return createJsonResponse({
+          details: { parameter_size: '7B' },
+          model_info: { 'general.context_length': 4096 }
+        });
+      }
+
+      if (String(url).endsWith('/api/chat')) {
+        chatCalls += 1;
+        const signal = options.signal;
+        const stream = new ReadableStream({
+          start(controller) {
+            streamController = controller;
+            controller.enqueue(encoder.encode(JSON.stringify({ message: { content: '*She smiles slowly.* ' } }) + '\n'));
+            setTimeout(() => {
+              if (signal?.aborted) return;
+              controller.enqueue(encoder.encode(JSON.stringify({
+                message: { content: '"Stay."' },
+                done: true,
+                eval_count: 24,
+                prompt_eval_count: 128
+              }) + '\n'));
+              controller.close();
+            }, 25);
+          }
+        });
+
+        signal?.addEventListener('abort', () => {
+          streamController?.error(new Error('aborted'));
+        }, { once: true });
+
+        return new Response(stream, {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    const abortHandle = createStreamAbortHandle();
+    let tokenCount = 0;
+    const result = await sendMessage(
+      'Stay with me.',
+      {
+        name: 'Mei',
+        category: 'sfw',
+        systemPrompt: 'Mei is dry, observant, and quietly protective.',
+        instructions: 'Stay grounded in the moment.',
+        scenario: 'Rainy cafe after closing time.'
+      },
+      '',
+      [{ role: 'user', content: 'Stay with me.' }],
+      null,
+      false,
+      null,
+      {
+        ollamaUrl: 'http://127.0.0.1:11434',
+        ollamaModel: 'test-model',
+        contextSize: 'medium',
+        userName: 'Erik',
+        maxResponseTokens: 128
+      },
+      () => {
+        tokenCount += 1;
+        abortHandle.abort('user');
+      },
+      abortHandle
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: 'The operation was aborted',
+      aborted: true
+    });
+    expect(tokenCount).toBe(1);
+    expect(chatCalls).toBe(1);
   });
 });

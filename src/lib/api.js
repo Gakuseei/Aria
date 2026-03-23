@@ -824,6 +824,176 @@ export function abortImpersonateCall() {
   }
 }
 
+function escapeRegex(text) {
+  return String(text || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function deconjugateSimplePresent(verb) {
+  const normalized = String(verb || '').toLowerCase();
+  if (!normalized) return '';
+
+  const irregular = {
+    is: 'am',
+    are: 'am',
+    has: 'have',
+    does: 'do',
+    goes: 'go'
+  };
+
+  if (irregular[normalized]) return irregular[normalized];
+  if (normalized.endsWith('ies') && normalized.length > 3) return `${normalized.slice(0, -3)}y`;
+  if (/(ches|shes|sses|xes|zes|oes)$/.test(normalized)) return normalized.slice(0, -2);
+  if (normalized.endsWith('s') && normalized.length > 2 && !/(ss|us|is)$/.test(normalized)) return normalized.slice(0, -1);
+  return normalized;
+}
+
+function isAdverbishToken(token) {
+  const normalized = String(token || '').replace(/^[^A-Za-z']+|[^A-Za-z']+$/g, '').toLowerCase();
+  if (!normalized) return false;
+  return normalized.endsWith('ly')
+    || ['then', 'still', 'just', 'again', 'almost', 'nearly', 'closer'].includes(normalized);
+}
+
+function repairLeadingNarrationSegment(segment, userName) {
+  const trimmed = String(segment || '').trim();
+  if (!trimmed || /^["“]/.test(trimmed)) return trimmed;
+  if (/\b(?:I|me|my|mine|I'm|I've|I'll|I'd)\b/i.test(trimmed)) return trimmed;
+  if (/^(?:She|He|Her|His)\b/i.test(trimmed)) return trimmed;
+
+  const escapedUserName = escapeRegex(userName);
+  const directReplacements = [
+    [new RegExp(`^${escapedUserName}'s\\b`, 'i'), 'My'],
+    [new RegExp(`^${escapedUserName}\\b`, 'i'), 'I'],
+    [/^You're\b/i, "I'm"],
+    [/^You've\b/i, "I've"],
+    [/^You'll\b/i, "I'll"],
+    [/^You'd\b/i, "I'd"],
+    [/^Your\b/i, 'My'],
+    [/^You\b/i, 'I']
+  ];
+
+  for (const [pattern, replacement] of directReplacements) {
+    if (pattern.test(trimmed)) {
+      return trimmed.replace(pattern, replacement);
+    }
+  }
+
+  const tokens = trimmed.split(/\s+/);
+  let verbIndex = 0;
+  while (verbIndex < tokens.length && verbIndex < 3 && isAdverbishToken(tokens[verbIndex])) {
+    verbIndex++;
+  }
+
+  if (verbIndex >= tokens.length) return trimmed;
+
+  const originalVerbToken = tokens[verbIndex];
+  const bareVerb = originalVerbToken.replace(/^[^A-Za-z']+|[^A-Za-z']+$/g, '');
+  if (!bareVerb || bareVerb.length < 3) return trimmed;
+
+  const invalidLeadWords = new Set([
+    'well', 'oh', 'ah', 'yes', 'no', 'the', 'a', 'an', 'this', 'that', 'these', 'those',
+    'her', 'his', 'their', 'its', 'our', 'my', 'your', 'me', 'mine', 'hers', 'herself', 'himself'
+  ]);
+  if (invalidLeadWords.has(bareVerb.toLowerCase())) return trimmed;
+
+  const deconjugatedVerb = deconjugateSimplePresent(bareVerb);
+  if (!deconjugatedVerb || deconjugatedVerb === bareVerb.toLowerCase()) {
+    return `I ${trimmed}`;
+  }
+
+  tokens[verbIndex] = originalVerbToken.replace(bareVerb, deconjugatedVerb);
+  return `I ${tokens.join(' ')}`
+    .replace(/\b(and|then|while|before)\s+([A-Za-z']+)\b/g, (match, prefix, verb) => {
+      const repairedVerb = deconjugateSimplePresent(verb);
+      return repairedVerb !== verb.toLowerCase() ? `${prefix} ${repairedVerb}` : match;
+    });
+}
+
+function repairLeadingActionBlock(text, userName) {
+  return String(text || '').replace(/^\*([^*]+)\*/, (match, actionText) => {
+    const repairedAction = repairLeadingNarrationSegment(actionText, userName);
+    return repairedAction ? `*${repairedAction}*` : match;
+  });
+}
+
+function hasInvalidImpersonateLead(text, userName, charName = '') {
+  const trimmed = String(text || '').trim();
+  if (!trimmed) return true;
+  const escapedUserName = escapeRegex(userName);
+  const invalidLeads = [
+    'You\\b',
+    'Your\\b',
+    "You're\\b",
+    "You've\\b",
+    "You'll\\b",
+    "You'd\\b",
+    `${escapedUserName}\\b`,
+    `${escapedUserName}'s\\b`,
+    '\\*?\\s*(?:She|He|Her|His)\\b'
+  ];
+
+  if (charName) {
+    invalidLeads.push(`${escapeRegex(charName)}\\b`);
+  }
+
+  return new RegExp(`^(?:${invalidLeads.join('|')})`, 'i').test(trimmed);
+}
+
+export function finalizeImpersonateDraft(rawText, { charName = '', userName = 'User' } = {}) {
+  let cleaned = String(rawText || '').trim();
+  if (!cleaned) {
+    return {
+      text: '',
+      repaired: false,
+      valid: false
+    };
+  }
+
+  cleaned = cleaned.replace(/<\/s>/g, '');
+  cleaned = cleaned.replace(/\[TOOL_CALLS\]/g, '');
+  cleaned = cleaned.replace(/<\|[^|]*\|>/g, '');
+  cleaned = cleaned.replace(/~+\s*$/g, '');
+  cleaned = cleaned.replace(/\s*\(\d+\s*words?\)\s*/gi, ' ');
+  cleaned = cleaned.replace(/^[./]+(?=\*)/gm, '');
+  const metaCut = cleaned.search(/\n---|\n\n(?:I chose|I picked|This |The |Here |Note)/i);
+  if (metaCut > 0) cleaned = cleaned.substring(0, metaCut);
+  cleaned = cleanTranscriptArtifacts(cleaned, charName);
+
+  const lastCh = cleaned.slice(-1);
+  if (lastCh && !['.', '!', '?', '"', '*', ')'].includes(lastCh)) {
+    const end = Math.max(cleaned.lastIndexOf('*'), cleaned.lastIndexOf('"'), cleaned.lastIndexOf('.'), cleaned.lastIndexOf('!'), cleaned.lastIndexOf('?'));
+    if (end > 0 && end > cleaned.length * 0.3) cleaned = cleaned.substring(0, end + 1);
+  }
+
+  if (cleaned.startsWith(`${charName}:`) || cleaned.startsWith(`${charName} :`)) {
+    cleaned = '';
+  }
+
+  const charSpeakIdx = cleaned.indexOf(`\n${charName}:`);
+  if (charSpeakIdx >= 0) {
+    cleaned = cleaned.substring(0, charSpeakIdx).trim();
+  }
+
+  if (cleaned.startsWith(`${userName}:`) || cleaned.startsWith(`${userName} :`)) {
+    cleaned = cleaned.replace(/^\S+:\s*/, '');
+  }
+
+  const beforeRepair = cleaned;
+  cleaned = repairLeadingActionBlock(cleaned, userName);
+
+  if (!cleaned.startsWith('*')) {
+    cleaned = repairLeadingNarrationSegment(cleaned, userName);
+  }
+
+  cleaned = cleaned.trim();
+
+  return {
+    text: cleaned,
+    repaired: cleaned !== beforeRepair,
+    valid: Boolean(cleaned) && !hasInvalidImpersonateLead(cleaned, userName, charName)
+  };
+}
+
 /**
  * Generate a user-perspective reply using the AI model (SillyTavern-style).
  * Streams tokens into `onToken` callback so the input field fills live.
@@ -958,42 +1128,12 @@ export async function impersonateUser(history, character, userName, passionLevel
     }
   }
 
-  // Cleanup: special tokens + artifacts + sentence trim + wrong name
-  let cleaned = textChunks.join('').trim();
-  cleaned = cleaned.replace(/<\/s>/g, '');
-  cleaned = cleaned.replace(/\[TOOL_CALLS\]/g, '');
-  cleaned = cleaned.replace(/<\|[^|]*\|>/g, '');
-  cleaned = cleaned.replace(/~+\s*$/g, '');
-  cleaned = cleaned.replace(/\s*\(\d+\s*words?\)\s*/gi, ' ');
-  cleaned = cleaned.replace(/^[./]+(?=\*)/gm, '');
-  const metaCut = cleaned.search(/\n---|\n\n(?:I chose|I picked|This |The |Here |Note)/i);
-  if (metaCut > 0) cleaned = cleaned.substring(0, metaCut);
-  cleaned = cleaned.trim();
-
-  // Trim to last complete sentence if num_predict cut mid-word
-  const lastCh = cleaned.slice(-1);
-  if (lastCh && !['.', '!', '?', '"', '*', ')'].includes(lastCh)) {
-    const end = Math.max(cleaned.lastIndexOf('*'), cleaned.lastIndexOf('"'), cleaned.lastIndexOf('.'), cleaned.lastIndexOf('!'), cleaned.lastIndexOf('?'));
-    if (end > 0 && end > cleaned.length * 0.3) cleaned = cleaned.substring(0, end + 1);
+  const finalized = finalizeImpersonateDraft(textChunks.join(''), { charName, userName });
+  if (!finalized.valid || !finalized.text) {
+    throw new Error('Failed to generate a usable draft');
   }
 
-  // If response starts with charName — wrong character, trash it
-  if (cleaned.startsWith(`${charName}:`) || cleaned.startsWith(`${charName} :`)) {
-    cleaned = '';
-  }
-
-  // If charName appears mid-text as new speaker, cut there
-  const charSpeakIdx = cleaned.indexOf(`\n${charName}:`);
-  if (charSpeakIdx >= 0) {
-    cleaned = cleaned.substring(0, charSpeakIdx).trim();
-  }
-
-  // Strip userName: prefix the model might add
-  if (cleaned.startsWith(`${userName}:`) || cleaned.startsWith(`${userName} :`)) {
-    cleaned = cleaned.replace(/^\S+:\s*/, '');
-  }
-
-  return cleaned;
+  return finalized.text;
 }
 
 /**

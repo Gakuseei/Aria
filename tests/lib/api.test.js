@@ -4,6 +4,7 @@ import {
   buildRoleplaySceneContext,
   buildSystemPrompt,
   cleanTranscriptArtifacts,
+  finalizeImpersonateDraft,
   generateSuggestionsBackground,
   isUnderfilledShortReply,
   parseSuggestionResponse,
@@ -496,6 +497,39 @@ describe('suggestions stabilization', () => {
       'Hold her gaze',
       'Lean closer across the bar'
     ]);
+  });
+});
+
+describe('finalizeImpersonateDraft', () => {
+  it('repairs leading action blocks into first-person phrasing', () => {
+    const finalized = finalizeImpersonateDraft(
+      '*slowly traces a finger along her lip* "You look good like this."',
+      { charName: 'Alice', userName: 'Erik' }
+    );
+
+    expect(finalized.valid).toBe(true);
+    expect(finalized.repaired).toBe(true);
+    expect(finalized.text).toContain('*I slowly trace a finger along her lip*');
+  });
+
+  it('repairs second-person narration of the user without another model call', () => {
+    const finalized = finalizeImpersonateDraft(
+      'You guide her head gently and keep her eyes on you.',
+      { charName: 'Alice', userName: 'Erik' }
+    );
+
+    expect(finalized.valid).toBe(true);
+    expect(finalized.text).toBe('I guide her head gently and keep her eyes on you.');
+  });
+
+  it('rejects drafts that still start as the character after cleanup', () => {
+    const finalized = finalizeImpersonateDraft(
+      'Alice: *She smiles faintly.* "Then come closer."',
+      { charName: 'Alice', userName: 'Erik' }
+    );
+
+    expect(finalized.valid).toBe(false);
+    expect(finalized.text).toContain('*She smiles faintly.*');
   });
 });
 

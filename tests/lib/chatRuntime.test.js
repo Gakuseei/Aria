@@ -324,6 +324,11 @@ describe('assembleRuntimeContext', () => {
     expect(suggestionContext.userPrompt).toContain('3 actions for Erik');
     expect(suggestionContext.userPrompt).toContain('Current beat:');
     expect(impersonateContext.systemPrompt).toContain('Character Reference:');
+    expect(impersonateContext.systemPrompt).toContain('FIRST PERSON (I/me/my)');
+    expect(impersonateContext.systemPrompt).toContain('NEVER narrate Erik from outside in second or third person.');
+    expect(impersonateContext.userPrompt).toContain('Current beat:');
+    expect(impersonateContext.userPrompt).toContain('Scene summary:');
+    expect(impersonateContext.userPrompt).toContain('Recent conversation:');
     expect(impersonateContext.userPrompt).toContain("Write Erik's next reply");
   });
 

@@ -165,14 +165,40 @@ function buildImpersonateLateSteering(runtimeState) {
     : '';
 
   return [
-    `Write ${runtimeState.userName}'s next reply in first person (I/me/my).`,
-    `Never write as ${runtimeState.characterName}.`,
-    'Keep it to 1-2 sentences. Actions go in *asterisks*. Dialogue stays plain text.',
+    `Write ${runtimeState.userName}'s next reply in an ongoing ${isBot ? 'conversation' : 'roleplay scene'} with ${runtimeState.characterName}.`,
+    `Write ${runtimeState.userName}'s reply in FIRST PERSON (I/me/my).`,
+    `NEVER write as ${runtimeState.characterName}.`,
+    `NEVER narrate ${runtimeState.userName} from outside in second or third person.`,
+    '1-2 sentences MAX.',
+    'Actions go in *asterisks*. Dialogue stays plain text.',
+    'Keep the same language as the conversation.',
     isBot
-      ? 'Stay inside the current exchange and answer what the bot just said or asked.'
-      : 'Stay inside the exact active scene and answer what the character just did or said.',
+      ? 'Stay inside the exact active exchange and answer what the bot just said or asked.'
+      : `Stay inside the exact scene established by the recent conversation. Do not invent a new location, prop, room, or time jump unless the scene already changed there. Keep the reply grounded in what ${runtimeState.characterName} just did or said.`,
     intensityLine
   ].filter(Boolean).join('\n');
+}
+
+function buildImpersonateUserPrompt(runtimeState, recentTail) {
+  const isBot = runtimeState.compiledRuntimeCard.runtimeDefaults.type === 'bot';
+  const currentBeat = [
+    runtimeState.activeScene.latest_character_action_or_reaction ? `${runtimeState.characterName}: ${runtimeState.activeScene.latest_character_action_or_reaction}` : '',
+    runtimeState.activeScene.latest_user_action_or_request ? `${runtimeState.userName}: ${runtimeState.activeScene.latest_user_action_or_request}` : ''
+  ].filter(Boolean).join('\n');
+  const sceneSummary = clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: false }), 105, 120)
+    || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 220);
+  const recentConversation = formatHistory(recentTail, runtimeState.characterName, runtimeState.userName)
+    || currentBeat
+    || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 220);
+
+  return [
+    `Current beat:\n${currentBeat || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 160)}`,
+    `Scene summary:\n${sceneSummary || 'Use the current beat above.'}`,
+    `Recent conversation:\n${recentConversation}`,
+    isBot
+      ? `Write ${runtimeState.userName}'s next reply without changing the exchange:`
+      : `Write ${runtimeState.userName}'s next reply without changing the scene:`
+  ].join('\n\n');
 }
 
 export function assembleRuntimeContext({ profile, runtimeState }) {
@@ -302,7 +328,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
   return {
     profile,
     systemPrompt,
-    userPrompt: `Recent scene tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 220)}\n\nWrite ${runtimeState.userName}'s next reply without changing the scene:`,
+    userPrompt: buildImpersonateUserPrompt(runtimeState, recentTail),
     debug: {
       ...debug,
       historyCountKept: recentTail.length

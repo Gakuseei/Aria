@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assembleRuntimeContext, buildRuntimeState, compileCharacterRuntimeCard } from '../../src/lib/chatRuntime/index.js';
+import { assembleRuntimeContext, buildRuntimeState, compileCharacterRuntimeCard, resolveSessionSceneMemory, validateSceneMemory } from '../../src/lib/chatRuntime/index.js';
 
 describe('compileCharacterRuntimeCard', () => {
   it('preserves voice and posture signals from systemPrompt', () => {
@@ -129,6 +129,129 @@ describe('buildRuntimeState', () => {
     expect(runtimeState.sceneState.continuity_facts.join(' ')).not.toContain('"Your usual."');
     expect(runtimeState.activeScene.continuity).toMatch(/counter|stool|favorite partner/i);
   });
+
+  it('uses validated persisted scene memory as a fallback when recent history loses the anchors', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Mei',
+        systemPrompt: 'Mei is dry, observant, and quietly protective.',
+        instructions: 'Stay blunt but gentle.',
+        scenario: 'Rainy cafe afternoon.'
+      },
+      history: [
+        { role: 'assistant', content: '*She sets the mug down in front of you.* "Drink."', timestamp: 1700000001000 },
+        { role: 'user', content: 'I do, but I keep watching you.', timestamp: 1700000002000 }
+      ],
+      userName: 'Erik',
+      runtimeSteering: {
+        profile: 'reply',
+        availableContextTokens: 360,
+        responseMode: 'normal',
+        persistedSceneMemory: {
+          setting_anchor: 'Corner cafe counter during a rainy afternoon.',
+          relationship_anchor: 'She treats Erik like the one regular she actually keeps close.',
+          continuity_facts: ['The corner stool is still kept for him.'],
+          open_thread: 'Whether she will stay by his side.',
+          source_assistant_timestamp: 1700000001000,
+          updated_at: '2026-03-23T10:00:00.000Z'
+        }
+      }
+    });
+
+    expect(runtimeState.sceneState.setting_anchor).toContain('Corner cafe counter');
+    expect(runtimeState.sceneState.relationship_anchor).toContain('regular');
+    expect(runtimeState.sceneState.debug.settingSource).toBe('memory');
+    expect(runtimeState.sceneState.debug.relationshipSource).toBe('memory');
+  });
+});
+
+describe('sceneMemory', () => {
+  it('refreshes scene memory from an accepted assistant-ending snapshot', () => {
+    const sceneMemory = resolveSessionSceneMemory({
+      character: {
+        name: 'Emma',
+        systemPrompt: 'Emma is warm and perceptive.',
+        instructions: 'Build tension through small pauses.',
+        scenario: 'Modern apartment hallway at night.'
+      },
+      history: [
+        { role: 'assistant', content: '*She waits in the doorway with the book against her chest.* "I hoped you were home."', timestamp: 1700000001000 },
+        { role: 'user', content: 'Come inside before the neighbors stare.', timestamp: 1700000002000 },
+        { role: 'assistant', content: '*She steps in slowly and keeps close to you.* "Then close the door for me."', timestamp: 1700000003000 }
+      ],
+      userName: 'Erik'
+    });
+
+    expect(sceneMemory?.source_assistant_timestamp).toBe(1700000003000);
+    expect(sceneMemory?.setting_anchor).toBeTruthy();
+    expect(sceneMemory?.continuity_facts?.length || 0).toBeGreaterThan(0);
+  });
+
+  it('carries forward matching scene memory on a user-ended snapshot but drops stale memory after a regenerate-like replacement', () => {
+    const previousSceneMemory = {
+      setting_anchor: 'Cafe counter by the rainy window.',
+      relationship_anchor: 'She keeps him close without admitting it.',
+      continuity_facts: ['The mug is still between them.'],
+      open_thread: 'Whether she will stay.',
+      source_assistant_timestamp: 1700000001000,
+      updated_at: '2026-03-23T10:00:00.000Z'
+    };
+
+    const validCarry = resolveSessionSceneMemory({
+      character: {
+        name: 'Mei',
+        systemPrompt: 'Mei is dry and observant.',
+        scenario: 'Rainy cafe afternoon.'
+      },
+      history: [
+        { role: 'assistant', content: '*She slides a mug closer.* "Drink."', timestamp: 1700000001000 },
+        { role: 'user', content: 'Only if you stay.', timestamp: 1700000002000 }
+      ],
+      userName: 'Erik',
+      previousSceneMemory
+    });
+
+    const staleDropped = resolveSessionSceneMemory({
+      character: {
+        name: 'Mei',
+        systemPrompt: 'Mei is dry and observant.',
+        scenario: 'Rainy cafe afternoon.'
+      },
+      history: [
+        { role: 'user', content: 'Only if you stay.', timestamp: 1700000002000 }
+      ],
+      userName: 'Erik',
+      previousSceneMemory
+    });
+
+    expect(validCarry?.source_assistant_timestamp).toBe(1700000001000);
+    expect(staleDropped).toBeNull();
+  });
+
+  it('rejects stale persisted scene memory and strips malformed factual lines', () => {
+    const valid = validateSceneMemory({
+      setting_anchor: 'Cafe counter by the rainy window.',
+      relationship_anchor: 'She keeps him close without admitting it.',
+      continuity_facts: ['The mug is still between them.', 'User: "Stay."'],
+      open_thread: 'Will she stay?',
+      source_assistant_timestamp: 1700000001000,
+      updated_at: '2026-03-23T10:00:00.000Z'
+    }, [
+      { role: 'assistant', content: '*She waits.*', timestamp: 1700000001000 },
+      { role: 'user', content: 'Stay.', timestamp: 1700000002000 }
+    ]);
+
+    const stale = validateSceneMemory({
+      setting_anchor: 'Wrong place',
+      source_assistant_timestamp: 1700000003000,
+      updated_at: '2026-03-23T10:00:00.000Z'
+    }, [
+      { role: 'assistant', content: '*She waits.*', timestamp: 1700000001000 }
+    ]);
+
+    expect(valid?.continuity_facts).toEqual(['The mug is still between them.']);
+    expect(stale).toBeNull();
+  });
 });
 
 describe('assembleRuntimeContext', () => {
@@ -202,6 +325,39 @@ describe('assembleRuntimeContext', () => {
     expect(suggestionContext.userPrompt).toContain('Current beat:');
     expect(impersonateContext.systemPrompt).toContain('Character Reference:');
     expect(impersonateContext.userPrompt).toContain("Write Erik's next reply");
+  });
+
+  it('surfaces persisted scene-memory usage in debug output', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Mei',
+        category: 'sfw',
+        systemPrompt: 'Mei is dry, observant, and quietly protective.',
+        instructions: 'Stay blunt but gentle.',
+        scenario: 'Rainy cafe afternoon.'
+      },
+      history: [
+        { role: 'assistant', content: '*She slides a mug toward you.* "Drink first."', timestamp: 1700000001000 },
+        { role: 'user', content: 'Are you always this bossy?', timestamp: 1700000002000 }
+      ],
+      userName: 'Erik',
+      runtimeSteering: {
+        profile: 'reply',
+        availableContextTokens: 900,
+        responseMode: 'normal',
+        persistedSceneMemory: {
+          setting_anchor: 'Cafe counter by the rainy window.',
+          relationship_anchor: 'She keeps him close without admitting it.',
+          continuity_facts: ['The mug is still between them.'],
+          open_thread: '',
+          source_assistant_timestamp: 1700000001000,
+          updated_at: '2026-03-23T10:00:00.000Z'
+        }
+      }
+    });
+
+    const replyContext = assembleRuntimeContext({ profile: 'reply', runtimeState });
+    expect(replyContext.debug.sceneMemoryUsed).toBe(true);
   });
 
   it('uses an explicit lightweight bot runtime path without roleplay-only reply steering', () => {

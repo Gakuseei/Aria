@@ -17,6 +17,7 @@ import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
 import downloadBlob from '../utils/downloadBlob';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from '../lib/defaults';
+import { resolveSessionSceneMemory } from '../lib/chatRuntime';
 import CustomDropdown from './CustomDropdown';
 
 // ============================================================================
@@ -76,6 +77,10 @@ function formatTimestamp(timestamp) {
   if (!timestamp) return '';
   const date = new Date(timestamp);
   return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+function sameSceneMemory(left, right) {
+  return JSON.stringify(left || null) === JSON.stringify(right || null);
 }
 
 function createStreamAbortHandle() {
@@ -238,6 +243,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const [sessionId, setSessionId] = useState(null);
   const [showPassionPopover, setShowPassionPopover] = useState(false);
   const [showChatOptions, setShowChatOptions] = useState(false);
+  const [sceneMemory, setSceneMemory] = useState(null);
 
   // BLOCK 6.9: Entrance Animation
   const isVisible = useEntranceAnimation(100);
@@ -338,10 +344,32 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const settingsRef = useRef(parentSettings);
   const mountedRef = useRef(true);
   const messagesRef = useRef([]);
+  const sceneMemoryRef = useRef(null);
 
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  useEffect(() => {
+    sceneMemoryRef.current = sceneMemory;
+  }, [sceneMemory]);
+
+  const buildSceneMemory = useCallback((history, previousSceneMemory = sceneMemoryRef.current) => (
+    resolveSessionSceneMemory({
+      character,
+      history,
+      userName,
+      previousSceneMemory
+    })
+  ), [character, userName]);
+
+  useEffect(() => {
+    const nextSceneMemory = buildSceneMemory(messages);
+    if (!sameSceneMemory(sceneMemoryRef.current, nextSceneMemory)) {
+      sceneMemoryRef.current = nextSceneMemory;
+      setSceneMemory(nextSceneMemory);
+    }
+  }, [buildSceneMemory, messages]);
 
   useEffect(() => {
     settingsRef.current = parentSettings;
@@ -613,6 +641,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         const restoredSessionId = loadedSession.sessionId || generateSessionId();
         setSessionId(restoredSessionId);
         setMessages(loadedSession.messages);
+        setSceneMemory(buildSceneMemory(loadedSession.messages, loadedSession.sceneMemory || null));
         const restoredLevel = loadedSession.passionLevel || 0;
         previousTierRef.current = getTierKey(restoredLevel);
         setPassionLevel(restoredLevel);
@@ -652,7 +681,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     initializeChat();
 
     return () => { cancelled = true; };
-  }, [character]);
+  }, [buildSceneMemory, character, loadedSession]);
 
   const initializeGreeting = () => {
     let greeting;
@@ -666,6 +695,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     greeting = resolveTemplates(greeting, character.name, userName);
     const greetingMsg = { role: 'assistant', content: greeting.trim(), timestamp: Date.now() };
     setMessages([greetingMsg]);
+    const greetingSceneMemory = buildSceneMemory([greetingMsg], null);
+    setSceneMemory(greetingSceneMemory);
 
     if (settings.smartSuggestionsEnabled) {
       const sourceAssistantTimestamp = greetingMsg.timestamp;
@@ -689,7 +720,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             return updated;
           });
         }
-      }, [], 0);
+      }, [], 0, greetingSceneMemory);
     }
   };
 
@@ -710,10 +741,12 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
   const saveCurrentSession = async () => {
     try {
+      const nextSceneMemory = buildSceneMemory(messages);
       const sessionData = {
         characterName: character.name,
         character: character,
         conversationHistory: messages,
+        sceneMemory: nextSceneMemory,
         passionLevel: passionLevel,
         mode: 'character_chat',
         lastPrompt: messages.filter(m => m && m.role === 'user').slice(-1)[0]?.content || ''
@@ -783,7 +816,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         userName,
         passionLevel,
         settings,
-        (_token, display) => setInput(display)
+        (_token, display) => setInput(display),
+        sceneMemoryRef.current
       );
       if (cleaned) {
         setInput(cleaned);
@@ -841,7 +875,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // MESSAGE SENDING
   // ============================================================================
 
-  const triggerSuggestions = (updatedMessages, currentPassionLevel) => {
+  const triggerSuggestions = (updatedMessages, currentPassionLevel, currentSceneMemory = sceneMemoryRef.current) => {
     if (!settings.smartSuggestionsEnabled) return;
     const rollingAvoid = suggestionsHistoryRef.current.slice(-30);
     const sourceAssistantTimestamp = [...updatedMessages].reverse().find((message) => message.role === 'assistant')?.timestamp ?? null;
@@ -872,7 +906,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         updated[lastIdx] = { ...updated[lastIdx], suggestions: result.length > 0 ? result : undefined, suggestTime: parseFloat(suggestTime) };
         return updated;
       });
-    }, rollingAvoid, currentPassionLevel ?? passionLevel);
+    }, rollingAvoid, currentPassionLevel ?? passionLevel, currentSceneMemory);
   };
 
   const handleSend = async (messageText = input) => {
@@ -903,6 +937,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       timestamp: Date.now()
     };
     const newMessages = [...messages, userMessage];
+    const runtimeSceneMemory = buildSceneMemory(newMessages);
     setMessages(newMessages);
     setInput('');
     setIsLoading(true);
@@ -946,7 +981,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         handleApiStats,
         settings,
         handleToken,
-        activeAbortHandle
+        activeAbortHandle,
+        runtimeSceneMemory
       );
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -968,16 +1004,18 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         ...(response.stats && { stats: response.stats })
       };
       const updatedMessages = [...newMessages, assistantMessage];
+      const nextSceneMemory = buildSceneMemory(updatedMessages, runtimeSceneMemory);
 
       // Set final message BEFORE clearing streaming → no flash
       setMessages(updatedMessages);
+      setSceneMemory(nextSceneMemory);
       setIsStreaming(false);
       setStreamingContent('');
 
       if (isForegroundRequestObsolete(activeAbortHandle)) return;
 
       const newPassion = response.passionLevel ?? passionLevel;
-      triggerSuggestions(updatedMessages, newPassion);
+      triggerSuggestions(updatedMessages, newPassion, nextSceneMemory);
 
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
@@ -1103,6 +1141,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const newSid = generateSessionId();
       setSessionId(newSid);
       setPassionLevel(0);
+      setSceneMemory(null);
       clearSuggestionsState();
       previousTierRef.current = 'surface';
       initializeGreeting();
@@ -1131,6 +1170,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         character: { name: character.name, description: character.description },
         model: settings.ollamaModel || 'unknown',
         messages: messages,
+        sceneMemory: sceneMemoryRef.current,
         passionLevel: passionManager.getPassionLevel(sessionId) || passionLevel,
         passionTier: getTierKey(passionManager.getPassionLevel(sessionId) || passionLevel),
         passionSpeed: character.passionSpeed || 'normal',
@@ -1167,6 +1207,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       // Import the chat
       setMessages(importData.messages);
+      setSceneMemory(buildSceneMemory(importData.messages, importData.sceneMemory || null));
       if (importData.passionLevel !== undefined) {
         previousTierRef.current = getTierKey(importData.passionLevel);
         setPassionLevel(importData.passionLevel);
@@ -1226,6 +1267,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     setIsImpersonating(false);
 
     setMessages(messagesUpToLastUser);
+    setSceneMemory(buildSceneMemory(messagesUpToLastUser));
     setIsLoading(true);
     if (abortRef.current) abortRef.current.abort();
     const activeAbortHandle = createStreamAbortHandle();
@@ -1265,7 +1307,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         null,
         settings,
         handleToken,
-        activeAbortHandle
+        activeAbortHandle,
+        buildSceneMemory(regenHistoryForApi)
       );
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -1286,16 +1329,18 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         ...(response.stats && { stats: response.stats })
       };
       const updatedMessages = [...messagesUpToLastUser, assistantMessage];
+      const nextSceneMemory = buildSceneMemory(updatedMessages);
 
       // Set final message BEFORE clearing streaming → no flash
       setMessages(updatedMessages);
+      setSceneMemory(nextSceneMemory);
       setIsStreaming(false);
       setStreamingContent('');
 
       if (isForegroundRequestObsolete(activeAbortHandle)) return;
 
       const newPassion = response.passionLevel ?? passionLevel;
-      triggerSuggestions(updatedMessages, newPassion);
+      triggerSuggestions(updatedMessages, newPassion, nextSceneMemory);
 
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);

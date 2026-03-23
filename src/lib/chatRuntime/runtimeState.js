@@ -20,6 +20,10 @@ const PROFILE_NON_HISTORY_CEILING = {
   impersonate: 300
 };
 
+const SCENE_MEMORY_MAX_TOKENS = 120;
+const SCENE_MEMORY_MAX_FACTS = 3;
+const SCENE_MEMORY_VERSION = 1;
+
 const RELATIONSHIP_KEYWORDS = [
   'master',
   'neighbor',
@@ -105,6 +109,25 @@ function normalizeHistory(history) {
   return (history || [])
     .filter((message) => (message?.role === 'user' || message?.role === 'assistant') && typeof message?.content === 'string' && message.content.trim())
     .map((message) => ({ role: message.role, content: message.content }));
+}
+
+function normalizeTimestampValue(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
+function getLatestAssistantTimestamp(history) {
+  for (let index = (history || []).length - 1; index >= 0; index -= 1) {
+    if (history[index]?.role === 'assistant') {
+      return normalizeTimestampValue(history[index]?.timestamp);
+    }
+  }
+
+  return null;
 }
 
 function findProtectedIndices(history) {
@@ -249,10 +272,107 @@ function sanitizeSceneAnchor(text, keywords = [], maxLength = 150) {
   return trimPromptSnippet(matchingSentence || flattened || text, maxLength);
 }
 
-function deriveSettingAnchor(history, sceneSeed) {
+function cleanSceneMemoryLine(text, maxLength) {
+  const cleaned = String(text || '')
+    .replace(/\b(?:user|assistant|human|ai|character)\s*:/gi, ' ')
+    .replace(/[*"]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return trimPromptSnippet(cleaned, maxLength);
+}
+
+function sanitizeSceneMemoryLine(text, maxLength = 120) {
+  const raw = String(text || '').trim();
+  if (/\b(?:user|assistant|human|ai|character)\s*:/i.test(raw)) return '';
+
+  const cleaned = cleanSceneMemoryLine(text, maxLength);
+  if (!cleaned) return '';
+
+  const lowered = cleaned.toLowerCase();
+  if (/[|]/.test(cleaned)) return '';
+  if (/\b(?:said|asked|replied|answered)\b/i.test(lowered)) return '';
+
+  return cleaned;
+}
+
+function trimSceneMemoryFacts(facts) {
+  return (facts || [])
+    .map((fact) => sanitizeSceneMemoryLine(fact, 96))
+    .filter(Boolean)
+    .slice(0, SCENE_MEMORY_MAX_FACTS);
+}
+
+function trimSceneMemoryToBudget(memory) {
+  if (!memory) return null;
+
+  const trimmed = {
+    setting_anchor: sanitizeSceneMemoryLine(memory.setting_anchor, 96),
+    relationship_anchor: sanitizeSceneMemoryLine(memory.relationship_anchor, 96),
+    continuity_facts: trimSceneMemoryFacts(memory.continuity_facts),
+    open_thread: sanitizeSceneMemoryLine(memory.open_thread, 96),
+    source_assistant_timestamp: normalizeTimestampValue(memory.source_assistant_timestamp),
+    updated_at: memory.updated_at || new Date().toISOString(),
+    version: SCENE_MEMORY_VERSION
+  };
+
+  const contentTokenCount = () => estimateTokens([
+    trimmed.setting_anchor,
+    trimmed.relationship_anchor,
+    ...(trimmed.continuity_facts || []),
+    trimmed.open_thread
+  ].filter(Boolean).join('\n'));
+
+  if (contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
+    trimmed.open_thread = '';
+  }
+
+  while (trimmed.continuity_facts.length > 2 && contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
+    trimmed.continuity_facts = trimmed.continuity_facts.slice(0, -1);
+  }
+
+  if (contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
+    trimmed.relationship_anchor = trimPromptSnippet(trimmed.relationship_anchor, 72);
+  }
+
+  if (contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
+    trimmed.setting_anchor = trimPromptSnippet(trimmed.setting_anchor, 72);
+  }
+
+  if (contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
+    return null;
+  }
+
+  if (!trimmed.setting_anchor && !trimmed.relationship_anchor && trimmed.continuity_facts.length === 0 && !trimmed.open_thread) {
+    return null;
+  }
+
+  return trimmed;
+}
+
+export function validateSceneMemory(sceneMemory, history = []) {
+  if (!sceneMemory || typeof sceneMemory !== 'object') return null;
+
+  const sourceAssistantTimestamp = normalizeTimestampValue(sceneMemory.source_assistant_timestamp);
+  const latestAssistantTimestamp = getLatestAssistantTimestamp(history);
+  if (sourceAssistantTimestamp === null || latestAssistantTimestamp === null || sourceAssistantTimestamp !== latestAssistantTimestamp) {
+    return null;
+  }
+
+  return trimSceneMemoryToBudget({
+    ...sceneMemory,
+    source_assistant_timestamp: sourceAssistantTimestamp
+  });
+}
+
+function deriveSettingAnchor(history, sceneSeed, sceneMemory) {
   const historyAnchor = pickRecentSentenceByKeywords(history, SETTING_KEYWORDS, 150);
   if (historyAnchor) {
     return { value: sanitizeSceneAnchor(historyAnchor, SETTING_KEYWORDS, 150), source: 'history' };
+  }
+
+  if (sceneMemory?.setting_anchor) {
+    return { value: sanitizeSceneMemoryLine(sceneMemory.setting_anchor, 120), source: 'memory' };
   }
 
   const seedAnchor = pickSentenceByKeywords(sceneSeed, SETTING_KEYWORDS, 150) || trimPromptSnippet(sceneSeed, 150);
@@ -263,10 +383,14 @@ function deriveSettingAnchor(history, sceneSeed) {
   return { value: '', source: 'none' };
 }
 
-function deriveRelationshipAnchor(history, compiledRuntimeCard) {
+function deriveRelationshipAnchor(history, compiledRuntimeCard, sceneMemory) {
   const historyAnchor = pickRecentSentenceByKeywords(history, RELATIONSHIP_KEYWORDS, 150);
   if (historyAnchor) {
     return { value: sanitizeSceneAnchor(historyAnchor, RELATIONSHIP_KEYWORDS, 150), source: 'history' };
+  }
+
+  if (sceneMemory?.relationship_anchor) {
+    return { value: sanitizeSceneMemoryLine(sceneMemory.relationship_anchor, 120), source: 'memory' };
   }
 
   const seedText = `${compiledRuntimeCard.sceneSeed || ''}\n${compiledRuntimeCard.characterCore || ''}`;
@@ -377,28 +501,54 @@ function deriveOpenThread(latestUserTurn, latestAssistantTurn) {
   return 'Continue the current beat without resetting the scene.';
 }
 
-function deriveSceneState({ compiledRuntimeCard, history, charName, userName }) {
+function derivePersistentOpenThread(latestUserTurn, latestAssistantTurn) {
+  const latestUser = String(latestUserTurn || '').trim();
+  const latestAssistant = String(latestAssistantTurn || '').trim();
+
+  if (/\?$/.test(latestUser)) {
+    return sanitizeSceneMemoryLine(latestUser, 96);
+  }
+
+  const explicitRequest = latestUser.match(/(?:please|can you|could you|do|let|show|tell|stay|come|kiss|touch|take|hold|keep|follow)\b[\s\S]*/i);
+  if (explicitRequest) {
+    return sanitizeSceneMemoryLine(explicitRequest[0], 96);
+  }
+
+  const assistantQuestion = latestAssistant.match(/[^.?!]*\?/g);
+  if (assistantQuestion?.length > 0) {
+    return sanitizeSceneMemoryLine(assistantQuestion[assistantQuestion.length - 1], 96);
+  }
+
+  return '';
+}
+
+function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sceneMemory = null }) {
   const latestUserTurn = findLatestTurn(history, 'user');
   const latestAssistantTurn = findLatestTurn(history, 'assistant');
-  const settingAnchor = deriveSettingAnchor(history, compiledRuntimeCard.sceneSeed || '');
-  const relationshipAnchor = deriveRelationshipAnchor(history, compiledRuntimeCard);
+  const settingAnchor = deriveSettingAnchor(history, compiledRuntimeCard.sceneSeed || '', sceneMemory);
+  const relationshipAnchor = deriveRelationshipAnchor(history, compiledRuntimeCard, sceneMemory);
   const continuityFacts = collectContinuityFacts(
     history,
     [latestAssistantTurn, latestUserTurn]
   );
+  const continuityFromMemory = continuityFacts.length > 0
+    ? continuityFacts
+    : trimSceneMemoryFacts(sceneMemory?.continuity_facts || []);
+  const openThread = deriveOpenThread(latestUserTurn, latestAssistantTurn);
 
   return {
     setting_anchor: settingAnchor.value,
     relationship_anchor: relationshipAnchor.value,
-    continuity_facts: continuityFacts,
+    continuity_facts: continuityFromMemory,
     current_exchange: {
       latest_character_action_or_reaction: trimPromptSnippet(latestAssistantTurn, 170),
       latest_user_action_or_request: trimPromptSnippet(latestUserTurn, 160)
     },
-    open_thread: deriveOpenThread(latestUserTurn, latestAssistantTurn),
+    open_thread: openThread || sanitizeSceneMemoryLine(sceneMemory?.open_thread, 96) || '',
     debug: {
       settingSource: settingAnchor.source,
-      relationshipSource: relationshipAnchor.source
+      relationshipSource: relationshipAnchor.source,
+      memoryApplied: Boolean(sceneMemory)
     }
   };
 }
@@ -454,6 +604,7 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
   const totalBudget = Math.max(320, runtimeSteering.availableContextTokens || 2048);
   const profile = runtimeSteering.profile || 'reply';
   const normalizedHistory = normalizeHistory(history);
+  const validatedSceneMemory = validateSceneMemory(runtimeSteering.persistedSceneMemory, history);
   const compiledRuntimeCard = resolveRuntimeCardTemplates(compileCharacterRuntimeCard(character), charName, userName);
   const historyBudget = calculateHistoryBudget(totalBudget, profile);
   const selectedRecentHistory = selectRecentHistory(normalizedHistory, historyBudget);
@@ -465,7 +616,8 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
     compiledRuntimeCard,
     history: sceneHistory,
     charName,
-    userName
+    userName,
+    sceneMemory: validatedSceneMemory
   });
   const activeScene = buildActiveScene(sceneState);
 
@@ -473,6 +625,7 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
     compiledRuntimeCard,
     sceneState,
     activeScene,
+    persistedSceneMemory: validatedSceneMemory,
     selectedRecentHistory,
     runtimeSteering,
     userName,
@@ -483,6 +636,48 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
       profile
     })
   };
+}
+
+export function resolveSessionSceneMemory({ character, history, userName = 'User', previousSceneMemory = null }) {
+  const normalizedHistory = Array.isArray(history) ? history : [];
+  const validatedPrevious = validateSceneMemory(previousSceneMemory, normalizedHistory);
+  const latestMessage = normalizedHistory[normalizedHistory.length - 1] || null;
+
+  if (latestMessage?.role !== 'assistant') {
+    return validatedPrevious;
+  }
+
+  const latestAssistantTimestamp = normalizeTimestampValue(latestMessage.timestamp);
+  if (latestAssistantTimestamp === null) {
+    return null;
+  }
+
+  const runtimeState = buildRuntimeState({
+    character,
+    history: normalizedHistory,
+    userName,
+    runtimeSteering: {
+      profile: 'reply',
+      availableContextTokens: 8192,
+      responseMode: 'normal',
+      passionLevel: 0,
+      unchainedMode: false
+    }
+  });
+
+  const latestUserTurn = findLatestTurn(runtimeState.selectedRecentHistory.messages, 'user');
+  const latestAssistantTurn = findLatestTurn(runtimeState.selectedRecentHistory.messages, 'assistant');
+  const sceneMemory = trimSceneMemoryToBudget({
+    setting_anchor: runtimeState.sceneState.setting_anchor,
+    relationship_anchor: runtimeState.sceneState.relationship_anchor,
+    continuity_facts: runtimeState.sceneState.continuity_facts,
+    open_thread: derivePersistentOpenThread(latestUserTurn, latestAssistantTurn),
+    source_assistant_timestamp: latestAssistantTimestamp,
+    updated_at: new Date().toISOString(),
+    version: SCENE_MEMORY_VERSION
+  });
+
+  return sceneMemory;
 }
 
 export function renderActiveScene(activeScene, { compact = false } = {}) {

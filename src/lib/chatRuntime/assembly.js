@@ -186,7 +186,8 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     historyWasTruncated: runtimeState.selectedRecentHistory.debug.truncatedOldestNonProtected,
     sceneContinuityCount: runtimeState.sceneState?.continuity_facts?.length || 0,
     sceneSettingSource: runtimeState.sceneState?.debug?.settingSource || 'unknown',
-    sceneRelationshipSource: runtimeState.sceneState?.debug?.relationshipSource || 'unknown'
+    sceneRelationshipSource: runtimeState.sceneState?.debug?.relationshipSource || 'unknown',
+    sceneMemoryUsed: Boolean(runtimeState.persistedSceneMemory)
   };
 
   if (profile === 'reply') {

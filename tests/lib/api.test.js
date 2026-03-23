@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildRoleplaySceneContext,
   buildSystemPrompt,
@@ -7,11 +7,32 @@ import {
   isUnderfilledShortReply,
   parseSuggestionResponse,
   resolveTemplates,
+  saveSession,
   sendMessage,
   shouldAutoStopStreamingResponse
 } from '../../src/lib/api.js';
 
 const originalFetch = global.fetch;
+const originalLocalStorage = global.localStorage;
+
+function createStorageMock() {
+  let store = {};
+
+  return {
+    getItem(key) {
+      return Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null;
+    },
+    setItem(key, value) {
+      store[key] = String(value);
+    },
+    removeItem(key) {
+      delete store[key];
+    },
+    clear() {
+      store = {};
+    }
+  };
+}
 
 function createJsonResponse(data, ok = true, status = 200) {
   return {
@@ -43,6 +64,10 @@ function createStreamAbortHandle() {
 
 afterEach(() => {
   global.fetch = originalFetch;
+  if (global.localStorage && typeof global.localStorage.clear === 'function') {
+    global.localStorage.clear();
+  }
+  global.localStorage = originalLocalStorage;
   vi.restoreAllMocks();
 });
 
@@ -434,6 +459,55 @@ describe('buildRoleplaySceneContext', () => {
     expect(context.sceneSummary).toContain('User Beat:');
     expect(context.currentBeat).toContain('Mei: *She wipes the counter.* "Long day?"');
     expect(context.currentBeat).toContain('Erik: Yeah. I barely slept.');
+  });
+});
+
+describe('saveSession', () => {
+  beforeEach(() => {
+    global.localStorage = createStorageMock();
+  });
+
+  it('stores sceneMemory inside the same saved session snapshot', async () => {
+    const result = await saveSession('session-memory-test', {
+      characterName: 'Mei',
+      conversationHistory: [
+        { role: 'assistant', content: '*She waits by the counter.*', timestamp: 1700000001000 }
+      ],
+      sceneMemory: {
+        setting_anchor: 'Cafe counter by the rainy window.',
+        relationship_anchor: 'She keeps him close without admitting it.',
+        continuity_facts: ['The mug is still between them.'],
+        open_thread: '',
+        source_assistant_timestamp: 1700000001000,
+        updated_at: '2026-03-23T10:00:00.000Z'
+      },
+      lastUpdated: '2026-03-23T10:00:00.000Z'
+    });
+
+    const stored = JSON.parse(global.localStorage.getItem('sessions') || '{}');
+    expect(result.success).toBe(true);
+    expect(stored['session-memory-test'].sceneMemory.setting_anchor).toContain('Cafe counter');
+  });
+
+  it('does not let an older session snapshot overwrite a newer one in local storage', async () => {
+    await saveSession('session-stale-test', {
+      characterName: 'Mei',
+      conversationHistory: [
+        { role: 'assistant', content: '*She waits by the counter.*', timestamp: 1700000001000 }
+      ],
+      lastUpdated: '2026-03-23T10:05:00.000Z'
+    });
+
+    await saveSession('session-stale-test', {
+      characterName: 'Mei',
+      conversationHistory: [
+        { role: 'assistant', content: '*Older stale reply.*', timestamp: 1699999999000 }
+      ],
+      lastUpdated: '2026-03-23T10:00:00.000Z'
+    });
+
+    const stored = JSON.parse(global.localStorage.getItem('sessions') || '{}');
+    expect(stored['session-stale-test'].conversationHistory[0].content).toContain('waits by the counter');
   });
 });
 

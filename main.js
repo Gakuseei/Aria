@@ -1659,6 +1659,20 @@ ipcMain.handle('save-session', async (event, { sessionId, data }) => {
     await fs.promises.mkdir(sessionsDir, { recursive: true });
 
     const sessionPath = path.join(sessionsDir, `${sessionId}.json`);
+    const incomingUpdated = Date.parse(data?.lastUpdated || data?.savedAt || 0) || Date.now();
+
+    try {
+      const existingRaw = await fs.promises.readFile(sessionPath, 'utf-8');
+      const existingData = JSON.parse(existingRaw);
+      const existingUpdated = Date.parse(existingData?.lastUpdated || existingData?.savedAt || 0) || 0;
+      if (existingUpdated > incomingUpdated) {
+        return { success: true, skipped: 'stale-session-snapshot' };
+      }
+    } catch (readError) {
+      if (readError.code !== 'ENOENT') {
+        throw readError;
+      }
+    }
 
     const sessionData = {
       ...data,
@@ -1689,6 +1703,7 @@ ipcMain.handle('load-session', async (event, { sessionId }) => {
       // Normalize missing fields for old sessions
       if (data.passionLevel === undefined) data.passionLevel = 0;
       if (!Array.isArray(data.conversationHistory)) data.conversationHistory = [];
+      if (data.sceneMemory === undefined) data.sceneMemory = null;
       if (!data.lastUpdated) data.lastUpdated = data.savedAt || new Date().toISOString();
       if (!data.createdAt) data.createdAt = data.savedAt || new Date().toISOString();
 

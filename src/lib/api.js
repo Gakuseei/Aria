@@ -678,7 +678,7 @@ export function abortSuggestionCall() {
  * @param {string[]} [previousSuggestions] - Previous suggestions to avoid repeating
  * @param {number} [passionLevel=0] - Current passion level (0-100) for intensity matching
  */
-export async function generateSuggestionsBackground(history, character, userName, settings, callback, previousSuggestions = [], passionLevel = 0) {
+export async function generateSuggestionsBackground(history, character, userName, settings, callback, previousSuggestions = [], passionLevel = 0, sceneMemory = null) {
   abortSuggestionCall();
   const currentRequestId = ++suggestionRequestId;
 
@@ -694,7 +694,8 @@ export async function generateSuggestionsBackground(history, character, userName
       profile: 'suggestions',
       availableContextTokens: Math.max(320, numCtx - 256),
       passionLevel,
-      avoidSuggestions: [...previousSuggestions, lastUserMsg ? lastUserMsg.slice(0, 80) : ''].filter(Boolean)
+      avoidSuggestions: [...previousSuggestions, lastUserMsg ? lastUserMsg.slice(0, 80) : ''].filter(Boolean),
+      persistedSceneMemory: sceneMemory
     }
   });
   const runtimeContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState });
@@ -835,7 +836,7 @@ export function abortImpersonateCall() {
  * @param {function} onToken - Called with (null, fullDisplayText) on each token
  * @returns {Promise<string>} Full generated text
  */
-export async function impersonateUser(history, character, userName, passionLevel, settings, onToken) {
+export async function impersonateUser(history, character, userName, passionLevel, settings, onToken, sceneMemory = null) {
   abortImpersonateCall();
 
   const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
@@ -850,7 +851,8 @@ export async function impersonateUser(history, character, userName, passionLevel
     runtimeSteering: {
       profile: 'impersonate',
       availableContextTokens: Math.max(320, numCtx - 96),
-      passionLevel
+      passionLevel,
+      persistedSceneMemory: sceneMemory
     }
   });
   const runtimeContext = assembleRuntimeContext({ profile: 'impersonate', runtimeState });
@@ -1028,7 +1030,8 @@ export const sendMessage = async (
   onApiStats = null,  // v0.2.5: NEW - Callback for API Monitor stats
   settingsOverride = null,  // v0.2.5: FIX - Accept settings directly to avoid race conditions
   onToken = null,  // Streaming callback — receives each token chunk as string
-  streamAbortHandle = null
+  streamAbortHandle = null,
+  sceneMemory = null
 ) => {
   const startTime = Date.now();  // v0.2.5: Track response time
   
@@ -1082,7 +1085,8 @@ export const sendMessage = async (
         availableContextTokens: Math.max(320, modelCtx - numPredict - 128),
         responseMode,
         passionLevel: currentPassionLevel,
-        unchainedMode
+        unchainedMode,
+        persistedSceneMemory: sceneMemory
       }
     });
     const runtimeContext = assembleRuntimeContext({ profile: 'reply', runtimeState });
@@ -1589,6 +1593,7 @@ export const saveSession = async (sessionId, sessionData) => {
       ...sessionData,
       characterName: sessionData.characterName || 'Unknown',
       conversationHistory: sessionData.conversationHistory || [],
+      sceneMemory: sessionData.sceneMemory ?? null,
       passionLevel: sessionData.passionLevel || 0,
       lastUpdated: sessionData.lastUpdated || new Date().toISOString(),
       createdAt: sessionData.createdAt || new Date().toISOString()
@@ -1604,7 +1609,12 @@ export const saveSession = async (sessionId, sessionData) => {
       return { success: true };
     } else {
       const sessions = JSON.parse(localStorage.getItem('sessions') || '{}');
-      sessions[sessionId] = completeSessionData;
+      const existingSession = sessions[sessionId];
+      const incomingUpdated = Date.parse(completeSessionData.lastUpdated) || Date.now();
+      const existingUpdated = Date.parse(existingSession?.lastUpdated || existingSession?.savedAt || 0) || 0;
+      if (incomingUpdated >= existingUpdated) {
+        sessions[sessionId] = completeSessionData;
+      }
       localStorage.setItem('sessions', JSON.stringify(sessions));
       return { success: true };
     }

@@ -310,7 +310,7 @@ describe('assembleRuntimeContext', () => {
     });
 
     const replyContext = assembleRuntimeContext({ profile: 'reply', runtimeState: baseState });
-    const suggestionState = { ...baseState, runtimeSteering: { ...baseState.runtimeSteering, profile: 'suggestions', passionLevel: 0, avoidSuggestions: [] } };
+    const suggestionState = { ...baseState, runtimeSteering: { ...baseState.runtimeSteering, profile: 'suggestions', passionLevel: 35, avoidSuggestions: [] } };
     const suggestionContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState: suggestionState });
     const impersonateState = { ...baseState, runtimeSteering: { ...baseState.runtimeSteering, profile: 'impersonate', passionLevel: 0 } };
     const impersonateContext = assembleRuntimeContext({ profile: 'impersonate', runtimeState: impersonateState });
@@ -321,6 +321,8 @@ describe('assembleRuntimeContext', () => {
     expect(replyContext.systemPrompt).toContain('Active Scene:\nSetting:');
     expect(suggestionContext.systemPrompt).not.toContain('Global Core:');
     expect(suggestionContext.systemPrompt).toContain('same scene with Mei');
+    expect(suggestionContext.systemPrompt).toContain('no quotes, dialogue, commentary, or narrated prose');
+    expect(suggestionContext.systemPrompt).toContain('do not become timid, euphemistic, or generic');
     expect(suggestionContext.userPrompt).toContain('3 actions for Erik');
     expect(suggestionContext.userPrompt).toContain('Current beat:');
     expect(impersonateContext.systemPrompt).toContain('Character Reference:');

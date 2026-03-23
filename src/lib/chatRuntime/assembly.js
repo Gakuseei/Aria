@@ -12,9 +12,9 @@ const PROFILE_BUDGET_TARGETS = {
     lateSteering: 120
   },
   suggestions: {
-    characterCore: 190,
-    activeScene: 110,
-    lateSteering: 55
+    characterCore: 145,
+    activeScene: 90,
+    lateSteering: 105
   },
   impersonate: {
     characterCore: 90,
@@ -143,9 +143,11 @@ function buildSuggestionLateSteering(runtimeState) {
     isBot
       ? `Suggest what ${runtimeState.userName} does or says next in the same exchange with ${runtimeState.characterName}.`
       : `Suggest what ${runtimeState.userName} does next in the same scene with ${runtimeState.characterName}.`,
-    'Return exactly 3 short actions separated by | and nothing else.',
-    'Each action should be click-ready, about 3-9 words, and written as something the user does next.',
-    'Write actions the user takes next, not commentary, numbering, or coaching text.',
+    'Return exactly 3 click-ready actions separated by | and nothing else.',
+    'Each action should be 3-9 words, user action only, with no quotes, dialogue, commentary, or narrated prose.',
+    runtimeState.runtimeSteering.passionLevel > 15
+      ? 'In explicit scenes, do not become timid, euphemistic, or generic.'
+      : '',
     'Option 1 matches the current pace, option 2 is bolder, option 3 adds a fresh angle without resetting the scene.',
     isBot
       ? 'Stay inside the current exchange and do not reset the task or context.'
@@ -289,7 +291,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
 
   if (profile === 'suggestions') {
     const isBot = runtimeState.compiledRuntimeCard.runtimeDefaults.type === 'bot';
-    const recentTail = runtimeState.selectedRecentHistory.messages.slice(-4);
+    const recentTail = runtimeState.selectedRecentHistory.messages.slice(-3);
     const currentBeat = [
       runtimeState.activeScene.latest_character_action_or_reaction ? `${runtimeState.characterName}: ${runtimeState.activeScene.latest_character_action_or_reaction}` : '',
       runtimeState.activeScene.latest_user_action_or_request ? `${runtimeState.userName}: ${runtimeState.activeScene.latest_user_action_or_request}` : ''

@@ -514,10 +514,18 @@ export function scorePassionBackground(userMessage, aiMessage, settings, modelCt
 let suggestionAbortController = null;
 let suggestionRequestId = 0;
 const MIN_USABLE_SUGGESTIONS = 2;
+const SUGGESTION_TARGET_COUNT = 3;
+const SUGGESTION_MAX_WORDS = 11;
+const SUGGESTION_MAX_CHARS = 84;
 
 const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|note|options?|suggestions?)\b/i;
 const SUGGESTION_NON_ACTION_PATTERN = /^(?:explain|describe|clarify|suggest|propose)\b/i;
 const SUGGESTION_LABEL_PATTERN = /^(?:option\s*\d+|action\s*\d+|match the current pace|current pace|same scene|bolder(?: or more forward)?|fresh angle|unexpected(?: angle)?)\s*[:\-]\s*/i;
+const SUGGESTION_BAD_LEAD_PATTERN = /^(?:i|you|he|she|they|we|it|this|that|these|those|there|here|please|option|action|pace|scene|same|bolder|fresh)\b/i;
+const SUGGESTION_DIALOGUE_PATTERN = /["“”]/;
+const SUGGESTION_OVEREXPLAIN_PATTERN = /\b(?:because|while|so that|which makes|letting|making|feeling|as you|as she|as he)\b/i;
+const SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN = /\b(?:say|saying|said|murmur|murmuring|whisper|whispering|tell|telling|ask|asking)\b/i;
+const SUGGESTION_PROGRESSIVE_TAIL_PATTERN = /\s+and\s+(?:begin|starting|start|continue|continuing|keep|keeping|list|listing|tell|telling|explain|explaining|show|showing|reveal|revealing)\b/i;
 
 function cleanSuggestionCandidate(part) {
   let candidate = String(part || '').trim();
@@ -526,7 +534,7 @@ function cleanSuggestionCandidate(part) {
   candidate = candidate
     .replace(/^[-•]\s*/, '')
     .replace(/^['"“”`*:.\-\d)\s]+/, '')
-    .replace(/['"“”`:,|.\-\s]+$/, '')
+    .replace(/['"“”`*:,|.\-\s]+$/, '')
     .replace(SUGGESTION_LABEL_PATTERN, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
@@ -541,13 +549,31 @@ function cleanSuggestionCandidate(part) {
   return candidate;
 }
 
-function compactSuggestionCandidate(candidate) {
-  let compact = String(candidate || '').trim();
+function collapseImmediateSuggestionRepeat(candidate) {
+  const words = String(candidate || '').trim().split(/\s+/).filter(Boolean);
+  if (words.length < 4) return String(candidate || '').trim();
+
+  for (let size = Math.min(8, Math.floor(words.length / 2)); size >= 2; size--) {
+    const left = words.slice(0, size).join(' ').toLowerCase();
+    const right = words.slice(size, size * 2).join(' ').toLowerCase();
+    if (left && left === right) {
+      return words.slice(0, size).concat(words.slice(size * 2)).join(' ').trim();
+    }
+  }
+
+  return words.join(' ');
+}
+
+function trimSuggestionCandidate(candidate) {
+  let compact = collapseImmediateSuggestionRepeat(candidate);
   if (!compact) return '';
 
-  const wordCount = compact.split(/\s+/).filter(Boolean).length;
-  if (compact.length <= 96 && wordCount <= 14) {
-    return compact;
+  compact = compact.replace(/\s+/g, ' ').trim();
+  compact = compact.replace(/\s*["“”][^"“”]*["“”]\s*$/g, '').trim();
+
+  const dialogueCut = compact.search(/\s+["“”]/);
+  if (dialogueCut > 0) {
+    compact = compact.slice(0, dialogueCut).trim();
   }
 
   const sentenceCut = compact.search(/[.!?](?:\s|$)/);
@@ -555,9 +581,9 @@ function compactSuggestionCandidate(candidate) {
     compact = compact.slice(0, sentenceCut).trim();
   }
 
-  if (compact.length > 96 || compact.split(/\s+/).filter(Boolean).length > 14) {
+  if (compact.length > SUGGESTION_MAX_CHARS || compact.split(/\s+/).filter(Boolean).length > SUGGESTION_MAX_WORDS) {
     const clauseParts = compact
-      .split(/(?:\s+-\s+|;\s+|,\s+(?=[A-Z"']))/)
+      .split(/(?:\s+-\s+|;\s+|,\s+|(?=\s+(?:because|while|so that|letting|making|as)\b)|(?=\s+and\s+(?:begin|starting|start|continue|continuing|keep|keeping|list|listing|tell|telling|explain|explaining|show|showing|reveal|revealing)\b))/i)
       .map((part) => part.trim())
       .filter(Boolean);
     if (clauseParts.length > 1) {
@@ -565,14 +591,28 @@ function compactSuggestionCandidate(candidate) {
     }
   }
 
-  if (compact.length > 96 || compact.split(/\s+/).filter(Boolean).length > 14) {
-    compact = compact.split(/\s+/).slice(0, 12).join(' ');
+  if ((compact.length > SUGGESTION_MAX_CHARS || compact.split(/\s+/).filter(Boolean).length > SUGGESTION_MAX_WORDS) && SUGGESTION_PROGRESSIVE_TAIL_PATTERN.test(compact)) {
+    compact = compact.split(SUGGESTION_PROGRESSIVE_TAIL_PATTERN)[0].trim();
   }
 
-  compact = compact
-    .replace(/\b(?:and|or|to|with|into|onto|from|for|of|on|at|my|your|his|her|the|a|an)$/i, '')
-    .replace(/['"“”`:,|.\-\s]+$/, '')
+  if (compact.length > SUGGESTION_MAX_CHARS || compact.split(/\s+/).filter(Boolean).length > SUGGESTION_MAX_WORDS) {
+    compact = compact.split(/\s+/).slice(0, SUGGESTION_MAX_WORDS).join(' ');
+  }
+
+  return compact
+    .replace(/\b(?:and|or|to|with|into|onto|from|for|of|on|at|the|a|an|that|this|there|before|after)$/i, '')
+    .replace(/['"“”`*:,|.\-\s]+$/, '')
     .trim();
+}
+
+function compactSuggestionCandidate(candidate) {
+  let compact = trimSuggestionCandidate(candidate);
+  if (!compact) return '';
+
+  const wordCount = compact.split(/\s+/).filter(Boolean).length;
+  if (compact.length <= SUGGESTION_MAX_CHARS && wordCount <= SUGGESTION_MAX_WORDS) {
+    return compact;
+  }
 
   return compact;
 }
@@ -610,14 +650,65 @@ function dedupeSuggestionAgainstHistory(candidate, lastUserMsg, previousSuggesti
   });
 }
 
+function scoreSuggestionCandidate(candidate, rawCandidate = '') {
+  const text = String(candidate || '').trim();
+  if (!text) return -Infinity;
+
+  const words = text.split(/\s+/).filter(Boolean);
+  const lower = text.toLowerCase();
+  let score = 100;
+
+  if (words.length < 2) score -= 40;
+  if (words.length > 7) score -= (words.length - 7) * 7;
+  if (text.length > 64) score -= Math.ceil((text.length - 64) / 6) * 5;
+  if (SUGGESTION_BAD_LEAD_PATTERN.test(text)) score -= 18;
+  if (SUGGESTION_DIALOGUE_PATTERN.test(rawCandidate)) score -= 16;
+  if (SUGGESTION_OVEREXPLAIN_PATTERN.test(text)) score -= 14;
+  if (/[,:;]/.test(text)) score -= 8;
+  if (/\b(?:master|mistress|sir)\b/i.test(lower)) score -= 10;
+  if (SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN.test(text) && SUGGESTION_DIALOGUE_PATTERN.test(rawCandidate)) score -= 12;
+  if (!/^[A-Za-z]/.test(text)) score -= 10;
+
+  return score;
+}
+
+export function normalizeSuggestionDisplayValue(suggestion) {
+  return collapseImmediateSuggestionRepeat(trimSuggestionCandidate(suggestion))
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isTooSimilarToSelected(candidate, selected) {
+  const currentWords = String(candidate || '')
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, '')
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (currentWords.length === 0) return true;
+
+  const currentLead = currentWords[0];
+  return selected.some((existing) => {
+    const existingWords = String(existing || '')
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, '')
+      .split(/\s+/)
+      .filter(Boolean);
+    if (existingWords.length === 0) return false;
+
+    const overlap = currentWords.filter((word) => existingWords.includes(word)).length;
+    const shorter = Math.min(currentWords.length, existingWords.length);
+    const sameLead = existingWords[0] === currentLead;
+    return overlap >= Math.max(2, Math.ceil(shorter * 0.7)) || (sameLead && overlap >= Math.max(2, shorter - 1));
+  });
+}
+
 export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestions = []) {
   const cleaned = String(raw || '').trim()
     .replace(/\[TOOL_CALLS\]/gi, '')
     .replace(/<\/?s>/gi, '')
     .replace(/\bassistant\b/gi, '')
     .replace(/```[\s\S]*?```/g, '')
-    .replace(/\*/g, '')
-    .replace(/"/g, '')
     .trim();
 
   let parts = cleaned
@@ -639,16 +730,21 @@ export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestio
       .filter(Boolean);
   }
 
-  return parts
-    .map((part) => compactSuggestionCandidate(part))
-    .filter(Boolean)
-    .filter((part) => {
-      const wordCount = part.split(/\s+/).filter(Boolean).length;
-      return part.length >= 2 && part.length <= 96 && wordCount >= 2 && wordCount <= 14;
-    })
-    .filter((part) => !SUGGESTION_META_PATTERN.test(part) && !SUGGESTION_NON_ACTION_PATTERN.test(part))
-    .filter((part) => dedupeSuggestionAgainstHistory(part, lastUserMsg, previousSuggestions))
-    .slice(0, 3);
+  const selected = [];
+
+  parts.forEach((part) => {
+    const compact = compactSuggestionCandidate(part);
+    if (!compact) return;
+    const wordCount = compact.split(/\s+/).filter(Boolean).length;
+    if (compact.length < 2 || compact.length > SUGGESTION_MAX_CHARS || wordCount < 2 || wordCount > SUGGESTION_MAX_WORDS) return;
+    if (SUGGESTION_META_PATTERN.test(compact) || SUGGESTION_NON_ACTION_PATTERN.test(compact)) return;
+    if (!dedupeSuggestionAgainstHistory(compact, lastUserMsg, previousSuggestions)) return;
+    if (isTooSimilarToSelected(compact, selected)) return;
+    if (scoreSuggestionCandidate(compact, part) < 44) return;
+    selected.push(compact);
+  });
+
+  return selected.slice(0, SUGGESTION_TARGET_COUNT);
 }
 
 /**
@@ -692,14 +788,14 @@ export async function generateSuggestionsBackground(history, character, userName
     userName,
     runtimeSteering: {
       profile: 'suggestions',
-      availableContextTokens: Math.max(320, numCtx - 256),
+      availableContextTokens: Math.max(256, numCtx - 640),
       passionLevel,
       avoidSuggestions: [...previousSuggestions, lastUserMsg ? lastUserMsg.slice(0, 80) : ''].filter(Boolean),
       persistedSceneMemory: sceneMemory
     }
   });
   const runtimeContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState });
-  const retrySystemPrompt = `${runtimeContext.systemPrompt}\n\nFORMAT CHECK:\n- Return exactly 3 short actions separated by |.\n- No numbering, labels, commentary, or explanations.\n- Keep every action in the same current scene and make it directly clickable.`;
+  const retrySystemPrompt = `${runtimeContext.systemPrompt}\n\nFORMAT CHECK:\n- Return exactly 3 short actions separated by |.\n- No numbering, labels, commentary, explanations, quotes, or dialogue.\n- Keep every action in the same current scene and make it directly clickable.\n- Keep actions compact and click-ready, about 3-9 words each.`;
   const parseSuggestions = (raw) => parseSuggestionResponse(raw, lastUserMsg, previousSuggestions);
 
   const chatParams = {
@@ -708,14 +804,15 @@ export async function generateSuggestionsBackground(history, character, userName
     model,
     isOllama: true,
     ollamaUrl,
-    temperature: 0.8,
-    maxTokens: 96,
+    temperature: 0.72,
+    maxTokens: 64,
     num_ctx: numCtx
   };
   const retryChatParams = {
     ...chatParams,
     systemPrompt: retrySystemPrompt,
-    temperature: 0.65
+    temperature: 0.6,
+    maxTokens: 56
   };
 
   console.log('[API] Suggestions runtime:', runtimeContext.debug);

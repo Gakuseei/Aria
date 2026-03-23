@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, abortPassionScoring, resolveTemplates, unloadOllamaModel } from '../lib/api';
+import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, abortPassionScoring, resolveTemplates, unloadOllamaModel, normalizeSuggestionDisplayValue } from '../lib/api';
 import { passionManager, getTierKey, PASSION_TIERS } from '../lib/PassionManager';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
@@ -91,10 +91,23 @@ export function getRestoredSuggestions(messages) {
     return [];
   }
 
-  return lastMessage.suggestions
+  return normalizeSuggestionList(lastMessage.suggestions);
+}
+
+function normalizeSuggestionList(suggestions) {
+  const seen = new Set();
+
+  return (Array.isArray(suggestions) ? suggestions : [])
     .filter((suggestion) => typeof suggestion === 'string')
-    .map((suggestion) => suggestion.trim())
-    .filter(Boolean);
+    .map((suggestion) => normalizeSuggestionDisplayValue(suggestion))
+    .filter(Boolean)
+    .filter((suggestion) => {
+      const key = suggestion.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 3);
 }
 
 function createStreamAbortHandle() {
@@ -708,7 +721,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const sourceAssistantTimestamp = greetingMsg.timestamp;
       setIsGeneratingSuggestions(true);
       generateSuggestionsBackground([greetingMsg], character, userName, settings, (suggestions) => {
-        const result = (suggestions && suggestions.length > 0) ? suggestions : [];
+        const result = normalizeSuggestionList((suggestions && suggestions.length > 0) ? suggestions : []);
         const latestAssistantTimestamp = [...messagesRef.current].reverse().find((message) => message.role === 'assistant')?.timestamp ?? sourceAssistantTimestamp;
         if (latestAssistantTimestamp !== sourceAssistantTimestamp) {
           console.log('[ChatInterface] Discarded stale greeting suggestions');
@@ -891,7 +904,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       const suggestTime = ((Date.now() - suggestStart) / 1000).toFixed(1);
       if (!mountedRef.current) return;
       setIsGeneratingSuggestions(false);
-      const result = (suggestions && suggestions.length > 0) ? suggestions : [];
+      const result = normalizeSuggestionList((suggestions && suggestions.length > 0) ? suggestions : []);
       const latestAssistantTimestamp = [...messagesRef.current].reverse().find((message) => message.role === 'assistant')?.timestamp ?? sourceAssistantTimestamp;
       if (sourceAssistantTimestamp && latestAssistantTimestamp !== sourceAssistantTimestamp) {
         console.log('[ChatInterface] Discarded stale suggestions');
@@ -1925,7 +1938,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
                     : 'border-zinc-700/50 hover:border-rose-500/30 text-zinc-400 hover:text-rose-300 hover:bg-rose-500/10'
                 }`}
                 style={{ animationDelay: `${i * 75}ms` }}
-                title={suggestion}
               >
                 <Sparkles size={12} className={isGoldMode ? 'text-amber-400/70' : 'text-rose-400/70'} />
                 <span className="truncate max-w-[280px] sm:max-w-[400px] md:max-w-[500px]">{suggestion}</span>

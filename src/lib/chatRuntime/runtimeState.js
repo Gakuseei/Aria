@@ -10,13 +10,13 @@ import {
 
 const PROFILE_HISTORY_SHARE = {
   reply: 0.58,
-  suggestions: 0.42,
+  suggestions: 0.3,
   impersonate: 0.36
 };
 
 const PROFILE_NON_HISTORY_CEILING = {
   reply: 750,
-  suggestions: 360,
+  suggestions: 260,
   impersonate: 300
 };
 

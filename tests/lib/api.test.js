@@ -7,6 +7,7 @@ import {
   finalizeImpersonateDraft,
   generateSuggestionsBackground,
   isUnderfilledShortReply,
+  normalizeSuggestionDisplayValue,
   parseSuggestionResponse,
   resolveTemplates,
   saveSession,
@@ -240,6 +241,25 @@ describe('getRestoredSuggestions', () => {
       'Ask about the coffee'
     ]);
   });
+
+  it('dedupes and normalizes restored suggestions before rendering', () => {
+    const messages = [
+      {
+        role: 'assistant',
+        content: 'What would you like to do next?',
+        suggestions: [
+          ' gently pats her shoulder in reassurance gently pats her shoulder in reassurance ',
+          'Gently pats her shoulder in reassurance',
+          'Smile reassuringly to ease her nerves'
+        ]
+      }
+    ];
+
+    expect(getRestoredSuggestions(messages)).toEqual([
+      'gently pats her shoulder in reassurance',
+      'Smile reassuringly to ease her nerves'
+    ]);
+  });
 });
 
 describe('shouldAutoStopStreamingResponse', () => {
@@ -384,6 +404,45 @@ describe('suggestions stabilization', () => {
     expect(parsed).toHaveLength(3);
     expect(parsed[2].split(/\s+/).filter(Boolean).length).toBeLessThanOrEqual(14);
     expect(parsed[2]).toContain('Murmur huskily');
+  });
+
+  it('cuts quoted or prose-heavy suggestion tails down to a compact action', () => {
+    const parsed = parseSuggestionResponse(
+      "Lean in closer to Alice, so she can feel the warmth radiating from your body as you begin explaining. This proximity will calm her nerves | Smile reassuringly to ease her nervousness | Gently adjust Alice's fingers on the pen to improve her grip",
+      '',
+      []
+    );
+
+    expect(parsed).toEqual([
+      'Lean in closer to Alice',
+      'Smile reassuringly to ease her nervousness',
+      "Gently adjust Alice's fingers on the pen to improve her grip"
+    ]);
+  });
+
+  it('drops quoted dialogue and repeated phrase spam during normalization', () => {
+    expect(normalizeSuggestionDisplayValue('gently pats her shoulder in reassurance gently pats her shoulder in reassurance'))
+      .toBe('gently pats her shoulder in reassurance');
+    expect(normalizeSuggestionDisplayValue('Hold her gaze intently and smile*'))
+      .toBe('Hold her gaze intently and smile');
+    expect(parseSuggestionResponse(
+      'Offer Alice a reassuring smile and nod "I have every confidence in you" | Guide her gently by the elbow towards the study | Push open the study door for her',
+      '',
+      []
+    )).toEqual([
+      'Offer Alice a reassuring smile and nod',
+      'Guide her gently by the elbow towards the study',
+      'Push open the study door for her'
+    ]);
+    expect(parseSuggestionResponse(
+      "Smile warmly at Alice's attentiveness and begin listing out the day's duties | Gently pat the seat next to you | Ask Alice if she has any questions about today's tasks before continuing",
+      '',
+      []
+    )).toEqual([
+      "Smile warmly at Alice's attentiveness",
+      'Gently pat the seat next to you',
+      "Ask Alice if she has any questions about today's tasks"
+    ]);
   });
 
   it('returns parsed suggestions from the public generator without forcing a retry', async () => {

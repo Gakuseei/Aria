@@ -83,6 +83,20 @@ function sameSceneMemory(left, right) {
   return JSON.stringify(left || null) === JSON.stringify(right || null);
 }
 
+export function getRestoredSuggestions(messages) {
+  if (!Array.isArray(messages) || messages.length === 0) return [];
+
+  const lastMessage = messages[messages.length - 1];
+  if (!lastMessage || lastMessage.role !== 'assistant' || !Array.isArray(lastMessage.suggestions)) {
+    return [];
+  }
+
+  return lastMessage.suggestions
+    .filter((suggestion) => typeof suggestion === 'string')
+    .map((suggestion) => suggestion.trim())
+    .filter(Boolean);
+}
+
 function createStreamAbortHandle() {
   return {
     aborted: false,
@@ -648,15 +662,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         if (restoredSessionId) {
           passionManager.setPassion(restoredSessionId, restoredLevel, true);
         }
-
-        // Restore suggestions from last assistant message
-        for (let i = loadedSession.messages.length - 1; i >= 0; i--) {
-          const msg = loadedSession.messages[i];
-          if (msg.role === 'assistant' && msg.suggestions?.length > 0) {
-            setSmartSuggestions(msg.suggestions);
-            break;
-          }
-        }
+        setSmartSuggestions(getRestoredSuggestions(loadedSession.messages));
 
         return;
       }
@@ -1208,6 +1214,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       // Import the chat
       setMessages(importData.messages);
       setSceneMemory(buildSceneMemory(importData.messages, importData.sceneMemory || null));
+      setSmartSuggestions(getRestoredSuggestions(importData.messages));
       if (importData.passionLevel !== undefined) {
         previousTierRef.current = getTierKey(importData.passionLevel);
         setPassionLevel(importData.passionLevel);

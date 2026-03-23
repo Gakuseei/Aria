@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getRestoredSuggestions } from '../../src/components/ChatInterface.jsx';
 import {
   buildRoleplaySceneContext,
   buildSystemPrompt,
@@ -177,6 +178,66 @@ describe('cleanTranscriptArtifacts', () => {
   it('handles clean text without modifications', () => {
     const clean = '*She looks up and smiles.* "Hey there!"';
     expect(cleanTranscriptArtifacts(clean)).toBe(clean);
+  });
+});
+
+describe('getRestoredSuggestions', () => {
+  it('restores suggestions when the latest message is an assistant turn with suggestions', () => {
+    const messages = [
+      { role: 'assistant', content: 'Hi there.' },
+      {
+        role: 'assistant',
+        content: 'What would you like to do next?',
+        suggestions: ['Sit closer', 'Ask about the coffee', 'Smile back']
+      }
+    ];
+
+    expect(getRestoredSuggestions(messages)).toEqual([
+      'Sit closer',
+      'Ask about the coffee',
+      'Smile back'
+    ]);
+  });
+
+  it('does not restore stale suggestions when a newer user turn exists', () => {
+    const messages = [
+      {
+        role: 'assistant',
+        content: 'What would you like to do next?',
+        suggestions: ['Sit closer', 'Ask about the coffee']
+      },
+      { role: 'user', content: 'I sit down beside you.' }
+    ];
+
+    expect(getRestoredSuggestions(messages)).toEqual([]);
+  });
+
+  it('returns an empty list when the latest assistant turn has no suggestions', () => {
+    const messages = [
+      {
+        role: 'assistant',
+        content: 'What would you like to do next?',
+        suggestions: ['Sit closer', 'Ask about the coffee']
+      },
+      { role: 'assistant', content: 'She smiles softly.' }
+    ];
+
+    expect(getRestoredSuggestions(messages)).toEqual([]);
+  });
+
+  it('drops empty and non-string suggestion values', () => {
+    const messages = [
+      {
+        role: 'assistant',
+        content: 'What would you like to do next?',
+        suggestions: [' Sit closer ', '', null, 'Ask about the coffee']
+      }
+    ];
+
+    expect(getRestoredSuggestions(messages)).toEqual([
+      'Sit closer',
+      'Ask about the coffee'
+    ]);
   });
 });
 

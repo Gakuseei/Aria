@@ -105,6 +105,117 @@ const CONTINUITY_KEYWORDS = [
   'step'
 ];
 
+const EXPLICIT_INTIMACY_PATTERN = /\b(?:sex|sexual|naked|nude|moan|thrust|grind|ride|cock|dick|pussy|clit|cum|orgasm|breasts?|nipples?|between (?:my|your|her|his) legs|inside (?:me|you|her|him)|hardcore|fuck(?:ing|ed)?|suck(?:ing|ed)?|lick(?:ing|ed)?|spread(?:ing)? (?:my|your|her|his) legs)\b/i;
+const FLIRTY_TENSION_PATTERN = /\b(?:blush(?:ing)?|flush(?:ed|ing)?|shiver(?:ing)?|breath(?:less|ing)?|tension|chemistry|closer|close|linger(?:ing)?|lean(?:ing)?|touch(?:ing|es)?|waist|throat|chin|lips?|kiss(?:es|ed|ing)?|hold(?:ing)?|stay|invite|pull(?:ing)?|want(?:s|ed|ing)?|need(?:s|ed|ing)?)\b/i;
+const ESCALATION_OPENING_PATTERN = /\b(?:come closer|closer|kiss me|touch me|hold me|stay with me|come here|pull me|want you|need you|show me|don't stop|keep going|let me|invite me|take me|want this)\b/i;
+const DEESCALATION_PATTERN = /\b(?:stop|slow down|not now|later|focus|back to work|back to the task|let'?s keep this professional|we should behave|we should stop|that's enough)\b/i;
+
+function collectAssistSignals({ history = [], activeScene, sceneState, persistedSceneMemory }) {
+  const recentMessages = history.slice(-6);
+  const recentText = recentMessages.map((message) => message.content).join('\n');
+  const latestUserTurn = [...history].reverse().find((message) => message.role === 'user')?.content || '';
+  const latestAssistantTurn = [...history].reverse().find((message) => message.role === 'assistant')?.content || '';
+  const beatText = [
+    activeScene?.latest_character_action_or_reaction,
+    activeScene?.latest_user_action_or_request,
+    activeScene?.open_thread,
+    activeScene?.continuity,
+    sceneState?.continuity_facts?.join(' | '),
+    persistedSceneMemory?.open_thread
+  ].filter(Boolean).join('\n');
+  const explicitHits = [recentText, beatText].filter(Boolean).reduce((count, text) => count + (EXPLICIT_INTIMACY_PATTERN.test(text) ? 1 : 0), 0);
+  const flirtyHits = [recentText, beatText].filter(Boolean).reduce((count, text) => count + (FLIRTY_TENSION_PATTERN.test(text) ? 1 : 0), 0);
+  const escalationOpening = ESCALATION_OPENING_PATTERN.test(beatText) || ESCALATION_OPENING_PATTERN.test(latestUserTurn);
+  const deescalating = DEESCALATION_PATTERN.test(`${latestUserTurn}\n${activeScene?.open_thread || ''}`);
+
+  return {
+    recentText,
+    latestUserTurn,
+    latestAssistantTurn,
+    explicitHits,
+    flirtyHits,
+    escalationOpening,
+    deescalating
+  };
+}
+
+function deriveAssistMode({ character, runtimeSteering, activeScene, sceneState, history, persistedSceneMemory }) {
+  const isBot = character?.type === 'bot';
+  if (isBot) {
+    return {
+      value: 'bot_conversation',
+      debug: {
+        nsfwAllowed: false,
+        explicitHits: 0,
+        flirtyHits: 0,
+        escalationOpening: false,
+        deescalating: false,
+        reason: 'bot_override'
+      }
+    };
+  }
+
+  const categoryAllowsNsfw = character?.category === 'nsfw';
+  const unchainedMode = Boolean(runtimeSteering?.unchainedMode);
+  const nsfwAllowed = categoryAllowsNsfw || unchainedMode;
+  const signals = collectAssistSignals({
+    history,
+    activeScene,
+    sceneState,
+    persistedSceneMemory
+  });
+  const elevatedPassion = Number(runtimeSteering?.passionLevel || 0) >= 20;
+  const strongPassion = Number(runtimeSteering?.passionLevel || 0) >= 35;
+  const explicitScene = signals.explicitHits > 0;
+  const flirtScene = signals.flirtyHits > 0;
+
+  if (nsfwAllowed && explicitScene && !signals.deescalating) {
+    return {
+      value: 'nsfw_only',
+      debug: {
+        nsfwAllowed,
+        explicitHits: signals.explicitHits,
+        flirtyHits: signals.flirtyHits,
+        escalationOpening: signals.escalationOpening,
+        deescalating: signals.deescalating,
+        reason: 'explicit_scene'
+      }
+    };
+  }
+
+  if (
+    nsfwAllowed
+    && !explicitScene
+    && !signals.deescalating
+    && (signals.escalationOpening || flirtScene)
+    && (elevatedPassion || signals.escalationOpening || signals.flirtyHits >= 2 || strongPassion)
+  ) {
+    return {
+      value: 'mixed_transition',
+      debug: {
+        nsfwAllowed,
+        explicitHits: signals.explicitHits,
+        flirtyHits: signals.flirtyHits,
+        escalationOpening: signals.escalationOpening,
+        deescalating: signals.deescalating,
+        reason: 'flirty_scene_with_escalation'
+      }
+    };
+  }
+
+  return {
+    value: 'sfw_only',
+    debug: {
+      nsfwAllowed,
+      explicitHits: signals.explicitHits,
+      flirtyHits: signals.flirtyHits,
+      escalationOpening: signals.escalationOpening,
+      deescalating: signals.deescalating,
+      reason: nsfwAllowed ? 'insufficient_escalation' : 'category_gate'
+    }
+  };
+}
+
 function normalizeHistory(history) {
   return (history || [])
     .filter((message) => (message?.role === 'user' || message?.role === 'assistant') && typeof message?.content === 'string' && message.content.trim())
@@ -622,11 +733,21 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
     sceneMemory: validatedSceneMemory
   });
   const activeScene = buildActiveScene(sceneState);
+  const assistMode = deriveAssistMode({
+    character,
+    runtimeSteering,
+    activeScene,
+    sceneState,
+    history: sceneHistory,
+    persistedSceneMemory: validatedSceneMemory
+  });
 
   return {
     compiledRuntimeCard,
     sceneState,
     activeScene,
+    assistMode: assistMode.value,
+    assistModeDebug: assistMode.debug,
     persistedSceneMemory: validatedSceneMemory,
     selectedRecentHistory,
     runtimeSteering,

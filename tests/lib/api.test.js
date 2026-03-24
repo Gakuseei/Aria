@@ -4,6 +4,7 @@ import {
   buildRoleplaySceneContext,
   buildSystemPrompt,
   cleanTranscriptArtifacts,
+  deriveAssistBudgetTier,
   finalizeImpersonateDraft,
   generateSuggestionsBackground,
   isUnderfilledShortReply,
@@ -420,6 +421,20 @@ describe('suggestions stabilization', () => {
     ]);
   });
 
+  it('keeps bot suggestions conversational instead of bodily when mode-aware parsing is used', () => {
+    const parsed = parseSuggestionResponse(
+      'Kiss her neck | Ask what time works best | Confirm the requested duration',
+      '',
+      [],
+      { assistMode: 'bot_conversation' }
+    );
+
+    expect(parsed).toEqual([
+      'Ask what time works best',
+      'Confirm the requested duration'
+    ]);
+  });
+
   it('drops quoted dialogue and repeated phrase spam during normalization', () => {
     expect(normalizeSuggestionDisplayValue('gently pats her shoulder in reassurance gently pats her shoulder in reassurance'))
       .toBe('gently pats her shoulder in reassurance');
@@ -589,6 +604,46 @@ describe('finalizeImpersonateDraft', () => {
 
     expect(finalized.valid).toBe(false);
     expect(finalized.text).toContain('*She smiles faintly.*');
+  });
+
+  it('strips visible user speaker prefixes from finalized drafts', () => {
+    const finalized = finalizeImpersonateDraft(
+      'User: *I take a slow breath and meet her eyes.* "Then stay."',
+      { charName: 'Mei', userName: 'Erik' }
+    );
+
+    expect(finalized.valid).toBe(true);
+    expect(finalized.text.startsWith('User:')).toBe(false);
+    expect(finalized.text.startsWith('I:')).toBe(false);
+  });
+});
+
+describe('deriveAssistBudgetTier', () => {
+  it('returns constrained for small-model or low-budget setups', () => {
+    expect(deriveAssistBudgetTier({
+      parameterSize: '7B',
+      modelName: 'test-7b',
+      contextSize: 4096,
+      maxResponseTokens: 192
+    })).toBe('constrained');
+  });
+
+  it('returns roomy for larger-model or high-budget setups', () => {
+    expect(deriveAssistBudgetTier({
+      parameterSize: '27B',
+      modelName: 'test-27b',
+      contextSize: 8192,
+      maxResponseTokens: 512
+    })).toBe('roomy');
+  });
+
+  it('returns default for the normal middle path', () => {
+    expect(deriveAssistBudgetTier({
+      parameterSize: '12B',
+      modelName: 'test-12b',
+      contextSize: 6144,
+      maxResponseTokens: 256
+    })).toBe('default');
   });
 });
 

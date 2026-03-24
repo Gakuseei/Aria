@@ -737,7 +737,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
             return updated;
           });
         }
-      }, [], 0, greetingSceneMemory);
+      }, [], 0, greetingSceneMemory, isUnchainedMode);
     }
   };
 
@@ -833,7 +833,8 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         passionLevel,
         settings,
         (_token, display) => setInput(display),
-        sceneMemoryRef.current
+        sceneMemoryRef.current,
+        isUnchainedMode
       );
       if (cleaned) {
         setInput(cleaned);
@@ -922,7 +923,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         updated[lastIdx] = { ...updated[lastIdx], suggestions: result.length > 0 ? result : undefined, suggestTime: parseFloat(suggestTime) };
         return updated;
       });
-    }, rollingAvoid, currentPassionLevel ?? passionLevel, currentSceneMemory);
+    }, rollingAvoid, currentPassionLevel ?? passionLevel, currentSceneMemory, isUnchainedMode);
   };
 
   const handleSend = async (messageText = input) => {

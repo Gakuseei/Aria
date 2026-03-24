@@ -163,6 +163,113 @@ describe('buildRuntimeState', () => {
     expect(runtimeState.sceneState.debug.settingSource).toBe('memory');
     expect(runtimeState.sceneState.debug.relationshipSource).toBe('memory');
   });
+
+  it('keeps sfw personas in sfw_only when unchained mode is off', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Mei',
+        category: 'sfw',
+        systemPrompt: 'Mei is dry, observant, and quietly protective.',
+        instructions: 'Stay blunt but gentle.',
+        scenario: 'Rainy cafe afternoon.'
+      },
+      history: [
+        { role: 'assistant', content: '*She leans closer over the counter.* "You keep staring at my mouth."' },
+        { role: 'user', content: 'Then kiss me.' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: {
+        profile: 'reply',
+        availableContextTokens: 900,
+        responseMode: 'normal',
+        unchainedMode: false,
+        passionLevel: 45
+      }
+    });
+
+    expect(runtimeState.assistMode).toBe('sfw_only');
+    expect(runtimeState.assistModeDebug.reason).toBe('category_gate');
+  });
+
+  it('allows sfw personas into mixed_transition when unchained mode is on and escalation is justified', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Mei',
+        category: 'sfw',
+        systemPrompt: 'Mei is dry, observant, and quietly protective.',
+        instructions: 'Stay blunt but gentle.',
+        scenario: 'Rainy cafe afternoon.'
+      },
+      history: [
+        { role: 'assistant', content: '*She lingers close enough that her shoulder brushes yours.* "You can stay if you want."' },
+        { role: 'user', content: 'Then stay with me a little closer.' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: {
+        profile: 'reply',
+        availableContextTokens: 900,
+        responseMode: 'normal',
+        unchainedMode: true,
+        passionLevel: 32
+      }
+    });
+
+    expect(runtimeState.assistMode).toBe('mixed_transition');
+  });
+
+  it('allows sfw personas into nsfw_only only with unchained mode and explicit scene evidence', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Mei',
+        category: 'sfw',
+        systemPrompt: 'Mei is dry, observant, and quietly protective.',
+        instructions: 'Stay blunt but gentle.',
+        scenario: 'Rainy cafe afternoon.'
+      },
+      history: [
+        { role: 'assistant', content: '*She parts her thighs and drags your hand between her legs.* "Stop staring and touch me properly."' },
+        { role: 'user', content: 'Then I rub her slowly until she moans.' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: {
+        profile: 'reply',
+        availableContextTokens: 900,
+        responseMode: 'normal',
+        unchainedMode: true,
+        passionLevel: 48
+      }
+    });
+
+    expect(runtimeState.assistMode).toBe('nsfw_only');
+  });
+
+  it('forces bot conversations into bot_conversation', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'DeskBot',
+        type: 'bot',
+        category: 'sfw',
+        systemPrompt: 'DeskBot handles scheduling requests with crisp answers.',
+        instructions: 'Ask for the missing time window before committing.',
+        scenario: 'Office planning assistant.'
+      },
+      history: [
+        { role: 'assistant', content: 'I can help schedule that.' },
+        { role: 'user', content: 'Book a 30-minute check-in for tomorrow.' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: {
+        profile: 'reply',
+        availableContextTokens: 900,
+        responseMode: 'normal',
+        unchainedMode: true,
+        passionLevel: 99
+      }
+    });
+
+    expect(runtimeState.assistMode).toBe('bot_conversation');
+    expect(runtimeState.assistModeDebug.reason).toBe('bot_override');
+  });
 });
 
 describe('sceneMemory', () => {

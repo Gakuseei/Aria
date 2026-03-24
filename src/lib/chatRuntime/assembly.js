@@ -10,7 +10,7 @@ const PROFILE_BUDGET_TARGETS = {
     personaAnchor: 90,
     activeScene: 140,
     exampleSeed: 180,
-    lateSteering: 120
+    lateSteering: 145
   },
   suggestions: {
     characterCore: 145,
@@ -44,6 +44,32 @@ function getPromptModeRules(category, responseMode) {
   }
 
   return rules;
+}
+
+function getAssistModeRules(runtimeState, feature) {
+  const assistMode = runtimeState.assistMode || 'sfw_only';
+  const isBot = runtimeState.compiledRuntimeCard.runtimeDefaults.type === 'bot';
+  if (isBot || assistMode === 'bot_conversation') {
+    return feature === 'suggestions'
+      ? ['Keep every option grounded in the active exchange. Never turn task or bot chat into bodily roleplay.']
+      : ['Stay inside the active exchange. Do not introduce bodily roleplay framing.'];
+  }
+
+  if (assistMode === 'nsfw_only') {
+    return feature === 'suggestions'
+      ? ['The scene is already explicit. Do not become timid, euphemistic, or generic.']
+      : ['The scene is already explicit. Do not soften it into generic flirting or detached summary.'];
+  }
+
+  if (assistMode === 'mixed_transition') {
+    return feature === 'suggestions'
+      ? ['Build tension, invitation, and forward motion without jumping straight to explicit hardcore phrasing.']
+      : ['Build tension, invitation, and closeness without abrupt explicitness or generic porn phrasing.'];
+  }
+
+  return feature === 'suggestions'
+    ? ['Keep the options non-explicit. Favor emotional, conversational, or lightly physical moves over hidden heat-pushes.']
+    : ['Keep the interaction non-explicit. Do not inject hidden sexual escalation.'];
 }
 
 function formatHistory(history, charName, userName) {
@@ -131,6 +157,7 @@ function buildReplyLateSteering(runtimeState) {
     runtimeState.compiledRuntimeCard.personaAnchor
       ? `Keep ${characterName}'s signature voice, reactions, and habits active. Do not sand down the character into generic flirtation, generic submission, or generic dirty talk.`
       : '',
+    ...getAssistModeRules(runtimeState, 'reply'),
     ...modeRules,
     depthInstruction || 'Match the current closeness of the scene without forcing escalation.'
   ].filter(Boolean).join('\n');
@@ -149,7 +176,7 @@ function buildSuggestionLateSteering(runtimeState) {
       : `Suggest what ${runtimeState.userName} does next in the same scene with ${runtimeState.characterName}.`,
     'Return exactly 3 click-ready actions separated by | and nothing else.',
     'Use this fixed ladder: safe: ... | bold: ... | progress: ...',
-    'Each action should stay short, user-side, clickable, and free of dialogue, quotes, or commentary.',
+    'Each action should stay short, user-side, clickable, with no quotes, dialogue, commentary, or narrated prose.',
     runtimeState.runtimeSteering.passionLevel > 15
       ? 'In explicit scenes, do not become timid, euphemistic, or generic.'
       : '',
@@ -164,6 +191,7 @@ function buildSuggestionLateSteering(runtimeState) {
     runtimeState.compiledRuntimeCard.personaAnchor
       ? `Keep ${runtimeState.userName}'s options grounded in ${runtimeState.characterName}'s specific persona, not generic flirtation.`
       : '',
+    ...getAssistModeRules(runtimeState, 'suggestions'),
     'Match the conversation language and the current scene tone.',
     intensityLine,
     avoidList.length > 0 ? `Do not repeat: ${avoidList.join(' | ')}` : ''
@@ -192,6 +220,7 @@ function buildImpersonateLateSteering(runtimeState) {
     runtimeState.compiledRuntimeCard.personaAnchor
       ? `Keep the response tuned to ${runtimeState.characterName}'s specific persona and chemistry instead of generic romance language.`
       : '',
+    ...getAssistModeRules(runtimeState, 'impersonate'),
     intensityLine
   ].filter(Boolean).join('\n');
 }
@@ -239,6 +268,9 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
   const totalBudget = Math.max(320, runtimeState.runtimeSteering.availableContextTokens || 2048);
   const debug = {
     profile,
+    assistMode: runtimeState.assistMode || 'sfw_only',
+    assistModeDebug: runtimeState.assistModeDebug || null,
+    assistBudgetTier: runtimeState.runtimeSteering.assistBudgetTier || 'default',
     includedBlocks: [],
     droppedBlocks: [],
     historyCountKept: runtimeState.selectedRecentHistory.messages.length,
@@ -329,6 +361,19 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       totalTokens = estimateTokens(systemPrompt) + historyMessages.reduce((sum, message) => sum + estimateTokens(message.content), 0);
     }
 
+    if (totalTokens > totalBudget && personaAnchor) {
+      debug.includedBlocks = debug.includedBlocks.filter((block) => block !== 'Persona Anchor');
+      if (!debug.droppedBlocks.includes('Persona Anchor')) debug.droppedBlocks.push('Persona Anchor');
+      systemPrompt = [
+        buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)),
+        buildPlainTextBlock('Character Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)),
+        buildPlainTextBlock('Active Scene', activeScene),
+        exampleSeed ? buildPlainTextBlock('Example Seed', exampleSeed) : '',
+        buildPlainTextBlock('Late Steering', lateSteering)
+      ].filter(Boolean).join('\n\n');
+      totalTokens = estimateTokens(systemPrompt) + historyMessages.reduce((sum, message) => sum + estimateTokens(message.content), 0);
+    }
+
     if (totalTokens > totalBudget) {
       const remainingHistoryBudget = Math.max(0, totalBudget - estimateTokens(systemPrompt));
       historyMessages = trimHistoryForBudget(historyMessages, remainingHistoryBudget);
@@ -352,7 +397,6 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       runtimeState.activeScene.latest_user_action_or_request ? `${runtimeState.userName}: ${runtimeState.activeScene.latest_user_action_or_request}` : ''
     ].filter(Boolean).join('\n');
     const systemPrompt = [
-      buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, 65)),
       buildPlainTextBlock('Character Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)),
       runtimeState.compiledRuntimeCard.personaAnchor
         ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, 75))
@@ -361,7 +405,8 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       buildPlainTextBlock('Late Steering', clipToTokenTarget(buildSuggestionLateSteering(runtimeState), targets.lateSteering))
     ].filter(Boolean).join('\n\n');
 
-    debug.includedBlocks.push('Global Core', 'Character Core', 'Active Scene', 'Late Steering');
+    debug.includedBlocks.push('Character Core', 'Active Scene', 'Late Steering');
+    debug.droppedBlocks.push('Global Core');
     if (runtimeState.compiledRuntimeCard.personaAnchor) {
       debug.includedBlocks.push('Persona Anchor');
     } else {

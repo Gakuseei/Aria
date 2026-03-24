@@ -299,9 +299,69 @@ const LEGACY_CONTEXT_SIZE_MAP = {
   max: 8192
 };
 
+const ASSIST_BUDGET_CONFIG = {
+  constrained: {
+    suggestionNumCtxCap: 2560,
+    suggestionContextReserve: 1024,
+    suggestionMaxTokens: 56,
+    suggestionRetryTarget: 2,
+    impersonateNumCtxCap: 3072,
+    impersonateContextReserve: 384,
+    impersonateFirstTokens: 104,
+    impersonateRetryTokens: 132,
+    allowWeakRetry: false,
+    allowInvalidRetry: true
+  },
+  default: {
+    suggestionNumCtxCap: 3072,
+    suggestionContextReserve: 896,
+    suggestionMaxTokens: 64,
+    suggestionRetryTarget: 2,
+    impersonateNumCtxCap: 4096,
+    impersonateContextReserve: 256,
+    impersonateFirstTokens: 120,
+    impersonateRetryTokens: 152,
+    allowWeakRetry: true,
+    allowInvalidRetry: true
+  },
+  roomy: {
+    suggestionNumCtxCap: 4096,
+    suggestionContextReserve: 832,
+    suggestionMaxTokens: 72,
+    suggestionRetryTarget: 3,
+    impersonateNumCtxCap: 4096,
+    impersonateContextReserve: 192,
+    impersonateFirstTokens: 136,
+    impersonateRetryTokens: 176,
+    allowWeakRetry: true,
+    allowInvalidRetry: true
+  }
+};
+
 function parseModelParamB(modelName = '') {
   const match = String(modelName).toLowerCase().match(/(\d+(?:\.\d+)?)\s*b\b/);
   return match ? parseFloat(match[1]) : null;
+}
+
+function parseParameterSizeB(parameterSize = '') {
+  const match = String(parameterSize).toLowerCase().match(/(\d+(?:\.\d+)?)\s*b\b/);
+  return match ? parseFloat(match[1]) : null;
+}
+
+export function deriveAssistBudgetTier({ parameterSize = '', modelName = '', contextSize = 4096, maxResponseTokens = 256 } = {}) {
+  const parameterB = parseParameterSizeB(parameterSize) ?? parseModelParamB(modelName);
+  const normalizedContext = normalizeContextSize(contextSize, modelName || parameterSize);
+  const numericMaxTokens = Number.isFinite(Number(maxResponseTokens)) ? Number(maxResponseTokens) : 256;
+
+  if ((Number.isFinite(parameterB) && parameterB <= 8) || normalizedContext <= 4096 || numericMaxTokens <= 192) {
+    return 'constrained';
+  }
+
+  if ((Number.isFinite(parameterB) && parameterB >= 20) || normalizedContext >= 8192 || numericMaxTokens >= 512) {
+    return 'roomy';
+  }
+
+  return 'default';
 }
 
 export function getRecommendedContextSizeForModel(modelName = '') {
@@ -492,8 +552,9 @@ const SUGGESTION_PASSIVE_PATTERN = /\b(?:smile|nod|look|glance|watch|wait|pause|
 const SUGGESTION_PROGRESS_PATTERN = /\b(?:invite|pull|guide|lead|bring|take|sit|move|close|touch|kiss|confess|admit|answer|ask|offer|decide|tell|reveal|reach)\b/i;
 const SUGGESTION_BOLD_PATTERN = /\b(?:touch|kiss|pull|guide|lean|closer|waist|thigh|lap|admit|confess|breath|neck)\b/i;
 const WRITE_FOR_ME_GENERIC_PATTERN = /\b(?:electricity between us|cannot deny|there'?s no denying|lingering for a heartbeat longer than necessary|beneath those long lashes|warm smile spreads|vision bathed in|presence has come to mean|hint of color in her cheeks|warmth between us|something unspoken)\b/i;
-const INCOMPLETE_SUGGESTION_ENDING_PATTERN = /\b(?:a|an|the|your|my|his|her|their|our|this|that|these|those|another|some|any|more|expensive|impressive|closer)\s*$/i;
+const INCOMPLETE_SUGGESTION_ENDING_PATTERN = /\b(?:a|an|the|this|that|these|those|another|some|any|more|expensive|impressive)\s*$/i;
 const INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN = /\b(?:whispering|smirking|watching|waiting|looking|leaning|reaching|moving)\s*$/i;
+const BOT_PHYSICAL_SUGGESTION_PATTERN = /\b(?:kiss|waist|thigh|lap|neck|body|breath|touch|lick|ride|grind)\b/i;
 
 function detectSuggestionRole(text = '') {
   const lowered = String(text || '').toLowerCase();
@@ -635,7 +696,7 @@ function dedupeSuggestionAgainstHistory(candidate, lastUserMsg, previousSuggesti
   });
 }
 
-function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null) {
+function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null, assistMode = 'sfw_only') {
   const text = String(candidate || '').trim();
   if (!text) return -Infinity;
 
@@ -666,6 +727,17 @@ function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null) {
   } else if (role === 'progress') {
     if (SUGGESTION_PROGRESS_PATTERN.test(text)) score += 14;
     if (SUGGESTION_PASSIVE_PATTERN.test(text) && !SUGGESTION_PROGRESS_PATTERN.test(text)) score -= 16;
+  }
+
+  if (assistMode === 'bot_conversation') {
+    if (/\b(?:kiss|waist|thigh|lap|neck|body|breath|touch)\b/i.test(text)) score -= 60;
+    if (/\b(?:ask|answer|confirm|offer|clarify|review|check|tell|show|schedule|explain)\b/i.test(text)) score += 10;
+  } else if (assistMode === 'sfw_only') {
+    if (/\b(?:kiss|waist|thigh|lap|neck|body|make me|take me)\b/i.test(text)) score -= 22;
+    if (/\b(?:ask|smile|stay|tell|answer|offer|admit|reach|sit|look)\b/i.test(text)) score += 4;
+  } else if (assistMode === 'mixed_transition') {
+    if (/\b(?:hardcore|fuck|cock|pussy|cum)\b/i.test(text)) score -= 30;
+    if (/\b(?:closer|touch|kiss|admit|invite|pull|hold|lean)\b/i.test(text)) score += 8;
   }
 
   return score;
@@ -702,7 +774,8 @@ function isTooSimilarToSelected(candidate, selected) {
   });
 }
 
-export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestions = []) {
+export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestions = [], options = {}) {
+  const assistMode = options.assistMode || 'sfw_only';
   const cleaned = String(raw || '').trim()
     .replace(/\[TOOL_CALLS\]/gi, '')
     .replace(/<\/?s>/gi, '')
@@ -736,12 +809,13 @@ export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestio
     const role = detectSuggestionRole(rawPart);
     const compact = compactSuggestionCandidate(cleanedPart);
     if (!compact) return;
+    if (assistMode === 'bot_conversation' && BOT_PHYSICAL_SUGGESTION_PATTERN.test(compact)) return;
     const wordCount = compact.split(/\s+/).filter(Boolean).length;
     if (compact.length < 2 || compact.length > SUGGESTION_MAX_CHARS || wordCount < 2 || wordCount > SUGGESTION_MAX_WORDS) return;
     if (SUGGESTION_META_PATTERN.test(compact) || SUGGESTION_NON_ACTION_PATTERN.test(compact)) return;
     if (!dedupeSuggestionAgainstHistory(compact, lastUserMsg, previousSuggestions)) return;
     if (isTooSimilarToSelected(compact, selected)) return;
-    if (scoreSuggestionCandidate(compact, rawPart, role) < 44) return;
+    if (scoreSuggestionCandidate(compact, rawPart, role, assistMode) < 44) return;
     if (role && !roleBuckets[role]) {
       roleBuckets[role] = compact;
       selected.push(compact);
@@ -790,14 +864,21 @@ export function abortSuggestionCall() {
  * @param {string[]} [previousSuggestions] - Previous suggestions to avoid repeating
  * @param {number} [passionLevel=0] - Current passion level (0-100) for intensity matching
  */
-export async function generateSuggestionsBackground(history, character, userName, settings, callback, previousSuggestions = [], passionLevel = 0, sceneMemory = null) {
+export async function generateSuggestionsBackground(history, character, userName, settings, callback, previousSuggestions = [], passionLevel = 0, sceneMemory = null, unchainedMode = false) {
   abortSuggestionCall();
   const currentRequestId = ++suggestionRequestId;
 
   const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
   const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
   const numCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 4096);
-  const suggestionNumCtx = Math.min(numCtx, 3072);
+  const assistBudgetTier = deriveAssistBudgetTier({
+    parameterSize: (await getModelCapabilities(ollamaUrl, model)).parameterSize,
+    modelName: model,
+    contextSize: settings.contextSize || 4096,
+    maxResponseTokens: settings.maxResponseTokens
+  });
+  const budgetConfig = ASSIST_BUDGET_CONFIG[assistBudgetTier];
+  const suggestionNumCtx = Math.min(numCtx, budgetConfig.suggestionNumCtxCap);
   const lastUserMsg = [...(history || [])].reverse().find((message) => message?.role === 'user')?.content || '';
   const runtimeState = buildRuntimeState({
     character,
@@ -805,15 +886,19 @@ export async function generateSuggestionsBackground(history, character, userName
     userName,
     runtimeSteering: {
       profile: 'suggestions',
-      availableContextTokens: Math.max(256, suggestionNumCtx - 896),
+      availableContextTokens: Math.max(256, suggestionNumCtx - budgetConfig.suggestionContextReserve),
       passionLevel,
+      unchainedMode,
+      assistBudgetTier,
       avoidSuggestions: [...previousSuggestions, lastUserMsg ? lastUserMsg.slice(0, 80) : ''].filter(Boolean),
       persistedSceneMemory: sceneMemory
     }
   });
   const runtimeContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState });
   const retrySystemPrompt = `${runtimeContext.systemPrompt}\n\nFORMAT CHECK:\n- Return exactly 3 short actions separated by |.\n- No numbering, labels, commentary, explanations, quotes, or dialogue.\n- Keep every action in the same current scene and make it directly clickable.\n- Keep actions compact and click-ready, about 3-9 words each.`;
-  const parseSuggestions = (raw) => parseSuggestionResponse(raw, lastUserMsg, previousSuggestions);
+  const parseSuggestions = (raw) => parseSuggestionResponse(raw, lastUserMsg, previousSuggestions, {
+    assistMode: runtimeState.assistMode
+  });
 
   const chatParams = {
     messages: [{ role: 'user', content: runtimeContext.userPrompt }],
@@ -822,14 +907,14 @@ export async function generateSuggestionsBackground(history, character, userName
     isOllama: true,
     ollamaUrl,
     temperature: 0.72,
-    maxTokens: 64,
+    maxTokens: budgetConfig.suggestionMaxTokens,
     num_ctx: suggestionNumCtx
   };
   const retryChatParams = {
     ...chatParams,
     systemPrompt: retrySystemPrompt,
     temperature: 0.6,
-    maxTokens: 56
+    maxTokens: Math.max(48, budgetConfig.suggestionMaxTokens - 8)
   };
 
   console.log('[API] Suggestions runtime:', runtimeContext.debug);
@@ -846,7 +931,7 @@ export async function generateSuggestionsBackground(history, character, userName
         const raw = result.content || '';
         const suggestions = parseSuggestions(raw);
         console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
-        if (suggestions.length >= MIN_USABLE_SUGGESTIONS) {
+        if (suggestions.length >= Math.min(SUGGESTION_TARGET_COUNT, budgetConfig.suggestionRetryTarget)) {
           callback(suggestions);
           return;
         }
@@ -895,7 +980,7 @@ export async function generateSuggestionsBackground(history, character, userName
         const raw = data.message?.content || '';
         const suggestions = parseSuggestions(raw);
         console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
-        if (suggestions.length >= MIN_USABLE_SUGGESTIONS) {
+        if (suggestions.length >= Math.min(SUGGESTION_TARGET_COUNT, budgetConfig.suggestionRetryTarget)) {
           suggestionAbortController = null;
           callback(suggestions);
           return;
@@ -1056,10 +1141,11 @@ function hasInvalidImpersonateLead(text, userName, charName = '') {
   return new RegExp(`^(?:${invalidLeads.join('|')})`, 'i').test(trimmed);
 }
 
-function scoreWriteForMeDraft(text, history = []) {
+function scoreWriteForMeDraft(text, history = [], options = {}) {
   const trimmed = String(text || '').trim();
   if (!trimmed) return -Infinity;
 
+  const assistMode = options.assistMode || 'sfw_only';
   let score = 100;
   const words = trimmed.split(/\s+/).filter(Boolean);
   const sentenceCount = trimmed.split(/(?<=[.!?])\s+/).filter(Boolean).length;
@@ -1079,6 +1165,10 @@ function scoreWriteForMeDraft(text, history = []) {
   if (!/\b(?:ask|tell|invite|offer|pull|touch|kiss|move|sit|stay|admit|answer|lean|take|guide|bring|hold|want|need|let|smile|nod|look|meet|step|follow|reach|trace|press)\b/i.test(trimmed)) {
     score -= 6;
   }
+  if (/^(?:I|User)\s*:/i.test(trimmed)) score -= 32;
+  if (assistMode === 'bot_conversation' && /\b(?:kiss|waist|thigh|lap|body|moan|cum)\b/i.test(trimmed)) score -= 60;
+  if (assistMode === 'sfw_only' && /\b(?:cock|pussy|cum|fuck|spread your legs)\b/i.test(trimmed)) score -= 45;
+  if (assistMode === 'mixed_transition' && /\b(?:cock|pussy|cum|hardcore)\b/i.test(trimmed)) score -= 32;
 
   if (recentUserMessages.some((message) => message && trimmed.toLowerCase() === message)) {
     score -= 35;
@@ -1109,13 +1199,13 @@ function shortenWriteForMeDraft(text) {
   return trimmed;
 }
 
-function isUsableWriteForMeDraft(finalized, history = []) {
+function isUsableWriteForMeDraft(finalized, history = [], options = {}) {
   if (!finalized?.valid || !finalized.text) return false;
 
   const trimmed = finalized.text.trim();
   if (trimmed.length < 18) return false;
 
-  const score = scoreWriteForMeDraft(trimmed, history);
+  const score = scoreWriteForMeDraft(trimmed, history, options);
   return score >= 18;
 }
 
@@ -1159,6 +1249,7 @@ export function finalizeImpersonateDraft(rawText, { charName = '', userName = 'U
   }
 
   cleaned = cleaned.replace(/^I:\s*/i, '');
+  cleaned = cleaned.replace(/^User:\s*/i, '');
 
   const beforeRepair = cleaned;
   cleaned = repairLeadingActionBlock(cleaned, userName);
@@ -1188,13 +1279,21 @@ export function finalizeImpersonateDraft(rawText, { charName = '', userName = 'U
  * @param {function} onToken - Called with (null, fullDisplayText) on each token
  * @returns {Promise<string>} Full generated text
  */
-export async function impersonateUser(history, character, userName, passionLevel, settings, onToken, sceneMemory = null) {
+export async function impersonateUser(history, character, userName, passionLevel, settings, onToken, sceneMemory = null, unchainedMode = false) {
   abortImpersonateCall();
 
   const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
   const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
   const numCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 4096);
-  const impersonateNumCtx = Math.min(numCtx, 4096);
+  const modelCapabilities = await getModelCapabilities(ollamaUrl, model);
+  const assistBudgetTier = deriveAssistBudgetTier({
+    parameterSize: modelCapabilities.parameterSize,
+    modelName: model,
+    contextSize: settings.contextSize || 4096,
+    maxResponseTokens: settings.maxResponseTokens
+  });
+  const budgetConfig = ASSIST_BUDGET_CONFIG[assistBudgetTier];
+  const impersonateNumCtx = Math.min(numCtx, budgetConfig.impersonateNumCtxCap);
   const profile = getModelProfile(model);
   const charName = character?.name || 'Character';
   const runtimeState = buildRuntimeState({
@@ -1203,8 +1302,10 @@ export async function impersonateUser(history, character, userName, passionLevel
     userName,
     runtimeSteering: {
       profile: 'impersonate',
-      availableContextTokens: Math.max(320, impersonateNumCtx - 256),
+      availableContextTokens: Math.max(320, impersonateNumCtx - budgetConfig.impersonateContextReserve),
       passionLevel,
+      unchainedMode,
+      assistBudgetTier,
       persistedSceneMemory: sceneMemory
     }
   });
@@ -1284,25 +1385,38 @@ export async function impersonateUser(history, character, userName, passionLevel
     }
   };
 
-  let finalized = await generateDraft({ numPredict: 120, temperature: Math.max(0.58, (settings.temperature ?? profile.temperature) - 0.04) });
-  let finalizedScore = finalized.valid && finalized.text ? scoreWriteForMeDraft(finalized.text, history) : -Infinity;
+  const scoreDraft = (draft) => (
+    draft.valid && draft.text
+      ? scoreWriteForMeDraft(draft.text, history, { assistMode: runtimeState.assistMode })
+      : -Infinity
+  );
+  const isStructurallyInvalid = (draft) => !draft?.valid || !draft?.text || draft.text.trim().length < 18;
 
-  if (!isUsableWriteForMeDraft(finalized, history) || finalizedScore < 44) {
+  let finalized = await generateDraft({
+    numPredict: budgetConfig.impersonateFirstTokens,
+    temperature: Math.max(0.58, (settings.temperature ?? profile.temperature) - 0.04)
+  });
+  let finalizedScore = scoreDraft(finalized);
+
+  if (
+    (budgetConfig.allowWeakRetry && (!isUsableWriteForMeDraft(finalized, history, { assistMode: runtimeState.assistMode }) || finalizedScore < 44))
+    || (budgetConfig.allowInvalidRetry && isStructurallyInvalid(finalized))
+  ) {
     console.info('[API] Impersonate retry: first draft too weak or generic, retrying with stronger completion prompt');
     const retryDraft = await generateDraft({
-      numPredict: 152,
+      numPredict: budgetConfig.impersonateRetryTokens,
       promptSuffix: '\n\nWrite one complete first-person reply that clearly moves the scene forward while still sounding like the user. Stay grounded in the exact current beat. Prefer a natural, sendable reply over a perfect one. End cleanly after one to three sentences.',
       temperature: Math.max(0.55, (settings.temperature ?? profile.temperature) - 0.08)
     });
-    const retryScore = retryDraft.valid && retryDraft.text ? scoreWriteForMeDraft(retryDraft.text, history) : -Infinity;
+    const retryScore = scoreDraft(retryDraft);
 
-    if (retryScore >= finalizedScore || !isUsableWriteForMeDraft(finalized, history)) {
+    if (retryScore >= finalizedScore || !isUsableWriteForMeDraft(finalized, history, { assistMode: runtimeState.assistMode })) {
       finalized = retryDraft;
       finalizedScore = retryScore;
     }
   }
 
-  if (!isUsableWriteForMeDraft(finalized, history)) {
+  if (!isUsableWriteForMeDraft(finalized, history, { assistMode: runtimeState.assistMode })) {
     throw new Error('Failed to generate a usable draft');
   }
 
@@ -1324,7 +1438,8 @@ export function buildSystemPrompt({ character, userName = 'User', passionLevel =
       availableContextTokens: 2048,
       responseMode,
       passionLevel,
-      unchainedMode
+      unchainedMode,
+      assistBudgetTier: 'default'
     }
   });
 
@@ -1379,6 +1494,7 @@ export const sendMessage = async (
     const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
     const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
     const modelCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 4096);
+    const modelCapabilities = await getModelCapabilities(ollamaUrl, model);
     const profile = getModelProfile(model);
     const historyToUse = (Array.isArray(conversationHistory) ? conversationHistory : []).filter(m => m.role !== 'system');
 
@@ -1391,6 +1507,12 @@ export const sendMessage = async (
     const responseMode = getEffectiveResponseMode(character, userMessage);
     const baseNumPredict = settings.maxResponseTokens ?? profile.maxResponseTokens ?? 512;
     const numPredict = getResponseModeTokenLimit(baseNumPredict, responseMode);
+    const assistBudgetTier = deriveAssistBudgetTier({
+      parameterSize: modelCapabilities.parameterSize,
+      modelName: model,
+      contextSize: settings.contextSize || 4096,
+      maxResponseTokens: baseNumPredict
+    });
     const runtimeState = buildRuntimeState({
       character,
       history: historyToUse,
@@ -1401,6 +1523,7 @@ export const sendMessage = async (
         responseMode,
         passionLevel: currentPassionLevel,
         unchainedMode,
+        assistBudgetTier,
         persistedSceneMemory: sceneMemory
       }
     });

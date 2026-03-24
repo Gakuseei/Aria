@@ -476,17 +476,30 @@ let suggestionAbortController = null;
 let suggestionRequestId = 0;
 const MIN_USABLE_SUGGESTIONS = 2;
 const SUGGESTION_TARGET_COUNT = 3;
-const SUGGESTION_MAX_WORDS = 11;
-const SUGGESTION_MAX_CHARS = 84;
+const SUGGESTION_MAX_WORDS = 9;
+const SUGGESTION_MAX_CHARS = 72;
+const SUGGESTION_ROLE_ORDER = ['safe', 'bold', 'progress'];
 
 const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|note|options?|suggestions?)\b/i;
 const SUGGESTION_NON_ACTION_PATTERN = /^(?:explain|describe|clarify|suggest|propose)\b/i;
-const SUGGESTION_LABEL_PATTERN = /^(?:option\s*\d+|action\s*\d+|match the current pace|current pace|same scene|bolder(?: or more forward)?|fresh angle|unexpected(?: angle)?)\s*[:\-]\s*/i;
+const SUGGESTION_LABEL_PATTERN = /^(?:safe|bold|progress|option\s*\d+|action\s*\d+|match the current pace|current pace|same scene|bolder(?: or more forward)?|fresh angle|unexpected(?: angle)?)\s*[:\-]\s*/i;
 const SUGGESTION_BAD_LEAD_PATTERN = /^(?:i|you|he|she|they|we|it|this|that|these|those|there|here|please|option|action|pace|scene|same|bolder|fresh)\b/i;
 const SUGGESTION_DIALOGUE_PATTERN = /["“”]/;
 const SUGGESTION_OVEREXPLAIN_PATTERN = /\b(?:because|while|so that|which makes|letting|making|feeling|as you|as she|as he)\b/i;
 const SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN = /\b(?:say|saying|said|murmur|murmuring|whisper|whispering|tell|telling|ask|asking)\b/i;
 const SUGGESTION_PROGRESSIVE_TAIL_PATTERN = /\s+and\s+(?:begin|starting|start|continue|continuing|keep|keeping|list|listing|tell|telling|explain|explaining|show|showing|reveal|revealing)\b/i;
+const SUGGESTION_PASSIVE_PATTERN = /\b(?:smile|nod|look|glance|watch|wait|pause|listen)\b/i;
+const SUGGESTION_PROGRESS_PATTERN = /\b(?:invite|pull|guide|lead|bring|take|sit|move|close|touch|kiss|confess|admit|answer|ask|offer|decide|tell|reveal|reach)\b/i;
+const SUGGESTION_BOLD_PATTERN = /\b(?:touch|kiss|pull|guide|lean|closer|waist|thigh|lap|admit|confess|breath|neck)\b/i;
+const WRITE_FOR_ME_GENERIC_PATTERN = /\b(?:electricity between us|cannot deny|there'?s no denying|lingering for a heartbeat longer than necessary|beneath those long lashes|warm smile spreads|vision bathed in|presence has come to mean|hint of color in her cheeks|can't help but notice|linger in the air|associate with her presence|warmth between us|something unspoken)\b/i;
+
+function detectSuggestionRole(text = '') {
+  const lowered = String(text || '').toLowerCase();
+  if (/^\s*safe\s*[:\-]/i.test(lowered)) return 'safe';
+  if (/^\s*bold\s*[:\-]/i.test(lowered)) return 'bold';
+  if (/^\s*progress\s*[:\-]/i.test(lowered)) return 'progress';
+  return null;
+}
 
 function cleanSuggestionCandidate(part) {
   let candidate = String(part || '').trim();
@@ -611,7 +624,7 @@ function dedupeSuggestionAgainstHistory(candidate, lastUserMsg, previousSuggesti
   });
 }
 
-function scoreSuggestionCandidate(candidate, rawCandidate = '') {
+function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null) {
   const text = String(candidate || '').trim();
   if (!text) return -Infinity;
 
@@ -629,6 +642,20 @@ function scoreSuggestionCandidate(candidate, rawCandidate = '') {
   if (/\b(?:master|mistress|sir)\b/i.test(lower)) score -= 10;
   if (SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN.test(text) && SUGGESTION_DIALOGUE_PATTERN.test(rawCandidate)) score -= 12;
   if (!/^[A-Za-z]/.test(text)) score -= 10;
+  if (SUGGESTION_PROGRESS_PATTERN.test(text)) score += 12;
+  if (SUGGESTION_BOLD_PATTERN.test(text)) score += 6;
+  if (SUGGESTION_PASSIVE_PATTERN.test(text) && !SUGGESTION_PROGRESS_PATTERN.test(text)) score -= 8;
+
+  if (role === 'safe') {
+    if (SUGGESTION_PASSIVE_PATTERN.test(text)) score += 4;
+    if (SUGGESTION_BOLD_PATTERN.test(text)) score -= 4;
+  } else if (role === 'bold') {
+    if (SUGGESTION_BOLD_PATTERN.test(text)) score += 10;
+    if (/\b(?:wait|pause|watch quietly)\b/i.test(text)) score -= 8;
+  } else if (role === 'progress') {
+    if (SUGGESTION_PROGRESS_PATTERN.test(text)) score += 14;
+    if (SUGGESTION_PASSIVE_PATTERN.test(text) && !SUGGESTION_PROGRESS_PATTERN.test(text)) score -= 16;
+  }
 
   return score;
 }
@@ -674,38 +701,55 @@ export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestio
 
   let parts = cleaned
     .split(/[|\n]/)
-    .map((part) => cleanSuggestionCandidate(part))
-    .filter(Boolean);
+    .map((part) => ({ raw: String(part || '').trim(), cleaned: cleanSuggestionCandidate(part) }))
+    .filter((part) => part.raw || part.cleaned);
 
   if (parts.length < 2) {
     parts = cleaned
       .split(/\d+[.)]\s*/)
-      .map((part) => cleanSuggestionCandidate(part))
-      .filter(Boolean);
+      .map((part) => ({ raw: String(part || '').trim(), cleaned: cleanSuggestionCandidate(part) }))
+      .filter((part) => part.raw || part.cleaned);
   }
 
   if (parts.length < 2) {
     parts = cleaned
       .split(/\s*;\s*/)
-      .map((part) => cleanSuggestionCandidate(part))
-      .filter(Boolean);
+      .map((part) => ({ raw: String(part || '').trim(), cleaned: cleanSuggestionCandidate(part) }))
+      .filter((part) => part.raw || part.cleaned);
   }
 
   const selected = [];
+  const roleBuckets = { safe: null, bold: null, progress: null };
 
-  parts.forEach((part) => {
-    const compact = compactSuggestionCandidate(part);
+  parts.forEach(({ raw: rawPart, cleaned: cleanedPart }) => {
+    const role = detectSuggestionRole(rawPart);
+    const compact = compactSuggestionCandidate(cleanedPart);
     if (!compact) return;
     const wordCount = compact.split(/\s+/).filter(Boolean).length;
     if (compact.length < 2 || compact.length > SUGGESTION_MAX_CHARS || wordCount < 2 || wordCount > SUGGESTION_MAX_WORDS) return;
     if (SUGGESTION_META_PATTERN.test(compact) || SUGGESTION_NON_ACTION_PATTERN.test(compact)) return;
     if (!dedupeSuggestionAgainstHistory(compact, lastUserMsg, previousSuggestions)) return;
     if (isTooSimilarToSelected(compact, selected)) return;
-    if (scoreSuggestionCandidate(compact, part) < 44) return;
+    if (scoreSuggestionCandidate(compact, rawPart, role) < 44) return;
+    if (role && !roleBuckets[role]) {
+      roleBuckets[role] = compact;
+      selected.push(compact);
+      return;
+    }
     selected.push(compact);
   });
 
-  return selected.slice(0, SUGGESTION_TARGET_COUNT);
+  const ordered = SUGGESTION_ROLE_ORDER
+    .map((role) => roleBuckets[role])
+    .filter(Boolean);
+
+  selected.forEach((candidate) => {
+    if (ordered.length >= SUGGESTION_TARGET_COUNT) return;
+    if (ordered.includes(candidate)) return;
+    ordered.push(candidate);
+  });
+
+  return ordered.slice(0, SUGGESTION_TARGET_COUNT);
 }
 
 /**
@@ -881,6 +925,9 @@ export function abortImpersonateCall() {
     impersonateAbortController.abort();
     impersonateAbortController = null;
   }
+  if (isElectron() && window.electronAPI?.abortAiChat) {
+    window.electronAPI.abortAiChat('impersonate');
+  }
 }
 
 function escapeRegex(text) {
@@ -998,6 +1045,59 @@ function hasInvalidImpersonateLead(text, userName, charName = '') {
   return new RegExp(`^(?:${invalidLeads.join('|')})`, 'i').test(trimmed);
 }
 
+function scoreWriteForMeDraft(text, history = []) {
+  const trimmed = String(text || '').trim();
+  if (!trimmed) return -Infinity;
+
+  let score = 100;
+  const words = trimmed.split(/\s+/).filter(Boolean);
+  const sentenceCount = trimmed.split(/(?<=[.!?])\s+/).filter(Boolean).length;
+  const recentUserMessages = (history || [])
+    .filter((message) => message.role === 'user')
+    .slice(-3)
+    .map((message) => String(message.content || '').trim().toLowerCase());
+
+  if (trimmed.length < 24) score -= 50;
+  if (!/[.!?*"”]$/.test(trimmed)) score -= 18;
+  if (words.length < 4) score -= 20;
+  if (words.length > 40) score -= 18 + Math.ceil((words.length - 40) / 4) * 5;
+  if (sentenceCount > 2) score -= 14 + (sentenceCount - 2) * 6;
+  if (WRITE_FOR_ME_GENERIC_PATTERN.test(trimmed)) score -= 24;
+  if (!/\b(?:I|me|my|I'm|I’d|I'd|I’ll|I'll|I’ve|I've)\b/.test(trimmed)) score -= 30;
+  if (!/[*"]/.test(trimmed)) score -= 8;
+  if (!/\b(?:ask|tell|invite|offer|pull|touch|kiss|move|sit|stay|admit|answer|lean|take|guide|bring|hold|want|need|let)\b/i.test(trimmed)) {
+    score -= 12;
+  }
+
+  if (recentUserMessages.some((message) => message && trimmed.toLowerCase() === message)) {
+    score -= 35;
+  }
+
+  return score;
+}
+
+function shortenWriteForMeDraft(text) {
+  let trimmed = String(text || '').trim().replace(/\n{3,}/g, '\n\n');
+  if (!trimmed) return '';
+
+  const sentences = trimmed
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  if (sentences.length > 2) {
+    trimmed = sentences.slice(0, 2).join(' ').trim();
+  }
+
+  if (trimmed.length > 280) {
+    const clipped = trimmed.slice(0, 280);
+    const sentenceEnd = Math.max(clipped.lastIndexOf('. '), clipped.lastIndexOf('! '), clipped.lastIndexOf('? '));
+    trimmed = sentenceEnd > 120 ? clipped.slice(0, sentenceEnd + 1).trim() : clipped.trim();
+  }
+
+  return trimmed;
+}
+
 export function finalizeImpersonateDraft(rawText, { charName = '', userName = 'User' } = {}) {
   let cleaned = String(rawText || '').trim();
   if (!cleaned) {
@@ -1089,14 +1189,14 @@ export async function impersonateUser(history, character, userName, passionLevel
   console.log('[API] Impersonate runtime:', runtimeContext.debug);
   const stop = [`\n${charName}:`, `\n${charName} :`, `${charName}:`];
 
-  const generateDraft = async ({ numPredict, promptSuffix = '', streamOutput = true }) => {
+  const generateDraft = async ({ numPredict, promptSuffix = '', temperature = settings.temperature ?? profile.temperature }) => {
     const messages = [
       { role: 'system', content: runtimeContext.systemPrompt },
       { role: 'user', content: `${runtimeContext.userPrompt}${promptSuffix}` }
     ];
     const options = {
       num_predict: numPredict,
-      temperature: settings.temperature ?? profile.temperature,
+      temperature,
       num_ctx: impersonateNumCtx,
       top_k: settings.topK ?? profile.topK,
       top_p: settings.topP ?? profile.topP,
@@ -1105,40 +1205,30 @@ export async function impersonateUser(history, character, userName, passionLevel
       repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
       penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline
     };
-    const textChunks = [];
-
-    const emitDisplay = () => {
-      if (!streamOutput) return;
-      const display = textChunks.join('')
-        .replace(/<\/s>/g, '')
-        .replace(/\[TOOL_CALLS\]/g, '')
-        .replace(/<\|[^|]*\|>/g, '')
-        .replace(/^[./]+(?=\*)/gm, '')
-        .trim();
-      onToken(null, display);
-    };
 
     if (isElectron()) {
       const requestId = `impersonate-${Date.now()}-${numPredict}`;
       impersonateAbortController = {
-        abort: () => window.electronAPI.ollamaStreamAbort(requestId)
+        abort: () => window.electronAPI.abortAiChat?.('impersonate')
       };
 
-      const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
-        if (rid !== requestId) return;
-        textChunks.push(token);
-        emitDisplay();
-      });
-
       try {
-        const result = await window.electronAPI.ollamaChatStream({
-          requestId, ollamaUrl, model, messages, options, stop
+        const result = await window.electronAPI.aiChat({
+          messages: [{ role: 'user', content: `${runtimeContext.userPrompt}${promptSuffix}` }],
+          systemPrompt: runtimeContext.systemPrompt,
+          model,
+          isOllama: true,
+          ollamaUrl,
+          temperature: options.temperature,
+          maxTokens: options.num_predict,
+          num_ctx: options.num_ctx,
+          tag: 'impersonate'
         });
-        if (!result.success && !result.aborted) {
-          throw new Error(result.error || 'Stream failed');
+        if (!result.success) {
+          throw new Error(result.error || 'Chat failed');
         }
+        return finalizeImpersonateDraft(result.content || '', { charName, userName });
       } finally {
-        cleanup();
         impersonateAbortController = null;
       }
     } else {
@@ -1148,67 +1238,47 @@ export async function impersonateUser(history, character, userName, passionLevel
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: impersonateAbortController.signal,
-        body: JSON.stringify({ model, messages, stream: true, options: { ...options, stop } })
+        body: JSON.stringify({ model, messages, stream: false, options: { ...options, stop } })
       });
 
       if (!res.ok || !res.body) {
         throw new Error(`Ollama request failed: ${res.status}`);
       }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-
       try {
-        while (true) {
-          let readResult;
-          try {
-            readResult = await reader.read();
-          } catch (readErr) {
-            console.warn('[API] Impersonate stream interrupted:', readErr.message);
-            break;
-          }
-          const { done, value } = readResult;
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          for (const line of chunk.split('\n').filter(Boolean)) {
-            try {
-              const parsed = JSON.parse(line);
-              const token = parsed.message?.content || '';
-              if (token) {
-                textChunks.push(token);
-                emitDisplay();
-              }
-            } catch { /* skip malformed lines */ }
-          }
-        }
+        const data = await res.json();
+        return finalizeImpersonateDraft(data.message?.content || '', { charName, userName });
       } finally {
-        reader.cancel().catch(() => {});
         impersonateAbortController = null;
       }
     }
-
-    return finalizeImpersonateDraft(textChunks.join(''), { charName, userName });
   };
 
-  let finalized = await generateDraft({ numPredict: 96, streamOutput: true });
+  let finalized = await generateDraft({ numPredict: 96, temperature: Math.max(0.55, (settings.temperature ?? profile.temperature) - 0.08) });
+  let finalizedScore = finalized.valid && finalized.text ? scoreWriteForMeDraft(finalized.text, history) : -Infinity;
 
-  if (!finalized.valid || !finalized.text || finalized.text.trim().length < 24) {
-    console.info('[API] Impersonate retry: first draft too weak, retrying with stronger completion prompt');
-    finalized = await generateDraft({
+  if (!finalized.valid || !finalized.text || finalizedScore < 66) {
+    console.info('[API] Impersonate retry: first draft too weak or generic, retrying with stronger completion prompt');
+    const retryDraft = await generateDraft({
       numPredict: 128,
-      promptSuffix: '\n\nWrite one complete short first-person reply. End cleanly after one or two sentences.',
-      streamOutput: false
+      promptSuffix: '\n\nWrite one complete first-person reply that clearly moves the scene forward. Stay natural, specific, and grounded in the exact current beat. Avoid generic romance phrasing, atmospheric filler, and commentary about scent, tension, or what lingers in the air. End cleanly after one or two sentences.',
+      temperature: Math.max(0.5, (settings.temperature ?? profile.temperature) - 0.1)
     });
-    if (finalized.text) {
-      onToken(null, finalized.text);
+    const retryScore = retryDraft.valid && retryDraft.text ? scoreWriteForMeDraft(retryDraft.text, history) : -Infinity;
+
+    if (retryScore >= finalizedScore || !finalized.valid || !finalized.text) {
+      finalized = retryDraft;
+      finalizedScore = retryScore;
     }
   }
 
-  if (!finalized.valid || !finalized.text || finalized.text.trim().length < 18) {
+  if (!finalized.valid || !finalized.text || finalized.text.trim().length < 24 || finalizedScore < 36) {
     throw new Error('Failed to generate a usable draft');
   }
 
-  return finalized.text;
+  const shortened = shortenWriteForMeDraft(finalized.text);
+  onToken(null, shortened);
+  return shortened;
 }
 
 /**

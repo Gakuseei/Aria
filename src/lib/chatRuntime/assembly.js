@@ -148,16 +148,22 @@ function buildSuggestionLateSteering(runtimeState) {
       ? `Suggest what ${runtimeState.userName} does or says next in the same exchange with ${runtimeState.characterName}.`
       : `Suggest what ${runtimeState.userName} does next in the same scene with ${runtimeState.characterName}.`,
     'Return exactly 3 click-ready actions separated by | and nothing else.',
-    'Each action should be 3-9 words, user action only, with no quotes, dialogue, commentary, or narrated prose.',
+    'Use this fixed ladder: safe: ... | bold: ... | progress: ...',
+    'Each action should stay short, user-side, clickable, and free of dialogue, quotes, or commentary.',
     runtimeState.runtimeSteering.passionLevel > 15
       ? 'In explicit scenes, do not become timid, euphemistic, or generic.'
       : '',
-    'Option 1 matches the current pace, option 2 is bolder, option 3 adds a fresh angle without resetting the scene.',
+    'safe matches the current pace naturally.',
+    'bold is more daring or intimate without breaking character or scene continuity.',
+    'progress must clearly move the scene forward: answer the open thread, make a choice, deepen tension, escalate, or shift the beat within the same scene.',
     isBot
       ? 'Stay inside the current exchange and do not reset the task or context.'
       : 'Stay in the current scene. Do not relocate the characters unless the scene is already moving there.',
-    'Make the options meaningfully different instead of three phrasings of the same move.',
+    'Make the 3 options meaningfully different instead of three phrasings of the same move.',
     `Base the actions on what ${runtimeState.characterName} just did or said.`,
+    runtimeState.compiledRuntimeCard.personaAnchor
+      ? `Keep ${runtimeState.userName}'s options grounded in ${runtimeState.characterName}'s specific persona, not generic flirtation.`
+      : '',
     'Match the conversation language and the current scene tone.',
     intensityLine,
     avoidList.length > 0 ? `Do not repeat: ${avoidList.join(' | ')}` : ''
@@ -175,14 +181,35 @@ function buildImpersonateLateSteering(runtimeState) {
     `Write ${runtimeState.userName}'s reply in FIRST PERSON (I/me/my).`,
     `NEVER write as ${runtimeState.characterName}.`,
     `NEVER narrate ${runtimeState.userName} from outside in second or third person.`,
-    '1-2 sentences MAX.',
+    'Prefer 1-2 sentences. Use a 3rd sentence only if it materially improves the next move.',
     'Actions go in *asterisks*. Dialogue stays plain text.',
     'Keep the same language as the conversation.',
+    'Default to the user\'s recent voice, directness, and pacing.',
+    'If a literal imitation would stall the scene, choose the stronger next move while still sounding like the user.',
+    'The reply must actively move the scene forward instead of restating the current tension.',
+    'Avoid atmospheric filler, generic longing narration, and extra description about scent, tension, or what lingers in the air unless the user already writes that way.',
     isBot
       ? 'Stay inside the exact active exchange and answer what the bot just said or asked.'
       : `Stay inside the exact scene established by the recent conversation. Do not invent a new location, prop, room, or time jump unless the scene already changed there. Keep the reply grounded in what ${runtimeState.characterName} just did or said.`,
+    runtimeState.compiledRuntimeCard.personaAnchor
+      ? `Keep the response tuned to ${runtimeState.characterName}'s specific persona and chemistry instead of generic romance language.`
+      : '',
     intensityLine
   ].filter(Boolean).join('\n');
+}
+
+function buildRecentUserVoiceExamples(runtimeState) {
+  const samples = runtimeState.selectedRecentHistory.messages
+    .filter((message) => message.role === 'user')
+    .slice(-3)
+    .map((message) => trimPromptSnippet(message.content, 170))
+    .filter(Boolean);
+
+  if (samples.length === 0) return '';
+
+  return samples
+    .map((sample, index) => `${index + 1}. ${sample}`)
+    .join('\n');
 }
 
 function buildImpersonateUserPrompt(runtimeState, recentTail) {
@@ -191,20 +218,24 @@ function buildImpersonateUserPrompt(runtimeState, recentTail) {
     runtimeState.activeScene.latest_character_action_or_reaction ? `${runtimeState.characterName}: ${runtimeState.activeScene.latest_character_action_or_reaction}` : '',
     runtimeState.activeScene.latest_user_action_or_request ? `${runtimeState.userName}: ${runtimeState.activeScene.latest_user_action_or_request}` : ''
   ].filter(Boolean).join('\n');
+  const openThread = trimPromptSnippet(runtimeState.activeScene.open_thread || '', 140);
   const sceneSummary = clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: false }), 105, 120)
     || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 220);
   const recentConversation = formatHistory(recentTail, runtimeState.characterName, runtimeState.userName)
     || currentBeat
     || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 220);
+  const voiceExamples = buildRecentUserVoiceExamples(runtimeState);
 
   return [
     `Current beat:\n${currentBeat || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 160)}`,
+    openThread ? `Open thread:\n${openThread}` : '',
     `Scene summary:\n${sceneSummary || 'Use the current beat above.'}`,
+    voiceExamples ? `Recent ${runtimeState.userName} voice examples:\n${voiceExamples}` : '',
     `Recent conversation:\n${recentConversation}`,
     isBot
-      ? `Write ${runtimeState.userName}'s next reply without changing the exchange:`
-      : `Write ${runtimeState.userName}'s next reply without changing the scene:`
-  ].join('\n\n');
+      ? `Write ${runtimeState.userName}'s next reply so the exchange clearly moves forward:`
+      : `Write ${runtimeState.userName}'s next reply so the scene clearly moves forward:`
+  ].filter(Boolean).join('\n\n');
 }
 
 export function assembleRuntimeContext({ profile, runtimeState }) {
@@ -325,18 +356,27 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       runtimeState.activeScene.latest_user_action_or_request ? `${runtimeState.userName}: ${runtimeState.activeScene.latest_user_action_or_request}` : ''
     ].filter(Boolean).join('\n');
     const systemPrompt = [
+      buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, 65)),
       buildPlainTextBlock('Character Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)),
+      runtimeState.compiledRuntimeCard.personaAnchor
+        ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, 75))
+        : '',
       buildPlainTextBlock('Active Scene', clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene, 115)),
       buildPlainTextBlock('Late Steering', clipToTokenTarget(buildSuggestionLateSteering(runtimeState), targets.lateSteering))
     ].filter(Boolean).join('\n\n');
 
-    debug.includedBlocks.push('Character Core', 'Active Scene', 'Late Steering');
-    debug.droppedBlocks.push('Global Core', 'Example Seed');
+    debug.includedBlocks.push('Global Core', 'Character Core', 'Active Scene', 'Late Steering');
+    if (runtimeState.compiledRuntimeCard.personaAnchor) {
+      debug.includedBlocks.push('Persona Anchor');
+    } else {
+      debug.droppedBlocks.push('Persona Anchor');
+    }
+    debug.droppedBlocks.push('Example Seed');
 
     return {
       profile,
       systemPrompt,
-      userPrompt: `Current beat:\n${currentBeat || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 160)}\n\nRecent scene tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 220)}\n\n${isBot ? `3 next moves for ${runtimeState.userName} in the same exchange:` : `3 actions for ${runtimeState.userName} in the same scene:`}`,
+      userPrompt: `Current beat:\n${currentBeat || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 160)}\n\nOpen thread:\n${trimPromptSnippet(runtimeState.activeScene.open_thread || 'Carry the scene forward from the latest beat.', 140)}\n\nRecent scene tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 220)}\n\n${isBot ? `3 next moves for ${runtimeState.userName} in the same exchange:` : `3 actions for ${runtimeState.userName} in the same scene:`}`,
       debug: {
         ...debug,
         historyCountKept: recentTail.length
@@ -347,13 +387,22 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
   const recentTail = runtimeState.selectedRecentHistory.messages.slice(-4);
   const minimalCharacterReference = clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore);
   const systemPrompt = [
+    buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, 60)),
     buildPlainTextBlock('Active Scene', clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene, 115)),
+    runtimeState.compiledRuntimeCard.personaAnchor
+      ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, 75))
+      : '',
     buildPlainTextBlock('Character Reference', minimalCharacterReference),
     buildPlainTextBlock('Late Steering', clipToTokenTarget(buildImpersonateLateSteering(runtimeState), targets.lateSteering))
   ].filter(Boolean).join('\n\n');
 
-  debug.includedBlocks.push('Active Scene', 'Character Reference', 'Late Steering');
-  debug.droppedBlocks.push('Global Core', 'Example Seed');
+  debug.includedBlocks.push('Global Core', 'Active Scene', 'Character Reference', 'Late Steering');
+  if (runtimeState.compiledRuntimeCard.personaAnchor) {
+    debug.includedBlocks.push('Persona Anchor');
+  } else {
+    debug.droppedBlocks.push('Persona Anchor');
+  }
+  debug.droppedBlocks.push('Example Seed');
 
   return {
     profile,

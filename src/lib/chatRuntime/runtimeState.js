@@ -9,15 +9,15 @@ import {
 } from './text.js';
 
 const PROFILE_HISTORY_SHARE = {
-  reply: 0.58,
-  suggestions: 0.3,
-  impersonate: 0.36
+  reply: 0.34,
+  suggestions: 0.18,
+  impersonate: 0.22
 };
 
-const PROFILE_NON_HISTORY_CEILING = {
-  reply: 750,
-  suggestions: 260,
-  impersonate: 300
+const PROFILE_NON_HISTORY_RESERVE = {
+  reply: 900,
+  suggestions: 420,
+  impersonate: 520
 };
 
 const SCENE_MEMORY_MAX_TOKENS = 120;
@@ -594,9 +594,10 @@ function shouldUseExampleSeed({ history, compiledRuntimeCard, profile }) {
 
 function calculateHistoryBudget(totalBudget, profile) {
   const historyShare = PROFILE_HISTORY_SHARE[profile] || PROFILE_HISTORY_SHARE.reply;
-  const nonHistoryCeiling = PROFILE_NON_HISTORY_CEILING[profile] || PROFILE_NON_HISTORY_CEILING.reply;
+  const nonHistoryReserve = PROFILE_NON_HISTORY_RESERVE[profile] || PROFILE_NON_HISTORY_RESERVE.reply;
   const sharedBudget = Math.floor(totalBudget * historyShare);
-  return Math.max(180, Math.max(sharedBudget, totalBudget - nonHistoryCeiling));
+  const reservedBudget = totalBudget - nonHistoryReserve;
+  return Math.max(180, Math.min(sharedBudget, reservedBudget));
 }
 
 export function buildRuntimeState({ character, history, userName = 'User', runtimeSteering = {} }) {

@@ -1922,7 +1922,8 @@ ipcMain.handle('load-settings', async () => {
     const BACKFILL_DEFAULTS = {
       ollamaUrl: OLLAMA_DEFAULT_URL,
       ollamaModel: DEFAULT_MODEL_NAME,
-      maxResponseTokens: 512
+      contextSize: 4096,
+      maxResponseTokens: 256
     };
     for (const [key, value] of Object.entries(BACKFILL_DEFAULTS)) {
       if (settings[key] === undefined) {

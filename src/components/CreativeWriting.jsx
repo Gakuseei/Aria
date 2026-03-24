@@ -179,7 +179,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     try {
       const language = localStorage.getItem('language') || 'en';
       const ollamaUrl = parentSettings?.ollamaUrl || OLLAMA_DEFAULT_URL;
-      const numCtx = await getModelCtx(ollamaUrl, currentModel, parentSettings?.contextSize || 'medium');
+      const numCtx = await getModelCtx(ollamaUrl, currentModel, parentSettings?.contextSize || 4096);
 
       const result = await generateStory({
         prompt: prompt.trim(),
@@ -255,7 +255,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     try {
       const language = localStorage.getItem('language') || 'en';
       const ollamaUrl = parentSettings?.ollamaUrl || OLLAMA_DEFAULT_URL;
-      const numCtx = await getModelCtx(ollamaUrl, currentModel, parentSettings?.contextSize || 'medium');
+      const numCtx = await getModelCtx(ollamaUrl, currentModel, parentSettings?.contextSize || 4096);
 
       const result = await continueStory({
         storyText: story,

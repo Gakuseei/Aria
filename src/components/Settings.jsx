@@ -1,7 +1,7 @@
 // ARIA v1.0 RELEASE - Settings (Rose Noir Theme)
 
 import { useState, useEffect, useRef } from 'react';
-import { fetchOllamaModels, testOllamaConnection } from '../lib/api';
+import { CONTEXT_SIZE_OPTIONS, fetchOllamaModels, getRecommendedContextSizeForModel, normalizeContextSize, testOllamaConnection } from '../lib/api';
 import { Globe, Zap, Moon, RefreshCw, Check, X, User, Image, Volume2, HelpCircle, FolderOpen } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import ImageGenSetup from './tutorials/ImageGenSetup';
@@ -12,6 +12,9 @@ import useGoldMode from '../hooks/useGoldMode';
 export default function Settings({ settings, onSettingChange, onClose }) {
   const { t, language, setLanguage } = useLanguage();
   const isGoldMode = useGoldMode();
+  const normalizedContextSize = normalizeContextSize(settings.contextSize, settings.ollamaModel);
+  const recommendedContextSize = getRecommendedContextSizeForModel(settings.ollamaModel);
+  const contextIndex = Math.max(0, CONTEXT_SIZE_OPTIONS.indexOf(normalizedContextSize));
 
   // v0.2.5: All settings now come from props, no local state
   // Refs to avoid re-registering IPC listeners when props change
@@ -324,16 +327,32 @@ export default function Settings({ settings, onSettingChange, onClose }) {
 
               <div>
                 <label className="block text-sm font-medium text-zinc-400 mb-2">{t.settings.contextSize || 'Context Size'}</label>
-                <CustomDropdown
-                  value={settings.contextSize || 'medium'}
-                  onChange={(e) => onSettingChange('contextSize', e.target.value)}
-                  options={[
-                    { value: 'low', label: t.settings.contextLow || 'Low (8GB VRAM)' },
-                    { value: 'medium', label: t.settings.contextMedium || 'Medium (12GB VRAM)' },
-                    { value: 'high', label: t.settings.contextHigh || 'High (16GB VRAM)' },
-                    { value: 'max', label: t.settings.contextMax || 'Max (24GB+ VRAM)' }
-                  ]}
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-sm font-mono px-2 py-0.5 rounded ${
+                    isGoldMode ? 'text-amber-300 bg-amber-500/10' : 'text-rose-300 bg-rose-500/10'
+                  }`}>{normalizedContextSize}</span>
+                  <span className="text-xs text-zinc-500">
+                    {recommendedContextSize} {t.characterCreator?.recommended || 'recommended'}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max={String(CONTEXT_SIZE_OPTIONS.length - 1)}
+                  step="1"
+                  value={contextIndex}
+                  onChange={(e) => onSettingChange('contextSize', CONTEXT_SIZE_OPTIONS[Number(e.target.value)])}
+                  className={`w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer ${
+                    isGoldMode ? 'accent-amber-500' : 'accent-rose-500'
+                  }`}
                 />
+                <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-500">
+                  {CONTEXT_SIZE_OPTIONS.map((option) => (
+                    <span key={option} className={option === normalizedContextSize ? (isGoldMode ? 'text-amber-300' : 'text-rose-300') : undefined}>
+                      {option}
+                    </span>
+                  ))}
+                </div>
                 <p className="text-xs text-zinc-500 mt-1.5">
                   {t.settings.contextSizeDesc || 'More context = longer conversations in memory. Requires more VRAM.'}
                 </p>
@@ -367,14 +386,14 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   <label className="text-sm font-medium text-zinc-400">{t.settings.maxResponseTokens}</label>
                   <span className={`text-sm font-mono px-2 py-0.5 rounded ${
                     isGoldMode ? 'text-amber-300 bg-amber-500/10' : 'text-rose-300 bg-rose-500/10'
-                  }`}>{settings.maxResponseTokens ?? 512}</span>
+                  }`}>{settings.maxResponseTokens ?? 256}</span>
                 </div>
                 <input
                   type="range"
-                  min="64"
-                  max="2048"
+                  min="96"
+                  max="1024"
                   step="32"
-                  value={settings.maxResponseTokens ?? 512}
+                  value={settings.maxResponseTokens ?? 256}
                   onChange={(e) => onSettingChange('maxResponseTokens', parseInt(e.target.value))}
                   className={`w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer ${
                     isGoldMode ? 'accent-amber-500' : 'accent-rose-500'

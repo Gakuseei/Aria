@@ -249,7 +249,7 @@ const DEFAULT_SETTINGS = {
   repeatPenalty: 1.1,
   repeatLastN: 256,
   penalizeNewline: false,
-  contextSize: 'medium',
+  contextSize: 4096,
   fontSize: 'medium',
   autoSave: true,
   soundEnabled: true,
@@ -262,7 +262,7 @@ const DEFAULT_SETTINGS = {
   imageGenUrl: IMAGE_GEN_DEFAULT_URL,
   voiceEnabled: false,
   voiceUrl: VOICE_DEFAULT_URL,
-  maxResponseTokens: 512
+  maxResponseTokens: 256
 };
 
 const PASSION_SCORING_TIMEOUT_MS = 30000;
@@ -294,23 +294,53 @@ export function invalidateModelCapsCache() {
  * Context size presets (tokens). Users pick a tier in Settings.
  * Ollama offloads to CPU if VRAM is exceeded — safe to overshoot.
  */
-const CTX_PRESETS = {
-  low:    { small: 4096,  medium: 8192,   large: 16384  },
-  medium: { small: 8192,  medium: 16384,  large: 32768  },
-  high:   { small: 16384, medium: 32768,  large: 65536  },
-  max:    { small: 32768, medium: 65536,  large: 131072 }
+export const CONTEXT_SIZE_OPTIONS = [2048, 3072, 4096, 6144, 8192, 12288, 16384];
+
+const LEGACY_CONTEXT_SIZE_MAP = {
+  low: 3072,
+  medium: 4096,
+  high: 6144,
+  max: 8192
 };
+
+function parseModelParamB(modelName = '') {
+  const match = String(modelName).toLowerCase().match(/(\d+(?:\.\d+)?)\s*b\b/);
+  return match ? parseFloat(match[1]) : null;
+}
+
+export function getRecommendedContextSizeForModel(modelName = '') {
+  const paramB = parseModelParamB(modelName);
+  if (!Number.isFinite(paramB)) return 4096;
+  if (paramB <= 14) return 4096;
+  return 6144;
+}
+
+export function normalizeContextSize(value, modelName = '') {
+  if (typeof value === 'string') {
+    const trimmed = value.trim().toLowerCase();
+    if (LEGACY_CONTEXT_SIZE_MAP[trimmed]) return LEGACY_CONTEXT_SIZE_MAP[trimmed];
+    const numeric = Number.parseInt(trimmed, 10);
+    if (Number.isFinite(numeric)) value = numeric;
+  }
+
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return getRecommendedContextSizeForModel(modelName);
+  }
+
+  const bounded = Math.max(CONTEXT_SIZE_OPTIONS[0], Math.min(CONTEXT_SIZE_OPTIONS[CONTEXT_SIZE_OPTIONS.length - 1], Math.round(value)));
+  return CONTEXT_SIZE_OPTIONS.reduce((nearest, option) => {
+    return Math.abs(option - bounded) < Math.abs(nearest - bounded) ? option : nearest;
+  }, CONTEXT_SIZE_OPTIONS[0]);
+}
 
 /**
  * Compute the capped num_ctx for a given model.
  * Centralised so every Ollama request uses the same value.
  */
-export async function getModelCtx(ollamaUrl, model, contextPreset = 'medium') {
+export async function getModelCtx(ollamaUrl, model, requestedContextSize = 4096) {
   const caps = await getModelCapabilities(ollamaUrl, model);
-  const paramB = parseFloat(caps.parameterSize) || 7;
-  const sizeKey = paramB <= 3 ? 'small' : paramB <= 10 ? 'medium' : 'large';
-  const preset = CTX_PRESETS[contextPreset] || CTX_PRESETS.medium;
-  return Math.min(caps.contextLength, preset[sizeKey]);
+  const normalizedContextSize = normalizeContextSize(requestedContextSize, model || caps.parameterSize);
+  return Math.min(caps.contextLength, normalizedContextSize);
 }
 
 /**
@@ -397,6 +427,7 @@ async function getModelCapabilities(ollamaUrl, modelName) {
  * @returns {Promise<number>} Score from 0 to 10, or 0 on failure
  */
 async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096) {
+  const scoringCtx = Math.min(normalizeContextSize(modelCtx, settings?.ollamaModel), 2048);
   const scoringPrompt = `Rate closeness 0-10. Number only.\n0=casual 3=building 5=personal 7=intense 10=peak\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`;
 
   try {
@@ -412,7 +443,7 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
           ollamaUrl: settings.ollamaUrl || OLLAMA_DEFAULT_URL,
           temperature: 0.1,
           maxTokens: 16,
-          num_ctx: modelCtx,
+          num_ctx: scoringCtx,
           tag: 'passion-score'
         }),
         new Promise((_, reject) => {
@@ -435,7 +466,7 @@ async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096
             model: settings.ollamaModel || DEFAULT_MODEL_NAME,
             messages: [{ role: 'user', content: scoringPrompt }],
             stream: false,
-            options: { temperature: 0.1, num_predict: 16, num_ctx: modelCtx }
+            options: { temperature: 0.1, num_predict: 16, num_ctx: scoringCtx }
           })
         });
         if (!response.ok) return 0;
@@ -780,7 +811,8 @@ export async function generateSuggestionsBackground(history, character, userName
 
   const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
   const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
-  const numCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
+  const numCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 4096);
+  const suggestionNumCtx = Math.min(numCtx, 3072);
   const lastUserMsg = [...(history || [])].reverse().find((message) => message?.role === 'user')?.content || '';
   const runtimeState = buildRuntimeState({
     character,
@@ -788,7 +820,7 @@ export async function generateSuggestionsBackground(history, character, userName
     userName,
     runtimeSteering: {
       profile: 'suggestions',
-      availableContextTokens: Math.max(256, numCtx - 640),
+      availableContextTokens: Math.max(256, suggestionNumCtx - 896),
       passionLevel,
       avoidSuggestions: [...previousSuggestions, lastUserMsg ? lastUserMsg.slice(0, 80) : ''].filter(Boolean),
       persistedSceneMemory: sceneMemory
@@ -806,7 +838,7 @@ export async function generateSuggestionsBackground(history, character, userName
     ollamaUrl,
     temperature: 0.72,
     maxTokens: 64,
-    num_ctx: numCtx
+    num_ctx: suggestionNumCtx
   };
   const retryChatParams = {
     ...chatParams,
@@ -1108,7 +1140,8 @@ export async function impersonateUser(history, character, userName, passionLevel
 
   const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
   const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
-  const numCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
+  const numCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 4096);
+  const impersonateNumCtx = Math.min(numCtx, 4096);
   const profile = getModelProfile(model);
   const charName = character?.name || 'Character';
   const runtimeState = buildRuntimeState({
@@ -1117,7 +1150,7 @@ export async function impersonateUser(history, character, userName, passionLevel
     userName,
     runtimeSteering: {
       profile: 'impersonate',
-      availableContextTokens: Math.max(320, numCtx - 96),
+      availableContextTokens: Math.max(320, impersonateNumCtx - 256),
       passionLevel,
       persistedSceneMemory: sceneMemory
     }
@@ -1133,7 +1166,7 @@ export async function impersonateUser(history, character, userName, passionLevel
   const options = {
     num_predict: 60,
     temperature: settings.temperature ?? profile.temperature,
-    num_ctx: numCtx,
+    num_ctx: impersonateNumCtx,
     top_k: settings.topK ?? profile.topK,
     top_p: settings.topP ?? profile.topP,
     min_p: settings.minP ?? profile.minP,
@@ -1300,7 +1333,7 @@ export const sendMessage = async (
 
     const ollamaUrl = settings.ollamaUrl || OLLAMA_DEFAULT_URL;
     const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
-    const modelCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 'medium');
+    const modelCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 4096);
     const profile = getModelProfile(model);
     const historyToUse = (Array.isArray(conversationHistory) ? conversationHistory : []).filter(m => m.role !== 'system');
 
@@ -1792,9 +1825,16 @@ export const loadSettings = async () => {
       const result = await window.electronAPI.loadSettings();
 
       if (result && result.success && result.settings) {
-        return {
+        const merged = {
           ...DEFAULT_SETTINGS,
           ...result.settings
+        };
+        return {
+          ...merged,
+          contextSize: normalizeContextSize(merged.contextSize, merged.ollamaModel),
+          maxResponseTokens: Number.isFinite(Number(merged.maxResponseTokens))
+            ? Math.max(96, Math.min(1024, Number(merged.maxResponseTokens)))
+            : DEFAULT_SETTINGS.maxResponseTokens
         };
       }
     } else {
@@ -1802,9 +1842,16 @@ export const loadSettings = async () => {
 
       if (stored) {
         const parsed = JSON.parse(stored);
-        return {
+        const merged = {
           ...DEFAULT_SETTINGS,
           ...parsed
+        };
+        return {
+          ...merged,
+          contextSize: normalizeContextSize(merged.contextSize, merged.ollamaModel),
+          maxResponseTokens: Number.isFinite(Number(merged.maxResponseTokens))
+            ? Math.max(96, Math.min(1024, Number(merged.maxResponseTokens)))
+            : DEFAULT_SETTINGS.maxResponseTokens
         };
       }
     }

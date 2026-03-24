@@ -11,7 +11,7 @@ import CharacterCreator from './components/CharacterCreator';
 import AICharacterBuilder from './components/AICharacterBuilder';
 import DebugConsole from './components/DebugConsole';
 import OledToggleButton from './components/OledToggleButton';
-import { testOllamaConnection, autoDetectAndSetModel } from './lib/api';
+import { testOllamaConnection, autoDetectAndSetModel, normalizeContextSize } from './lib/api';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from './lib/defaults';
 import { useLanguage } from './context/LanguageContext';
 import OllamaSetup from './components/tutorials/OllamaSetup';
@@ -84,7 +84,8 @@ function App() {
     voiceEnabled: false,
     voiceUrl: VOICE_DEFAULT_URL,
     voiceTier: 'standard', // 'standard' (Piper) or 'premium' (Zonos)
-    contextSize: 'medium',
+    contextSize: 4096,
+    maxResponseTokens: 256,
     fontSize: 'medium',
     autoSave: true,
     smartSuggestionsEnabled: true,
@@ -126,7 +127,10 @@ function App() {
             voiceEnabled: loadedSettings.voiceEnabled ?? false,
             voiceUrl: loadedSettings.voiceUrl || VOICE_DEFAULT_URL,
             voiceTier: loadedSettings.voiceTier || 'standard',
-            contextSize: loadedSettings.contextSize || 'medium',
+            contextSize: normalizeContextSize(loadedSettings.contextSize, loadedSettings.ollamaModel || DEFAULT_MODEL_NAME),
+            maxResponseTokens: Number.isFinite(Number(loadedSettings.maxResponseTokens))
+              ? Math.max(96, Math.min(1024, Number(loadedSettings.maxResponseTokens)))
+              : 256,
             fontSize: loadedSettings.fontSize || 'medium',
             autoSave: loadedSettings.autoSave ?? true,
             smartSuggestionsEnabled: loadedSettings.smartSuggestionsEnabled ?? true,

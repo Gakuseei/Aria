@@ -3,25 +3,25 @@ export const RESPONSE_MODE_ORDER = ['short', 'normal', 'long'];
 const RESPONSE_MODE_CONFIG = {
   short: {
     labelKey: 'responseModeShort',
-    tokenCap: 192,
-    sentenceMax: 6,
+    tokenCap: 160,
+    sentenceMax: 4,
     paragraphMax: 1,
-    charMax: 450,
-    promptInstruction: 'Default to 2-4 sentences and one short paragraph at most. Keep replies complete and characterful even when the user sends a very short message. Do not mirror their brevity unless they explicitly ask for a shorter reply. Do not ramble or add extra scene narration unless the user explicitly asks for more detail.',
+    charMax: 360,
+    promptInstruction: 'Default to 2-3 sentences and one short paragraph at most. Keep replies complete and characterful, but avoid extra narration, filler, or scene padding unless the user explicitly asks for more detail.',
     rewriteInstruction: 'Rewrite the reply as one short paragraph with no more than 4 sentences. Keep only the strongest details unless the user explicitly asked for detail.'
   },
   normal: {
     labelKey: 'responseModeNormal',
-    tokenCap: 384,
-    sentenceMax: 12,
-    paragraphMax: 4,
-    charMax: 900,
-    promptInstruction: 'Keep replies focused and natural. Usually stay within 1-2 short paragraphs unless the user explicitly asks for more detail.',
+    tokenCap: 224,
+    sentenceMax: 7,
+    paragraphMax: 2,
+    charMax: 520,
+    promptInstruction: 'Keep replies focused and natural. Usually stay within 1-2 short paragraphs, carry only one strong beat forward, and avoid sprawling narration unless the user explicitly asks for more detail.',
     rewriteInstruction: 'Tighten the reply to a focused length. Avoid sprawling narration and keep only the strongest details.'
   },
   long: {
     labelKey: 'responseModeLong',
-    tokenCap: null,
+    tokenCap: 384,
     sentenceMax: null,
     paragraphMax: null,
     charMax: null,

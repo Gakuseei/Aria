@@ -9,13 +9,13 @@ import {
 } from './text.js';
 
 const PROFILE_HISTORY_SHARE = {
-  reply: 0.34,
+  reply: 0.4,
   suggestions: 0.18,
   impersonate: 0.22
 };
 
 const PROFILE_NON_HISTORY_RESERVE = {
-  reply: 900,
+  reply: 820,
   suggestions: 420,
   impersonate: 520
 };
@@ -583,13 +583,14 @@ function shouldUseExampleSeed({ history, compiledRuntimeCard, profile }) {
   const assistantTurns = history.filter((message) => message.role === 'assistant');
   const recentAssistantText = assistantTurns.slice(-2).map((message) => message.content).join('\n');
   const coldChat = assistantTurns.length <= 1;
-  const sparseCadenceEvidence = recentAssistantText.replace(/\s+/g, ' ').trim().length < 220;
+  const sparseCadenceEvidence = recentAssistantText.replace(/\s+/g, ' ').trim().length < 320;
+  const stillFormingVoice = assistantTurns.length <= 4;
 
   if (compiledRuntimeCard.runtimeDefaults.type === 'bot') {
     return assistantTurns.length === 0 && compiledRuntimeCard.runtimeDefaults.voiceDependsOnExamples;
   }
 
-  return coldChat || compiledRuntimeCard.runtimeDefaults.voiceDependsOnExamples || sparseCadenceEvidence;
+  return coldChat || stillFormingVoice || compiledRuntimeCard.runtimeDefaults.voiceDependsOnExamples || sparseCadenceEvidence;
 }
 
 function calculateHistoryBudget(totalBudget, profile) {

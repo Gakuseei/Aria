@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import TitleBar from './components/TitleBar';
 import MainMenu from './components/MainMenu';
 import ModeSelection from './components/ModeSelection';
@@ -43,6 +43,7 @@ const RTL_LANGUAGES = new Set(['ar']);
 
 function App() {
   const { language } = useLanguage();
+  const startupTimersRef = useRef(new Set());
   const [currentView, setCurrentView] = useState(VIEWS.MAIN_MENU);
   const [, setSelectedMode] = useState(null);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
@@ -94,6 +95,18 @@ function App() {
     preferredLanguage: 'en'
   });
 
+  const startDebugTimer = (label) => {
+    if (startupTimersRef.current.has(label)) return;
+    startupTimersRef.current.add(label);
+    console.time(label);
+  };
+
+  const endDebugTimer = (label) => {
+    if (!startupTimersRef.current.has(label)) return;
+    startupTimersRef.current.delete(label);
+    console.timeEnd(label);
+  };
+
   // Helper function to add events to log (max 10 entries)
   const addEventToLog = (eventType, message) => {
     const newEvent = {
@@ -107,8 +120,8 @@ function App() {
   // v0.2.5: CRITICAL FIX - Load settings from localStorage on startup
   useEffect(() => {
     async function initializeApp() {
-      console.time('[Startup] Total init');
-      console.time('[Startup] Settings load');
+      startDebugTimer('[Startup] Total init');
+      startDebugTimer('[Startup] Settings load');
       try {
         const stored = localStorage.getItem('settings');
         if (stored) {
@@ -159,10 +172,10 @@ function App() {
       } catch (error) {
         console.error('[v9.5 App Init] ❌ Error loading settings:', error);
       }
-      console.timeEnd('[Startup] Settings load');
+      endDebugTimer('[Startup] Settings load');
 
       // v0.2.5: Check Ollama connection (NO API KEY!)
-      console.time('[Startup] Ollama check');
+      startDebugTimer('[Startup] Ollama check');
       try {
         const ollamaTest = await testOllamaConnection();
 
@@ -189,8 +202,8 @@ function App() {
         setOllamaReady(false);
         setShowOnboarding(true);
       }
-      console.timeEnd('[Startup] Ollama check');
-      console.timeEnd('[Startup] Total init');
+      endDebugTimer('[Startup] Ollama check');
+      endDebugTimer('[Startup] Total init');
     }
 
     initializeApp();

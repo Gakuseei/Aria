@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, scorePassionBackground, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, abortPassionScoring, resolveTemplates, unloadOllamaModel, normalizeSuggestionDisplayValue } from '../lib/api';
+import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel, normalizeSuggestionDisplayValue } from '../lib/api';
 import { passionManager, getTierKey, PASSION_TIERS } from '../lib/PassionManager';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
@@ -420,7 +420,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       }
       abortSuggestionCall();
       abortImpersonateCall();
-      abortPassionScoring();
       unloadOllamaModel(settingsRef.current);
     };
   }, []);
@@ -446,7 +445,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     streamBufferRef.current = '';
     abortSuggestionCall();
     abortImpersonateCall();
-    abortPassionScoring();
     suggestionsHistoryRef.current = [];
 
     if (!mountedRef.current) return;
@@ -825,7 +823,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   const handleImpersonate = async () => {
     if (isLoading || isStreaming || isImpersonating) return;
     clearSuggestionsState();
-    abortPassionScoring();
     setIsImpersonating(true);
     setInput('');
     try {
@@ -943,7 +940,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
     clearSuggestionsState();
     abortImpersonateCall();
-    abortPassionScoring();
     setIsImpersonating(false);
 
     if (abortRef.current) abortRef.current.abort();
@@ -1042,11 +1038,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       const passionEnabled = character.passionEnabled !== false;
       if (passionEnabled && sessionId) {
-        scorePassionBackground(safeMessageText, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
         if (passionTimerRef.current) clearTimeout(passionTimerRef.current);
         passionTimerRef.current = setTimeout(() => {
           setPassionLevel(passionManager.getPassionLevel(sessionId));
-        }, 6000);
+        }, 300);
       }
 
       // Voice output (if enabled and auto-read enabled)
@@ -1283,7 +1278,6 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
     clearSuggestionsState();
     abortImpersonateCall();
-    abortPassionScoring();
     setIsImpersonating(false);
 
     setMessages(messagesUpToLastUser);
@@ -1368,12 +1362,10 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
       const passionEnabled = character.passionEnabled !== false;
       if (passionEnabled && sessionId) {
-        passionManager.revertLastScore(sessionId);
-        scorePassionBackground(lastUserMessage, safeResponse, settings, response.modelCtx || 4096, sessionId, character);
         if (passionTimerRef.current) clearTimeout(passionTimerRef.current);
         passionTimerRef.current = setTimeout(() => {
           setPassionLevel(passionManager.getPassionLevel(sessionId));
-        }, 6000);
+        }, 300);
       }
     } catch (error) {
       if (isForegroundRequestObsolete(activeAbortHandle)) return;

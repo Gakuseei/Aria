@@ -265,10 +265,6 @@ const DEFAULT_SETTINGS = {
   maxResponseTokens: 256
 };
 
-const PASSION_SCORING_TIMEOUT_MS = 30000;
-let passionScoreAbortController = null;
-let passionScoreRequestId = 0;
-
 const MODEL_CAPS_CACHE = {};
 const MODEL_CAPS_CACHE_MAX = 16;
 
@@ -419,87 +415,44 @@ async function getModelCapabilities(ollamaUrl, modelName) {
   }
 }
 
-/**
- * Score romantic/sexual intensity of a message exchange using the LLM.
- * @param {string} userMessage - User message text
- * @param {string} aiMessage - AI response text
- * @param {Object} settings - App settings (ollamaUrl, ollamaModel)
- * @returns {Promise<number>} Score from 0 to 10, or 0 on failure
- */
-async function scorePassionLLM(userMessage, aiMessage, settings, modelCtx = 4096) {
-  const scoringCtx = Math.min(normalizeContextSize(modelCtx, settings?.ollamaModel), 2048);
-  const scoringPrompt = `Rate closeness 0-10. Number only.\n0=casual 3=building 5=personal 7=intense 10=peak\nUser: "${userMessage.substring(0, 200)}"\nAI: "${aiMessage.substring(0, 200)}"`;
+function estimatePassionHeuristic(userMessage = '', aiMessage = '', currentPassionLevel = 0) {
+  const combined = `${userMessage}\n${aiMessage}`.toLowerCase();
+  let score = 0;
 
-  try {
-    let content = '';
+  const weightedSignals = [
+    { pattern: /\bkiss(?:ed|es|ing)?\b|\blips?\b|\bmouth\b/g, value: 2 },
+    { pattern: /\bhand\b|\bwaist\b|\bneck\b|\blap\b|\bthigh\b|\bbreast\b|\bchest\b/g, value: 1.5 },
+    { pattern: /\btouch(?:ing)?\b|\bcaress\b|\bstroke\b|\bunder the hem\b|\bunder your dress\b|\bmore intimately\b/g, value: 2 },
+    { pattern: /\bblush(?:ing)?\b|\bflutter(?:ing)?\b|\bshiver(?:ing)?\b|\btrembl(?:e|ing)\b|\bbreath(?:less|ing)?\b/g, value: 1 },
+    { pattern: /\bdesire\b|\barous(?:ed|ing)\b|\bheat\b|\bache\b|\bneed(?:y)?\b/g, value: 1.5 },
+    { pattern: /\bbetween (?:my|your|her|his) legs\b|\buntouched body\b|\bintimate pleasures\b/g, value: 2.5 }
+  ];
 
-    if (isElectron()) {
-      const result = await Promise.race([
-        window.electronAPI.aiChat({
-          messages: [{ role: 'user', content: scoringPrompt }],
-          systemPrompt: '',
-          model: settings.ollamaModel || DEFAULT_MODEL_NAME,
-          isOllama: true,
-          ollamaUrl: settings.ollamaUrl || OLLAMA_DEFAULT_URL,
-          temperature: 0.1,
-          maxTokens: 16,
-          num_ctx: scoringCtx,
-          tag: 'passion-score'
-        }),
-        new Promise((_, reject) => {
-          const t = setTimeout(() => reject(new Error('timeout')), PASSION_SCORING_TIMEOUT_MS);
-          if (typeof t === 'object' && t.unref) t.unref();
-        })
-      ]);
-      if (!result.success) return 0;
-      content = result.content?.trim() || '';
-    } else {
-      const abort = new AbortController();
-      passionScoreAbortController = abort;
-      const timer = setTimeout(() => abort.abort(), PASSION_SCORING_TIMEOUT_MS);
-      try {
-        const response = await fetch(`${settings.ollamaUrl || OLLAMA_DEFAULT_URL}/api/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: abort.signal,
-          body: JSON.stringify({
-            model: settings.ollamaModel || DEFAULT_MODEL_NAME,
-            messages: [{ role: 'user', content: scoringPrompt }],
-            stream: false,
-            options: { temperature: 0.1, num_predict: 16, num_ctx: scoringCtx }
-          })
-        });
-        if (!response.ok) return 0;
-        const data = await response.json();
-        content = data.message?.content?.trim() || '';
-      } finally {
-        clearTimeout(timer);
-        if (passionScoreAbortController === abort) {
-          passionScoreAbortController = null;
-        }
-      }
+  for (const { pattern, value } of weightedSignals) {
+    const matches = combined.match(pattern);
+    if (matches) {
+      score += matches.length * value;
     }
-
-    const match = content.match(/(\d+)/);
-    if (!match) return 0;
-    const score = parseInt(match[1], 10);
-    if (isNaN(score) || score < 0 || score > 10) return 0;
-    return score;
-  } catch (err) {
-    console.warn('[API] Passion scoring failed:', err?.message || 'timeout');
-    return 0;
   }
+
+  if (/["“”]/.test(aiMessage) && /\*(.*?)\*/.test(aiMessage)) {
+    score += 0.5;
+  }
+
+  if (currentPassionLevel >= 15 && /\bkiss|touch|waist|neck|lap|intimate\b/.test(combined)) {
+    score += 1;
+  }
+
+  return Math.max(0, Math.min(10, Math.round(score)));
 }
 
-export function abortPassionScoring() {
-  passionScoreRequestId++;
-  if (passionScoreAbortController) {
-    passionScoreAbortController.abort();
-    passionScoreAbortController = null;
-  }
-  if (isElectron() && window.electronAPI?.abortAiChat) {
-    window.electronAPI.abortAiChat('passion-score');
-  }
+function applyPassionHeuristic(userMessage, aiMessage, sessionId, character, currentPassionLevel = 0) {
+  const heuristicScore = estimatePassionHeuristic(userMessage, aiMessage, currentPassionLevel);
+  if (heuristicScore <= 0) return currentPassionLevel;
+  const adjustedScore = heuristicScore * getSpeedMultiplier(character?.passionSpeed);
+  const nextLevel = passionManager.applyScore(sessionId, adjustedScore);
+  console.log(`[API] Passion heuristic: ${currentPassionLevel} → ${nextLevel} (raw=${heuristicScore}, adj=${adjustedScore.toFixed(1)})`);
+  return nextLevel;
 }
 
 // ============================================================================
@@ -514,29 +467,6 @@ function isElectron() {
 // ============================================================================
 // v3.0: TEMPLATE-BASED PROMPT SYSTEM
 // ============================================================================
-
-/**
- * Run passion scoring in background — does not block the response.
- * Called after the AI response is already returned to the user.
- */
-export function scorePassionBackground(userMessage, aiMessage, settings, modelCtx, sessionId, character) {
-  const speedMultiplier = getSpeedMultiplier(character?.passionSpeed);
-  const requestId = ++passionScoreRequestId;
-
-  scorePassionLLM(userMessage, aiMessage, settings, modelCtx)
-    .then(rawScore => {
-      if (requestId !== passionScoreRequestId) return;
-      if (rawScore <= 0) return;
-      const adjustedScore = rawScore * speedMultiplier;
-      const prevLevel = passionManager.getPassionLevel(sessionId);
-      const newLevel = passionManager.applyScore(sessionId, adjustedScore);
-      console.log(`[API] Passion: ${prevLevel} → ${newLevel} (raw=${rawScore}, adj=${adjustedScore.toFixed(1)}, speed=${speedMultiplier}x)`);
-    })
-    .catch(err => {
-      if (requestId !== passionScoreRequestId) return;
-      console.warn('[API] Passion scoring failed:', err?.message);
-    });
-}
 
 /**
  * Abort controller for the current suggestion call.
@@ -1156,110 +1086,125 @@ export async function impersonateUser(history, character, userName, passionLevel
     }
   });
   const runtimeContext = assembleRuntimeContext({ profile: 'impersonate', runtimeState });
-  const messages = [
-    { role: 'system', content: runtimeContext.systemPrompt },
-    { role: 'user', content: runtimeContext.userPrompt }
-  ];
   console.log('[API] Impersonate runtime:', runtimeContext.debug);
-
-  // v3 settings + chat sampling
-  const options = {
-    num_predict: 60,
-    temperature: settings.temperature ?? profile.temperature,
-    num_ctx: impersonateNumCtx,
-    top_k: settings.topK ?? profile.topK,
-    top_p: settings.topP ?? profile.topP,
-    min_p: settings.minP ?? profile.minP,
-    repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty,
-    repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
-    penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline
-  };
   const stop = [`\n${charName}:`, `\n${charName} :`, `${charName}:`];
 
-  const textChunks = [];
+  const generateDraft = async ({ numPredict, promptSuffix = '', streamOutput = true }) => {
+    const messages = [
+      { role: 'system', content: runtimeContext.systemPrompt },
+      { role: 'user', content: `${runtimeContext.userPrompt}${promptSuffix}` }
+    ];
+    const options = {
+      num_predict: numPredict,
+      temperature: settings.temperature ?? profile.temperature,
+      num_ctx: impersonateNumCtx,
+      top_k: settings.topK ?? profile.topK,
+      top_p: settings.topP ?? profile.topP,
+      min_p: settings.minP ?? profile.minP,
+      repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty,
+      repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
+      penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline
+    };
+    const textChunks = [];
 
-  /** Stream display: only strip special tokens so user never sees </s> etc */
-  const emitDisplay = () => {
-    const display = textChunks.join('')
-      .replace(/<\/s>/g, '')
-      .replace(/\[TOOL_CALLS\]/g, '')
-      .replace(/<\|[^|]*\|>/g, '')
-      .replace(/^[./]+(?=\*)/gm, '')
-      .trim();
-    onToken(null, display);
-  };
-
-  if (isElectron()) {
-    const requestId = `impersonate-${Date.now()}`;
-    impersonateAbortController = {
-      abort: () => window.electronAPI.ollamaStreamAbort(requestId)
+    const emitDisplay = () => {
+      if (!streamOutput) return;
+      const display = textChunks.join('')
+        .replace(/<\/s>/g, '')
+        .replace(/\[TOOL_CALLS\]/g, '')
+        .replace(/<\|[^|]*\|>/g, '')
+        .replace(/^[./]+(?=\*)/gm, '')
+        .trim();
+      onToken(null, display);
     };
 
-    const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
-      if (rid !== requestId) return;
-      textChunks.push(token);
-      emitDisplay();
-    });
+    if (isElectron()) {
+      const requestId = `impersonate-${Date.now()}-${numPredict}`;
+      impersonateAbortController = {
+        abort: () => window.electronAPI.ollamaStreamAbort(requestId)
+      };
 
-    try {
-      const result = await window.electronAPI.ollamaChatStream({
-        requestId, ollamaUrl, model, messages, options, stop
+      const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
+        if (rid !== requestId) return;
+        textChunks.push(token);
+        emitDisplay();
       });
-      if (!result.success && !result.aborted) {
-        throw new Error(result.error || 'Stream failed');
-      }
-    } finally {
-      cleanup();
-      impersonateAbortController = null;
-    }
-  } else {
-    impersonateAbortController = new AbortController();
 
-    const res = await fetch(`${ollamaUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: impersonateAbortController.signal,
-      body: JSON.stringify({ model, messages, stream: true, options: { ...options, stop } })
-    });
-
-    if (!res.ok || !res.body) {
-      throw new Error(`Ollama request failed: ${res.status}`);
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-
-    try {
-      while (true) {
-        let readResult;
-        try {
-          readResult = await reader.read();
-        } catch (readErr) {
-          console.warn('[API] Impersonate stream interrupted:', readErr.message);
-          break;
+      try {
+        const result = await window.electronAPI.ollamaChatStream({
+          requestId, ollamaUrl, model, messages, options, stop
+        });
+        if (!result.success && !result.aborted) {
+          throw new Error(result.error || 'Stream failed');
         }
-        const { done, value } = readResult;
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split('\n').filter(Boolean)) {
+      } finally {
+        cleanup();
+        impersonateAbortController = null;
+      }
+    } else {
+      impersonateAbortController = new AbortController();
+
+      const res = await fetch(`${ollamaUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: impersonateAbortController.signal,
+        body: JSON.stringify({ model, messages, stream: true, options: { ...options, stop } })
+      });
+
+      if (!res.ok || !res.body) {
+        throw new Error(`Ollama request failed: ${res.status}`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      try {
+        while (true) {
+          let readResult;
           try {
-            const parsed = JSON.parse(line);
-            const token = parsed.message?.content || '';
-            if (token) {
-              textChunks.push(token);
-              emitDisplay();
-            }
-          } catch { /* skip malformed lines */ }
+            readResult = await reader.read();
+          } catch (readErr) {
+            console.warn('[API] Impersonate stream interrupted:', readErr.message);
+            break;
+          }
+          const { done, value } = readResult;
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          for (const line of chunk.split('\n').filter(Boolean)) {
+            try {
+              const parsed = JSON.parse(line);
+              const token = parsed.message?.content || '';
+              if (token) {
+                textChunks.push(token);
+                emitDisplay();
+              }
+            } catch { /* skip malformed lines */ }
+          }
         }
+      } finally {
+        reader.cancel().catch(() => {});
+        impersonateAbortController = null;
       }
-    } finally {
-      reader.cancel().catch(() => {});
-      impersonateAbortController = null;
+    }
+
+    return finalizeImpersonateDraft(textChunks.join(''), { charName, userName });
+  };
+
+  let finalized = await generateDraft({ numPredict: 96, streamOutput: true });
+
+  if (!finalized.valid || !finalized.text || finalized.text.trim().length < 24) {
+    console.info('[API] Impersonate retry: first draft too weak, retrying with stronger completion prompt');
+    finalized = await generateDraft({
+      numPredict: 128,
+      promptSuffix: '\n\nWrite one complete short first-person reply. End cleanly after one or two sentences.',
+      streamOutput: false
+    });
+    if (finalized.text) {
+      onToken(null, finalized.text);
     }
   }
 
-  const finalized = finalizeImpersonateDraft(textChunks.join(''), { charName, userName });
-  if (!finalized.valid || !finalized.text) {
+  if (!finalized.valid || !finalized.text || finalized.text.trim().length < 18) {
     throw new Error('Failed to generate a usable draft');
   }
 
@@ -1745,6 +1690,11 @@ export const sendMessage = async (
     }
 
     // Add assistant response to history
+    const passionEnabled = character?.passionEnabled !== false && Boolean(sessionId);
+    const nextPassionLevel = passionEnabled
+      ? applyPassionHeuristic(userMessage, aiMessage, sessionId, character, currentPassionLevel)
+      : currentPassionLevel;
+
     const assistantMsg = { role: 'assistant', content: aiMessage };
     const finalHistory = [...historyToUse, assistantMsg];
 
@@ -1774,7 +1724,7 @@ export const sendMessage = async (
         wordsPerSecond: parseFloat(wordsPerSecond),
         tokens: responseTokens,
         promptTokens: promptTokens_actual,
-        passionLevel: currentPassionLevel,
+        passionLevel: nextPassionLevel,
         responseMode,
         debug: debugStats
       });
@@ -1784,7 +1734,7 @@ export const sendMessage = async (
       success: true,
       message: aiMessage,
       conversationHistory: finalHistory,
-      passionLevel: currentPassionLevel,
+      passionLevel: nextPassionLevel,
       modelCtx,
       stats: {
         responseTime,

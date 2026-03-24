@@ -39,14 +39,17 @@ const LEGACY_RESPONSE_MODE_MAP = {
 
 const MORE_DETAIL_PATTERNS = [
   /\bmore detail(?:s)?\b/i,
-  /\blonger\b/i,
-  /\belaborate\b/i,
+  /\blonger (?:reply|response|answer|message)\b/i,
+  /\blonger,?\s+please\b/i,
+  /\belaborate(?: more)?\b/i,
   /\bin depth\b/i,
-  /\bdetailed\b/i,
-  /\bdetaill/i,
-  /\bgenauer\b/i,
-  /\bausf[uü]hr/i,
-  /\berz[aä]hl.*mehr/i
+  /\bdetailed (?:reply|response|answer|message|version)\b/i,
+  /\bmore detailed\b/i,
+  /\bdetailliertere?\s+(?:antwort|nachricht|version)\b/i,
+  /\bgenauere?\s+(?:antwort|erkl[aä]rung|version)\b/i,
+  /\bausf[uü]hrlich(?:ere)?\s+(?:antwort|nachricht|version)\b/i,
+  /\berz[aä]hl(?:\s+mir)?\s+mehr\b/i,
+  /\bmehr details?\b/i
 ];
 
 const SHORTER_REPLY_PATTERNS = [

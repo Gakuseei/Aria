@@ -7,6 +7,7 @@ const PROFILE_BUDGET_TARGETS = {
   reply: {
     globalCore: 80,
     characterCore: 260,
+    personaAnchor: 90,
     activeScene: 140,
     exampleSeed: 180,
     lateSteering: 120
@@ -127,6 +128,9 @@ function buildReplyLateSteering(runtimeState) {
     `Respond directly to what ${userName} just said or did.`,
     'Prefer in-character action and dialogue over detached observer-style scene summary.',
     `Keep the active scene intact with ${characterName} instead of summarizing or resetting it from the outside.`,
+    runtimeState.compiledRuntimeCard.personaAnchor
+      ? `Keep ${characterName}'s signature voice, reactions, and habits active. Do not sand down the character into generic flirtation, generic submission, or generic dirty talk.`
+      : '',
     ...modeRules,
     depthInstruction || 'Match the current closeness of the scene without forcing escalation.'
   ].filter(Boolean).join('\n');
@@ -223,6 +227,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     const activeSceneFull = renderActiveScene(runtimeState.activeScene, { compact: false });
     const activeSceneCompact = renderActiveScene(runtimeState.activeScene, { compact: true });
     const lateSteering = clipToTokenTarget(buildReplyLateSteering(runtimeState), targets.lateSteering);
+    const personaAnchor = clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, targets.personaAnchor);
     let activeScene = clipStructuredSceneText(activeSceneFull, targets.activeScene, 145);
     let exampleSeed = runtimeState.exampleEligibility ? clipToTokenTarget(runtimeState.compiledRuntimeCard.exampleSeed, targets.exampleSeed) : '';
 
@@ -231,6 +236,13 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
 
     blocks.push(buildPlainTextBlock('Character Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)));
     debug.includedBlocks.push('Character Core');
+
+    if (personaAnchor) {
+      blocks.push(buildPlainTextBlock('Persona Anchor', personaAnchor));
+      debug.includedBlocks.push('Persona Anchor');
+    } else {
+      debug.droppedBlocks.push('Persona Anchor');
+    }
 
     blocks.push(buildPlainTextBlock('Active Scene', activeScene));
     debug.includedBlocks.push('Active Scene');
@@ -250,12 +262,26 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     let totalTokens = estimateTokens(systemPrompt) + historyMessages.reduce((sum, message) => sum + estimateTokens(message.content), 0);
 
     if (totalTokens > totalBudget && exampleSeed) {
+      exampleSeed = clipToTokenTarget(exampleSeed, Math.max(80, Math.floor(targets.exampleSeed * 0.5)));
+      systemPrompt = [
+        buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)),
+        buildPlainTextBlock('Character Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)),
+        personaAnchor ? buildPlainTextBlock('Persona Anchor', personaAnchor) : '',
+        buildPlainTextBlock('Active Scene', activeScene),
+        buildPlainTextBlock('Example Seed', exampleSeed),
+        buildPlainTextBlock('Late Steering', lateSteering)
+      ].filter(Boolean).join('\n\n');
+      totalTokens = estimateTokens(systemPrompt) + historyMessages.reduce((sum, message) => sum + estimateTokens(message.content), 0);
+    }
+
+    if (totalTokens > totalBudget && exampleSeed) {
       exampleSeed = '';
       debug.includedBlocks = debug.includedBlocks.filter((block) => block !== 'Example Seed');
       if (!debug.droppedBlocks.includes('Example Seed')) debug.droppedBlocks.push('Example Seed');
       systemPrompt = [
         buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)),
         buildPlainTextBlock('Character Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)),
+        personaAnchor ? buildPlainTextBlock('Persona Anchor', personaAnchor) : '',
         buildPlainTextBlock('Active Scene', activeScene),
         buildPlainTextBlock('Late Steering', lateSteering)
       ].filter(Boolean).join('\n\n');
@@ -268,7 +294,9 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       systemPrompt = [
         buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)),
         buildPlainTextBlock('Character Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)),
+        personaAnchor ? buildPlainTextBlock('Persona Anchor', personaAnchor) : '',
         buildPlainTextBlock('Active Scene', activeScene),
+        exampleSeed ? buildPlainTextBlock('Example Seed', exampleSeed) : '',
         buildPlainTextBlock('Late Steering', lateSteering)
       ].filter(Boolean).join('\n\n');
       totalTokens = estimateTokens(systemPrompt) + historyMessages.reduce((sum, message) => sum + estimateTokens(message.content), 0);

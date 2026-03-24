@@ -1,4 +1,4 @@
-import { clipToTokenTarget, estimateTokens, resolveTemplates, splitParagraphs } from './text.js';
+import { clipToTokenTarget, estimateTokens, resolveTemplates, splitParagraphs, splitSentences, trimPromptSnippet } from './text.js';
 
 const VOICE_PATTERN = /\b(voice|speaks?|speech|tone|calls?|laughs?|whispers?|murmurs?|says?|dialogue)\b|["']/i;
 const POSTURE_PATTERN = /\b(body|posture|moves?|touch(?:es)?|gaze|eyes|smirk|smile|leans?|stands?|breath|hands?)\b/i;
@@ -113,6 +113,48 @@ function detectExampleDependency(systemPrompt, instructions, exampleSeed) {
   return voiceHintCount < 2;
 }
 
+function scoreAnchorSentence(sentence) {
+  let score = 0;
+  if (VOICE_PATTERN.test(sentence)) score += 8;
+  if (POSTURE_PATTERN.test(sentence)) score += 6;
+  if (BEHAVIOR_PATTERN.test(sentence)) score += 7;
+  if (sentence.includes('"') || sentence.includes("'")) score += 5;
+  if (/\b(always|never|literal(?:ly)?|naive|gentle|dominant|shy|teasing|cold|warm|possessive|dutiful|careful|blunt)\b/i.test(sentence)) score += 5;
+  if (sentence.length > 180) score -= 2;
+  return score;
+}
+
+function buildPersonaAnchor(systemPrompt, instructions, exampleSeed) {
+  const candidateSentences = [
+    ...splitSentences(systemPrompt),
+    ...splitSentences(instructions)
+  ]
+    .map((sentence) => trimPromptSnippet(sentence, 180))
+    .filter(Boolean);
+
+  const seen = new Set();
+  const selected = [];
+  for (const sentence of candidateSentences
+    .sort((left, right) => scoreAnchorSentence(right) - scoreAnchorSentence(left))) {
+    const key = sentence.toLowerCase();
+    if (seen.has(key)) continue;
+    if (selected.length >= 3) break;
+    if (scoreAnchorSentence(sentence) < 7) continue;
+    seen.add(key);
+    selected.push(sentence);
+  }
+
+  const exampleAssistantLine = String(exampleSeed || '')
+    .split('\n')
+    .find((line) => line.trim().startsWith('{{char}}:'));
+  if (exampleAssistantLine && selected.length < 4) {
+    const trimmedExample = trimPromptSnippet(exampleAssistantLine.replace(/^\{\{char\}\}:\s*/, ''), 150);
+    if (trimmedExample) selected.push(`Signature example: ${trimmedExample}`);
+  }
+
+  return clipToTokenTarget(selected.join('\n'), 90);
+}
+
 export function compileCharacterRuntimeCard(character = {}) {
   const name = String(character.name || 'Character').trim() || 'Character';
   const systemPrompt = String(character.systemPrompt || '').trim();
@@ -120,6 +162,7 @@ export function compileCharacterRuntimeCard(character = {}) {
   const scenario = String(character.scenario || '').trim();
   const authorsNote = String(character.authorsNote || '').trim();
   const exampleSeed = buildExampleSeed(character);
+  const personaAnchor = buildPersonaAnchor(systemPrompt, instructions, exampleSeed);
 
   const characterParagraphs = [
     ...createParagraphEntries(systemPrompt, 'systemPrompt')
@@ -194,7 +237,8 @@ export function compileCharacterRuntimeCard(character = {}) {
     voiceDependsOnExamples: detectExampleDependency(systemPrompt, instructions, exampleSeed),
     hasAuthorsNote: Boolean(authorsNote),
     authorsNote: authorsNote ? clipToTokenTarget(authorsNote, 90) : '',
-    hasSceneSeed: Boolean(sceneSeed)
+    hasSceneSeed: Boolean(sceneSeed),
+    hasPersonaAnchor: Boolean(personaAnchor)
   };
 
   return {
@@ -202,6 +246,7 @@ export function compileCharacterRuntimeCard(character = {}) {
     characterCore,
     sceneSeed,
     exampleSeed,
+    personaAnchor,
     runtimeDefaults
   };
 }
@@ -212,6 +257,7 @@ export function resolveRuntimeCardTemplates(runtimeCard, charName, userName) {
     globalCore: resolveTemplates(runtimeCard.globalCore || '', charName, userName),
     characterCore: resolveTemplates(runtimeCard.characterCore || '', charName, userName),
     sceneSeed: resolveTemplates(runtimeCard.sceneSeed || '', charName, userName),
-    exampleSeed: resolveTemplates(runtimeCard.exampleSeed || '', charName, userName)
+    exampleSeed: resolveTemplates(runtimeCard.exampleSeed || '', charName, userName),
+    personaAnchor: resolveTemplates(runtimeCard.personaAnchor || '', charName, userName)
   };
 }

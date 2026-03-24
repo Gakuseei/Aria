@@ -476,8 +476,8 @@ let suggestionAbortController = null;
 let suggestionRequestId = 0;
 const MIN_USABLE_SUGGESTIONS = 2;
 const SUGGESTION_TARGET_COUNT = 3;
-const SUGGESTION_MAX_WORDS = 9;
-const SUGGESTION_MAX_CHARS = 72;
+const SUGGESTION_MAX_WORDS = 11;
+const SUGGESTION_MAX_CHARS = 84;
 const SUGGESTION_ROLE_ORDER = ['safe', 'bold', 'progress'];
 
 const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|note|options?|suggestions?)\b/i;
@@ -491,7 +491,9 @@ const SUGGESTION_PROGRESSIVE_TAIL_PATTERN = /\s+and\s+(?:begin|starting|start|co
 const SUGGESTION_PASSIVE_PATTERN = /\b(?:smile|nod|look|glance|watch|wait|pause|listen)\b/i;
 const SUGGESTION_PROGRESS_PATTERN = /\b(?:invite|pull|guide|lead|bring|take|sit|move|close|touch|kiss|confess|admit|answer|ask|offer|decide|tell|reveal|reach)\b/i;
 const SUGGESTION_BOLD_PATTERN = /\b(?:touch|kiss|pull|guide|lean|closer|waist|thigh|lap|admit|confess|breath|neck)\b/i;
-const WRITE_FOR_ME_GENERIC_PATTERN = /\b(?:electricity between us|cannot deny|there'?s no denying|lingering for a heartbeat longer than necessary|beneath those long lashes|warm smile spreads|vision bathed in|presence has come to mean|hint of color in her cheeks|can't help but notice|linger in the air|associate with her presence|warmth between us|something unspoken)\b/i;
+const WRITE_FOR_ME_GENERIC_PATTERN = /\b(?:electricity between us|cannot deny|there'?s no denying|lingering for a heartbeat longer than necessary|beneath those long lashes|warm smile spreads|vision bathed in|presence has come to mean|hint of color in her cheeks|warmth between us|something unspoken)\b/i;
+const INCOMPLETE_SUGGESTION_ENDING_PATTERN = /\b(?:a|an|the|your|my|his|her|their|our|this|that|these|those|another|some|any|more|expensive|impressive|closer)\s*$/i;
+const INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN = /\b(?:whispering|smirking|watching|waiting|looking|leaning|reaching|moving)\s*$/i;
 
 function detectSuggestionRole(text = '') {
   const lowered = String(text || '').toLowerCase();
@@ -573,10 +575,19 @@ function trimSuggestionCandidate(candidate) {
     compact = compact.split(/\s+/).slice(0, SUGGESTION_MAX_WORDS).join(' ');
   }
 
-  return compact
-    .replace(/\b(?:and|or|to|with|into|onto|from|for|of|on|at|the|a|an|that|this|there|before|after)$/i, '')
+  compact = compact
+    .replace(/\b(?:and|or|to|with|in|into|onto|from|for|of|on|at|by|up|down|the|a|an|that|this|there|before|after)$/i, '')
     .replace(/['"“”`*:,|.\-\s]+$/, '')
     .trim();
+
+  while (INCOMPLETE_SUGGESTION_ENDING_PATTERN.test(compact) || INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN.test(compact)) {
+    const words = compact.split(/\s+/).filter(Boolean);
+    if (words.length <= 2) return '';
+    words.pop();
+    compact = words.join(' ').trim();
+  }
+
+  return compact;
 }
 
 function compactSuggestionCandidate(candidate) {
@@ -1057,16 +1068,16 @@ function scoreWriteForMeDraft(text, history = []) {
     .slice(-3)
     .map((message) => String(message.content || '').trim().toLowerCase());
 
-  if (trimmed.length < 24) score -= 50;
-  if (!/[.!?*"”]$/.test(trimmed)) score -= 18;
-  if (words.length < 4) score -= 20;
-  if (words.length > 40) score -= 18 + Math.ceil((words.length - 40) / 4) * 5;
-  if (sentenceCount > 2) score -= 14 + (sentenceCount - 2) * 6;
-  if (WRITE_FOR_ME_GENERIC_PATTERN.test(trimmed)) score -= 24;
-  if (!/\b(?:I|me|my|I'm|I’d|I'd|I’ll|I'll|I’ve|I've)\b/.test(trimmed)) score -= 30;
-  if (!/[*"]/.test(trimmed)) score -= 8;
-  if (!/\b(?:ask|tell|invite|offer|pull|touch|kiss|move|sit|stay|admit|answer|lean|take|guide|bring|hold|want|need|let)\b/i.test(trimmed)) {
-    score -= 12;
+  if (trimmed.length < 18) score -= 40;
+  if (!/[.!?*"”]$/.test(trimmed)) score -= 12;
+  if (words.length < 4) score -= 12;
+  if (words.length > 60) score -= 8 + Math.ceil((words.length - 60) / 6) * 3;
+  if (sentenceCount > 3) score -= 8 + (sentenceCount - 3) * 4;
+  if (WRITE_FOR_ME_GENERIC_PATTERN.test(trimmed)) score -= 16;
+  if (!/\b(?:I|me|my|I'm|I’d|I'd|I’ll|I'll|I’ve|I've)\b/.test(trimmed)) score -= 24;
+  if (!/[*"]/.test(trimmed)) score -= 4;
+  if (!/\b(?:ask|tell|invite|offer|pull|touch|kiss|move|sit|stay|admit|answer|lean|take|guide|bring|hold|want|need|let|smile|nod|look|meet|step|follow|reach|trace|press)\b/i.test(trimmed)) {
+    score -= 6;
   }
 
   if (recentUserMessages.some((message) => message && trimmed.toLowerCase() === message)) {
@@ -1085,17 +1096,27 @@ function shortenWriteForMeDraft(text) {
     .map((sentence) => sentence.trim())
     .filter(Boolean);
 
-  if (sentences.length > 2) {
-    trimmed = sentences.slice(0, 2).join(' ').trim();
+  if (sentences.length > 3) {
+    trimmed = sentences.slice(0, 3).join(' ').trim();
   }
 
-  if (trimmed.length > 280) {
-    const clipped = trimmed.slice(0, 280);
+  if (trimmed.length > 360) {
+    const clipped = trimmed.slice(0, 360);
     const sentenceEnd = Math.max(clipped.lastIndexOf('. '), clipped.lastIndexOf('! '), clipped.lastIndexOf('? '));
-    trimmed = sentenceEnd > 120 ? clipped.slice(0, sentenceEnd + 1).trim() : clipped.trim();
+    trimmed = sentenceEnd > 150 ? clipped.slice(0, sentenceEnd + 1).trim() : clipped.trim();
   }
 
   return trimmed;
+}
+
+function isUsableWriteForMeDraft(finalized, history = []) {
+  if (!finalized?.valid || !finalized.text) return false;
+
+  const trimmed = finalized.text.trim();
+  if (trimmed.length < 18) return false;
+
+  const score = scoreWriteForMeDraft(trimmed, history);
+  return score >= 18;
 }
 
 export function finalizeImpersonateDraft(rawText, { charName = '', userName = 'User' } = {}) {
@@ -1136,6 +1157,8 @@ export function finalizeImpersonateDraft(rawText, { charName = '', userName = 'U
   if (cleaned.startsWith(`${userName}:`) || cleaned.startsWith(`${userName} :`)) {
     cleaned = cleaned.replace(/^\S+:\s*/, '');
   }
+
+  cleaned = cleaned.replace(/^I:\s*/i, '');
 
   const beforeRepair = cleaned;
   cleaned = repairLeadingActionBlock(cleaned, userName);
@@ -1222,6 +1245,13 @@ export async function impersonateUser(history, character, userName, passionLevel
           temperature: options.temperature,
           maxTokens: options.num_predict,
           num_ctx: options.num_ctx,
+          top_k: options.top_k,
+          top_p: options.top_p,
+          min_p: options.min_p,
+          repeat_penalty: options.repeat_penalty,
+          repeat_last_n: options.repeat_last_n,
+          penalize_newline: options.penalize_newline,
+          stop,
           tag: 'impersonate'
         });
         if (!result.success) {
@@ -1254,25 +1284,25 @@ export async function impersonateUser(history, character, userName, passionLevel
     }
   };
 
-  let finalized = await generateDraft({ numPredict: 96, temperature: Math.max(0.55, (settings.temperature ?? profile.temperature) - 0.08) });
+  let finalized = await generateDraft({ numPredict: 120, temperature: Math.max(0.58, (settings.temperature ?? profile.temperature) - 0.04) });
   let finalizedScore = finalized.valid && finalized.text ? scoreWriteForMeDraft(finalized.text, history) : -Infinity;
 
-  if (!finalized.valid || !finalized.text || finalizedScore < 66) {
+  if (!isUsableWriteForMeDraft(finalized, history) || finalizedScore < 44) {
     console.info('[API] Impersonate retry: first draft too weak or generic, retrying with stronger completion prompt');
     const retryDraft = await generateDraft({
-      numPredict: 128,
-      promptSuffix: '\n\nWrite one complete first-person reply that clearly moves the scene forward. Stay natural, specific, and grounded in the exact current beat. Avoid generic romance phrasing, atmospheric filler, and commentary about scent, tension, or what lingers in the air. End cleanly after one or two sentences.',
-      temperature: Math.max(0.5, (settings.temperature ?? profile.temperature) - 0.1)
+      numPredict: 152,
+      promptSuffix: '\n\nWrite one complete first-person reply that clearly moves the scene forward while still sounding like the user. Stay grounded in the exact current beat. Prefer a natural, sendable reply over a perfect one. End cleanly after one to three sentences.',
+      temperature: Math.max(0.55, (settings.temperature ?? profile.temperature) - 0.08)
     });
     const retryScore = retryDraft.valid && retryDraft.text ? scoreWriteForMeDraft(retryDraft.text, history) : -Infinity;
 
-    if (retryScore >= finalizedScore || !finalized.valid || !finalized.text) {
+    if (retryScore >= finalizedScore || !isUsableWriteForMeDraft(finalized, history)) {
       finalized = retryDraft;
       finalizedScore = retryScore;
     }
   }
 
-  if (!finalized.valid || !finalized.text || finalized.text.trim().length < 24 || finalizedScore < 36) {
+  if (!isUsableWriteForMeDraft(finalized, history)) {
     throw new Error('Failed to generate a usable draft');
   }
 

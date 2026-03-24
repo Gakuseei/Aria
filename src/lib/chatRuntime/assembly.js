@@ -181,13 +181,11 @@ function buildImpersonateLateSteering(runtimeState) {
     `Write ${runtimeState.userName}'s reply in FIRST PERSON (I/me/my).`,
     `NEVER write as ${runtimeState.characterName}.`,
     `NEVER narrate ${runtimeState.userName} from outside in second or third person.`,
-    'Prefer 1-2 sentences. Use a 3rd sentence only if it materially improves the next move.',
+    'Prefer 1-2 sentences. A 3rd sentence is allowed if it helps the reply land naturally.',
     'Actions go in *asterisks*. Dialogue stays plain text.',
     'Keep the same language as the conversation.',
     'Default to the user\'s recent voice, directness, and pacing.',
-    'If a literal imitation would stall the scene, choose the stronger next move while still sounding like the user.',
-    'The reply must actively move the scene forward instead of restating the current tension.',
-    'Avoid atmospheric filler, generic longing narration, and extra description about scent, tension, or what lingers in the air unless the user already writes that way.',
+    'Answer the latest beat naturally. Move the scene forward when it fits, but do not force a dramatic move every time.',
     isBot
       ? 'Stay inside the exact active exchange and answer what the bot just said or asked.'
       : `Stay inside the exact scene established by the recent conversation. Do not invent a new location, prop, room, or time jump unless the scene already changed there. Keep the reply grounded in what ${runtimeState.characterName} just did or said.`,
@@ -218,7 +216,6 @@ function buildImpersonateUserPrompt(runtimeState, recentTail) {
     runtimeState.activeScene.latest_character_action_or_reaction ? `${runtimeState.characterName}: ${runtimeState.activeScene.latest_character_action_or_reaction}` : '',
     runtimeState.activeScene.latest_user_action_or_request ? `${runtimeState.userName}: ${runtimeState.activeScene.latest_user_action_or_request}` : ''
   ].filter(Boolean).join('\n');
-  const openThread = trimPromptSnippet(runtimeState.activeScene.open_thread || '', 140);
   const sceneSummary = clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: false }), 105, 120)
     || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 220);
   const recentConversation = formatHistory(recentTail, runtimeState.characterName, runtimeState.userName)
@@ -228,7 +225,6 @@ function buildImpersonateUserPrompt(runtimeState, recentTail) {
 
   return [
     `Current beat:\n${currentBeat || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 160)}`,
-    openThread ? `Open thread:\n${openThread}` : '',
     `Scene summary:\n${sceneSummary || 'Use the current beat above.'}`,
     voiceExamples ? `Recent ${runtimeState.userName} voice examples:\n${voiceExamples}` : '',
     `Recent conversation:\n${recentConversation}`,

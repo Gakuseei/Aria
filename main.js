@@ -1047,7 +1047,24 @@ ipcMain.handle('abort-ai-chat', async (_event, { tag }) => {
  * Send chat message to LOCAL Ollama
  */
 ipcMain.handle('ai-chat', async (event, params) => {
-  const { messages, systemPrompt, maxTokens, model, isOllama, ollamaUrl, temperature, num_ctx, tag } = params;
+  const {
+    messages,
+    systemPrompt,
+    maxTokens,
+    model,
+    isOllama,
+    ollamaUrl,
+    temperature,
+    num_ctx,
+    top_k,
+    top_p,
+    min_p,
+    repeat_penalty,
+    repeat_last_n,
+    penalize_newline,
+    stop = [],
+    tag
+  } = params;
 
   if (!isOllama) {
     return {
@@ -1080,6 +1097,12 @@ ipcMain.handle('ai-chat', async (event, params) => {
       num_predict: maxTokens ?? 1000,
     };
     if (num_ctx) options.num_ctx = num_ctx;
+    if (typeof top_k === 'number') options.top_k = top_k;
+    if (typeof top_p === 'number') options.top_p = top_p;
+    if (typeof min_p === 'number') options.min_p = min_p;
+    if (typeof repeat_penalty === 'number') options.repeat_penalty = repeat_penalty;
+    if (typeof repeat_last_n === 'number') options.repeat_last_n = repeat_last_n;
+    if (typeof penalize_newline === 'boolean') options.penalize_newline = penalize_newline;
 
     const timeoutId = setTimeout(() => abortController.abort(), 120000);
 
@@ -1092,7 +1115,8 @@ ipcMain.handle('ai-chat', async (event, params) => {
         model: model || loadSettingsSync().ollamaModel || DEFAULT_MODEL_NAME,
         messages: ollamaMessages,
         stream: false,
-        options
+        options,
+        stop
       }),
       signal: abortController.signal,
     });

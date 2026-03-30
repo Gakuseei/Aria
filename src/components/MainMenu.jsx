@@ -14,7 +14,7 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
   const isGoldMode = useGoldMode();
 
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center p-8 relative overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-900 to-black">
+    <div className="theme-screen-shell relative flex h-full w-full flex-col items-center justify-center overflow-hidden p-8">
       {/* Logo / Title Area - BLOCK 6.9: Smooth Fade-In / Premium Gold */}
       <div className={`relative z-10 text-center mb-16 transition-all ${
         isGoldMode ? 'duration-[1500ms] ease-out' : 'duration-500'
@@ -79,7 +79,7 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
           </span>
         </h1>
 
-        <p className="text-zinc-500 text-xs tracking-[0.3em] uppercase font-medium">
+        <p className="theme-text-soft text-xs font-medium uppercase tracking-[0.3em]">
           {t.mainMenu?.tagline || '100% Local • Uncensored • Offline'}
         </p>
       </div>
@@ -129,7 +129,7 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
           aria-label={t.mainMenu.load}
         >
           {/* Background */}
-          <div className="absolute inset-0 bg-zinc-900/80 backdrop-blur-sm border border-white/5 rounded-2xl group-hover:border-rose-500/50 group-hover:bg-zinc-900 group-hover:shadow-[0_0_30px_rgba(226,29,72,0.2)] transition-all duration-300" />
+          <div className="theme-card-subtle absolute inset-0 rounded-2xl backdrop-blur-sm transition-all duration-300 group-hover:border-rose-500/50 group-hover:shadow-[0_0_30px_rgba(226,29,72,0.2)]" />
 
           {/* Content */}
           <span className="relative flex items-center justify-center gap-3 text-zinc-400 group-hover:text-white font-medium tracking-widest uppercase text-sm transition-colors">
@@ -147,7 +147,7 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
           aria-label={t.mainMenu.settings}
         >
           {/* Background */}
-          <div className="absolute inset-0 bg-zinc-900/80 backdrop-blur-sm border border-white/5 rounded-2xl group-hover:border-rose-500/50 group-hover:bg-zinc-900 group-hover:shadow-[0_0_30px_rgba(226,29,72,0.2)] transition-all duration-300" />
+          <div className="theme-card-subtle absolute inset-0 rounded-2xl backdrop-blur-sm transition-all duration-300 group-hover:border-rose-500/50 group-hover:shadow-[0_0_30px_rgba(226,29,72,0.2)]" />
 
           {/* Content */}
           <span className="relative flex items-center justify-center gap-3 text-zinc-400 group-hover:text-white font-medium tracking-widest uppercase text-sm transition-colors">

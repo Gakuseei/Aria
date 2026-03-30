@@ -132,9 +132,24 @@ body {
   color: var(--color-text);
 }
 
+.theme-screen-shell,
 .theme-settings-shell {
   background: var(--app-backdrop);
   color: var(--color-text);
+}
+
+.theme-card-subtle {
+  background: var(--glass-light-bg);
+  border: 1px solid var(--glass-panel-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.theme-text-muted {
+  color: var(--color-text-muted);
+}
+
+.theme-text-soft {
+  color: var(--color-text-soft);
 }
 
 .theme-app-backdrop {

@@ -425,7 +425,7 @@ export default function DebugConsole({
       <Toaster position="top-right" />
       <div className="fixed inset-0 z-[9999] flex items-center justify-center px-3 py-4 pointer-events-none">
         <div className="absolute inset-0 bg-black/90 backdrop-blur-md pointer-events-auto" onClick={onClose} />
-        <div className="relative flex h-[88vh] max-h-[920px] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-rose-500/30 bg-zinc-950/90 shadow-2xl pointer-events-auto">
+        <div className="relative flex h-[88vh] max-h-[920px] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-rose-500/30 shadow-2xl pointer-events-auto" style={{ backgroundColor: 'color-mix(in srgb, var(--color-bg) 90%, transparent)', color: 'var(--color-text)' }}>
           <div className="border-b border-white/5 bg-gradient-to-r from-rose-950/40 to-pink-950/20 px-5 py-4 sm:px-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex min-w-0 items-center gap-3">
@@ -747,7 +747,7 @@ export default function DebugConsole({
               <div className="space-y-4">
                 {errors.length > 0 ? (
                   <>
-                    <div className="sticky top-0 z-10 rounded-xl border border-white/5 bg-zinc-950/90 p-3 backdrop-blur-md">
+                    <div className="sticky top-0 z-10 rounded-xl border border-white/5 p-3 backdrop-blur-md" style={{ backgroundColor: 'color-mix(in srgb, var(--color-bg) 92%, transparent)' }}>
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex flex-wrap items-center gap-3">
                           <div className="flex items-center gap-2">
@@ -886,7 +886,7 @@ export default function DebugConsole({
             )}
           </div>
 
-          <div className="border-t border-white/5 bg-zinc-950/70 px-5 py-3 sm:px-6">
+          <div className="border-t border-white/5 px-5 py-3 sm:px-6" style={{ backgroundColor: 'color-mix(in srgb, var(--color-bg) 78%, transparent)' }}>
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
               <span>{t.debugConsole.footer}</span>
               <span>{t.debugConsole.view}: {currentView}</span>

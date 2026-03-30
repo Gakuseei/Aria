@@ -185,7 +185,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
               }`}>
                 {t.settings.title}
               </h1>
-              <p className="text-sm text-zinc-500 mt-0.5">{t.settings?.versionTagline || 'v1.0 Release • Local Only'}</p>
+              <p className="theme-text-soft mt-0.5 text-sm">{t.settings?.versionTagline || 'v1.0 Release • Local Only'}</p>
             </div>
           </div>
 

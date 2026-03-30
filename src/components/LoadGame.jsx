@@ -139,7 +139,7 @@ function LoadGame({ onLoad, onBack }) {
   };
 
   return (
-    <div className={`h-full w-full flex flex-col p-8 bg-gradient-to-br from-zinc-900 via-zinc-900 to-black transition-all duration-300 ${
+    <div className={`theme-screen-shell flex h-full w-full flex-col p-8 transition-all duration-300 ${
       isVisible ? 'opacity-100' : 'opacity-0'
     }`}>
       {/* v1.0 ROSE NOIR: Premium Glass Header */}

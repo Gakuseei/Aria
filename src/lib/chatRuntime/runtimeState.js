@@ -107,7 +107,7 @@ const CONTINUITY_KEYWORDS = [
 
 const EXPLICIT_INTIMACY_PATTERN = /\b(?:sex|sexual|naked|nude|moan|thrust|grind|ride|cock|dick|pussy|clit|cum|orgasm|breasts?|nipples?|between (?:my|your|her|his) legs|inside (?:me|you|her|him)|hardcore|fuck(?:ing|ed)?|suck(?:ing|ed)?|lick(?:ing|ed)?|spread(?:ing)? (?:my|your|her|his) legs)\b/i;
 const FLIRTY_TENSION_PATTERN = /\b(?:blush(?:ing)?|flush(?:ed|ing)?|shiver(?:ing)?|breath(?:less|ing)?|tension|chemistry|closer|close|linger(?:ing)?|lean(?:ing)?|touch(?:ing|es)?|waist|throat|chin|lips?|kiss(?:es|ed|ing)?|hold(?:ing)?|stay|invite|pull(?:ing)?|want(?:s|ed|ing)?|need(?:s|ed|ing)?)\b/i;
-const ESCALATION_OPENING_PATTERN = /\b(?:come closer|closer|kiss me|touch me|hold me|stay with me|come here|pull me|want you|need you|show me|don't stop|keep going|let me|invite me|take me|want this)\b/i;
+const ESCALATION_OPENING_PATTERN = /\b(?:come closer|closer|kiss me|kiss me properly|touch me|hold me|stay with me|stay close|come here|pull me|pull me in|want you|need you|show me|don't stop|keep going|keep me right here|let me|invite me|take me|want this)\b/i;
 const DEESCALATION_PATTERN = /\b(?:stop|slow down|not now|later|focus|back to work|back to the task|let'?s keep this professional|we should behave|we should stop|that's enough)\b/i;
 
 function collectAssistSignals({ history = [], activeScene, sceneState, persistedSceneMemory }) {
@@ -126,7 +126,9 @@ function collectAssistSignals({ history = [], activeScene, sceneState, persisted
   const explicitHits = [recentText, beatText].filter(Boolean).reduce((count, text) => count + (EXPLICIT_INTIMACY_PATTERN.test(text) ? 1 : 0), 0);
   const flirtyHits = [recentText, beatText].filter(Boolean).reduce((count, text) => count + (FLIRTY_TENSION_PATTERN.test(text) ? 1 : 0), 0);
   const escalationOpening = ESCALATION_OPENING_PATTERN.test(beatText) || ESCALATION_OPENING_PATTERN.test(latestUserTurn);
-  const deescalating = DEESCALATION_PATTERN.test(`${latestUserTurn}\n${activeScene?.open_thread || ''}`);
+  const deescalationText = `${latestUserTurn}\n${activeScene?.open_thread || ''}`;
+  const explicitContinuation = /\bdon'?t stop\b/i.test(deescalationText);
+  const deescalating = !explicitContinuation && DEESCALATION_PATTERN.test(deescalationText);
 
   return {
     recentText,
@@ -168,8 +170,18 @@ function deriveAssistMode({ character, runtimeSteering, activeScene, sceneState,
   const strongPassion = Number(runtimeSteering?.passionLevel || 0) >= 35;
   const explicitScene = signals.explicitHits > 0;
   const flirtScene = signals.flirtyHits > 0;
+  const chargedEscalation = !explicitScene
+    && !signals.deescalating
+    && signals.escalationOpening
+    && signals.flirtyHits >= 1
+    && strongPassion;
+  const sustainedNsfwMomentum = !explicitScene
+    && !signals.deescalating
+    && categoryAllowsNsfw
+    && signals.flirtyHits >= 2
+    && strongPassion;
 
-  if (nsfwAllowed && explicitScene && !signals.deescalating) {
+  if (nsfwAllowed && !signals.deescalating && (explicitScene || chargedEscalation || sustainedNsfwMomentum)) {
     return {
       value: 'nsfw_only',
       debug: {
@@ -178,7 +190,9 @@ function deriveAssistMode({ character, runtimeSteering, activeScene, sceneState,
         flirtyHits: signals.flirtyHits,
         escalationOpening: signals.escalationOpening,
         deescalating: signals.deescalating,
-        reason: 'explicit_scene'
+        reason: explicitScene
+          ? 'explicit_scene'
+          : (chargedEscalation ? 'charged_escalation' : 'sustained_nsfw_momentum')
       }
     };
   }

@@ -243,6 +243,35 @@ describe('buildRuntimeState', () => {
     expect(runtimeState.assistMode).toBe('nsfw_only');
   });
 
+  it('promotes nsfw personas from sustained charged momentum into nsfw_only before explicit keywords appear', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Sarah',
+        category: 'nsfw',
+        systemPrompt: 'Sarah is dominant, composed, and likes to keep pressure on the moment.',
+        instructions: 'Stay in control and escalate when the scene has real momentum.',
+        scenario: 'Late night at the bar after closing.'
+      },
+      history: [
+        { role: 'assistant', content: '*She circles around behind you and lets her fingers linger at your waist.* "You keep asking for trouble."' },
+        { role: 'user', content: 'Then pull me closer and tell me what you want.' },
+        { role: 'assistant', content: '*Her mouth brushes your ear as she keeps you pinned lightly against the bar.* "You want me to spell it out for you?"' },
+        { role: 'user', content: 'Don\'t stop now. Keep me right here and kiss me properly.' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: {
+        profile: 'reply',
+        availableContextTokens: 900,
+        responseMode: 'normal',
+        unchainedMode: false,
+        passionLevel: 42
+      }
+    });
+
+    expect(runtimeState.assistMode).toBe('nsfw_only');
+    expect(runtimeState.assistModeDebug.reason).toBe('charged_escalation');
+  });
+
   it('forces bot conversations into bot_conversation', () => {
     const runtimeState = buildRuntimeState({
       character: {

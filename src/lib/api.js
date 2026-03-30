@@ -553,8 +553,14 @@ const SUGGESTION_PROGRESS_PATTERN = /\b(?:invite|pull|guide|lead|bring|take|sit|
 const SUGGESTION_BOLD_PATTERN = /\b(?:touch|kiss|pull|guide|lean|closer|waist|thigh|lap|admit|confess|breath|neck)\b/i;
 const WRITE_FOR_ME_GENERIC_PATTERN = /\b(?:electricity between us|cannot deny|there'?s no denying|lingering for a heartbeat longer than necessary|beneath those long lashes|warm smile spreads|vision bathed in|presence has come to mean|hint of color in her cheeks|warmth between us|something unspoken)\b/i;
 const INCOMPLETE_SUGGESTION_ENDING_PATTERN = /\b(?:a|an|the|this|that|these|those|another|some|any|more|expensive|impressive)\s*$/i;
-const INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN = /\b(?:whispering|smirking|watching|waiting|looking|leaning|reaching|moving)\s*$/i;
+const INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN = /\b(?:whispering|smirking|watching|waiting|looking|leaning|reaching|moving|commenting)\s*$/i;
+const INCOMPLETE_SUGGESTION_ADJECTIVE_ENDING_PATTERN = /\b(?:quick|warm|small|gentle|soft|slow|long|brief)\s*$/i;
+const INCOMPLETE_SUGGESTION_VERB_ENDING_PATTERN = /\b(?:have|enjoy|appreciate|like|love|let)\s*$/i;
+const INCOMPLETE_SUGGESTION_PHRASE_ENDING_PATTERN = /\b(?:how much(?: you)?|on how|how|it's okay to|okay to|by\s+(?:commenting|saying|asking|mentioning|telling))\s*$/i;
 const BOT_PHYSICAL_SUGGESTION_PATTERN = /\b(?:kiss|waist|thigh|lap|neck|body|breath|touch|lick|ride|grind)\b/i;
+const SUGGESTION_GENERIC_ACTION_PATTERN = /^(?:change the subject|keep talking|say something nice|say more)$/i;
+const WRITE_FOR_ME_META_LEAD_PATTERN = /\b(?:I decide to|I choose to|I can't help but|I find myself)\b/i;
+const WRITE_FOR_ME_MALFORMED_LEAD_PATTERN = /^\*?\s*I\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/;
 
 function detectSuggestionRole(text = '') {
   const lowered = String(text || '').toLowerCase();
@@ -620,7 +626,7 @@ function trimSuggestionCandidate(candidate) {
 
   if (compact.length > SUGGESTION_MAX_CHARS || compact.split(/\s+/).filter(Boolean).length > SUGGESTION_MAX_WORDS) {
     const clauseParts = compact
-      .split(/(?:\s+-\s+|;\s+|,\s+|(?=\s+(?:because|while|so that|letting|making|as)\b)|(?=\s+and\s+(?:begin|starting|start|continue|continuing|keep|keeping|list|listing|tell|telling|explain|explaining|show|showing|reveal|revealing)\b))/i)
+      .split(/(?:\s+-\s+|;\s+|,\s+|(?=\s+(?:because|while|so that|letting|making|as)\b)|(?=\s+(?:before|after)\s+(?:continuing|moving|speaking|telling|explaining)\b)|(?=\s+and\s+(?:begin|starting|start|continue|continuing|keep|keeping|list|listing|tell|telling|explain|explaining|show|showing|reveal|revealing)\b))/i)
       .map((part) => part.trim())
       .filter(Boolean);
     if (clauseParts.length > 1) {
@@ -633,7 +639,7 @@ function trimSuggestionCandidate(candidate) {
   }
 
   if (compact.length > SUGGESTION_MAX_CHARS || compact.split(/\s+/).filter(Boolean).length > SUGGESTION_MAX_WORDS) {
-    compact = compact.split(/\s+/).slice(0, SUGGESTION_MAX_WORDS).join(' ');
+    return '';
   }
 
   compact = compact
@@ -641,11 +647,49 @@ function trimSuggestionCandidate(candidate) {
     .replace(/['"“”`*:,|.\-\s]+$/, '')
     .trim();
 
-  while (INCOMPLETE_SUGGESTION_ENDING_PATTERN.test(compact) || INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN.test(compact)) {
+  while (
+    INCOMPLETE_SUGGESTION_ENDING_PATTERN.test(compact)
+    || INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN.test(compact)
+    || INCOMPLETE_SUGGESTION_ADJECTIVE_ENDING_PATTERN.test(compact)
+    || INCOMPLETE_SUGGESTION_VERB_ENDING_PATTERN.test(compact)
+    || INCOMPLETE_SUGGESTION_PHRASE_ENDING_PATTERN.test(compact)
+  ) {
     const words = compact.split(/\s+/).filter(Boolean);
     if (words.length <= 2) return '';
     words.pop();
     compact = words.join(' ').trim();
+  }
+
+  compact = compact
+    .replace(/\b(?:and|or|to|with|in|into|onto|from|for|of|on|at|by|up|down|the|a|an|that|this|there|before|after)$/i, '')
+    .replace(/['"“”`*:,|.\-\s]+$/, '')
+    .trim();
+
+  while (
+    INCOMPLETE_SUGGESTION_ENDING_PATTERN.test(compact)
+    || INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN.test(compact)
+    || INCOMPLETE_SUGGESTION_ADJECTIVE_ENDING_PATTERN.test(compact)
+    || INCOMPLETE_SUGGESTION_VERB_ENDING_PATTERN.test(compact)
+    || INCOMPLETE_SUGGESTION_PHRASE_ENDING_PATTERN.test(compact)
+  ) {
+    const words = compact.split(/\s+/).filter(Boolean);
+    if (words.length <= 2) return '';
+    words.pop();
+    compact = words.join(' ').trim();
+  }
+
+  compact = compact
+    .replace(/\b(?:and|or|to|with|in|into|onto|from|for|of|on|at|by|up|down|the|a|an|that|this|there|before|after)$/i, '')
+    .replace(/['"“”`*:,|.\-\s]+$/, '')
+    .trim();
+
+  const finalWordCount = compact.split(/\s+/).filter(Boolean).length;
+  if (finalWordCount < 2) {
+    return '';
+  }
+
+  if (SUGGESTION_GENERIC_ACTION_PATTERN.test(compact)) {
+    return '';
   }
 
   return compact;
@@ -1121,6 +1165,7 @@ function repairLeadingActionBlock(text, userName) {
 function hasInvalidImpersonateLead(text, userName, charName = '') {
   const trimmed = String(text || '').trim();
   if (!trimmed) return true;
+  if (WRITE_FOR_ME_MALFORMED_LEAD_PATTERN.test(trimmed)) return true;
   const escapedUserName = escapeRegex(userName);
   const invalidLeads = [
     'You\\b',
@@ -1157,8 +1202,8 @@ function scoreWriteForMeDraft(text, history = [], options = {}) {
   if (trimmed.length < 18) score -= 40;
   if (!/[.!?*"”]$/.test(trimmed)) score -= 12;
   if (words.length < 4) score -= 12;
-  if (words.length > 60) score -= 8 + Math.ceil((words.length - 60) / 6) * 3;
-  if (sentenceCount > 3) score -= 8 + (sentenceCount - 3) * 4;
+  if (words.length > 32) score -= 10 + Math.ceil((words.length - 32) / 4) * 5;
+  if (sentenceCount > 2) score -= 10 + (sentenceCount - 2) * 8;
   if (WRITE_FOR_ME_GENERIC_PATTERN.test(trimmed)) score -= 16;
   if (!/\b(?:I|me|my|I'm|I’d|I'd|I’ll|I'll|I’ve|I've)\b/.test(trimmed)) score -= 24;
   if (!/[*"]/.test(trimmed)) score -= 4;
@@ -1166,6 +1211,8 @@ function scoreWriteForMeDraft(text, history = [], options = {}) {
     score -= 6;
   }
   if (/^(?:I|User)\s*:/i.test(trimmed)) score -= 32;
+  if (WRITE_FOR_ME_META_LEAD_PATTERN.test(trimmed)) score -= 12;
+  if (WRITE_FOR_ME_MALFORMED_LEAD_PATTERN.test(trimmed)) score -= 80;
   if (assistMode === 'bot_conversation' && /\b(?:kiss|waist|thigh|lap|body|moan|cum)\b/i.test(trimmed)) score -= 60;
   if (assistMode === 'sfw_only' && /\b(?:cock|pussy|cum|fuck|spread your legs)\b/i.test(trimmed)) score -= 45;
   if (assistMode === 'mixed_transition' && /\b(?:cock|pussy|cum|hardcore)\b/i.test(trimmed)) score -= 32;
@@ -1186,14 +1233,20 @@ function shortenWriteForMeDraft(text) {
     .map((sentence) => sentence.trim())
     .filter(Boolean);
 
-  if (sentences.length > 3) {
-    trimmed = sentences.slice(0, 3).join(' ').trim();
+  if (sentences.length > 2) {
+    trimmed = sentences.slice(0, 2).join(' ').trim();
   }
 
-  if (trimmed.length > 360) {
-    const clipped = trimmed.slice(0, 360);
-    const sentenceEnd = Math.max(clipped.lastIndexOf('. '), clipped.lastIndexOf('! '), clipped.lastIndexOf('? '));
-    trimmed = sentenceEnd > 150 ? clipped.slice(0, sentenceEnd + 1).trim() : clipped.trim();
+  const words = trimmed.split(/\s+/).filter(Boolean);
+
+  if (trimmed.length > 220 || words.length > 38) {
+    trimmed = sentences[0] || trimmed;
+  }
+
+  if (trimmed.length > 220) {
+    const clipped = trimmed.slice(0, 220);
+    const sentenceEnd = Math.max(clipped.lastIndexOf('. '), clipped.lastIndexOf('! '), clipped.lastIndexOf('? '), clipped.lastIndexOf('" '), clipped.lastIndexOf('* '));
+    trimmed = sentenceEnd > 90 ? clipped.slice(0, sentenceEnd + 1).trim() : clipped.trim();
   }
 
   return trimmed;

@@ -460,6 +460,19 @@ describe('suggestions stabilization', () => {
     ]);
   });
 
+  it('drops clipped suggestions instead of returning visibly truncated chips', () => {
+    const parsed = parseSuggestionResponse(
+      'Take a deep breath | Confide more details about the specific challenges at work that have | Change the subject by commenting on how much you enjoy',
+      '',
+      []
+    );
+
+    expect(parsed).toEqual([
+      'Take a deep breath',
+      'Confide more details about the specific challenges at work'
+    ]);
+  });
+
   it('returns parsed suggestions from the public generator without forcing a retry', async () => {
     const fetchMock = vi.fn(async (url) => {
       if (String(url).endsWith('/api/show')) {
@@ -615,6 +628,15 @@ describe('finalizeImpersonateDraft', () => {
     expect(finalized.valid).toBe(true);
     expect(finalized.text.startsWith('User:')).toBe(false);
     expect(finalized.text.startsWith('I:')).toBe(false);
+  });
+
+  it('rejects malformed first-person drafts that leak the character after I', () => {
+    const finalized = finalizeImpersonateDraft(
+      '*I Mei scowls and waves her hand dismissively.* "Whatever."',
+      { charName: 'Mei', userName: 'Erik' }
+    );
+
+    expect(finalized.valid).toBe(false);
   });
 });
 

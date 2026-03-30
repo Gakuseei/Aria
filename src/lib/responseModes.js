@@ -3,7 +3,7 @@ export const RESPONSE_MODE_ORDER = ['short', 'normal', 'long'];
 const RESPONSE_MODE_CONFIG = {
   short: {
     labelKey: 'responseModeShort',
-    tokenCap: 160,
+    tokenCap: 192,
     sentenceMax: 4,
     paragraphMax: 1,
     charMax: 360,
@@ -12,7 +12,7 @@ const RESPONSE_MODE_CONFIG = {
   },
   normal: {
     labelKey: 'responseModeNormal',
-    tokenCap: 256,
+    tokenCap: 384,
     sentenceMax: 7,
     paragraphMax: 2,
     charMax: 620,
@@ -21,7 +21,7 @@ const RESPONSE_MODE_CONFIG = {
   },
   long: {
     labelKey: 'responseModeLong',
-    tokenCap: 448,
+    tokenCap: null,
     sentenceMax: null,
     paragraphMax: null,
     charMax: null,

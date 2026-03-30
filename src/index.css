@@ -948,11 +948,15 @@ body.oled-mode [title]:hover::after {
 :root[data-theme='light'] .bg-zinc-950,
 :root[data-theme='light'] .bg-zinc-900,
 :root[data-theme='light'] .bg-zinc-900\/80,
+:root[data-theme='light'] .bg-zinc-900\/60,
 :root[data-theme='light'] .bg-zinc-900\/50,
 :root[data-theme='light'] .bg-zinc-800,
 :root[data-theme='light'] .bg-zinc-800\/50,
 :root[data-theme='light'] .bg-zinc-700\/20,
-:root[data-theme='light'] .bg-zinc-700\/50 {
+:root[data-theme='light'] .bg-zinc-700\/50,
+:root[data-theme='light'] .bg-black\/30,
+:root[data-theme='light'] .bg-black\/40,
+:root[data-theme='light'] .bg-black\/50 {
   background-color: rgba(255, 255, 255, 0.82) !important;
 }
 

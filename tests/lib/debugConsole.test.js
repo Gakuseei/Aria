@@ -120,6 +120,18 @@ describe('debugConsole helpers', () => {
     expect(summary.apiStatus).toBe('degraded');
   });
 
+  it('marks overall health as warning when API is degraded without captured errors', () => {
+    const summary = summarizeDebugHealth({
+      errors: [],
+      eventLog: [{ type: 'api' }],
+      lastApiResponseTime: 2500,
+      lastApiWps: 9,
+    });
+
+    expect(summary.apiStatus).toBe('degraded');
+    expect(summary.overallStatus).toBe('warning');
+  });
+
   it('builds structured export payloads without view-layer ids', () => {
     const payload = buildErrorExportPayload({
       appVersion: '0.2.5',

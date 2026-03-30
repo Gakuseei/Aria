@@ -210,8 +210,14 @@ export function summarizeDebugHealth({
     }
   }
 
+  const overallStatus = recentErrors > 0
+    ? 'attention'
+    : recentWarnings > 0 || apiStatus === 'slow' || apiStatus === 'degraded'
+      ? 'warning'
+      : 'healthy';
+
   return {
-    overallStatus: recentErrors > 0 ? 'attention' : recentWarnings > 0 ? 'warning' : 'healthy',
+    overallStatus,
     recentErrors,
     recentWarnings,
     recentEvents: eventLog.length,

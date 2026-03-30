@@ -16,6 +16,7 @@ import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DE
 import { useLanguage } from './context/LanguageContext';
 import OllamaSetup from './components/tutorials/OllamaSetup';
 import { normalizeResponseMode } from './lib/responseModes';
+import { DEBUG_CONSOLE_EVENT_LIMIT } from './lib/debugConsole';
 
 // App views
 const VIEWS = {
@@ -107,14 +108,13 @@ function App() {
     console.timeEnd(label);
   };
 
-  // Helper function to add events to log (max 10 entries)
   const addEventToLog = (eventType, message) => {
     const newEvent = {
       timestamp: new Date().toISOString(),
       type: eventType,
-      message: message
+      message
     };
-    setEventLog(prev => [newEvent, ...prev].slice(0, 10));
+    setEventLog(prev => [newEvent, ...prev].slice(0, DEBUG_CONSOLE_EVENT_LIMIT));
   };
 
   // v0.2.5: CRITICAL FIX - Load settings from localStorage on startup

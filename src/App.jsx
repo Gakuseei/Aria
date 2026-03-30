@@ -11,7 +11,7 @@ import CharacterCreator from './components/CharacterCreator';
 import AICharacterBuilder from './components/AICharacterBuilder';
 import DebugConsole from './components/DebugConsole';
 import OledToggleButton from './components/OledToggleButton';
-import { testOllamaConnection, autoDetectAndSetModel, normalizeContextSize } from './lib/api';
+import { testOllamaConnection, autoDetectAndSetModel, normalizeContextSize, loadSettings } from './lib/api';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from './lib/defaults';
 import { useLanguage } from './context/LanguageContext';
 import OllamaSetup from './components/tutorials/OllamaSetup';
@@ -126,10 +126,8 @@ function App() {
       startDebugTimer('[Startup] Total init');
       startDebugTimer('[Startup] Settings load');
       try {
-        const stored = localStorage.getItem('settings');
-        if (stored) {
-          const loadedSettings = JSON.parse(stored);
-
+        const loadedSettings = await loadSettings();
+        if (loadedSettings && typeof loadedSettings === 'object') {
           const mergedSettings = withResolvedThemeSettings({
             ollamaUrl: loadedSettings.ollamaUrl || OLLAMA_DEFAULT_URL,
             ollamaModel: loadedSettings.ollamaModel || DEFAULT_MODEL_NAME,
@@ -155,8 +153,8 @@ function App() {
             preferredLanguage: loadedSettings.preferredLanguage || 'en'
           });
 
+          localStorage.setItem('settings', JSON.stringify(mergedSettings));
           setSettings(mergedSettings);
-
           applyUIScale(mergedSettings.fontSize);
           setThemeModeActive(mergedSettings.themeMode);
           setOledModeActive(mergedSettings.oledMode);
@@ -170,7 +168,6 @@ function App() {
               localStorage.setItem('language', mergedSettings.preferredLanguage);
             }
           }
-
         }
       } catch (error) {
         console.error('[v9.5 App Init] ❌ Error loading settings:', error);

@@ -132,6 +132,11 @@ body {
   color: var(--color-text);
 }
 
+.theme-settings-shell {
+  background: var(--app-backdrop);
+  color: var(--color-text);
+}
+
 .theme-app-backdrop {
   background: var(--app-backdrop);
 }
@@ -925,16 +930,55 @@ body.oled-mode [title]:hover::after {
 }
 
 /* VERSION 5.7: OLED Mode - Enhanced contrast for readability */
+:root[data-theme='light'] .bg-zinc-950,
+:root[data-theme='light'] .bg-zinc-900,
+:root[data-theme='light'] .bg-zinc-900\/80,
+:root[data-theme='light'] .bg-zinc-900\/50,
+:root[data-theme='light'] .bg-zinc-800,
+:root[data-theme='light'] .bg-zinc-800\/50,
+:root[data-theme='light'] .bg-zinc-700\/20,
+:root[data-theme='light'] .bg-zinc-700\/50 {
+  background-color: rgba(255, 255, 255, 0.82) !important;
+}
+
+:root[data-theme='light'] .border-zinc-800,
+:root[data-theme='light'] .border-zinc-700,
+:root[data-theme='light'] .border-zinc-700\/30,
+:root[data-theme='light'] .border-zinc-700\/50,
+:root[data-theme='light'] .border-white\/5,
+:root[data-theme='light'] .border-white\/10 {
+  border-color: rgba(225, 29, 72, 0.14) !important;
+}
+
+:root[data-theme='light'] .text-white,
+:root[data-theme='light'] .text-zinc-100 {
+  color: #18181b !important;
+}
+
+:root[data-theme='light'] .text-zinc-200,
+:root[data-theme='light'] .text-zinc-300 {
+  color: #334155 !important;
+}
+
+:root[data-theme='light'] .text-zinc-400 {
+  color: #475569 !important;
+}
+
+:root[data-theme='light'] .text-zinc-500,
+:root[data-theme='light'] .text-zinc-600 {
+  color: #64748b !important;
+}
+
 body.oled-mode .text-zinc-400 {
-  color: #9ca3af !important;
+  color: #a1a1aa !important;
 }
 
 body.oled-mode .text-zinc-500 {
-  color: #6b7280 !important;
+  color: #71717a !important;
 }
 
 body.oled-mode .text-zinc-600 {
-  color: #4b5563 !important;
+  color: #52525b !important;
 }
 
 /* VERSION 5.7: Accessibility - Focus indicators for OLED mode */

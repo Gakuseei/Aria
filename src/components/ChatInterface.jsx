@@ -1592,7 +1592,13 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
 
             {/* Voice Settings Popover */}
             {showVoiceSettings && (
-              <div className={`absolute top-12 right-0 w-64 ${settings.oledMode ? 'bg-black' : 'bg-zinc-900'} border border-zinc-700 rounded-xl shadow-2xl z-[200] flex flex-col p-4 backdrop-blur-xl`}>
+              <div className={`absolute top-12 right-0 z-[200] flex w-64 flex-col rounded-xl border p-4 shadow-2xl backdrop-blur-xl ${
+                settings.themeMode === 'light'
+                  ? 'bg-white/95 border-rose-200 text-zinc-900'
+                  : settings.oledMode
+                    ? 'bg-black border-zinc-800 text-zinc-100'
+                    : 'bg-zinc-900 border-zinc-700 text-zinc-100'
+              }`}>
                 <div className="space-y-4">
                   {/* Master Toggle: Enable Voice */}
                   <div className="flex items-center justify-between">

@@ -12,6 +12,20 @@
     />
     
     <title>Aria</title>
+    <script>
+      try {
+        const rawSettings = localStorage.getItem('settings');
+        const parsedSettings = rawSettings ? JSON.parse(rawSettings) : {};
+        const themeMode = parsedSettings.themeMode || (parsedSettings.oledMode ? 'oled' : 'dark');
+        document.documentElement.dataset.theme = themeMode;
+        document.body?.classList?.add(`theme-${themeMode}`);
+        if (themeMode === 'oled') {
+          document.body?.classList?.add('oled-mode');
+        }
+      } catch {
+        document.documentElement.dataset.theme = 'dark';
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

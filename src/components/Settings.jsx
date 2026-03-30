@@ -167,7 +167,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
 
   return (
     <div
-      className="h-full bg-gradient-to-br from-zinc-900 via-zinc-900 to-black text-white p-6"
+      className="theme-settings-shell h-full p-6"
       style={{ overflowY: 'auto' }}
     >
       <div className="max-w-4xl mx-auto">
@@ -181,7 +181,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
               <h1 className={`text-2xl font-bold ${
                 isGoldMode 
                   ? 'bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(251,191,36,0.4)]'
-                  : 'text-white'
+                  : 'text-[var(--color-text)]'
               }`}>
                 {t.settings.title}
               </h1>

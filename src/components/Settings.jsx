@@ -918,18 +918,32 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg">
-                  <span className="text-sm text-zinc-300">{t.settings.oledMode}</span>
-                  <button
-                    onClick={() => onSettingChange('oledMode', !settings.oledMode)}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                      settings.oledMode
-                        ? (isGoldMode ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30')
-                        : 'bg-zinc-700/50 text-zinc-400 border border-zinc-600/30'
-                    }`}
-                  >
-                    {settings.oledMode ? 'ON' : 'OFF'}
-                  </button>
+                <div className="space-y-3 rounded-lg bg-zinc-700/20 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-zinc-300">{t.settings.themeMode}</span>
+                    <span className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+                      {settings.themeMode === 'light' ? t.settings.lightMode : settings.themeMode === 'oled' ? t.settings.oledMode : t.settings.darkMode}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'dark', label: t.settings.darkMode },
+                      { id: 'light', label: t.settings.lightMode },
+                      { id: 'oled', label: t.settings.oledMode },
+                    ].map((themeOption) => (
+                      <button
+                        key={themeOption.id}
+                        onClick={() => onSettingChange('themeMode', themeOption.id)}
+                        className={`rounded-lg border-2 border-transparent px-3 py-2 text-xs font-medium transition-all ${
+                          settings.themeMode === themeOption.id
+                            ? (isGoldMode ? 'bg-amber-500/20 text-amber-300 hover:border-amber-500 border-amber-500/40' : 'bg-rose-500/15 text-rose-200 hover:border-rose-500 border-rose-500/40')
+                            : 'bg-zinc-700/50 text-zinc-400 hover:border-rose-500 hover:text-zinc-100'
+                        }`}
+                      >
+                        {themeOption.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

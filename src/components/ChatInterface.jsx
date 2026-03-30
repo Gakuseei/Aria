@@ -292,6 +292,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     piperPath: '',
     modelPath: '',
     voiceVolume: 1.0,
+    themeMode: 'dark',
     oledMode: false
   });
   
@@ -520,6 +521,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
           piperPath: loadedSettings.piperPath || '',
           modelPath: loadedSettings.modelPath || '',
           voiceVolume: loadedSettings.voiceVolume ?? 1.0,
+          themeMode: loadedSettings.themeMode || (loadedSettings.oledMode ? 'oled' : 'dark'),
           oledMode: loadedSettings.oledMode || false
         });
 

@@ -254,6 +254,7 @@ const DEFAULT_SETTINGS = {
   autoSave: true,
   soundEnabled: true,
   animationsEnabled: true,
+  themeMode: 'dark',
   oledMode: false,
   preferredLanguage: 'en',
   userName: 'User',

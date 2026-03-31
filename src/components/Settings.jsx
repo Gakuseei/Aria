@@ -215,7 +215,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             <div className="space-y-4">
               {/* User Name */}
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">{t.settings.userName}</label>
+                <label className="block text-sm font-medium theme-text-muted mb-2">{t.settings.userName}</label>
                 <input
                   type="text"
                   value={settings.userName}
@@ -225,14 +225,14 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   }`}
                   placeholder={t.settings.userName}
                 />
-                <p className="text-xs text-zinc-500 mt-1.5">
+                <p className="text-xs theme-text-soft mt-1.5">
                   {t.settings.yourNameDisplayed}
                 </p>
               </div>
 
               {/* User Gender & Anatomy - BLOCK 7.2: No z-index needed with Portal */}
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">{t.settings.userGender}</label>
+                <label className="block text-sm font-medium theme-text-muted mb-2">{t.settings.userGender}</label>
                 <CustomDropdown
                   value={settings.userGender}
                   onChange={(e) => onSettingChange('userGender', e.target.value)}
@@ -243,7 +243,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                     { value: 'futa', label: t.gender?.futa || 'Futa/Trans' }
                   ]}
                 />
-                <p className="text-xs text-zinc-500 mt-1.5">
+                <p className="text-xs theme-text-soft mt-1.5">
                   {t.settings.definesAnatomy}
                 </p>
               </div>
@@ -263,7 +263,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">{t.settings.ollamaUrl}</label>
+                <label className="block text-sm font-medium theme-text-muted mb-2">{t.settings.ollamaUrl}</label>
                 <input
                   type="text"
                   value={settings.ollamaUrl}
@@ -283,7 +283,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-zinc-400">{t.settings.model}</label>
+                  <label className="block text-sm font-medium theme-text-muted">{t.settings.model}</label>
                   <button
                     onClick={handleLoadModels}
                     disabled={loadingModels}
@@ -316,7 +316,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                     placeholder="hermes3"
                   />
                 )}
-                <p className="text-xs text-zinc-500 mt-1.5">
+                <p className="text-xs theme-text-soft mt-1.5">
                   {loadingModels
                     ? (t.settings.detectingModels || 'Detecting models...')
                     : availableModels.length > 0
@@ -326,12 +326,12 @@ export default function Settings({ settings, onSettingChange, onClose }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">{t.settings.contextSize || 'Context Size'}</label>
+                <label className="block text-sm font-medium theme-text-muted mb-2">{t.settings.contextSize || 'Context Size'}</label>
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-sm font-mono px-2 py-0.5 rounded ${
                     isGoldMode ? 'text-amber-300 bg-amber-500/10' : 'text-rose-300 bg-rose-500/10'
                   }`}>{normalizedContextSize}</span>
-                  <span className="text-xs text-zinc-500">
+                  <span className="text-xs theme-text-soft">
                     {recommendedContextSize} {t.characterCreator?.recommended || 'recommended'}
                   </span>
                 </div>
@@ -353,14 +353,14 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                     </span>
                   ))}
                 </div>
-                <p className="text-xs text-zinc-500 mt-1.5">
+                <p className="text-xs theme-text-soft mt-1.5">
                   {t.settings.contextSizeDesc || 'More context = longer conversations in memory. Requires more VRAM.'}
                 </p>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-zinc-400">{t.settings.temperature}</label>
+                  <label className="text-sm font-medium theme-text-muted">{t.settings.temperature}</label>
                   <span className={`text-sm font-mono px-2 py-0.5 rounded ${
                     isGoldMode ? 'text-amber-300 bg-amber-500/10' : 'text-rose-300 bg-rose-500/10'
                   }`}>{(settings.temperature ?? 0.8).toFixed(2)}</span>
@@ -376,14 +376,14 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                     isGoldMode ? 'accent-amber-500' : 'accent-rose-500'
                   }`}
                 />
-                <p className="text-xs text-zinc-500 mt-1.5">
+                <p className="text-xs theme-text-soft mt-1.5">
                   {t.settings.lowerMoreFocused}
                 </p>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-zinc-400">{t.settings.maxResponseTokens}</label>
+                  <label className="text-sm font-medium theme-text-muted">{t.settings.maxResponseTokens}</label>
                   <span className={`text-sm font-mono px-2 py-0.5 rounded ${
                     isGoldMode ? 'text-amber-300 bg-amber-500/10' : 'text-rose-300 bg-rose-500/10'
                   }`}>{settings.maxResponseTokens ?? 256}</span>
@@ -399,7 +399,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                     isGoldMode ? 'accent-amber-500' : 'accent-rose-500'
                   }`}
                 />
-                <p className="text-xs text-zinc-500 mt-1.5">
+                <p className="text-xs theme-text-soft mt-1.5">
                   {t.settings.maxResponseTokensDesc}
                 </p>
               </div>
@@ -457,7 +457,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
 
             <div className="space-y-4">
               {/* v1.0 UX FIX: Click OFF → Opens Tutorial directly */}
-              <div className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg">
+              <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                 <div>
                   <span className="text-sm text-zinc-300">{t.settings.enableImageGen}</span>
                   {!settings.imageGenEnabled && (
@@ -481,10 +481,10 @@ export default function Settings({ settings, onSettingChange, onClose }) {
 
               {/* Tier Selection: Standard (SDXL) vs Premium (FLUX) */}
               {settings.imageGenEnabled && (
-                <div className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg">
+                <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                   <div>
                     <span className="text-sm text-zinc-300">{t.settings?.imageQualityTier || 'Quality Tier'}</span>
-                    <p className="text-xs text-zinc-500 mt-0.5">
+                    <p className="text-xs theme-text-soft mt-0.5">
                       {settings.imageGenTier === 'premium' ? (t.settings?.imageFlux || 'FLUX.1 (12GB+ VRAM)') : (t.settings?.imageSdxl || 'SDXL (4-8GB VRAM)')}
                     </p>
                   </div>
@@ -525,7 +525,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
 
               {settings.imageGenEnabled && (
                 <div>
-                  <label className="block text-sm font-medium text-zinc-400 mb-2">
+                  <label className="block text-sm font-medium theme-text-muted mb-2">
                     {t.settings.imageGenApiUrl}
                   </label>
                   <input
@@ -535,7 +535,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                     className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                     placeholder="http://127.0.0.1:7860"
                   />
-                  <p className="text-xs text-zinc-500 mt-1">
+                  <p className="text-xs theme-text-soft mt-1">
                     {t.settings.automatic1111Endpoint}
                   </p>
                 </div>
@@ -557,7 +557,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             <div className="space-y-4">
               {/* v1.0 UX FIX: Click OFF → Opens Tutorial directly */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg">
+                <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                   <div>
                     <span className="text-sm text-zinc-300">{t.settings.enableVoice}</span>
                     {!settings.voiceEnabled && (
@@ -595,10 +595,10 @@ export default function Settings({ settings, onSettingChange, onClose }) {
 
                 {/* Tier Selection: Standard (Piper) vs Premium (Zonos) */}
                 {settings.voiceEnabled && (
-                  <div className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg">
+                  <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                     <div>
                       <span className="text-sm text-zinc-300">{t.settings?.voiceEngine || 'Voice Engine'}</span>
-                      <p className="text-xs text-zinc-500 mt-0.5">
+                      <p className="text-xs theme-text-soft mt-0.5">
                         {settings.voiceTier === 'premium' ? (t.settings?.voiceZonos || 'Zonos (4GB+ VRAM)') : (t.settings?.voicePiper || 'Piper TTS (CPU)')}
                       </p>
                     </div>
@@ -793,12 +793,12 @@ export default function Settings({ settings, onSettingChange, onClose }) {
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-white">{t.settings.language}</h2>
-                <p className="text-xs text-zinc-500 mt-0.5">{t.settings.changesUiText}</p>
+                <p className="text-xs theme-text-soft mt-0.5">{t.settings.changesUiText}</p>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">{t.settings.uiLanguage}</label>
+              <label className="block text-sm font-medium theme-text-muted mb-2">{t.settings.uiLanguage}</label>
               <CustomDropdown
                 value={language}
                 onChange={(e) => {
@@ -823,7 +823,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   { value: 'tr', label: 'Türkçe 🇹🇷' }
                 ]}
               />
-              <p className="text-xs text-zinc-500 mt-2">
+              <p className="text-xs theme-text-soft mt-2">
                 {t.settings.changesUiText}
               </p>
             </div>
@@ -843,7 +843,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             <div className="space-y-4">
               {/* v1.0 ROSE NOIR: Global UI Scale */}
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">{t.settings.globalUIScale}</label>
+                <label className="block text-sm font-medium theme-text-muted mb-2">{t.settings.globalUIScale}</label>
                 <div className="grid grid-cols-3 gap-3">
                   {['small', 'medium', 'large'].map((size) => (
                     <button
@@ -869,7 +869,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
 
               {/* Toggle Settings */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg">
+                <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                   <span className="text-sm text-zinc-300">{t.settings.autoSave}</span>
                   <button
                     onClick={() => onSettingChange('autoSave', !settings.autoSave)}
@@ -884,10 +884,10 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                 </div>
 
                 {/* v0.2.5: AUFGABE 2 - Replaced "Sound Effects" with "Smart Suggestions" */}
-                <div className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg">
+                <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                   <div className="flex flex-col">
                     <span className="text-sm text-zinc-300">{t.settings.smartSuggestions}</span>
-                    <span className="text-xs text-zinc-500 mt-0.5">{t.settings.aiGeneratedQuickReplies}</span>
+                    <span className="text-xs theme-text-soft mt-0.5">{t.settings.aiGeneratedQuickReplies}</span>
                   </div>
                   <button
                     onClick={() => onSettingChange('smartSuggestionsEnabled', !settings.smartSuggestionsEnabled)}
@@ -904,7 +904,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg">
+                <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                   <span className="text-sm text-zinc-300">{t.settings.animations}</span>
                   <button
                     onClick={() => onSettingChange('animationsEnabled', !settings.animationsEnabled)}
@@ -918,10 +918,10 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   </button>
                 </div>
 
-                <div className="space-y-3 rounded-lg bg-zinc-700/20 p-3">
+                <div className="space-y-3 rounded-lg theme-card-subtle p-3">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm text-zinc-300">{t.settings.themeMode}</span>
-                    <span className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+                    <span className="text-xs uppercase tracking-[0.18em] theme-text-soft">
                       {settings.themeMode === 'light' ? t.settings.lightMode : settings.themeMode === 'oled' ? t.settings.oledMode : t.settings.darkMode}
                     </span>
                   </div>

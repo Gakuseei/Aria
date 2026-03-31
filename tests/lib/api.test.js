@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getRestoredSuggestions } from '../../src/components/ChatInterface.jsx';
+import { formatMessageText, getRestoredSuggestions } from '../../src/components/ChatInterface.jsx';
 import {
   buildRoleplaySceneContext,
   buildSystemPrompt,
@@ -181,6 +181,26 @@ describe('cleanTranscriptArtifacts', () => {
   it('handles clean text without modifications', () => {
     const clean = '*She looks up and smiles.* "Hey there!"';
     expect(cleanTranscriptArtifacts(clean)).toBe(clean);
+  });
+});
+
+describe('formatMessageText', () => {
+  it('preserves whitespace-only separators between action and dialogue spans', () => {
+    expect(formatMessageText('*smiles* "Hello there" *waves*')).toEqual([
+      { type: 'action', text: '*smiles*' },
+      { type: 'plain', text: ' ' },
+      { type: 'dialogue', text: '"Hello there"' },
+      { type: 'plain', text: ' ' },
+      { type: 'action', text: '*waves*' },
+    ]);
+  });
+
+  it('keeps leading and trailing plain text around formatted segments', () => {
+    expect(formatMessageText('Before *acts* after')).toEqual([
+      { type: 'plain', text: 'Before ' },
+      { type: 'action', text: '*acts*' },
+      { type: 'plain', text: ' after' },
+    ]);
   });
 });
 

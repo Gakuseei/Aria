@@ -24,7 +24,7 @@ import CustomDropdown from './CustomDropdown';
 // TEXT FORMATTING - BLOCK 4 FIX: Apostroph-Bug behoben
 // ============================================================================
 
-function formatMessageText(text, isGoldMode = false) {
+export function formatMessageText(text, isGoldMode = false) {
   if (!text || typeof text !== 'string') return [];
 
   const parts = [];
@@ -40,7 +40,7 @@ function formatMessageText(text, isGoldMode = false) {
   while ((match = regex.exec(text)) !== null) {
     if (match.index > currentIndex) {
       const plainText = text.substring(currentIndex, match.index);
-      if (plainText.trim()) {
+      if (plainText.length > 0) {
         parts.push({ type: 'plain', text: plainText });
       }
     }
@@ -61,7 +61,7 @@ function formatMessageText(text, isGoldMode = false) {
 
   if (currentIndex < text.length) {
     const remainingText = text.substring(currentIndex);
-    if (remainingText.trim()) {
+    if (remainingText.length > 0) {
       parts.push({ type: 'plain', text: remainingText });
     }
   }

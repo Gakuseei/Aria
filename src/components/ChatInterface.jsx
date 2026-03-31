@@ -169,7 +169,7 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
       {!isUser && (
         <div className="relative mr-3 flex-shrink-0">
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg ring-2 ring-white/10"
+            className="theme-chat-avatar-ring flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white"
             style={{
               background: `linear-gradient(135deg, ${character?.themeColor || '#52525b'}, ${character?.themeColor || '#52525b'}88)`
             }}
@@ -263,10 +263,10 @@ className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
       {/* v1.0 ROSE NOIR: User Avatar (right) with rose ring / Gold Mode */}
       {isUser && (
         <div className="relative ml-3 flex-shrink-0">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-lg ring-2 ${
+          <div className={`theme-chat-avatar-ring flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${
             isGoldMode
               ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-black shadow-[0_0_10px_rgba(251,191,36,0.5)] ring-amber-500/30'
-              : 'bg-gradient-to-br from-rose-800 to-rose-600 text-white ring-rose-400/30'
+              : 'theme-chat-user-bubble text-white'
           }`}>
             {avatarLetter}
           </div>
@@ -1472,11 +1472,13 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
   return (
     <div className="theme-screen-shell app-theme-shell relative flex h-screen flex-col overflow-hidden text-[var(--color-text)]">
+      <div className="theme-chat-ambient pointer-events-none absolute inset-0 z-0" />
+      <div className="theme-chat-scrim pointer-events-none absolute inset-0 z-0" />
       {passionLevel > 15 && (
         <div
           className="pointer-events-none fixed inset-0 z-10 transition-opacity duration-[2000ms]"
           style={{
-            background: `radial-gradient(ellipse at center, transparent 50%, rgba(244, 63, 94, ${Math.min((passionLevel - 15) * 0.003, 0.25)}) 100%)`
+            background: `radial-gradient(ellipse at center, transparent 48%, rgba(244, 63, 94, ${Math.min((passionLevel - 15) * 0.0024, 0.16)}) 100%)`
           }}
         />
       )}
@@ -1485,7 +1487,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           {tierToast}
         </div>
       )}
-      {/* Hidden file input for import */}
       <input
         ref={importFileRef}
         type="file"
@@ -1495,12 +1496,10 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         aria-label="Import chat file"
       />
 
-      {/* v1.0 ROSE NOIR: Premium Glass Header - BLOCK 6.9: Smooth Fade-In */}
-      <div className={`glass-header flex items-center justify-between px-6 py-5 flex-shrink-0 relative z-40 transition-all duration-500 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+      <div className={`theme-chat-header relative z-40 flex shrink-0 items-center justify-between px-6 py-5 transition-all duration-500 ${
+        isVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
       }`}>
-        <div className="flex items-center gap-5">
-          {/* Back Button */}
+        <div className="theme-chat-header-card flex items-center gap-4 rounded-[1.5rem] px-4 py-3">
           <button
             onClick={handleBackNavigation}
             className="theme-icon-button rounded-xl p-3 transition-all duration-200"
@@ -1510,24 +1509,21 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             <ArrowLeft size={22} strokeWidth={1.5} />
           </button>
 
-          {/* Character Avatar with Ring - Larger */}
           <div className="relative">
             <div
-              className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-xl ring-2 ring-white/10"
+              className="theme-chat-avatar-ring flex h-14 w-14 items-center justify-center rounded-full text-lg font-bold text-white"
               style={{
                 background: `linear-gradient(135deg, ${character.themeColor}, ${character.themeColor}88)`
               }}
             >
               {character.name.charAt(0)}
             </div>
-            {/* Online indicator */}
-            <div className="theme-success-dot absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-black" />
+            <div className="theme-success-dot absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-[color:var(--color-surface-elevated)]" />
           </div>
 
-          {/* Name & Passion Badge */}
-          <div className="relative">
+          <div className="relative min-w-0">
             <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-white">
+              <h2 className="theme-chat-title truncate text-xl font-bold">
                 {character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name)}
               </h2>
               <button
@@ -1539,41 +1535,38 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 <Info size={18} strokeWidth={1.5} />
               </button>
             </div>
-            <div className="flex items-center gap-2 mt-1">
-              <p className="theme-text-muted text-sm">
+            <div className="mt-1 flex items-center gap-2">
+              <p className="theme-text-muted truncate text-sm">
                 {character.isCustom ? character.subtitle || character.role : (t.characters?.[character.id]?.subtitle || character.subtitle || character.role)}
               </p>
               {passionLevel > 0 && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowPassionPopover(prev => !prev); }}
-                  className="theme-toggle-pill rounded-full px-2 py-0.5 text-xs transition-colors cursor-pointer"
+                  className="theme-status-chip rounded-full px-2.5 py-0.5 text-xs transition-colors cursor-pointer"
                   data-passion-popover
                 >
-                  · {PASSION_TIERS[getTierKey(passionLevel)]?.label}
+                  {PASSION_TIERS[getTierKey(passionLevel)]?.label}
                 </button>
               )}
             </div>
             {showPassionPopover && (
               <div
-                className="theme-popover absolute left-0 top-full z-50 mt-2 min-w-[200px] rounded-xl p-4"
+                className="theme-popover absolute left-0 top-full z-50 mt-2 min-w-[240px] rounded-xl p-4"
                 data-passion-popover
               >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-zinc-300">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="theme-popover-heading text-sm font-medium">
                     {PASSION_TIERS[getTierKey(passionLevel)]?.label}
                   </span>
-                  <span className="text-sm text-zinc-500">{passionLevel}/100</span>
+                  <span className="theme-popover-copy text-sm">{passionLevel}/100</span>
                 </div>
-                <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden mb-3">
+                <div className="theme-progress-track mb-3 h-1.5 w-full overflow-hidden rounded-full">
                   <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${passionLevel}%`,
-                      background: 'linear-gradient(90deg, #71717a, #f43f5e)'
-                    }}
+                    className="theme-progress-fill h-full rounded-full transition-all duration-500"
+                    style={{ width: `${passionLevel}%` }}
                   />
                 </div>
-                <div className="text-xs text-zinc-500 mb-3">
+                <div className="theme-popover-label mb-3 text-xs">
                   {t.chat?.voiceSettings?.speed || 'Speed'}: {(() => {
                     const sp = character?.passionSpeed || 'normal';
                     return t.characterCreator?.['passionSpeed_' + sp] || sp.charAt(0).toUpperCase() + sp.slice(1);
@@ -1586,7 +1579,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                     setPassionLevel(0);
                     setShowPassionPopover(false);
                   }}
-                  className="w-full text-xs text-zinc-500 hover:text-rose-400 py-1.5 transition-colors cursor-pointer"
+                  className="theme-danger-button w-full rounded-lg px-3 py-2 text-xs font-medium transition-colors"
                 >
                   {t.chat?.resetPassion || 'Reset Passion'}
                 </button>
@@ -1626,10 +1619,10 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               <div className="theme-popover absolute top-12 right-0 z-[200] flex w-64 flex-col rounded-xl p-4">
                 <div className="space-y-4">
                   {/* Master Toggle: Enable Voice */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
-                      <span className="text-sm font-medium text-zinc-100">{t.chat.voiceSettings.enableVoice}</span>
-                      <p className="text-xs text-zinc-500 mt-0.5">{t.chat.voiceSettings.masterToggle}</p>
+                      <span className="theme-popover-heading text-sm font-medium">{t.chat.voiceSettings.enableVoice}</span>
+                      <p className="theme-popover-label mt-0.5 text-xs">{t.chat.voiceSettings.masterToggle}</p>
                     </div>
                     <button
                       onClick={async () => {
@@ -1655,10 +1648,10 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
                   {/* Auto-Read Toggle */}
                   {voiceEnabled === true && (
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-4">
                       <div>
-                        <span className="text-sm font-medium text-zinc-100">{t.chat.voiceSettings.autoRead}</span>
-                        <p className="text-xs text-zinc-500 mt-0.5">{t.chat.voiceSettings.autoReadDesc}</p>
+                        <span className="theme-popover-heading text-sm font-medium">{t.chat.voiceSettings.autoRead}</span>
+                        <p className="theme-popover-label mt-0.5 text-xs">{t.chat.voiceSettings.autoReadDesc}</p>
                       </div>
                       <button
                         onClick={() => setAutoReadEnabled(!autoReadEnabled)}
@@ -1706,8 +1699,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                   {/* Volume Slider */}
                   {voiceEnabled === true && (
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-zinc-100">{t.chat.voiceSettings.volume}</span>
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="theme-popover-heading text-sm font-medium">{t.chat.voiceSettings.volume}</span>
                         <span className="theme-info-badge rounded px-2 py-0.5 text-xs font-mono">{Math.round((settings.voiceVolume ?? 1.0) * 100)}%</span>
                       </div>
                       <input
@@ -1777,8 +1770,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             {showChatOptions && (
               <div className="theme-popover absolute top-12 right-0 z-[200] flex w-56 flex-col rounded-xl p-1">
                 {/* Text Zoom */}
-                <div className="px-3 py-2 border-b border-white/5">
-                  <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">{t.chat.textSize}</span>
+                <div className="theme-popover-divider border-b px-3 py-2">
+                  <span className="theme-popover-label text-xs font-medium uppercase tracking-wider">{t.chat.textSize}</span>
                   <div className="flex gap-1 mt-1">
                     <button
                       onClick={handleZoomOut}
@@ -1816,7 +1809,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 </button>
 
                 {/* Danger Zone */}
-                <div className="border-t border-white/5 mt-1 pt-1">
+                <div className="theme-popover-divider mt-1 border-t pt-1">
                   <button
                     onClick={() => { handleNewGame(); setShowChatOptions(false); }}
                     className="theme-danger-button flex w-full items-center gap-2 rounded-lg p-2.5 text-left text-sm transition-colors"
@@ -1836,10 +1829,10 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <div className="theme-danger-banner mx-auto max-w-5xl rounded-2xl px-4 py-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-rose-100">{sendFailure.title}</div>
-                <p className="mt-1 text-sm text-rose-100/90">{sendFailure.message}</p>
+                <div className="text-sm font-semibold text-[var(--color-text)]">{sendFailure.title}</div>
+                <p className="mt-1 text-sm text-[color:var(--color-text)]/90">{sendFailure.message}</p>
                 {sendFailure.detail && (
-                  <p className="mt-2 break-words text-xs text-rose-200/75">{sendFailure.detail}</p>
+                  <p className="theme-text-muted mt-2 break-words text-xs">{sendFailure.detail}</p>
                 )}
               </div>
               {sendFailure.action === 'settings' && typeof onOpenSettings === 'function' && (
@@ -1868,7 +1861,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             message.isTierEvent ? (
               <div key={message.timestamp} className="flex items-center justify-center gap-3 py-4 select-none">
                 <div className="theme-separator-line h-px flex-1" />
-                <span className="text-[11px] font-medium text-rose-400/60 tracking-[0.2em] uppercase">
+                <span className="theme-tier-label text-[11px] font-medium tracking-[0.2em] uppercase">
                   ✦ {message.content} ✦
                 </span>
                 <div className="theme-separator-line h-px flex-1 scale-x-[-1]" />
@@ -1904,7 +1897,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             <div className="flex justify-start mb-4">
               <div className="relative mr-3 flex-shrink-0">
                 <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg ring-2 ring-white/10"
+                  className="theme-chat-avatar-ring flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white"
                   style={{
                     background: `linear-gradient(135deg, ${character?.themeColor || '#52525b'}, ${character?.themeColor || '#52525b'}88)`
                   }}
@@ -1916,9 +1909,9 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 {!streamingContent ? (
                   <div className="flex items-center gap-3">
                     <div className="flex gap-1.5">
-                      <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <div className="theme-typing-dot h-2 w-2 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="theme-typing-dot h-2 w-2 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="theme-typing-dot h-2 w-2 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                     <span className="theme-text-muted text-sm">
                       {t.chat.isTyping.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
@@ -1926,17 +1919,17 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                   </div>
                 ) : (
                   <>
-                    <div className="text-xs text-zinc-400 mb-1.5 font-medium flex items-center gap-1.5"><span>{character.name}</span></div>
+                    <div className="theme-message-meta mb-1.5 flex items-center gap-1.5 text-xs font-medium"><span>{character.name}</span></div>
                     <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
                       {(() => {
                         const formattedParts = formatMessageText(streamingContent || '', false);
                         return formattedParts.map((part, i) => {
                           if (part.type === 'action') {
-                            return <span key={i} className="text-zinc-400 italic">{part.text}</span>;
+                            return <span key={i} className="theme-message-meta italic">{part.text}</span>;
                           } else if (part.type === 'dialogue') {
-                            return <span key={i} className="text-white font-normal">{part.text}</span>;
+                            return <span key={i} className="text-[color:var(--color-text)] font-normal">{part.text}</span>;
                           } else {
-                            return <span key={i} className="text-zinc-200">{part.text}</span>;
+                            return <span key={i} className="theme-message-body">{part.text}</span>;
                           }
                         });
                       })()}
@@ -1955,17 +1948,17 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl z-50">
         {/* Suggestion Skeleton Loading */}
         {settings.smartSuggestionsEnabled && isGeneratingSuggestions && smartSuggestions.length === 0 && !isStreaming && !isImpersonating && (
-          <div className="flex gap-2.5 mb-4 flex-wrap justify-center">
+          <div className="mb-4 flex flex-wrap justify-center gap-2.5">
             {[0, 1, 2].map(i => (
               <div
                 key={`skeleton-${i}`}
-                className={`suggestion-skeleton px-4 py-2 rounded-full flex items-center gap-2 ${
-                  isGoldMode ? 'bg-amber-500/5 border border-amber-500/20' : 'bg-rose-500/5 border border-zinc-700/30'
+                className={`theme-suggestion-skeleton suggestion-skeleton flex items-center gap-2 rounded-full px-4 py-2 ${
+                  isGoldMode ? 'border-amber-500/20 bg-amber-500/5' : ''
                 }`}
                 style={{ animationDelay: `${i * 100}ms` }}
               >
-                <div className={`w-3 h-3 rounded-full ${isGoldMode ? 'bg-amber-500/20' : 'bg-rose-500/20'}`} />
-                <div className={`h-3 rounded-full ${isGoldMode ? 'bg-amber-500/15' : 'bg-zinc-700/40'}`} style={{ width: `${60 + i * 20}px` }} />
+                <div className={`theme-suggestion-skeleton-dot h-3 w-3 rounded-full ${isGoldMode ? 'bg-amber-500/20' : ''}`} />
+                <div className={`theme-suggestion-skeleton-line h-3 rounded-full ${isGoldMode ? 'bg-amber-500/15' : ''}`} style={{ width: `${60 + i * 20}px` }} />
               </div>
             ))}
           </div>
@@ -2026,12 +2019,12 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <button
             onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}
             disabled={isLoading || isStreaming}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-30 flex-shrink-0 ${
+            className={`theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-all duration-200 disabled:opacity-30 ${
               isImpersonating
-                ? `text-zinc-300 ${!input.trim() ? (isGoldMode ? 'impersonate-pulse-gold' : 'impersonate-pulse') : 'bg-zinc-700 hover:bg-zinc-600'}`
+                ? `${!input.trim() ? (isGoldMode ? 'impersonate-pulse-gold' : 'impersonate-pulse') : ''} text-[var(--color-text)]`
                 : isGoldMode
-                  ? 'bg-zinc-800 hover:bg-amber-500/20 text-amber-400/70 hover:text-amber-300'
-                  : 'bg-zinc-800 hover:bg-rose-500/20 text-rose-400/70 hover:text-rose-300'
+                  ? 'text-amber-300'
+                  : 'text-[color:var(--theme-accent-strong)]'
             }`}
             title={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
             aria-label={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
@@ -2041,10 +2034,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <button
             onClick={() => handleSend()}
             disabled={isLoading || isStreaming || isImpersonating || !input.trim()}
-            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-30 shadow-lg flex-shrink-0 ${
-              isGoldMode
-                ? 'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-black font-bold shadow-amber-900/20 disabled:from-zinc-600 disabled:to-zinc-700'
-                : 'bg-gradient-to-br from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white shadow-rose-500/30 disabled:from-zinc-600 disabled:to-zinc-700'
+            className={`theme-composer-primary flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full transition-all duration-200 shadow-lg disabled:opacity-30 ${
+              isGoldMode ? 'text-black' : 'text-white'
             }`}
             title={t.chat.send}
             aria-label={t.chat.send}
@@ -2054,48 +2045,44 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         </div>
       </div>
 
-      {/* v1.0: IMAGE GENERATION MODAL (MANUAL) */}
       {showImageModal && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="theme-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={() => setShowImageModal(false)}
         >
           <div
-            className="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-md w-full shadow-2xl"
+            className="theme-modal-shell max-w-md w-full rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-6 py-4 border-b border-zinc-700">
-              <h2 className="text-xl font-bold text-white">{t.chat.generateImage}</h2>
-              <p className="text-sm text-zinc-400 mt-1">{t.chat.customNsfwPrompt}</p>
+            <div className="theme-modal-header theme-modal-divider border-b px-6 py-4">
+              <h2 className="theme-modal-title text-xl font-bold">{t.chat.generateImage}</h2>
+              <p className="theme-modal-subtitle mt-1 text-sm">{t.chat.customNsfwPrompt}</p>
             </div>
 
             <div className="p-6 space-y-4">
               {!imageGenEnabled ? (
-                <div className="bg-rose-950/90 border border-rose-500/50 rounded-lg p-4 space-y-4">
-                  <p className="text-sm text-rose-200">
+                <div className="theme-modal-danger-panel space-y-4 rounded-lg p-4">
+                  <p className="text-sm text-[var(--color-text)]">
                     {t.chat.imageGenDisabled}
                   </p>
-                  
-                  {/* Enable directly from here */}
                   <button
                     onClick={async () => {
                       setImageGenEnabled(true);
-                      // Persist to localStorage and IPC
                       let currentSettings = {};
                       try { currentSettings = JSON.parse(localStorage.getItem('settings') || '{}'); } catch { /* corrupted */ }
                       currentSettings.imageGenEnabled = true;
                       localStorage.setItem('settings', JSON.stringify(currentSettings));
                       await window.electronAPI?.saveSettings?.(currentSettings);
                     }}
-                    className="w-full px-4 py-2.5 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/50 rounded-lg text-purple-300 font-medium transition-all flex items-center justify-center gap-2"
+                    className="theme-modal-accent-button flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 font-medium transition-all"
                   >
                     <ImageIcon size={16} />
                     {t.settings.enableImageGen || 'Enable Image Generation'}
                   </button>
-                  
+
                   <button
                     onClick={() => setShowTutorial('imageGen')}
-                    className="w-full px-4 py-2 bg-zinc-700/30 hover:bg-zinc-700/50 rounded-lg text-zinc-300 text-sm transition-all"
+                    className="theme-button-secondary w-full rounded-lg px-4 py-2 text-sm transition-all"
                   >
                     {t.chat.showSetupTutorial}
                   </button>
@@ -2103,13 +2090,13 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               ) : (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-zinc-400 mb-2">{t.chat.imagePrompt}</label>
+                    <label className="theme-label mb-2 block text-sm font-medium">{t.chat.imagePrompt}</label>
                     <textarea
                       value={imagePrompt}
                       spellCheck={false}
                       autoCorrect="off"
                       onChange={(e) => setImagePrompt(e.target.value)}
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white resize-none"
+                      className="theme-control-lg resize-none"
                       rows={4}
                       placeholder={t.chat.nsfwIntimateScene}
                     />
@@ -2118,7 +2105,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                   <button
                     onClick={handleManualImageGen}
                     disabled={!imagePrompt.trim() || generatingImage}
-                    className="w-full px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/50 rounded-lg text-purple-300 font-medium transition-all disabled:opacity-50"
+                    className="theme-modal-accent-button w-full rounded-lg px-4 py-2 font-medium transition-all disabled:opacity-50"
                   >
                     {generatingImage ? t.common.loading : t.chat.generate}
                   </button>
@@ -2128,7 +2115,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                       const cleanedContext = extractConversationContext(messages, character);
                       setImagePrompt(cleanedContext);
                     }}
-                    className="w-full px-4 py-2 bg-zinc-700/30 hover:bg-zinc-700/50 rounded-lg text-zinc-300 text-sm transition-all"
+                    className="theme-button-secondary w-full rounded-lg px-4 py-2 text-sm transition-all"
                   >
                     {t.chat.useConversationContext}
                   </button>
@@ -2136,10 +2123,10 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               )}
             </div>
 
-            <div className="px-6 py-4 border-t border-zinc-700">
+            <div className="theme-modal-footer theme-modal-divider border-t px-6 py-4">
               <button
                 onClick={() => setShowImageModal(false)}
-                className="w-full px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded-lg text-cyan-300 font-medium transition-all"
+                className="theme-modal-info-button w-full rounded-lg px-4 py-2 font-medium transition-all"
               >
                 {t.common.back}
               </button>
@@ -2157,29 +2144,26 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         />
       )}
 
-      {/* v1.0: CHARACTER BIO MODAL */}
       {showBioModal && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="theme-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={() => setShowBioModal(false)}
         >
           <div
-            className="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl"
+            className="theme-modal-shell max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-zinc-900 border-b border-zinc-700 px-6 py-4 flex items-center justify-between">
+            <div className="theme-modal-header theme-modal-divider sticky top-0 flex items-center justify-between border-b px-6 py-4">
               <div className="flex items-center gap-4">
-                {/* Profile Image in Modal */}
                 {character.avatarBase64 ? (
                   <img
                     src={character.avatarBase64}
                     alt={character.name}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-zinc-700 shadow-lg"
+                    className="theme-chat-avatar-ring h-16 w-16 rounded-full object-cover"
                   />
                 ) : (
                   <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg border-2 border-zinc-700"
+                    className="theme-chat-avatar-ring flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold text-white"
                     style={{
                       background: `linear-gradient(135deg, ${character.themeColor}, ${character.themeColor}88)`
                     }}
@@ -2189,10 +2173,10 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 )}
 
                 <div>
-                  <h2 className="text-2xl font-bold text-white">
+                  <h2 className="theme-modal-title text-2xl font-bold">
                     {character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name)}
                   </h2>
-                  <p className="text-sm text-zinc-400">
+                  <p className="theme-modal-subtitle text-sm">
                     {character.isCustom 
                       ? (character.subtitle || character.role)
                       : (t.characters?.[character.id]?.subtitle || character.subtitle || character.role)
@@ -2202,7 +2186,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               </div>
               <button
                 onClick={() => setShowBioModal(false)}
-                className="p-2 hover:bg-zinc-800 rounded-lg transition-all text-zinc-400 hover:text-white"
+                className="theme-icon-button rounded-lg p-2 transition-all"
                 title={t.common?.close || 'Close'}
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2211,84 +2195,77 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               </button>
             </div>
 
-            {/* Modal Content */}
             <div className="p-6 space-y-6">
-              {/* Description */}
+              <div>
+                <h3 className="theme-modal-section-title mb-2 text-lg font-semibold">{t.chat.about}</h3>
+                <p className="theme-modal-copy leading-relaxed">
+                  {character.isCustom 
+                    ? character.description
+                    : (t.characters?.[character.id]?.description || character.description)
+                  }
+                </p>
+              </div>
+
+              {character.systemPrompt && (
                 <div>
-                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">{t.chat.about}</h3>
-                  <p className="text-zinc-300 leading-relaxed">
-                    {character.isCustom 
-                      ? character.description
-                      : (t.characters?.[character.id]?.description || character.description)
-                    }
-                  </p>
+                  <h3 className="theme-modal-section-title mb-2 text-lg font-semibold">{t.chat.personalityProfile}</h3>
+                  <div className="theme-modal-panel rounded-lg p-4">
+                    <pre className="theme-modal-code whitespace-pre-wrap text-sm leading-relaxed font-mono">
+                      {character.systemPrompt}
+                    </pre>
+                  </div>
                 </div>
+              )}
 
-                {/* System Prompt (Personality Details) */}
-                {character.systemPrompt && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-cyan-400 mb-2">{t.chat.personalityProfile}</h3>
-                    <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
-                      <pre className="text-sm text-zinc-300 whitespace-pre-wrap font-mono leading-relaxed">
-                        {character.systemPrompt}
-                      </pre>
-                    </div>
-                  </div>
-                )}
-
-                {/* Instructions (Critical Rules) */}
-                {character.instructions && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-red-400 mb-2">{t.chat.criticalCharacterRules}</h3>
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-                      <pre className="text-sm text-red-200 whitespace-pre-wrap font-mono leading-relaxed">
-                        {character.instructions}
-                      </pre>
-                    </div>
-                  </div>
-                )}
-
-                {/* Model Sampling Params */}
+              {character.instructions && (
                 <div>
-                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">{t.settings.samplingParams || 'Sampling Parameters'}</h3>
-                  {(() => {
-                    const mp = getModelProfile(settings?.ollamaModel);
-                    return (
-                      <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
-                        <div className="grid grid-cols-2 gap-2 text-sm text-zinc-400">
-                          <div>Temperature: <span className="text-zinc-200">{mp.temperature}</span></div>
-                          <div>Top P: <span className="text-zinc-200">{mp.topP}</span></div>
-                          <div>Top K: <span className="text-zinc-200">{mp.topK}</span></div>
-                          <div>Max Tokens: <span className="text-zinc-200">{mp.maxResponseTokens}</span></div>
-                          <div>Min P: <span className="text-zinc-200">{mp.minP}</span></div>
-                          <div>Repeat Penalty: <span className="text-zinc-200">{mp.repeatPenalty}</span></div>
-                        </div>
-                        {!character.isCustom && (
-                          <p className="text-xs text-zinc-600 mt-2 italic">{t.settings.readOnly || 'Auto-configured for this model'}</p>
-                        )}
+                  <h3 className="theme-modal-section-title mb-2 text-lg font-semibold">{t.chat.criticalCharacterRules}</h3>
+                  <div className="theme-modal-danger-panel rounded-lg p-4">
+                    <pre className="theme-modal-code whitespace-pre-wrap text-sm leading-relaxed font-mono">
+                      {character.instructions}
+                    </pre>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h3 className="theme-modal-section-title mb-2 text-lg font-semibold">{t.settings.samplingParams || 'Sampling Parameters'}</h3>
+                {(() => {
+                  const mp = getModelProfile(settings?.ollamaModel);
+                  return (
+                    <div className="theme-modal-panel rounded-lg p-4">
+                      <div className="theme-modal-copy grid grid-cols-2 gap-2 text-sm">
+                        <div>Temperature: <span className="theme-modal-title">{mp.temperature}</span></div>
+                        <div>Top P: <span className="theme-modal-title">{mp.topP}</span></div>
+                        <div>Top K: <span className="theme-modal-title">{mp.topK}</span></div>
+                        <div>Max Tokens: <span className="theme-modal-title">{mp.maxResponseTokens}</span></div>
+                        <div>Min P: <span className="theme-modal-title">{mp.minP}</span></div>
+                        <div>Repeat Penalty: <span className="theme-modal-title">{mp.repeatPenalty}</span></div>
                       </div>
-                    );
-                  })()}
-                </div>
+                      {!character.isCustom && (
+                        <p className="theme-modal-subtitle mt-2 text-xs italic">{t.settings.readOnly || 'Auto-configured for this model'}</p>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
 
-                {/* Theme Color */}
-                <div>
-                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">{t.chat.themeColor}</h3>
+              <div>
+                <h3 className="theme-modal-section-title mb-2 text-lg font-semibold">{t.chat.themeColor}</h3>
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-12 h-12 rounded-lg border-2 border-zinc-700"
+                    className="h-12 w-12 rounded-lg border-2 border-[color:var(--color-border)]"
                     style={{ backgroundColor: character.themeColor }}
                   />
-                  <span className="text-zinc-400 font-mono">{character.themeColor}</span>
+                  <span className="theme-modal-copy font-mono">{character.themeColor}</span>
                 </div>
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-zinc-900 border-t border-zinc-700 px-6 py-4">
+            <div className="theme-modal-footer theme-modal-divider sticky bottom-0 border-t px-6 py-4">
               <button
                 onClick={() => setShowBioModal(false)}
-                className="w-full px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded-lg transition-all text-cyan-300 font-medium"
+                className="theme-modal-info-button w-full rounded-lg px-4 py-2 font-medium transition-all"
               >
                 {t.common.back}
               </button>
@@ -2298,19 +2275,19 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       )}
 
       {confirmModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[200]">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm mx-4 shadow-2xl">
-            <p className="text-sm text-zinc-300 mb-4">{confirmModal.message}</p>
+        <div className="theme-modal-backdrop fixed inset-0 z-[200] flex items-center justify-center">
+          <div className="theme-modal-shell mx-4 max-w-sm rounded-2xl p-6">
+            <p className="theme-modal-copy mb-4 text-sm">{confirmModal.message}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmModal(null)}
-                className="flex-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm transition-colors"
+                className="theme-button-secondary flex-1 rounded-lg px-4 py-2 text-sm transition-colors"
               >
                 {t.common.cancel || 'Cancel'}
               </button>
               <button
                 onClick={() => { confirmModal.onConfirm(); setConfirmModal(null); }}
-                className="flex-1 px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 rounded-lg text-sm transition-colors"
+                className="theme-danger-button flex-1 rounded-lg px-4 py-2 text-sm transition-colors"
               >
                 {t.common.confirm || 'Confirm'}
               </button>

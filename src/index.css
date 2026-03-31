@@ -426,17 +426,90 @@ body {
 }
 
 .theme-message-action {
-  background: rgb(0 0 0 / 0.18);
+  background: color-mix(in srgb, var(--color-surface-elevated) 68%, transparent);
   color: var(--color-text-muted);
+  border: 1px solid color-mix(in srgb, var(--color-border) 52%, transparent);
 }
 
 .theme-message-action:hover {
-  background: rgb(0 0 0 / 0.32);
+  background: color-mix(in srgb, var(--color-surface-elevated) 84%, var(--theme-accent-muted));
   color: var(--color-text);
+  border-color: color-mix(in srgb, var(--color-border) 78%, transparent);
 }
 
 .theme-message-action-info:hover {
   color: var(--color-info);
+}
+
+.theme-chat-ambient {
+  background:
+    radial-gradient(circle at top center, color-mix(in srgb, var(--color-primary) 14%, transparent) 0%, transparent 48%),
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--color-text) 4%, transparent) 0%, transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 18%, transparent), transparent 24%, transparent 76%, color-mix(in srgb, var(--color-bg) 14%, transparent));
+  opacity: 0.9;
+}
+
+.theme-chat-scrim {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 28%, transparent), transparent 18%),
+    linear-gradient(180deg, transparent 0%, transparent 78%, color-mix(in srgb, var(--color-bg) 32%, transparent) 100%);
+}
+
+.theme-chat-header {
+  background: color-mix(in srgb, var(--color-surface-elevated) 80%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  box-shadow: 0 18px 44px -34px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.theme-chat-header-card {
+  background: color-mix(in srgb, var(--color-surface-elevated) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 68%, transparent);
+  box-shadow: var(--theme-card-shadow);
+}
+
+.theme-chat-avatar-ring {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-border) 64%, transparent), 0 16px 30px -22px rgba(0, 0, 0, 0.6);
+}
+
+.theme-chat-title {
+  color: var(--color-text);
+}
+
+.theme-status-chip {
+  background: color-mix(in srgb, var(--color-surface-muted) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 68%, transparent);
+  color: var(--color-text-muted);
+}
+
+.theme-status-chip:hover {
+  background: color-mix(in srgb, var(--color-surface-muted) 72%, var(--theme-accent-muted));
+  color: var(--color-text);
+}
+
+.theme-progress-track {
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+}
+
+.theme-progress-fill {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-text-soft) 84%, transparent), color-mix(in srgb, var(--color-primary) 86%, white 14%));
+}
+
+.theme-popover-heading {
+  color: var(--color-text);
+}
+
+.theme-popover-copy {
+  color: var(--color-text-muted);
+}
+
+.theme-popover-label {
+  color: var(--color-text-soft);
+}
+
+.theme-popover-divider {
+  border-color: color-mix(in srgb, var(--color-border) 58%, transparent);
 }
 
 .theme-suggestion-pill {
@@ -452,6 +525,19 @@ body {
   color: var(--color-text);
 }
 
+.theme-suggestion-skeleton {
+  background: color-mix(in srgb, var(--color-surface-elevated) 76%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 62%, transparent);
+}
+
+.theme-suggestion-skeleton-dot {
+  background: var(--theme-accent-soft);
+}
+
+.theme-suggestion-skeleton-line {
+  background: color-mix(in srgb, var(--color-surface-muted) 72%, var(--theme-accent-muted));
+}
+
 .theme-composer {
   background: color-mix(in srgb, var(--color-surface-elevated) 95%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
@@ -461,6 +547,103 @@ body {
 .theme-composer:focus-within {
   border-color: var(--theme-accent-border);
   box-shadow: var(--theme-shell-shadow), 0 0 0 1px rgb(var(--color-primary-rgb) / 0.22);
+}
+
+.theme-composer-secondary {
+  background: color-mix(in srgb, var(--color-surface-muted) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 64%, transparent);
+  color: var(--color-text-muted);
+}
+
+.theme-composer-secondary:hover {
+  background: color-mix(in srgb, var(--color-surface-muted) 78%, var(--theme-accent-muted));
+  color: var(--color-text);
+}
+
+.theme-composer-primary {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 94%, white 6%), color-mix(in srgb, var(--color-primary-dark) 90%, black 10%));
+  color: #fff;
+  box-shadow: 0 18px 30px -24px rgb(var(--color-primary-rgb) / 0.72);
+}
+
+.theme-composer-primary:hover {
+  filter: brightness(1.05);
+}
+
+.theme-modal-backdrop {
+  background: color-mix(in srgb, var(--color-bg) 74%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.theme-modal-shell {
+  background: color-mix(in srgb, var(--color-surface-elevated) 96%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 76%, transparent);
+  box-shadow: var(--theme-shell-shadow);
+}
+
+.theme-modal-header,
+.theme-modal-footer {
+  background: color-mix(in srgb, var(--color-surface-elevated) 92%, transparent);
+}
+
+.theme-modal-divider {
+  border-color: color-mix(in srgb, var(--color-border) 62%, transparent);
+}
+
+.theme-modal-title {
+  color: var(--color-text);
+}
+
+.theme-modal-subtitle,
+.theme-modal-copy {
+  color: var(--color-text-muted);
+}
+
+.theme-modal-section-title {
+  color: var(--color-text);
+}
+
+.theme-modal-panel {
+  background: color-mix(in srgb, var(--color-surface-muted) 90%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 64%, transparent);
+}
+
+.theme-modal-danger-panel {
+  background: color-mix(in srgb, var(--theme-danger-soft) 82%, var(--color-surface-elevated));
+  border: 1px solid var(--theme-danger-border);
+}
+
+.theme-modal-accent-button {
+  background: var(--theme-accent-soft);
+  border: 1px solid var(--theme-accent-border);
+  color: var(--theme-accent-strong);
+}
+
+.theme-modal-accent-button:hover {
+  background: color-mix(in srgb, var(--theme-accent-soft) 74%, transparent);
+}
+
+.theme-modal-info-button {
+  background: var(--theme-info-soft);
+  border: 1px solid var(--theme-info-border);
+  color: var(--color-info);
+}
+
+.theme-modal-info-button:hover {
+  background: color-mix(in srgb, var(--theme-info-soft) 76%, transparent);
+}
+
+.theme-modal-code {
+  color: var(--color-text);
+}
+
+.theme-tier-label {
+  color: rgb(var(--color-primary-rgb) / 0.7);
+}
+
+.theme-typing-dot {
+  background: color-mix(in srgb, var(--color-primary) 78%, white 22%);
 }
 
 /* v1.0 DEEP VOID OLED - True Black with Ambient Rose Glow */

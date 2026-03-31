@@ -56,24 +56,15 @@ export default function CustomDropdown({ value, onChange, options, className = '
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`
-          w-full px-4 py-2.5
-          bg-zinc-900 border-2 rounded-xl
-          text-left flex items-center justify-between
-          transition-all duration-200
-          ${className}
-          ${isOpen
-            ? 'border-rose-500 text-white'
-            : 'border-zinc-800 text-zinc-300 hover:border-zinc-700'
-          }
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-        `}
+        className={`theme-control flex items-center justify-between text-left transition-all duration-200 ${className} ${
+          isOpen ? 'border-[color:var(--theme-accent-border)] text-[var(--color-text)] shadow-[0_0_0_1px_rgb(var(--color-primary-rgb)/0.18)]' : 'theme-label'
+        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <span className="truncate text-sm">{selectedLabel}</span>
         <ChevronDown
           size={16}
-          className={`flex-shrink-0 ml-2 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-rose-400' : 'text-zinc-600'
+          className={`ml-2 flex-shrink-0 transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-[color:var(--theme-accent-strong)]' : 'theme-text-soft'
           }`}
         />
       </button>
@@ -82,30 +73,28 @@ export default function CustomDropdown({ value, onChange, options, className = '
         <>
           <div className="fixed inset-0 z-[10001]" onClick={() => setIsOpen(false)} />
           <div
-            className="fixed z-[10002] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl shadow-black/50 overflow-hidden"
+            className="theme-popover fixed z-[10002] overflow-hidden rounded-xl"
             style={{
               top: `${menuPosition.top}px`,
               left: `${menuPosition.left}px`,
               width: `${menuPosition.width}px`
             }}
           >
-            <div className="max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent py-1">
+            <div className="scrollbar-thin max-h-[280px] overflow-y-auto py-1">
               {options.map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   onClick={() => handleSelect(option.value)}
-                  className={`
-                    w-full text-left px-4 py-2 text-sm transition-colors
-                    ${value === option.value
-                      ? 'bg-rose-500/20 text-rose-300'
-                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
-                    }
-                  `}
+                  className={`w-full px-4 py-2 text-left text-sm transition-colors ${
+                    value === option.value
+                      ? 'bg-[color:var(--theme-accent-soft)] text-[color:var(--color-text)]'
+                      : 'theme-label hover:bg-[color:var(--theme-accent-muted)] hover:text-[color:var(--color-text)]'
+                  }`}
                 >
                   <span className="flex items-center justify-between">
                     {option.label}
-                    {value === option.value && <span className="text-rose-500 text-xs">●</span>}
+                    {value === option.value && <span className="text-[color:var(--theme-accent-strong)] text-xs">●</span>}
                   </span>
                 </button>
               ))}

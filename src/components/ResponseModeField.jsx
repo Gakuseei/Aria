@@ -4,19 +4,19 @@ import { RESPONSE_MODE_ORDER, getResponseModeConfig, normalizeResponseMode } fro
 
 const ACCENT_STYLES = {
   amber: {
-    accent: 'accent-amber-500',
-    badge: 'text-amber-300 bg-amber-500/10',
-    activeLabel: 'text-amber-300'
+    sliderClassName: 'theme-slider',
+    badgeClassName: 'theme-accent-badge',
+    activeLabelClassName: 'text-[color:var(--theme-accent-strong)]'
   },
   rose: {
-    accent: 'accent-rose-500',
-    badge: 'text-rose-300 bg-rose-500/10',
-    activeLabel: 'text-rose-300'
+    sliderClassName: 'theme-slider',
+    badgeClassName: 'theme-accent-badge',
+    activeLabelClassName: 'text-[color:var(--theme-accent-strong)]'
   },
   violet: {
-    accent: 'accent-violet-500',
-    badge: 'text-violet-300 bg-violet-500/10',
-    activeLabel: 'text-violet-300'
+    sliderClassName: 'theme-slider-info',
+    badgeClassName: 'theme-info-badge',
+    activeLabelClassName: 'text-[color:var(--color-info)]'
   }
 };
 
@@ -33,11 +33,11 @@ function ResponseModeField({ value = 'normal', onChange, accent = 'rose', idPref
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <label htmlFor={idPrefix} className="text-sm font-medium text-zinc-300">
+      <div className="mb-2 flex items-center justify-between">
+        <label htmlFor={idPrefix} className="theme-label text-sm font-medium">
           {text.responseModeLabel}
         </label>
-        <span className={`text-sm font-medium px-2 py-0.5 rounded ${styles.badge}`}>
+        <span className={`${styles.badgeClassName} rounded px-2 py-0.5 text-sm font-medium`}>
           {text[currentMode.labelKey]}
         </span>
       </div>
@@ -49,7 +49,7 @@ function ResponseModeField({ value = 'normal', onChange, accent = 'rose', idPref
         step="1"
         value={currentIndex}
         onChange={(event) => onChange(RESPONSE_MODE_ORDER[Number(event.target.value)])}
-        className={`w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer ${styles.accent}`}
+        className={`theme-slider w-full cursor-pointer appearance-none rounded-lg bg-[color:var(--color-surface-muted)] ${styles.sliderClassName}`}
       />
       <div className="mt-2 flex items-center justify-between text-xs">
         {RESPONSE_MODE_ORDER.map((mode) => {
@@ -57,13 +57,13 @@ function ResponseModeField({ value = 'normal', onChange, accent = 'rose', idPref
           const isActive = mode === normalizedValue;
 
           return (
-            <span key={mode} className={isActive ? styles.activeLabel : 'text-zinc-500'}>
+            <span key={mode} className={isActive ? styles.activeLabelClassName : 'theme-text-soft'}>
               {text[option.labelKey]}
             </span>
           );
         })}
       </div>
-      <p className="text-xs text-zinc-600 mt-1.5">
+      <p className="theme-text-soft mt-1.5 text-xs">
         {text.responseModeHint}
       </p>
     </div>

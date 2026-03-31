@@ -194,13 +194,13 @@ function CharacterCreator({ onSave, onBack }) {
   };
 
   return (
-    <div className="h-full w-full flex flex-col p-8">
+    <div className="theme-screen-shell h-full w-full flex flex-col p-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="p-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-700/50 border border-zinc-700/50 transition-all group"
+            className="theme-button-secondary group rounded-lg p-2 transition-all"
             aria-label={t.common?.back || 'Back'}
           >
             <svg className="w-5 h-5 text-zinc-400 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -217,13 +217,13 @@ function CharacterCreator({ onSave, onBack }) {
         <div className="flex gap-3">
           <button
             onClick={() => setShowPreview(!showPreview)}
-            className="px-4 py-2 rounded-lg bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 hover:text-white hover:border-zinc-600 transition-all text-sm"
+            className="theme-button-secondary rounded-lg px-4 py-2 text-sm transition-all"
           >
             {showPreview ? t.characterCreator.hidePreview : t.characterCreator.showPreview}
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-medium hover:from-red-500 hover:to-rose-500 transition-all flex items-center gap-2"
+            className="theme-button-primary flex items-center gap-2 rounded-xl px-6 py-3 font-medium transition-all"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -239,7 +239,7 @@ function CharacterCreator({ onSave, onBack }) {
         <div className="flex-1 overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
           <div className="max-w-2xl space-y-6">
             {/* Templates */}
-            <div className="bg-zinc-800/30 rounded-xl p-5 border border-zinc-700/30">
+            <div className="theme-soft-panel rounded-xl p-5">
               <h3 className="text-sm font-medium text-zinc-400 mb-3">{t.characterCreator.quickStartTemplates}</h3>
               <div className="flex gap-3">
                 {templates.map((template) => (
@@ -254,7 +254,7 @@ function CharacterCreator({ onSave, onBack }) {
               </div>
             </div>
 
-<div className="bg-zinc-800/30 rounded-xl p-5 border border-zinc-700/30">
+<div className="theme-soft-panel rounded-xl p-5">
               <h3 className="text-sm font-medium text-zinc-400 mb-3">{t.characterCreator?.characterType || 'Type'}</h3>
               <div className="flex gap-3">
                 {['character', 'bot'].map(type => (
@@ -286,7 +286,7 @@ function CharacterCreator({ onSave, onBack }) {
             </div>
 
             {/* Basic Info */}
-            <div className="bg-zinc-800/30 rounded-xl p-5 border border-zinc-700/30 space-y-5">
+            <div className="theme-soft-panel space-y-5 rounded-xl p-5">
               <h3 className="text-lg font-semibold text-white mb-4">{t.characterCreator.basicInformation}</h3>
 
               <div>
@@ -312,7 +312,7 @@ function CharacterCreator({ onSave, onBack }) {
                   value={formData.subtitle}
                   onChange={(e) => handleChange('subtitle', e.target.value)}
                   placeholder={t.characterCreator.subtitlePlaceholderV2 || t.characterCreator.subtitlePlaceholder}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+                  className="theme-control"
                 />
               </div>
 
@@ -325,7 +325,7 @@ function CharacterCreator({ onSave, onBack }) {
                   onChange={(e) => handleChange('description', e.target.value)}
                   placeholder={t.characterCreator.descriptionPlaceholderV2 || t.characterCreator.descriptionPlaceholder}
                   rows={3}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+                  className="theme-control resize-none"
                 />
                 <p className="text-xs text-zinc-500 mt-1">{t.characterCreator.descriptionHint || 'Used by Smart Suggestions to understand your character better.'}</p>
               </div>
@@ -346,7 +346,7 @@ function CharacterCreator({ onSave, onBack }) {
                     value={formData.themeColor}
                     onChange={(e) => handleChange('themeColor', e.target.value)}
                     placeholder="#ef4444"
-                    className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white font-mono text-sm focus:outline-none focus:border-red-500/50"
+                    className="theme-control flex-1 font-mono text-sm"
                   />
                 </div>
               </div>
@@ -403,7 +403,7 @@ function CharacterCreator({ onSave, onBack }) {
             </div>
 
             {/* AI Behavior */}
-            <div className="bg-zinc-800/30 rounded-xl p-5 border border-zinc-700/30 space-y-5">
+            <div className="theme-soft-panel space-y-5 rounded-xl p-5">
               <div>
                 <h3 className="text-lg font-semibold text-white mb-1">{t.characterCreator.aiBehavior}</h3>
                 <p className="text-xs text-zinc-500">{t.characterCreator.defineHowAiActs}</p>
@@ -449,7 +449,7 @@ function CharacterCreator({ onSave, onBack }) {
                   onChange={(e) => handleChange('scenario', e.target.value)}
                   placeholder={t.characterCreator.scenarioPlaceholder}
                   rows={4}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white font-mono text-sm resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+                  className="theme-control-lg resize-none font-mono text-sm"
                 />
                 <p className="text-xs text-zinc-600 mt-1">
                   {t.characterCreator.scenarioTip}
@@ -536,7 +536,7 @@ function CharacterCreator({ onSave, onBack }) {
                   onChange={(e) => handleChange('instructions', e.target.value)}
                   placeholder={t.characterCreator.instructionsPlaceholderV2 || t.characterCreator?.instructionsPlaceholder || 'Rules...'}
                   rows={4}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white font-mono text-sm resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+                  className="theme-control-lg resize-none font-mono text-sm"
                 />
                 <p className="text-xs text-zinc-600 mt-1">
                   {t.characterCreator?.instructionsTip || 'These rules have the HIGHEST priority — they override everything else including passion intensity.'}
@@ -639,7 +639,7 @@ function CharacterCreator({ onSave, onBack }) {
 
         {/* Preview Panel */}
         {showPreview && (
-          <div className="w-96 flex-shrink-0 bg-zinc-800/30 rounded-xl border border-zinc-700/30 p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700">
+          <div className="theme-soft-panel scrollbar-thin w-96 flex-shrink-0 overflow-y-auto rounded-xl p-6">
             <h3 className="text-lg font-semibold text-white mb-4">{t.characterCreator.preview}</h3>
             
             {/* Character Card Preview */}

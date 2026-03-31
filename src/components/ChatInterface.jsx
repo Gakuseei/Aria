@@ -183,15 +183,15 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
         className={`max-w-[75%] rounded-2xl px-5 py-3.5 relative transition-all duration-200 ${
           isUser
             ? (isGoldMode
-                ? 'bg-gradient-to-br from-zinc-900 to-amber-950/40 border border-amber-500/30 text-white'
-                : 'bg-gradient-to-br from-[#6f2740]/92 via-[#5c2237]/88 to-zinc-900 border border-white/10 text-white')
-            : 'glass hover:border-white/10'
+                ? 'border border-amber-500/30 bg-gradient-to-br from-zinc-900 to-amber-950/40 text-white'
+                : 'theme-chat-user-bubble')
+            : 'theme-chat-assistant-bubble'
         }`}
       >
         {/* BLOCK 7.0: User name label - GOLD MODE for supporters */}
         {isUser && userName && (
-          <div className={`text-xs mb-1.5 font-medium flex items-center gap-1.5 ${
-            isGoldMode ? 'text-amber-400' : 'text-rose-200/80'
+          <div className={`theme-message-meta text-xs mb-1.5 font-medium flex items-center gap-1.5 ${
+            isGoldMode ? 'text-amber-400' : 'text-[color:var(--theme-accent-strong)]'
           }`}>
             {userName}
             {isGoldMode && <span className="text-amber-300">✨</span>}
@@ -199,7 +199,7 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
         )}
 
         {!isUser && character?.name && (
-          <div className="text-xs text-zinc-400 mb-1.5 font-medium flex items-center gap-1.5">
+          <div className="theme-message-meta mb-1.5 flex items-center gap-1.5 text-xs font-medium">
             <span>{character.name}</span>
           </div>
         )}
@@ -216,20 +216,20 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
         <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
           {formattedParts.map((part, i) => {
             if (part.type === 'action') {
-              return <span key={i} className="text-zinc-400 italic">{part.text}</span>;
+              return <span key={i} className="theme-message-meta italic">{part.text}</span>;
             } else if (part.type === 'dialogue') {
-              return <span key={i} className="text-white font-normal">{part.text}</span>;
+              return <span key={i} className="text-[color:var(--color-text)] font-normal">{part.text}</span>;
             } else if (part.type === 'bold' && isGoldMode && !isUser) {
               return <span key={i} className="text-amber-400 font-bold drop-shadow-sm">{part.text}</span>;
             } else {
-              return <span key={i} className="text-zinc-200">{part.text}</span>;
+              return <span key={i} className="theme-message-body">{part.text}</span>;
             }
           })}
         </div>
 
         {message.timestamp && (
-          <div className={`text-xs mt-2 ${
-            isUser ? 'text-rose-200/70' : 'text-zinc-500'
+          <div className={`theme-message-meta text-xs mt-2 ${
+            isUser ? 'text-[color:var(--theme-accent-strong)]/70' : ''
           }`}>
             {formatTimestamp(message.timestamp)}
           </div>
@@ -241,7 +241,7 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
           {!isUser && voiceEnabled === true && onSpeak && (
             <button
               onClick={() => onSpeak(message.content || '')}
-              className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-zinc-400 hover:text-cyan-400 transition-all duration-200"
+className="theme-message-action theme-message-action-info rounded-lg p-1.5 transition-all duration-200"
               title={t.chat?.playAudio || 'Play Audio'}
             >
               <Volume2 size={14} strokeWidth={1.5} />
@@ -250,7 +250,7 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
           {/* Copy button */}
           <button
             onClick={() => onCopy(message.content || '')}
-            className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-zinc-400 hover:text-white transition-all duration-200"
+className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
             title={t.chat?.copy || 'Copy'}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -1471,7 +1471,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   // ============================================================================
 
   return (
-    <div className="relative flex flex-col h-screen overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-900 to-black text-white">
+    <div className="theme-screen-shell app-theme-shell relative flex h-screen flex-col overflow-hidden text-[var(--color-text)]">
       {passionLevel > 15 && (
         <div
           className="pointer-events-none fixed inset-0 z-10 transition-opacity duration-[2000ms]"
@@ -1481,7 +1481,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         />
       )}
       {tierToast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[300] px-4 py-2 bg-zinc-900/95 border border-zinc-700 rounded-full text-sm text-zinc-200 shadow-xl backdrop-blur-sm animate-pulse">
+        <div className="theme-popover fixed left-1/2 top-6 z-[300] -translate-x-1/2 rounded-full px-4 py-2 text-sm animate-pulse">
           {tierToast}
         </div>
       )}
@@ -1503,7 +1503,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           {/* Back Button */}
           <button
             onClick={handleBackNavigation}
-            className="p-3 hover:bg-white/5 rounded-xl transition-all duration-200 text-zinc-500 hover:text-white"
+            className="theme-icon-button rounded-xl p-3 transition-all duration-200"
             title={t.chat.back}
             aria-label={t.chat.back}
           >
@@ -1521,7 +1521,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               {character.name.charAt(0)}
             </div>
             {/* Online indicator */}
-            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full border-2 border-black shadow-lg shadow-emerald-500/50" />
+            <div className="theme-success-dot absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-black" />
           </div>
 
           {/* Name & Passion Badge */}
@@ -1532,7 +1532,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               </h2>
               <button
                 onClick={() => setShowBioModal(true)}
-                className="p-2 hover:bg-white/10 rounded-lg text-zinc-500 hover:text-zinc-300 transition-all"
+                className="theme-icon-button rounded-lg p-2 transition-all"
                 title={t.chat.viewBio}
                 aria-label={t.chat.viewBio}
               >
@@ -1540,13 +1540,13 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               </button>
             </div>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-sm text-zinc-500">
+              <p className="theme-text-muted text-sm">
                 {character.isCustom ? character.subtitle || character.role : (t.characters?.[character.id]?.subtitle || character.subtitle || character.role)}
               </p>
               {passionLevel > 0 && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowPassionPopover(prev => !prev); }}
-                  className="text-xs px-2 py-0.5 rounded-full bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700/60 transition-colors cursor-pointer"
+                  className="theme-toggle-pill rounded-full px-2 py-0.5 text-xs transition-colors cursor-pointer"
                   data-passion-popover
                 >
                   · {PASSION_TIERS[getTierKey(passionLevel)]?.label}
@@ -1555,7 +1555,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             </div>
             {showPassionPopover && (
               <div
-                className="absolute top-full left-0 mt-2 bg-zinc-900 border border-zinc-700/50 rounded-xl shadow-2xl z-50 p-4 min-w-[200px]"
+                className="theme-popover absolute left-0 top-full z-50 mt-2 min-w-[200px] rounded-xl p-4"
                 data-passion-popover
               >
                 <div className="flex items-center justify-between mb-3">
@@ -1599,8 +1599,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         <div className="flex items-center gap-2 relative z-50 pointer-events-auto">
           <button
             onClick={() => setShowImageModal(true)}
-            className={`p-3 hover:bg-white/10 active:scale-95 rounded-xl transition-all duration-200 ${
-              imageGenEnabled ? 'text-purple-400 hover:text-purple-300' : 'text-zinc-600'
+            className={`theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 ${
+              imageGenEnabled ? 'theme-icon-button-active' : ''
             }`}
             title={t.chat?.imageGeneration || 'Image Generation'}
             aria-label={t.chat?.imageGeneration || 'Image Generation'}
@@ -1612,8 +1612,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <div className="relative z-[100] pointer-events-auto voice-settings-container">
             <button
               onClick={handleVoiceSettingsClick}
-              className={`p-3 hover:bg-white/10 active:scale-95 rounded-xl transition-all duration-200 ${
-                voiceEnabled === true ? 'text-cyan-400 hover:text-cyan-300' : 'text-zinc-600'
+              className={`theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 ${
+                voiceEnabled === true ? 'theme-icon-button-info' : ''
               }`}
               title={t.chat?.voiceSettings?.title || 'Voice Settings'}
               aria-label={t.chat?.voiceSettings?.title || 'Voice Settings'}
@@ -1623,13 +1623,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
             {/* Voice Settings Popover */}
             {showVoiceSettings && (
-              <div className={`absolute top-12 right-0 z-[200] flex w-64 flex-col rounded-xl border p-4 shadow-2xl backdrop-blur-xl ${
-                settings.themeMode === 'light'
-                  ? 'bg-white/95 border-rose-200 text-zinc-900'
-                  : settings.oledMode
-                    ? 'bg-black border-zinc-800 text-zinc-100'
-                    : 'bg-zinc-900 border-zinc-700 text-zinc-100'
-              }`}>
+              <div className="theme-popover absolute top-12 right-0 z-[200] flex w-64 flex-col rounded-xl p-4">
                 <div className="space-y-4">
                   {/* Master Toggle: Enable Voice */}
                   <div className="flex items-center justify-between">
@@ -1651,10 +1645,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                         setVoiceEnabled(newValue);
                         setLocalSettings(updatedSettings);
                       }}
-                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                        voiceEnabled === true
-                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                          : 'bg-zinc-700/50 text-zinc-400 border border-zinc-600/30'
+                      className={`theme-toggle-pill rounded-lg px-3 py-1 text-xs font-medium transition-all ${
+                        voiceEnabled === true ? 'is-info-active' : ''
                       }`}
                     >
                       {voiceEnabled === true ? 'ON' : 'OFF'}
@@ -1670,10 +1662,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                       </div>
                       <button
                         onClick={() => setAutoReadEnabled(!autoReadEnabled)}
-                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                          autoReadEnabled
-                            ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                            : 'bg-zinc-700/50 text-zinc-400 border border-zinc-600/30'
+                        className={`theme-toggle-pill rounded-lg px-3 py-1 text-xs font-medium transition-all ${
+                          autoReadEnabled ? 'is-info-active' : ''
                         }`}
                       >
                         {autoReadEnabled ? 'ON' : 'OFF'}
@@ -1684,7 +1674,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                   {/* Voice Model Selection - FIX 3 */}
                   {voiceEnabled === true && (
                     <div>
-                      <label className="block text-xs text-zinc-400 mb-1">{t.chat.voiceSettings.voiceModel}</label>
+                      <label className="theme-label mb-1 block text-xs">{t.chat.voiceSettings.voiceModel}</label>
                       <CustomDropdown
                         value={settings.modelPath || ''}
                         onChange={async (e) => {
@@ -1718,7 +1708,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-zinc-100">{t.chat.voiceSettings.volume}</span>
-                        <span className="text-xs text-cyan-400 font-mono">{Math.round((settings.voiceVolume ?? 1.0) * 100)}%</span>
+                        <span className="theme-info-badge rounded px-2 py-0.5 text-xs font-mono">{Math.round((settings.voiceVolume ?? 1.0) * 100)}%</span>
                       </div>
                       <input
                         type="range"
@@ -1732,7 +1722,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                           setLocalSettings(newSettings);
                           await window.electronAPI.saveSettings(newSettings);
                         }}
-                        className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                        className="theme-slider-info w-full cursor-pointer appearance-none rounded-lg bg-[color:var(--color-surface-muted)]"
                       />
                     </div>
                   )}
@@ -1748,10 +1738,10 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 : (t.chat.enableUnchainedConfirm || '');
               setConfirmModal({ message: msg, onConfirm: () => setIsUnchainedMode(!isUnchainedMode) });
             }}
-            className={`p-3 rounded-xl transition-all duration-200 active:scale-95 ${
+            className={`theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 ${
               isUnchainedMode
-                ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 shadow-lg shadow-rose-500/20'
-                : 'hover:bg-white/10 text-cyan-400 hover:text-cyan-300'
+                ? 'theme-icon-button-active shadow-lg shadow-[0_18px_32px_-24px_rgb(var(--color-primary-rgb)/0.7)]'
+                : 'theme-icon-button-info'
             }`}
             title={!isUnchainedMode ? t.chat.enableUnchained : t.chat.unchainedActive}
             aria-label={!isUnchainedMode ? t.chat.enableUnchained : t.chat.unchainedActive}
@@ -1763,7 +1753,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <button
             onClick={regenerateLastResponse}
             disabled={isLoading || isStreaming || messages.length < 2}
-            className="p-3 hover:bg-white/10 active:scale-95 rounded-xl transition-all duration-200 text-zinc-500 hover:text-rose-400 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 hover:text-[color:var(--theme-accent-strong)] disabled:cursor-not-allowed disabled:opacity-30"
             title={t.chat.regenerateResponse}
             aria-label={t.chat.regenerateResponse}
           >
@@ -1774,8 +1764,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <div className="relative z-[100] pointer-events-auto chat-options-container">
             <button
               onClick={() => setShowChatOptions(!showChatOptions)}
-              className={`p-3 hover:bg-white/10 active:scale-95 rounded-xl transition-all duration-200 ${
-                showChatOptions ? 'text-rose-400' : 'text-zinc-500 hover:text-white'
+              className={`theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 ${
+                showChatOptions ? 'theme-icon-button-active' : ''
               }`}
               title={t.chat.chatOptions}
               aria-label={t.chat.chatOptions}
@@ -1785,7 +1775,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
             {/* BLOCK 6.9.2: Chat Options Popover */}
             {showChatOptions && (
-              <div className="absolute top-12 right-0 w-56 bg-zinc-950 border border-white/10 rounded-xl shadow-2xl z-[200] flex flex-col p-1 backdrop-blur-xl">
+              <div className="theme-popover absolute top-12 right-0 z-[200] flex w-56 flex-col rounded-xl p-1">
                 {/* Text Zoom */}
                 <div className="px-3 py-2 border-b border-white/5">
                   <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">{t.chat.textSize}</span>
@@ -1793,7 +1783,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                     <button
                       onClick={handleZoomOut}
                       disabled={fontSize === 'xs'}
-                      className="flex-1 px-2 py-1 text-xs rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white disabled:opacity-30 transition-all"
+                      className="theme-button-secondary flex-1 rounded-lg px-2 py-1 text-xs transition-all disabled:opacity-30"
                     >
                       <ZoomOut size={14} className="inline mr-1" />
                       {t.chat.smaller}
@@ -1801,7 +1791,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                     <button
                       onClick={handleZoomIn}
                       disabled={fontSize === '2xl'}
-                      className="flex-1 px-2 py-1 text-xs rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white disabled:opacity-30 transition-all"
+                      className="theme-button-secondary flex-1 rounded-lg px-2 py-1 text-xs transition-all disabled:opacity-30"
                     >
                       <ZoomIn size={14} className="inline mr-1" />
                       {t.chat.larger}
@@ -1812,14 +1802,14 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 {/* Import/Export */}
                 <button
                   onClick={() => { handleExportChat(); setShowChatOptions(false); }}
-                  className="text-sm text-zinc-400 hover:text-white hover:bg-white/5 p-2.5 rounded-lg text-left transition-colors flex items-center gap-2"
+                  className="theme-button-secondary flex items-center gap-2 rounded-lg p-2.5 text-left text-sm transition-colors"
                 >
                   <Download size={16} />
                   {t.chat.export}
                 </button>
                 <button
                   onClick={() => { importFileRef.current?.click(); setShowChatOptions(false); }}
-                  className="text-sm text-zinc-400 hover:text-white hover:bg-white/5 p-2.5 rounded-lg text-left transition-colors flex items-center gap-2"
+                  className="theme-button-secondary flex items-center gap-2 rounded-lg p-2.5 text-left text-sm transition-colors"
                 >
                   <Upload size={16} />
                   {t.chat.import}
@@ -1829,7 +1819,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 <div className="border-t border-white/5 mt-1 pt-1">
                   <button
                     onClick={() => { handleNewGame(); setShowChatOptions(false); }}
-                    className="w-full text-sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 p-2.5 rounded-lg text-left transition-colors flex items-center gap-2"
+                    className="theme-danger-button flex w-full items-center gap-2 rounded-lg p-2.5 text-left text-sm transition-colors"
                   >
                     <Trash2 size={16} />
                     {t.chat.clear}
@@ -1843,7 +1833,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
       {sendFailure && (
         <div className="px-4 pt-4">
-          <div className="mx-auto max-w-5xl rounded-2xl border border-rose-500/30 bg-rose-950/70 px-4 py-3 shadow-lg shadow-rose-950/30 backdrop-blur-xl">
+          <div className="theme-danger-banner mx-auto max-w-5xl rounded-2xl px-4 py-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-rose-100">{sendFailure.title}</div>
@@ -1855,7 +1845,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               {sendFailure.action === 'settings' && typeof onOpenSettings === 'function' && (
                 <button
                   onClick={onOpenSettings}
-                  className="inline-flex shrink-0 items-center justify-center rounded-xl border border-rose-300/30 bg-rose-400/10 px-3 py-2 text-sm font-medium text-rose-50 transition-colors hover:bg-rose-400/20"
+                  className="theme-danger-button inline-flex shrink-0 items-center justify-center rounded-xl px-3 py-2 text-sm font-medium transition-colors"
                 >
                   {sendFailure.actionLabel}
                 </button>
@@ -1877,18 +1867,18 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           {messages.map((message, index) => (
             message.isTierEvent ? (
               <div key={message.timestamp} className="flex items-center justify-center gap-3 py-4 select-none">
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-rose-500/30" />
+                <div className="theme-separator-line h-px flex-1" />
                 <span className="text-[11px] font-medium text-rose-400/60 tracking-[0.2em] uppercase">
                   ✦ {message.content} ✦
                 </span>
-                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-rose-500/30" />
+                <div className="theme-separator-line h-px flex-1 scale-x-[-1]" />
               </div>
             ) : message.role === 'system' ? (
               <div key={`${message.timestamp || index}-system`} className="flex justify-center mb-4 message-slide-in">
                 <div className={`max-w-[85%] rounded-xl px-5 py-3 text-sm whitespace-pre-wrap font-mono ${
                   isGoldMode
                     ? 'bg-amber-950/40 border border-amber-500/20 text-amber-200/90'
-                    : 'bg-zinc-900/80 border border-rose-500/20 text-zinc-300'
+                    : 'theme-chat-assistant-bubble theme-message-body'
                 }`}>
                   {message.content}
                 </div>
@@ -1922,7 +1912,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                   {character.name.charAt(0)}
                 </div>
               </div>
-              <div className="max-w-[75%] rounded-2xl px-5 py-3.5 relative transition-all duration-200 glass hover:border-white/10">
+              <div className="theme-chat-assistant-bubble relative max-w-[75%] rounded-2xl px-5 py-3.5 transition-all duration-200">
                 {!streamingContent ? (
                   <div className="flex items-center gap-3">
                     <div className="flex gap-1.5">
@@ -1930,7 +1920,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                       <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                       <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
-                    <span className="text-zinc-500 text-sm">
+                    <span className="theme-text-muted text-sm">
                       {t.chat.isTyping.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
                     </span>
                   </div>
@@ -1988,10 +1978,10 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 key={`suggestion-${suggestion.slice(0, 20)}-${i}`}
                 onClick={() => handleSuggestionClick(suggestion)}
                 disabled={isLoading}
-                className={`suggestion-pill px-4 py-2 bg-zinc-900/95 backdrop-blur-2xl border rounded-full text-sm transition-all duration-200 disabled:opacity-50 flex items-center gap-2 shadow-lg ${
+                className={`theme-suggestion-pill suggestion-pill flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-all duration-200 shadow-lg disabled:opacity-50 ${
                   isGoldMode
                     ? 'border-amber-500/40 text-amber-100 hover:bg-amber-500/10 hover:shadow-[0_0_15px_-3px_rgba(245,158,11,0.3)] hover:border-amber-400'
-                    : 'border-zinc-700/50 hover:border-rose-500/30 text-zinc-400 hover:text-rose-300 hover:bg-rose-500/10'
+                    : ''
                 }`}
                 style={{ animationDelay: `${i * 75}ms` }}
               >
@@ -2002,8 +1992,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           </div>
         )}
         {/* Floating Input Bar - Premium Glass Cockpit */}
-        <div className={`bg-zinc-900/95 backdrop-blur-2xl rounded-3xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)] px-5 py-4 flex items-center gap-3 transition-all duration-200 ${
-          isGoldMode ? 'border border-amber-500/30 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50' : 'border border-rose-500/30 focus-within:border-rose-500'
+        <div className={`theme-composer flex items-center gap-3 rounded-3xl px-5 py-4 transition-all duration-200 ${
+          isGoldMode ? 'border-amber-500/30 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50' : ''
         }`}>
           <textarea
             ref={inputRef}
@@ -2031,7 +2021,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             }}
             placeholder={t.chat.messageCharacter.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
             disabled={isLoading}
-            className="chat-input flex-1 min-w-0 bg-transparent border-none outline-none ring-0 text-white text-lg placeholder-zinc-500 focus:outline-none focus:ring-0 disabled:opacity-50 px-2 resize-none overflow-y-auto"
+            className="chat-input flex-1 min-w-0 resize-none overflow-y-auto border-none bg-transparent px-2 text-lg text-[var(--color-text)] outline-none ring-0 placeholder-[color:var(--color-text-soft)] focus:outline-none focus:ring-0 disabled:opacity-50"
           />
           <button
             onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}

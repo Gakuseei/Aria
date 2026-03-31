@@ -476,17 +476,11 @@ body.oled-mode .theme-chat-scrim {
 }
 
 .theme-chat-header {
-  background: color-mix(in srgb, var(--color-surface-elevated) 80%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  background: color-mix(in srgb, var(--color-surface-elevated) 76%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 64%, transparent);
   box-shadow: 0 18px 44px -34px rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-}
-
-.theme-chat-header-card {
-  background: color-mix(in srgb, var(--color-surface-elevated) 78%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-border) 68%, transparent);
-  box-shadow: var(--theme-card-shadow);
 }
 
 .theme-chat-avatar-ring {
@@ -508,21 +502,23 @@ body.oled-mode .theme-chat-scrim {
   color: var(--color-text);
 }
 
-.theme-status-chip-passion {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--color-surface-elevated) 90%, transparent), color-mix(in srgb, var(--theme-accent-soft) 78%, transparent));
-  border: 1px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
-  color: color-mix(in srgb, var(--color-primary) 82%, white 18%);
-  box-shadow: 0 12px 28px -22px rgb(var(--color-primary-rgb) / 0.75);
+.theme-passion-inline {
+  color: color-mix(in srgb, var(--color-primary) 78%, var(--color-text-muted));
 }
 
-.theme-status-chip-passion:hover {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--color-surface-elevated) 72%, transparent), color-mix(in srgb, var(--theme-accent-soft) 92%, transparent));
-  border-color: color-mix(in srgb, var(--color-primary) 42%, transparent);
+.theme-passion-inline:hover {
   color: var(--color-text);
 }
 
-.theme-status-chip-passion-value {
-  color: color-mix(in srgb, var(--color-primary) 80%, white 20%);
+.theme-passion-inline-bar {
+  width: 1.25rem;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 54%, transparent), color-mix(in srgb, var(--color-primary) 96%, white 4%));
+}
+
+.theme-passion-inline-value {
+  color: color-mix(in srgb, var(--color-primary) 86%, white 14%);
 }
 
 .theme-progress-track {
@@ -771,6 +767,47 @@ body.oled-mode .text-red-500 {
   left: 0;
   right: 0;
   z-index: 9999;
+}
+
+.theme-titlebar {
+  background: color-mix(in srgb, var(--color-surface-elevated) 84%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 58%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.theme-titlebar-brand {
+  color: var(--color-text);
+}
+
+.theme-titlebar-wordmark {
+  color: var(--color-text);
+}
+
+.theme-titlebar-version {
+  color: var(--color-text-soft);
+}
+
+.theme-titlebar-control {
+  width: 1.9rem;
+  height: 1.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.55rem;
+  color: var(--color-text-soft);
+  background: transparent;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.theme-titlebar-control:hover {
+  background: color-mix(in srgb, var(--color-surface-muted) 70%, transparent);
+  color: var(--color-text);
+}
+
+.theme-titlebar-control-close:hover {
+  background: var(--theme-danger-soft);
+  color: color-mix(in srgb, var(--color-primary) 86%, white 14%);
 }
 
 .interactive-elements,

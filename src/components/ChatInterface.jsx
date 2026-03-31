@@ -1499,7 +1499,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       <div className={`theme-chat-header relative z-40 flex shrink-0 items-center justify-between px-6 py-5 transition-all duration-500 ${
         isVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
       }`}>
-        <div className="theme-chat-header-card flex items-center gap-4 rounded-[1.5rem] px-4 py-3">
+        <div className="flex min-w-0 items-center gap-4">
           <button
             onClick={handleBackNavigation}
             className="theme-icon-button rounded-xl p-3 transition-all duration-200"
@@ -1542,11 +1542,12 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               {passionLevel > 0 && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowPassionPopover(prev => !prev); }}
-                  className="theme-status-chip-passion flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors cursor-pointer"
+                  className="theme-passion-inline flex items-center gap-2 py-0.5 text-xs font-medium transition-colors cursor-pointer"
                   data-passion-popover
                 >
+                  <span className="theme-passion-inline-bar" aria-hidden="true" />
                   <span>{PASSION_TIERS[getTierKey(passionLevel)]?.label}</span>
-                  <span className="theme-status-chip-passion-value">{passionLevel}%</span>
+                  <span className="theme-passion-inline-value">{passionLevel}%</span>
                 </button>
               )}
             </div>

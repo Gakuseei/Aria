@@ -1,8 +1,9 @@
-// ARIA v1.0 RELEASE - TitleBar (Rose Noir Theme)
+import { Minus, Square, X } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 function TitleBar() {
   const { t } = useLanguage();
+
   const handleMinimize = () => {
     if (window.electronAPI?.minimize) {
       window.electronAPI.minimize();
@@ -22,78 +23,40 @@ function TitleBar() {
   };
 
   return (
-    <div
-      className="h-8 w-full bg-gradient-to-b from-black/70 to-transparent backdrop-blur-xl flex items-center justify-between px-4 select-none fixed top-0 left-0 right-0 z-[9999]"
-      style={{ WebkitAppRegion: 'drag' }}
-    >
-      {/* App Title - Rose Noir Branding */}
-      <div className="flex items-center gap-2.5">
-        <div className="w-3 h-3 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/40 animate-pulse" />
-        <span className="text-xs font-semibold text-zinc-300 tracking-widest uppercase">
+    <div className="theme-titlebar fixed left-0 right-0 top-0 z-[9999] flex h-8 items-center justify-between px-3 select-none" style={{ WebkitAppRegion: 'drag' }}>
+      <div className="theme-titlebar-brand flex min-w-0 items-center gap-2">
+        <span className="theme-titlebar-wordmark truncate text-[11px] font-semibold uppercase tracking-[0.28em]">
           Aria
         </span>
-        <span className="text-[10px] font-medium text-rose-400/80 tracking-wide">
+        <span className="theme-titlebar-version text-[10px] font-medium uppercase tracking-[0.18em]">
           v1.0
         </span>
       </div>
 
-      {/* Window Controls - Sleek Minimal Design */}
-      <div
-        className="flex items-center gap-0.5 relative z-[10000]"
-        style={{ WebkitAppRegion: 'no-drag' }}
-      >
-        {/* Minimize */}
+      <div className="relative z-[10000] flex items-center gap-0.5" style={{ WebkitAppRegion: 'no-drag' }}>
         <button
           onClick={handleMinimize}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-all duration-200 group"
+          className="theme-titlebar-control"
           title={t.common?.minimize || 'Minimize'}
           aria-label={t.common?.minimize || 'Minimize'}
         >
-          <svg
-            className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-200 transition-colors"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-          </svg>
+          <Minus size={14} strokeWidth={1.75} />
         </button>
-
-        {/* Maximize */}
         <button
           onClick={handleMaximize}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-all duration-200 group"
+          className="theme-titlebar-control"
           title={t.common?.maximize || 'Maximize'}
           aria-label={t.common?.maximize || 'Maximize'}
         >
-          <svg
-            className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-200 transition-colors"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" />
-          </svg>
+          <Square size={12} strokeWidth={1.75} />
         </button>
-
-        {/* Close - Rose Glow on Hover */}
         <button
           onClick={handleClose}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-rose-500/20 transition-all duration-200 group"
+          className="theme-titlebar-control theme-titlebar-control-close"
           title={t.common?.close || 'Close'}
           aria-label={t.common?.close || 'Close'}
         >
-          <svg
-            className="w-3.5 h-3.5 text-zinc-500 group-hover:text-rose-400 transition-colors"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X size={14} strokeWidth={1.75} />
         </button>
       </div>
     </div>

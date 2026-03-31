@@ -1542,10 +1542,11 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               {passionLevel > 0 && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowPassionPopover(prev => !prev); }}
-                  className="theme-status-chip rounded-full px-2.5 py-0.5 text-xs transition-colors cursor-pointer"
+                  className="theme-status-chip-passion flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors cursor-pointer"
                   data-passion-popover
                 >
-                  {PASSION_TIERS[getTierKey(passionLevel)]?.label}
+                  <span>{PASSION_TIERS[getTierKey(passionLevel)]?.label}</span>
+                  <span className="theme-status-chip-passion-value">{passionLevel}%</span>
                 </button>
               )}
             </div>
@@ -1554,23 +1555,34 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 className="theme-popover absolute left-0 top-full z-50 mt-2 min-w-[240px] rounded-xl p-4"
                 data-passion-popover
               >
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="theme-popover-heading text-sm font-medium">
-                    {PASSION_TIERS[getTierKey(passionLevel)]?.label}
-                  </span>
-                  <span className="theme-popover-copy text-sm">{passionLevel}/100</span>
+                <div className="mb-3 flex items-start justify-between gap-4">
+                  <div>
+                    <div className="theme-popover-heading text-sm font-semibold">
+                      {PASSION_TIERS[getTierKey(passionLevel)]?.label}
+                    </div>
+                    <div className="theme-popover-label mt-1 text-[11px] uppercase tracking-[0.18em]">
+                      {t.settings?.passionSystem}
+                    </div>
+                  </div>
+                  <div className="theme-status-chip-passion-value text-lg font-semibold leading-none">{passionLevel}%</div>
                 </div>
-                <div className="theme-progress-track mb-3 h-1.5 w-full overflow-hidden rounded-full">
+                <div className="theme-progress-track mb-3 h-2 w-full overflow-hidden rounded-full">
                   <div
-                    className="theme-progress-fill h-full rounded-full transition-all duration-500"
+                    className="theme-progress-fill-passion h-full rounded-full transition-all duration-500"
                     style={{ width: `${passionLevel}%` }}
                   />
                 </div>
-                <div className="theme-popover-label mb-3 text-xs">
-                  {t.chat?.voiceSettings?.speed || 'Speed'}: {(() => {
-                    const sp = character?.passionSpeed || 'normal';
-                    return t.characterCreator?.['passionSpeed_' + sp] || sp.charAt(0).toUpperCase() + sp.slice(1);
-                  })()}
+                <div className="mb-3 grid gap-3 text-xs">
+                  <div className="theme-soft-panel rounded-lg px-3 py-2">
+                    <div className="theme-popover-label">{t.chat?.passionTooltip}</div>
+                  </div>
+                  <div className="theme-soft-panel rounded-lg px-3 py-2">
+                    <div className="theme-popover-label">{t.chat?.voiceSettings?.speed}</div>
+                    <div className="theme-popover-heading mt-1 font-medium">{(() => {
+                      const sp = character?.passionSpeed || 'normal';
+                      return t.characterCreator?.['passionSpeed_' + sp] || sp.charAt(0).toUpperCase() + sp.slice(1);
+                    })()}</div>
+                  </div>
                 </div>
                 <button
                   onClick={() => {

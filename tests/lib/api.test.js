@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { formatMessageText, getRestoredSuggestions } from '../../src/components/ChatInterface.jsx';
+import { buildChatFailureState, formatMessageText, getRestoredSuggestions } from '../../src/components/ChatInterface.jsx';
 import {
   buildRoleplaySceneContext,
   buildSystemPrompt,
@@ -201,6 +201,33 @@ describe('formatMessageText', () => {
       { type: 'action', text: '*acts*' },
       { type: 'plain', text: ' after' },
     ]);
+  });
+});
+
+describe('buildChatFailureState', () => {
+  const t = {
+    common: { error: 'Error' },
+    mainMenu: { settings: 'Settings' },
+    chat: {
+      sendError: 'No response from Ollama. Check that it is running and try again.',
+      timeout: 'Request timed out. Ollama may be busy — try again or restart Ollama.',
+    },
+  };
+
+  it('surfaces model-not-found failures with technical detail and a settings action', () => {
+    const result = buildChatFailureState(new Error("Ollama error: 404 - {\"error\":\"model 'missing-model' not found\"}"), t);
+
+    expect(result.message).toBe(t.chat.sendError);
+    expect(result.detail).toContain("missing-model");
+    expect(result.action).toBe('settings');
+    expect(result.actionLabel).toBe('Settings');
+  });
+
+  it('maps aborted foreground requests to the timeout copy without a settings action', () => {
+    const result = buildChatFailureState(new Error('The operation was aborted'), t);
+
+    expect(result.message).toBe(t.chat.timeout);
+    expect(result.action).toBe(null);
   });
 });
 

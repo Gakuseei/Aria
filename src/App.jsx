@@ -48,6 +48,7 @@ function App() {
   const { language } = useLanguage();
   const startupTimersRef = useRef(new Set());
   const [currentView, setCurrentView] = useState(VIEWS.MAIN_MENU);
+  const [settingsReturnView, setSettingsReturnView] = useState(VIEWS.MAIN_MENU);
   const [, setSelectedMode] = useState(null);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [loadedSession, setLoadedSession] = useState(null);
@@ -424,8 +425,13 @@ function App() {
   };
 
   // Handle settings
-  const handleSettings = () => {
+  const openSettings = (returnView = VIEWS.MAIN_MENU) => {
+    setSettingsReturnView(returnView);
     navigate(VIEWS.SETTINGS);
+  };
+
+  const handleSettings = () => {
+    openSettings(VIEWS.MAIN_MENU);
   };
 
   // Handle back navigation
@@ -450,8 +456,10 @@ function App() {
         navigate(VIEWS.MODE_SELECT);
         break;
       case VIEWS.LOAD_GAME:
-      case VIEWS.SETTINGS:
         navigate(VIEWS.MAIN_MENU);
+        break;
+      case VIEWS.SETTINGS:
+        navigate(settingsReturnView || VIEWS.MAIN_MENU);
         break;
       default:
         navigate(VIEWS.MAIN_MENU);
@@ -512,6 +520,7 @@ function App() {
             character={selectedCharacter}
             loadedSession={loadedSession}
             onBack={handleBack}
+            onOpenSettings={() => openSettings(VIEWS.CHAT_INTERFACE)}
             settings={settings}
           />
         );

@@ -83,6 +83,30 @@ function sameSceneMemory(left, right) {
   return JSON.stringify(left || null) === JSON.stringify(right || null);
 }
 
+function stripOllamaEnvelope(message = '') {
+  return String(message)
+    .replace(/^Ollama error:\s*\d+\s*-\s*/i, '')
+    .trim();
+}
+
+export function buildChatFailureState(error, t = {}) {
+  const rawMessage = typeof error?.message === 'string' ? error.message.trim() : '';
+  const detail = stripOllamaEnvelope(rawMessage);
+  const isTimeout = rawMessage === 'The operation was aborted';
+  const needsSettings = /model\s+'[^']+'\s+not\s+found/i.test(detail) || /No models installed/i.test(rawMessage);
+  const message = isTimeout
+    ? (t.chat?.timeout || 'Request timed out')
+    : (t.chat?.sendError || rawMessage || 'Failed to get response');
+
+  return {
+    title: t.common?.error || 'Error',
+    message,
+    detail: detail && detail !== message ? detail : '',
+    action: needsSettings ? 'settings' : null,
+    actionLabel: needsSettings ? (t.mainMenu?.settings || 'Settings') : null,
+  };
+}
+
 export function getRestoredSuggestions(messages) {
   if (!Array.isArray(messages) || messages.length === 0) return [];
 
@@ -256,7 +280,7 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
 // MAIN CHAT INTERFACE - v8.1 RESTORED
 // ============================================================================
 
-export default function ChatInterface({ character, loadedSession, onBack, settings: parentSettings }) {
+export default function ChatInterface({ character, loadedSession, onBack, onOpenSettings, settings: parentSettings }) {
   const { t } = useLanguage();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -327,6 +351,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
   // v0.2.5: Smart Suggestions
   const [smartSuggestions, setSmartSuggestions] = useState([]);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
+  const [sendFailure, setSendFailure] = useState(null);
   const suggestionsHistoryRef = useRef([]);
   const chatMessages = useMemo(() => messages.filter(m => !m.isTierEvent), [messages]);
 
@@ -942,6 +967,7 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
     }
 
     clearSuggestionsState();
+    setSendFailure(null);
     abortImpersonateCall();
     setIsImpersonating(false);
 
@@ -1055,12 +1081,17 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       if (isForegroundRequestObsolete(activeAbortHandle)) return;
       console.error('[ChatInterface] Send error:', error);
-      const errorMsg = error?.message === 'The operation was aborted'
-        ? (t.chat?.timeout || 'Request timed out')
-        : error?.message === 'No response from Ollama'
-          ? (t.chat?.noOllamaResponse || 'Model returned empty response — please send again.')
-          : (t.chat?.sendError || error?.message || 'Failed to get response');
-      toast.error(errorMsg);
+      const failureState = error?.message === 'No response from Ollama'
+        ? {
+            title: t.common?.error || 'Error',
+            message: t.chat?.noOllamaResponse || 'Model returned empty response — please send again.',
+            detail: '',
+            action: null,
+            actionLabel: null,
+          }
+        : buildChatFailureState(error, t);
+      setSendFailure(failureState);
+      toast.error(failureState.message);
     } finally {
       if (abortRef.current === activeAbortHandle) {
         abortRef.current = null;
@@ -1810,6 +1841,30 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
         </div>
       </div>
 
+      {sendFailure && (
+        <div className="px-4 pt-4">
+          <div className="mx-auto max-w-5xl rounded-2xl border border-rose-500/30 bg-rose-950/70 px-4 py-3 shadow-lg shadow-rose-950/30 backdrop-blur-xl">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-rose-100">{sendFailure.title}</div>
+                <p className="mt-1 text-sm text-rose-100/90">{sendFailure.message}</p>
+                {sendFailure.detail && (
+                  <p className="mt-2 break-words text-xs text-rose-200/75">{sendFailure.detail}</p>
+                )}
+              </div>
+              {sendFailure.action === 'settings' && typeof onOpenSettings === 'function' && (
+                <button
+                  onClick={onOpenSettings}
+                  className="inline-flex shrink-0 items-center justify-center rounded-xl border border-rose-300/30 bg-rose-400/10 px-3 py-2 text-sm font-medium text-rose-50 transition-colors hover:bg-rose-400/20"
+                >
+                  {sendFailure.actionLabel}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MESSAGES - BLOCK 6.7: Increased bottom padding for floating input */}
       <div
         ref={messagesContainerRef}
@@ -1960,6 +2015,9 @@ export default function ChatInterface({ character, loadedSession, onBack, settin
               if (isImpersonating) {
                 abortImpersonateCall();
                 setIsImpersonating(false);
+              }
+              if (sendFailure) {
+                setSendFailure(null);
               }
               setInput(e.target.value);
               e.target.style.height = 'auto';

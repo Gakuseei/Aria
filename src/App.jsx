@@ -539,6 +539,7 @@ function App() {
           <LoadGame
             onLoad={handleSessionLoad}
             onBack={handleBack}
+            onStartNewGame={handleNewGame}
           />
         );
       

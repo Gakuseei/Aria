@@ -11,7 +11,20 @@ const LOCALE_MAP = {
   ar: 'ar-SA', hi: 'hi-IN', tr: 'tr-TR'
 };
 
-function LoadGame({ onLoad, onBack }) {
+export function buildLoadGameEmptyState({ totalSessions = 0, t }) {
+  const hasSavedSessions = totalSessions > 0;
+  const description = t.loadGame.noSavesDesc;
+
+  return {
+    title: t.loadGame.noSavesTitle,
+    description,
+    actionLabel: hasSavedSessions ? null : t.mainMenu?.newGame || null,
+    previewTitle: hasSavedSessions ? t.loadGame.selectSave : t.loadGame.noSavesTitle,
+    previewDescription: description,
+  };
+}
+
+function LoadGame({ onLoad, onBack, onStartNewGame }) {
   const { t, language } = useLanguage();
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -101,6 +114,8 @@ function LoadGame({ onLoad, onBack }) {
     if (characterFilter !== 'all' && session.characterName !== characterFilter) return false;
     return true;
   });
+
+  const emptyState = buildLoadGameEmptyState({ totalSessions: sessions.length, t });
 
   // Format date
   const formatDate = (dateStr) => {
@@ -293,16 +308,26 @@ function LoadGame({ onLoad, onBack }) {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="w-16 h-16 mb-4 rounded-2xl bg-zinc-800/50 flex items-center justify-center text-zinc-600">
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                </svg>
+            <div className="flex h-full items-center justify-center">
+              <div className="theme-card-subtle flex max-w-md flex-col items-center rounded-3xl px-8 py-10 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-800/50 text-zinc-600">
+                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-[var(--color-text)] mb-2">{emptyState.title}</h3>
+                <p className="theme-text-soft text-sm max-w-xs">
+                  {emptyState.description}
+                </p>
+                {emptyState.actionLabel && typeof onStartNewGame === 'function' && (
+                  <button
+                    onClick={onStartNewGame}
+                    className="mt-5 inline-flex items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-500/20 transition-all hover:from-rose-600 hover:to-pink-700"
+                  >
+                    {emptyState.actionLabel}
+                  </button>
+                )}
               </div>
-              <h3 className="text-lg font-medium text-zinc-400 mb-2">{t.loadGame.noSavesTitle}</h3>
-              <p className="text-sm text-zinc-600 max-w-xs">
-                {t.loadGame.noSavesDesc}
-              </p>
             </div>
           )}
         </div>
@@ -368,15 +393,26 @@ function LoadGame({ onLoad, onBack }) {
               </button>
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="w-12 h-12 mb-4 rounded-xl bg-zinc-700/30 flex items-center justify-center text-zinc-600">
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-700/30 text-zinc-600">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
                 </svg>
               </div>
-              <p className="text-sm text-zinc-500">
-                {t.loadGame.selectSave}
+              <p className="text-sm text-[var(--color-text)]">
+                {emptyState.previewTitle}
               </p>
+              <p className="theme-text-soft mt-2 text-xs max-w-xs">
+                {emptyState.previewDescription}
+              </p>
+              {emptyState.actionLabel && typeof onStartNewGame === 'function' && (
+                <button
+                  onClick={onStartNewGame}
+                  className="mt-5 inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-white/10"
+                >
+                  {emptyState.actionLabel}
+                </button>
+              )}
             </div>
           )}
         </div>

@@ -160,27 +160,10 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
   );
 
 
-  // v0.2.5 ROSE NOIR: Avatar styling
-  const avatarLetter = isUser ? (userName?.[0] || 'U') : (character?.name?.[0] || 'A');
-
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} group mb-4 message-slide-in`}>
-      {/* v1.0 ROSE NOIR: AI Avatar (left) with ring */}
-      {!isUser && (
-        <div className="relative mr-3 flex-shrink-0">
-          <div
-            className="theme-chat-avatar-ring flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white"
-            style={{
-              background: `linear-gradient(135deg, ${character?.themeColor || '#52525b'}, ${character?.themeColor || '#52525b'}88)`
-            }}
-          >
-            {avatarLetter}
-          </div>
-        </div>
-      )}
-
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} group mb-5 message-slide-in`}>
       <div
-        className={`max-w-[75%] rounded-2xl px-5 py-3.5 relative transition-all duration-200 ${
+        className={`theme-message-column rounded-sm px-5 py-4 relative transition-all duration-200 ${
           isUser
             ? (isGoldMode
                 ? 'border border-amber-500/30 bg-gradient-to-br from-zinc-900 to-amber-950/40 text-white'
@@ -228,7 +211,7 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
         </div>
 
         {message.timestamp && (
-          <div className={`theme-message-meta text-xs mt-2 ${
+          <div className={`theme-message-meta text-xs mt-3 ${
             isUser ? 'text-[color:var(--theme-accent-strong)]/70' : ''
           }`}>
             {formatTimestamp(message.timestamp)}
@@ -260,18 +243,6 @@ className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
         </div>
       </div>
 
-      {/* v1.0 ROSE NOIR: User Avatar (right) with rose ring / Gold Mode */}
-      {isUser && (
-        <div className="relative ml-3 flex-shrink-0">
-          <div className={`theme-chat-avatar-ring flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${
-            isGoldMode
-              ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-black shadow-[0_0_10px_rgba(251,191,36,0.5)] ring-amber-500/30'
-              : 'theme-chat-user-bubble text-white'
-          }`}>
-            {avatarLetter}
-          </div>
-        </div>
-      )}
     </div>
   );
 });
@@ -1496,7 +1467,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         aria-label="Import chat file"
       />
 
-      <div className={`theme-chat-header relative z-40 flex shrink-0 items-center justify-between px-6 py-5 transition-all duration-500 ${
+      <div className={`theme-chat-header relative z-40 flex shrink-0 items-center justify-between px-6 py-4 transition-all duration-500 ${
         isVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
       }`}>
         <div className="flex min-w-0 items-center gap-4">
@@ -1602,7 +1573,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         </div>
 
         {/* Right Side - Icon Buttons with Rose Accents - BLOCK 6.9: Enhanced Clickability */}
-        <div className="flex items-center gap-2 relative z-50 pointer-events-auto">
+        <div className="theme-chat-toolbar relative z-50 flex items-center gap-1.5 rounded-xl px-2 py-2 pointer-events-auto">
           <button
             onClick={() => setShowImageModal(true)}
             className={`theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 ${
@@ -1755,7 +1726,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             <Sparkles size={22} strokeWidth={1.5} />
           </button>
 
-          {/* Regenerate Last Response */}
+          <div className="theme-chat-toolbar-divider mx-1" />
+
           <button
             onClick={regenerateLastResponse}
             disabled={isLoading || isStreaming || messages.length < 2}
@@ -1865,7 +1837,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       <div
         ref={messagesContainerRef}
         onScroll={handleMessagesScroll}
-        className={`flex-1 min-h-0 overflow-y-auto px-4 py-6 pb-64 ${
+        className={`flex-1 min-h-0 overflow-y-auto px-4 py-5 pb-64 ${
           isGoldMode ? 'scrollbar-gold' : ''
         }`}
       >
@@ -1907,18 +1879,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           ))}
 
           {(isLoading || isStreaming) && (
-            <div className="flex justify-start mb-4">
-              <div className="relative mr-3 flex-shrink-0">
-                <div
-                  className="theme-chat-avatar-ring flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white"
-                  style={{
-                    background: `linear-gradient(135deg, ${character?.themeColor || '#52525b'}, ${character?.themeColor || '#52525b'}88)`
-                  }}
-                >
-                  {character.name.charAt(0)}
-                </div>
-              </div>
-              <div className="theme-chat-assistant-bubble relative max-w-[75%] rounded-2xl px-5 py-3.5 transition-all duration-200">
+            <div className="flex justify-start mb-5">
+              <div className="theme-chat-assistant-bubble theme-message-column relative rounded-sm px-5 py-4 transition-all duration-200">
                 {!streamingContent ? (
                   <div className="flex items-center gap-3">
                     <div className="flex gap-1.5">
@@ -1958,7 +1920,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       </div>
 
       {/* v1.0 ROSE NOIR: Floating Input "Cockpit" - BLOCK 6.7: Detached, premium styling */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl z-50">
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-[68rem] z-50">
         {/* Suggestion Skeleton Loading */}
         {settings.smartSuggestionsEnabled && isGeneratingSuggestions && smartSuggestions.length === 0 && !isStreaming && !isImpersonating && (
           <div className="mb-4 flex flex-wrap justify-center gap-2.5">
@@ -2032,7 +1994,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <button
             onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}
             disabled={isLoading || isStreaming}
-            className={`theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-all duration-200 disabled:opacity-30 ${
+            className={`theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30 ${
               isImpersonating
                 ? `${!input.trim() ? (isGoldMode ? 'impersonate-pulse-gold' : 'impersonate-pulse') : ''} text-[var(--color-text)]`
                 : isGoldMode
@@ -2047,8 +2009,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <button
             onClick={() => handleSend()}
             disabled={isLoading || isStreaming || isImpersonating || !input.trim()}
-            className={`theme-composer-primary flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full transition-all duration-200 shadow-lg disabled:opacity-30 ${
-              isGoldMode ? 'text-black' : 'text-white'
+            className={`theme-composer-primary flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 shadow-lg disabled:opacity-30 ${
+              isGoldMode ? 'text-black' : 'text-[#101216]'
             }`}
             title={t.chat.send}
             aria-label={t.chat.send}

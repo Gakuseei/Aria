@@ -1948,7 +1948,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 }`}
                 style={{ animationDelay: `${i * 75}ms` }}
               >
-                <Sparkles size={12} className={isGoldMode ? 'text-amber-400/70' : 'text-[color:var(--theme-accent-strong)]/70'} />
+                <Sparkles size={12} className={isGoldMode ? 'text-amber-400/70' : 'theme-suggestion-pill-icon'} />
                 <span className="truncate max-w-[280px] sm:max-w-[400px] md:max-w-[500px]">{suggestion}</span>
               </button>
             ))}

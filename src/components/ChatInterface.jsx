@@ -1989,7 +1989,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             }}
             placeholder={t.chat.messageCharacter.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
             disabled={isLoading}
-            className="chat-input flex-1 min-w-0 resize-none overflow-y-auto border-none bg-transparent px-2 text-lg text-[var(--color-text)] outline-none ring-0 placeholder-[color:var(--color-text-soft)] focus:outline-none focus:ring-0 disabled:opacity-50"
+            className="chat-input flex-1 min-w-0 resize-none overflow-y-auto border-none bg-transparent px-2 text-lg text-[var(--color-text)] outline-none ring-0 placeholder-[color:var(--color-text-muted)] focus:outline-none focus:ring-0 disabled:opacity-50"
           />
           <button
             onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}

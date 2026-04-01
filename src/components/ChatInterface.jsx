@@ -163,7 +163,7 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} group mb-5 message-slide-in`}>
       <div
-        className={`theme-message-column rounded-sm px-5 py-4 relative transition-all duration-200 ${
+        className={`theme-message-column rounded-2xl px-5 py-4 relative transition-all duration-200 ${
           isUser
             ? (isGoldMode
                 ? 'border border-amber-500/30 bg-gradient-to-br from-zinc-900 to-amber-950/40 text-white'
@@ -1880,7 +1880,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
           {(isLoading || isStreaming) && (
             <div className="flex justify-start mb-5">
-              <div className="theme-chat-assistant-bubble theme-message-column relative rounded-sm px-5 py-4 transition-all duration-200">
+              <div className="theme-chat-assistant-bubble theme-message-column relative rounded-2xl px-5 py-4 transition-all duration-200">
                 {!streamingContent ? (
                   <div className="flex items-center gap-3">
                     <div className="flex gap-1.5">

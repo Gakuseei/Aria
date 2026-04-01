@@ -1726,7 +1726,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <button
             onClick={regenerateLastResponse}
             disabled={isLoading || isStreaming || messages.length < 2}
-            className="theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 hover:text-[color:var(--theme-accent-strong)] disabled:cursor-not-allowed disabled:opacity-30"
+            className="theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
             title={t.chat.regenerateResponse}
             aria-label={t.chat.regenerateResponse}
           >

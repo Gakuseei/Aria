@@ -171,18 +171,15 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
             : 'theme-chat-assistant-bubble'
         }`}
       >
-        {/* BLOCK 7.0: User name label - GOLD MODE for supporters */}
         {isUser && userName && (
-          <div className={`theme-message-meta text-xs mb-1.5 font-medium flex items-center gap-1.5 ${
-            isGoldMode ? 'text-amber-400' : 'text-[color:var(--theme-accent-strong)]'
-          }`}>
+          <div className="theme-message-meta theme-message-label text-xs mb-1.5 font-medium flex items-center gap-1.5">
             {userName}
             {isGoldMode && <span className="text-amber-300">✨</span>}
           </div>
         )}
 
         {!isUser && character?.name && (
-          <div className="theme-message-meta mb-1.5 flex items-center gap-1.5 text-xs font-medium">
+          <div className="theme-message-meta theme-message-label mb-1.5 flex items-center gap-1.5 text-xs font-medium">
             <span>{character.name}</span>
           </div>
         )}
@@ -211,9 +208,7 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
         </div>
 
         {message.timestamp && (
-          <div className={`theme-message-meta text-xs mt-3 ${
-            isUser ? 'text-[color:var(--theme-accent-strong)]/70' : ''
-          }`}>
+          <div className="theme-message-meta theme-message-timestamp text-xs mt-3">
             {formatTimestamp(message.timestamp)}
           </div>
         )}
@@ -1894,7 +1889,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                   </div>
                 ) : (
                   <>
-                    <div className="theme-message-meta mb-1.5 flex items-center gap-1.5 text-xs font-medium"><span>{character.name}</span></div>
+                    <div className="theme-message-meta theme-message-label mb-1.5 flex items-center gap-1.5 text-xs font-medium"><span>{character.name}</span></div>
                     <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
                       {(() => {
                         const formattedParts = formatMessageText(streamingContent || '', false);

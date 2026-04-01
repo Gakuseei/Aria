@@ -1454,7 +1454,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         />
       )}
       {tierToast && (
-        <div className="theme-popover fixed left-1/2 top-6 z-[300] -translate-x-1/2 rounded-full px-4 py-2 text-sm animate-pulse">
+        <div className="theme-chat-toast fixed left-1/2 top-6 z-[300] -translate-x-1/2 rounded-lg px-4 py-2 text-sm animate-pulse">
           {tierToast}
         </div>
       )}
@@ -1524,7 +1524,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             </div>
             {showPassionPopover && (
               <div
-                className="theme-popover absolute left-0 top-full z-50 mt-2 min-w-[240px] rounded-xl p-4"
+                className="theme-chat-flyout absolute left-0 top-full z-50 mt-2 min-w-[240px] rounded-lg p-4"
                 data-passion-popover
               >
                 <div className="mb-3 flex items-start justify-between gap-4">
@@ -1573,7 +1573,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         </div>
 
         {/* Right Side - Icon Buttons with Rose Accents - BLOCK 6.9: Enhanced Clickability */}
-        <div className="theme-chat-toolbar relative z-50 flex items-center gap-1.5 rounded-xl px-2 py-2 pointer-events-auto">
+        <div className="theme-chat-toolbar relative z-50 flex items-center gap-1.5 pointer-events-auto">
           <button
             onClick={() => setShowImageModal(true)}
             className={`theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 ${
@@ -1600,7 +1600,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
             {/* Voice Settings Popover */}
             {showVoiceSettings && (
-              <div className="theme-popover absolute top-12 right-0 z-[200] flex w-64 flex-col rounded-xl p-4">
+              <div className="theme-chat-flyout absolute top-12 right-0 z-[200] flex w-64 flex-col rounded-lg p-4">
                 <div className="space-y-4">
                   {/* Master Toggle: Enable Voice */}
                   <div className="flex items-center justify-between gap-4">
@@ -1753,7 +1753,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
             {/* BLOCK 6.9.2: Chat Options Popover */}
             {showChatOptions && (
-              <div className="theme-popover absolute top-12 right-0 z-[200] flex w-56 flex-col rounded-xl p-1">
+              <div className="theme-chat-flyout absolute top-12 right-0 z-[200] flex w-56 flex-col rounded-lg p-1">
                 {/* Text Zoom */}
                 <div className="theme-popover-divider border-b px-3 py-2">
                   <span className="theme-popover-label text-xs font-medium uppercase tracking-wider">{t.chat.textSize}</span>

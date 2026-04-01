@@ -23,9 +23,9 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
           ? 'opacity-100 scale-100' 
           : (isGoldMode ? 'opacity-0 scale-105' : 'opacity-0 scale-95')
       }`}>
-        {/* Decorative Element - Rose Noir / Gold Dynamic */}
+        {/* Decorative Element - Graphite Premium / Gold Dynamic */}
         <div className="relative inline-block mb-8">
-          <div className="relative w-28 h-28 mx-auto">
+          <div className="theme-brand-badge relative mx-auto flex h-28 w-28 items-center justify-center rounded-[2rem] backdrop-blur-xl">
             <svg viewBox="0 0 100 100" className="w-full h-full">
               {/* Outer Ring */}
               <circle
@@ -54,9 +54,9 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
               />
               <defs>
                 <linearGradient id="roseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#f43f5e" />
-                  <stop offset="50%" stopColor="#e11d48" />
-                  <stop offset="100%" stopColor="#be123c" />
+                  <stop offset="0%" stopColor="#f4f6fb" />
+                  <stop offset="52%" stopColor="#c9d0db" />
+                  <stop offset="100%" stopColor="#b49aaa" />
                 </linearGradient>
                 
                 <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -69,11 +69,11 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
           </div>
         </div>
 
-        {/* Title - Rose Noir / Gold Mode */}
+        {/* Title - Graphite Premium / Gold Mode */}
         <h1 className="text-6xl font-bold mb-4 tracking-tight">
           <span className={isGoldMode 
             ? "bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(251,191,36,0.4)]"
-            : "bg-gradient-to-r from-rose-400 via-rose-500 to-pink-600 bg-clip-text text-transparent"
+            : "theme-brand-gradient"
           }>
             Aria
           </span>
@@ -100,20 +100,20 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
           <div className={`absolute inset-0 ${
             isGoldMode 
               ? 'bg-gradient-to-r from-amber-600 to-yellow-500 opacity-90 group-hover:opacity-100 group-hover:shadow-[0_0_20px_rgba(251,191,36,0.3)]'
-              : 'bg-gradient-to-r from-rose-600 to-pink-600 opacity-90 group-hover:opacity-100'
+              : 'theme-brand-button opacity-95 group-hover:opacity-100'
           } transition-opacity`} />
 
           {/* Glass Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/8 to-transparent" />
 
           {/* Glow Effect */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div className="absolute inset-[-2px] bg-rose-500 blur-xl opacity-30" />
+            <div className="absolute inset-[-2px] bg-white blur-xl opacity-12" />
           </div>
 
           {/* Content */}
           <span className={`relative flex items-center justify-center gap-3 font-semibold tracking-widest uppercase text-sm ${
-            isGoldMode ? 'text-black font-bold' : 'text-white'
+            isGoldMode ? 'text-black font-bold' : 'text-[#101115] font-bold'
           }`}>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -129,10 +129,10 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
           aria-label={t.mainMenu.load}
         >
           {/* Background */}
-          <div className="theme-card-subtle absolute inset-0 rounded-2xl backdrop-blur-sm transition-all duration-300 group-hover:border-rose-500/50 group-hover:shadow-[0_0_30px_rgba(226,29,72,0.2)]" />
+          <div className="theme-outline-button absolute inset-0 rounded-2xl backdrop-blur-sm transition-all duration-300" />
 
           {/* Content */}
-          <span className="relative flex items-center justify-center gap-3 text-zinc-400 group-hover:text-white font-medium tracking-widest uppercase text-sm transition-colors">
+          <span className="theme-text-muted relative flex items-center justify-center gap-3 font-medium tracking-widest uppercase text-sm transition-colors group-hover:text-[var(--color-text)]">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
@@ -147,10 +147,10 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
           aria-label={t.mainMenu.settings}
         >
           {/* Background */}
-          <div className="theme-card-subtle absolute inset-0 rounded-2xl backdrop-blur-sm transition-all duration-300 group-hover:border-rose-500/50 group-hover:shadow-[0_0_30px_rgba(226,29,72,0.2)]" />
+          <div className="theme-outline-button absolute inset-0 rounded-2xl backdrop-blur-sm transition-all duration-300" />
 
           {/* Content */}
-          <span className="relative flex items-center justify-center gap-3 text-zinc-400 group-hover:text-white font-medium tracking-widest uppercase text-sm transition-colors">
+          <span className="theme-text-muted relative flex items-center justify-center gap-3 font-medium tracking-widest uppercase text-sm transition-colors group-hover:text-[var(--color-text)]">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -172,26 +172,26 @@ function MainMenu({ onNewGame, onLoadGame, onSettings }) {
           className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all overflow-hidden"
         >
           {/* Gradient Border Background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-rose-900/20 via-rose-500/10 to-transparent rounded-xl border border-rose-500/20 group-hover:border-rose-500/40 transition-all" />
+          <div className="absolute inset-0 rounded-xl border border-[color:var(--theme-accent-border)] bg-gradient-to-r from-white/4 via-[color:var(--theme-accent-soft)] to-transparent transition-all group-hover:border-[color:var(--theme-accent-strong)]/40" />
           
           {/* Glow Effect */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div className="absolute inset-[-2px] bg-rose-500 blur-lg opacity-30 rounded-xl" />
+            <div className="absolute inset-[-2px] bg-white blur-lg opacity-10 rounded-xl" />
           </div>
           
           {/* Shadow */}
-          <div className="absolute inset-0 shadow-rose-500/20 group-hover:shadow-rose-500/40 transition-shadow rounded-xl" />
+          <div className="absolute inset-0 transition-shadow rounded-xl" />
           
           {/* Content */}
-          <Heart size={18} className="relative text-rose-400 group-hover:scale-110 transition-transform animate-pulse" />
-          <span className="relative text-sm text-zinc-400 group-hover:text-rose-300 font-semibold transition-colors">
+          <Heart size={18} className="relative text-[color:var(--theme-accent-strong)] group-hover:scale-110 transition-transform animate-pulse" />
+          <span className="theme-text-muted relative text-sm font-semibold transition-colors group-hover:text-[var(--color-text)]">
             {t.mainMenu.support}
           </span>
         </button>
 
         {/* Center: Version Info */}
         <div className="text-center">
-          <p className="text-zinc-600 text-xs tracking-widest uppercase">
+          <p className="theme-text-soft text-xs tracking-widest uppercase">
             {t.mainMenu.footer}
           </p>
           {isSupporter && (

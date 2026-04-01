@@ -1478,7 +1478,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         <div
           className="pointer-events-none fixed inset-0 z-10 transition-opacity duration-[2000ms]"
           style={{
-            background: `radial-gradient(ellipse at center, transparent 48%, rgba(244, 63, 94, ${Math.min((passionLevel - 15) * 0.0024, 0.16)}) 100%)`
+            background: `radial-gradient(ellipse at center, transparent 48%, rgb(var(--color-primary-rgb) / ${Math.min((passionLevel - 15) * 0.0024, 0.16)}) 100%)`
           }}
         />
       )}
@@ -1991,7 +1991,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 }`}
                 style={{ animationDelay: `${i * 75}ms` }}
               >
-                <Sparkles size={12} className={isGoldMode ? 'text-amber-400/70' : 'text-rose-400/70'} />
+                <Sparkles size={12} className={isGoldMode ? 'text-amber-400/70' : 'text-[color:var(--theme-accent-strong)]/70'} />
                 <span className="truncate max-w-[280px] sm:max-w-[400px] md:max-w-[500px]">{suggestion}</span>
               </button>
             ))}

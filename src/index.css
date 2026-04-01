@@ -528,33 +528,49 @@ body {
 
 .theme-chat-ambient {
   background:
-    radial-gradient(circle at top center, rgb(var(--color-primary-rgb) / 0.12) 0%, transparent 24%),
-    radial-gradient(circle at 18% 16%, rgba(120, 82, 110, 0.12) 0%, transparent 24%),
-    radial-gradient(circle at 78% 18%, rgba(82, 54, 73, 0.1) 0%, transparent 22%),
-    linear-gradient(180deg, rgba(18, 16, 21, 0.9) 0%, transparent 24%, transparent 78%, rgba(10, 9, 12, 0.92) 100%);
-  opacity: 0.96;
+    radial-gradient(circle at 50% 0%, rgba(183, 138, 149, 0.045) 0%, transparent 18%),
+    radial-gradient(circle at 22% 18%, rgba(62, 64, 71, 0.16) 0%, transparent 26%),
+    radial-gradient(circle at 80% 20%, rgba(28, 31, 37, 0.18) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(18, 19, 22, 0.92) 0%, rgba(15, 16, 19, 0.82) 28%, rgba(13, 14, 17, 0.8) 64%, rgba(8, 9, 11, 0.94) 100%);
+  opacity: 0.94;
 }
 
 .theme-chat-scrim {
   background:
-    linear-gradient(180deg, rgba(10, 9, 12, 0.42), transparent 14%),
-    linear-gradient(180deg, transparent 0%, transparent 74%, rgba(8, 7, 10, 0.52) 100%);
+    linear-gradient(180deg, rgba(9, 10, 12, 0.34), transparent 16%),
+    linear-gradient(180deg, transparent 0%, transparent 68%, rgba(7, 8, 10, 0.56) 88%, rgba(6, 7, 9, 0.74) 100%);
+}
+
+:root[data-theme='light'] .theme-chat-ambient {
+  background:
+    radial-gradient(circle at 50% 0%, rgb(var(--color-primary-rgb) / 0.06) 0%, transparent 20%),
+    radial-gradient(circle at 20% 18%, rgba(251, 191, 211, 0.2) 0%, transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(224, 231, 255, 0.22) 0%, transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 247, 251, 0.94) 36%, rgba(253, 242, 248, 0.92) 70%, rgba(248, 250, 252, 0.97) 100%);
+  opacity: 0.92;
+}
+
+:root[data-theme='light'] .theme-chat-scrim {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent 18%),
+    linear-gradient(180deg, transparent 0%, transparent 82%, rgba(244, 63, 94, 0.05) 100%);
 }
 
 :root[data-theme='oled'] .theme-chat-ambient,
 body.oled-mode .theme-chat-ambient {
   background:
-    radial-gradient(circle at top center, rgba(255, 77, 121, 0.03) 0%, transparent 24%),
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.015) 0%, transparent 30%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.02), transparent 28%, transparent 74%, rgba(255, 255, 255, 0.01));
-  opacity: 0.5;
+    radial-gradient(circle at 50% 10%, rgba(34, 37, 43, 0.12) 0%, rgba(18, 20, 24, 0.05) 22%, transparent 40%),
+    radial-gradient(circle at 22% 18%, rgba(24, 27, 32, 0.14) 0%, transparent 28%),
+    radial-gradient(circle at 78% 20%, rgba(12, 14, 18, 0.16) 0%, transparent 26%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, transparent 30%, transparent 72%, rgba(10, 11, 14, 0.12) 100%);
+  opacity: 0.44;
 }
 
 :root[data-theme='oled'] .theme-chat-scrim,
 body.oled-mode .theme-chat-scrim {
   background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.14), transparent 12%),
-    linear-gradient(180deg, transparent 0%, transparent 82%, rgba(0, 0, 0, 0.2) 100%);
+    linear-gradient(180deg, rgba(0, 0, 0, 0.12), transparent 14%),
+    linear-gradient(180deg, transparent 0%, transparent 78%, rgba(0, 0, 0, 0.24) 100%);
 }
 
 .theme-chat-header {

@@ -1984,17 +1984,17 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             }}
             placeholder={t.chat.messageCharacter.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
             disabled={isLoading}
-            className="chat-input flex-1 min-w-0 resize-none overflow-y-auto border-none bg-transparent px-2 text-lg text-[var(--color-text)] outline-none ring-0 placeholder-[color:var(--color-text-muted)] focus:outline-none focus:ring-0 disabled:opacity-50"
+            className="chat-input theme-composer-input flex-1 min-w-0 resize-none overflow-y-auto border-none bg-transparent px-2 text-lg outline-none ring-0 focus:outline-none focus:ring-0 disabled:opacity-50"
           />
           <button
             onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}
             disabled={isLoading || isStreaming}
-            className={`theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30 ${
+            className={`theme-composer-secondary flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30 ${
               isImpersonating
                 ? `${!input.trim() ? (isGoldMode ? 'impersonate-pulse-gold' : 'impersonate-pulse') : ''} text-[var(--color-text)]`
                 : isGoldMode
                   ? 'text-amber-300'
-                  : 'text-[color:var(--theme-accent-strong)]'
+                  : ''
             }`}
             title={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
             aria-label={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
@@ -2004,9 +2004,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <button
             onClick={() => handleSend()}
             disabled={isLoading || isStreaming || isImpersonating || !input.trim()}
-            className={`theme-composer-primary flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 shadow-lg disabled:opacity-30 ${
-              isGoldMode ? 'text-black' : 'text-[#101216]'
-            }`}
+            className="theme-composer-primary flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 shadow-lg disabled:opacity-30"
             title={t.chat.send}
             aria-label={t.chat.send}
           >

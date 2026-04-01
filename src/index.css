@@ -881,36 +881,72 @@ body.oled-mode .theme-chat-scrim {
 
 .theme-composer {
   background:
-    linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.06), transparent 65%),
-    rgba(18, 16, 21, 0.96);
-  border: 1px solid rgba(120, 101, 121, 0.26);
-  box-shadow: 0 30px 70px -42px rgba(0, 0, 0, 0.82), inset 0 1px 0 rgba(255, 255, 255, 0.025);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 60%),
+    linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.045), transparent 76%),
+    color-mix(in srgb, var(--color-surface-elevated) 96%, rgba(12, 13, 16, 0.96));
+  border: 1px solid color-mix(in srgb, var(--color-border) 74%, rgb(var(--color-primary-rgb) / 0.12));
+  box-shadow: 0 32px 72px -42px rgba(0, 0, 0, 0.82), 0 16px 36px -34px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 .theme-composer:focus-within {
-  border-color: rgba(172, 132, 153, 0.4);
-  box-shadow: 0 32px 74px -42px rgba(0, 0, 0, 0.84), 0 0 0 1px rgb(var(--color-primary-rgb) / 0.26);
+  border-color: color-mix(in srgb, var(--theme-accent-border) 76%, var(--color-border));
+  box-shadow: 0 34px 76px -42px rgba(0, 0, 0, 0.84), 0 0 0 1px rgb(var(--color-primary-rgb) / 0.24), 0 0 0 5px rgb(var(--color-primary-rgb) / 0.06);
+}
+
+.theme-composer-input {
+  color: var(--color-text);
+}
+
+.theme-composer-input::placeholder {
+  color: color-mix(in srgb, var(--color-text-soft) 76%, var(--color-text-muted));
 }
 
 .theme-composer-secondary {
-  background: rgba(39, 33, 43, 0.92);
-  border: 1px solid rgba(109, 91, 108, 0.26);
-  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-surface-muted) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 58%, transparent);
+  color: color-mix(in srgb, var(--color-text-soft) 82%, var(--color-text-muted));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.015);
 }
 
 .theme-composer-secondary:hover {
-  background: rgba(55, 44, 58, 0.96);
+  background: color-mix(in srgb, var(--color-surface-muted) 84%, rgb(var(--color-primary-rgb) / 0.05));
+  border-color: color-mix(in srgb, var(--color-border) 70%, rgb(var(--color-primary-rgb) / 0.1));
   color: var(--color-text);
 }
 
 .theme-composer-primary {
-  background: linear-gradient(135deg, #9d6e87 0%, #7c5067 48%, #61384f 100%);
-  color: #fff8fb;
-  box-shadow: 0 22px 36px -24px rgba(62, 20, 41, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 82%, white 18%) 0%, color-mix(in srgb, var(--color-primary) 90%, var(--color-primary-dark)) 52%, color-mix(in srgb, var(--color-primary-dark) 88%, black 12%) 100%);
+  border: 1px solid color-mix(in srgb, var(--theme-accent-border) 82%, transparent);
+  color: #17181b;
+  box-shadow: 0 22px 36px -24px rgb(var(--color-primary-rgb) / 0.44), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .theme-composer-primary:hover {
-  filter: brightness(1.04);
+  filter: brightness(1.03);
+}
+
+:root[data-theme='light'] .theme-composer {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), transparent 54%),
+    linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.05), transparent 76%),
+    rgba(255, 251, 253, 0.96);
+  border: 1px solid color-mix(in srgb, var(--color-border) 72%, rgb(var(--color-primary-rgb) / 0.14));
+  box-shadow: 0 24px 54px -34px rgba(148, 163, 184, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+:root[data-theme='light'] .theme-composer:focus-within {
+  border-color: color-mix(in srgb, var(--theme-accent-border) 74%, var(--color-border));
+  box-shadow: 0 24px 56px -34px rgba(148, 163, 184, 0.3), 0 0 0 1px rgb(var(--color-primary-rgb) / 0.18), 0 0 0 5px rgb(var(--color-primary-rgb) / 0.06);
+}
+
+:root[data-theme='light'] .theme-composer-secondary {
+  background: color-mix(in srgb, var(--color-surface-muted) 64%, white 36%);
+  border: 1px solid color-mix(in srgb, var(--color-border) 60%, rgba(255, 255, 255, 0.42));
+  color: color-mix(in srgb, var(--color-text-soft) 76%, var(--color-text-muted));
+}
+
+:root[data-theme='light'] .theme-composer-primary {
+  color: #fff8fb;
 }
 
 .theme-message-column {

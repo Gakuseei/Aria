@@ -4,25 +4,25 @@
 
 /* Base Styles - v1.1 GRAPHITE PREMIUM THEME */
 :root {
-  --color-primary: #d0a6b6;
-  --color-primary-dark: #b88097;
-  --color-primary-rgb: 208 166 182;
+  --color-primary: #b57b87;
+  --color-primary-dark: #9b616d;
+  --color-primary-rgb: 181 123 135;
   --color-info: #9ec5d6;
   --color-info-rgb: 158 197 214;
   --color-success: #9dd3ba;
   --color-success-rgb: 157 211 186;
   --color-warning: #e8b6b0;
   --color-warning-rgb: 232 182 176;
-  --color-bg: #111215;
-  --color-surface: #1b1d22;
-  --color-surface-elevated: rgba(28, 30, 36, 0.92);
-  --color-surface-muted: rgba(39, 42, 49, 0.72);
-  --color-border: #343842;
-  --color-border-strong: rgba(255, 255, 255, 0.1);
-  --color-text: #f5f7fb;
-  --color-text-muted: #b1b6c2;
-  --color-text-soft: #7e8593;
-  --color-rose-glow: rgba(208, 166, 182, 0.12);
+  --color-bg: #0e1013;
+  --color-surface: #17191d;
+  --color-surface-elevated: rgba(24, 26, 31, 0.94);
+  --color-surface-muted: rgba(38, 40, 46, 0.78);
+  --color-border: #2b2f36;
+  --color-border-strong: rgba(214, 199, 193, 0.16);
+  --color-text: #ece7e3;
+  --color-text-muted: #b3aba4;
+  --color-text-soft: #857d77;
+  --color-rose-glow: rgba(196, 143, 154, 0.1);
   --glass-bg: rgba(20, 22, 27, 0.74);
   --glass-light-bg: rgba(31, 34, 41, 0.56);
   --glass-header-bg: rgba(14, 16, 20, 0.78);
@@ -33,25 +33,25 @@
   --glass-panel-shadow: 0 24px 65px rgba(3, 5, 10, 0.34);
   --input-bg: rgba(34, 37, 44, 0.92);
   --input-border: rgba(115, 123, 139, 0.28);
-  --selection-bg: rgba(208, 166, 182, 0.24);
+  --selection-bg: rgba(196, 143, 154, 0.22);
   --selection-text: #ffffff;
   --scrollbar-track: #121318;
   --scrollbar-thumb: #353943;
   --scrollbar-thumb-hover: #4b5160;
   --app-backdrop:
-    radial-gradient(circle at top center, rgba(255, 255, 255, 0.07) 0%, transparent 28%),
-    radial-gradient(circle at 20% 12%, rgba(208, 166, 182, 0.09) 0%, transparent 22%),
-    linear-gradient(180deg, #1a1c21 0%, #13151a 40%, #101116 100%);
+    radial-gradient(circle at top center, rgba(255, 255, 255, 0.04) 0%, transparent 26%),
+    radial-gradient(circle at 18% 10%, rgba(196, 143, 154, 0.08) 0%, transparent 22%),
+    linear-gradient(180deg, #17191d 0%, #111317 42%, #0d0f12 100%);
   --app-grid-line: rgba(255, 255, 255, 0.04);
-  --app-glow-primary: rgba(255, 255, 255, 0.05);
-  --app-glow-secondary: rgba(208, 166, 182, 0.06);
-  --app-glow-center: rgba(132, 141, 158, 0.05);
+  --app-glow-primary: rgba(255, 255, 255, 0.035);
+  --app-glow-secondary: rgba(196, 143, 154, 0.05);
+  --app-glow-center: rgba(152, 145, 138, 0.04);
   --theme-shell-shadow: 0 32px 80px -42px rgba(0, 0, 0, 0.78);
   --theme-card-shadow: 0 20px 52px -36px rgba(0, 0, 0, 0.64);
-  --theme-accent-soft: rgb(var(--color-primary-rgb) / 0.14);
-  --theme-accent-muted: rgb(var(--color-primary-rgb) / 0.1);
-  --theme-accent-border: rgb(var(--color-primary-rgb) / 0.26);
-  --theme-accent-strong: rgb(var(--color-primary-rgb) / 0.9);
+  --theme-accent-soft: rgb(var(--color-primary-rgb) / 0.12);
+  --theme-accent-muted: rgb(var(--color-primary-rgb) / 0.08);
+  --theme-accent-border: rgb(var(--color-primary-rgb) / 0.22);
+  --theme-accent-strong: rgb(var(--color-primary-rgb) / 0.84);
   --theme-info-soft: rgb(var(--color-info-rgb) / 0.12);
   --theme-info-border: rgb(var(--color-info-rgb) / 0.26);
   --theme-success-soft: rgb(var(--color-success-rgb) / 0.12);
@@ -62,6 +62,9 @@
 }
 
 :root[data-theme='light'] {
+  --color-primary: #f43f5e;
+  --color-primary-dark: #e11d48;
+  --color-primary-rgb: 244 63 94;
   --color-bg: #f8fafc;
   --color-surface: #ffffff;
   --color-surface-elevated: rgba(255, 255, 255, 0.96);
@@ -109,6 +112,7 @@ body.oled-mode {
   --color-text-soft: #7d7d86 !important;
   --color-primary: #ff4d79 !important;
   --color-primary-dark: #e11d48 !important;
+  --color-primary-rgb: 255 77 121 !important;
   --glass-bg: rgba(4, 4, 4, 0.92) !important;
   --glass-light-bg: rgba(8, 8, 8, 0.9) !important;
   --glass-header-bg: rgba(0, 0, 0, 0.98) !important;

@@ -648,20 +648,59 @@ body.oled-mode .theme-chat-scrim {
 
 .theme-chat-header {
   background:
-    linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.07), transparent 60%),
-    rgba(19, 17, 23, 0.84);
-  border-bottom: 1px solid rgba(118, 101, 121, 0.28);
-  box-shadow: 0 24px 54px -36px rgba(0, 0, 0, 0.68);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+    radial-gradient(circle at 18% 30%, rgb(var(--color-primary-rgb) / 0.18) 0%, rgb(var(--color-primary-rgb) / 0.06) 24%, transparent 46%),
+    linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.14) 0%, rgb(var(--color-primary-rgb) / 0.05) 38%, transparent 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface-elevated) 94%, rgb(var(--color-primary-rgb) / 0.05)) 0%, color-mix(in srgb, var(--color-surface) 92%, black 8%) 100%);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 66%, rgb(var(--color-primary-rgb) / 0.24));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 22px 46px -34px rgba(0, 0, 0, 0.72), 0 1px 0 rgb(var(--color-primary-rgb) / 0.1);
+  backdrop-filter: blur(28px) saturate(135%);
+  -webkit-backdrop-filter: blur(28px) saturate(135%);
+}
+
+.theme-chat-avatar-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.theme-chat-avatar-shell::before {
+  content: '';
+  position: absolute;
+  inset: -0.35rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgb(var(--color-primary-rgb) / 0.24) 0%, rgb(var(--color-primary-rgb) / 0.11) 38%, transparent 72%);
+  opacity: 0.78;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.theme-chat-avatar-shell .theme-success-dot {
+  background: color-mix(in srgb, var(--color-success) 54%, var(--color-surface-elevated) 46%);
+  box-shadow: 0 0 8px rgb(var(--color-success-rgb) / 0.12);
+  opacity: 0.9;
 }
 
 .theme-chat-avatar-ring {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-border) 70%, transparent), 0 18px 34px -22px rgba(0, 0, 0, 0.68);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-border) 66%, transparent), 0 16px 30px -24px rgba(0, 0, 0, 0.68);
+}
+
+.theme-chat-header-avatar-ring {
+  border: 1px solid color-mix(in srgb, rgb(var(--color-primary-rgb) / 0.24) 56%, var(--color-border));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 1px color-mix(in srgb, var(--color-border) 60%, transparent),
+    0 18px 34px -24px rgba(0, 0, 0, 0.74);
+  filter: saturate(0.88) brightness(0.92);
 }
 
 .theme-chat-title {
   color: var(--color-text);
+  letter-spacing: -0.022em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
+}
+
+.theme-chat-subtitle {
+  color: color-mix(in srgb, var(--color-text-muted) 84%, var(--color-text-soft));
+  letter-spacing: 0.01em;
 }
 
 .theme-chat-toolbar {
@@ -672,10 +711,41 @@ body.oled-mode .theme-chat-scrim {
   -webkit-backdrop-filter: none;
 }
 
+.theme-chat-toolbar .theme-icon-button {
+  color: color-mix(in srgb, var(--color-text-soft) 88%, var(--color-text-muted));
+  border: 1px solid transparent;
+  box-shadow: none;
+  opacity: 0.82;
+}
+
+.theme-chat-toolbar .theme-icon-button:hover {
+  background: color-mix(in srgb, var(--color-surface-muted) 48%, transparent);
+  border-color: color-mix(in srgb, var(--color-border) 66%, transparent);
+  color: var(--color-text);
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.theme-chat-toolbar .theme-icon-button-active {
+  color: var(--theme-accent-strong);
+  background: color-mix(in srgb, var(--theme-accent-soft) 74%, transparent);
+  border-color: color-mix(in srgb, var(--theme-accent-border) 82%, transparent);
+  box-shadow: 0 14px 24px -24px rgb(var(--color-primary-rgb) / 0.56);
+}
+
+.theme-chat-toolbar .theme-icon-button-info {
+  color: color-mix(in srgb, var(--color-text-muted) 78%, var(--color-info) 22%);
+}
+
+.theme-chat-toolbar .theme-icon-button-info:hover {
+  color: color-mix(in srgb, var(--color-info) 82%, var(--color-text));
+}
+
 .theme-chat-toolbar-divider {
   width: 1px;
   align-self: stretch;
-  background: rgba(112, 94, 112, 0.22);
+  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--color-border) 82%, rgb(var(--color-primary-rgb) / 0.12)) 18%, color-mix(in srgb, var(--color-border) 82%, rgb(var(--color-primary-rgb) / 0.14)) 82%, transparent 100%);
+  opacity: 0.78;
 }
 
 .theme-status-chip {
@@ -690,22 +760,23 @@ body.oled-mode .theme-chat-scrim {
 }
 
 .theme-passion-inline {
-  color: color-mix(in srgb, var(--color-primary) 78%, var(--color-text-muted));
+  color: color-mix(in srgb, var(--color-primary) 52%, var(--color-text-soft));
 }
 
 .theme-passion-inline:hover {
-  color: var(--color-text);
+  color: color-mix(in srgb, var(--color-primary) 58%, var(--color-text));
 }
 
 .theme-passion-inline-bar {
-  width: 1.25rem;
+  width: 1.1rem;
   height: 2px;
   border-radius: 999px;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 54%, transparent), color-mix(in srgb, var(--color-primary) 96%, white 4%));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 28%, transparent), color-mix(in srgb, var(--color-primary) 68%, var(--color-text-soft)));
 }
 
 .theme-passion-inline-value {
-  color: color-mix(in srgb, var(--color-primary) 86%, white 14%);
+  color: color-mix(in srgb, var(--color-primary) 62%, var(--color-text-muted));
+  font-variant-numeric: tabular-nums;
 }
 
 .theme-progress-track {

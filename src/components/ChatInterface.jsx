@@ -1475,11 +1475,11 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             <ArrowLeft size={22} strokeWidth={1.5} />
           </button>
 
-          <div className="relative">
+          <div className="theme-chat-avatar-shell">
             <div
-              className="theme-chat-avatar-ring flex h-14 w-14 items-center justify-center rounded-full text-lg font-bold text-white"
+              className="theme-chat-avatar-ring theme-chat-header-avatar-ring flex h-14 w-14 items-center justify-center rounded-full text-lg font-bold text-white"
               style={{
-                background: `linear-gradient(135deg, ${character.themeColor}, ${character.themeColor}88)`
+                background: `linear-gradient(180deg, rgba(14, 15, 18, 0.24), rgba(14, 15, 18, 0.18)), linear-gradient(135deg, ${character.themeColor}, ${character.themeColor}88)`
               }}
             >
               {character.name.charAt(0)}
@@ -1502,7 +1502,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               </button>
             </div>
             <div className="mt-1 flex items-center gap-2">
-              <p className="theme-text-muted truncate text-sm">
+              <p className="theme-chat-subtitle truncate text-sm">
                 {character.isCustom ? character.subtitle || character.role : (t.characters?.[character.id]?.subtitle || character.subtitle || character.role)}
               </p>
               {passionLevel > 0 && (

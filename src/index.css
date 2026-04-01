@@ -661,6 +661,20 @@ body.oled-mode .theme-chat-scrim {
   -webkit-backdrop-filter: blur(28px) saturate(135%);
 }
 
+.theme-chat-identity {
+  min-width: 0;
+}
+
+.theme-chat-back-button {
+  color: color-mix(in srgb, var(--color-text-soft) 72%, var(--color-text-muted));
+  opacity: 0.86;
+}
+
+.theme-chat-back-button:hover {
+  color: var(--color-text);
+  opacity: 1;
+}
+
 .theme-chat-avatar-shell {
   position: relative;
   isolation: isolate;
@@ -696,15 +710,45 @@ body.oled-mode .theme-chat-scrim {
   filter: saturate(0.88) brightness(0.92);
 }
 
+.theme-chat-titleblock {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-right: 0.25rem;
+}
+
+.theme-chat-name-row,
+.theme-chat-meta-row {
+  min-width: 0;
+}
+
 .theme-chat-title {
   color: var(--color-text);
-  letter-spacing: -0.022em;
+  letter-spacing: -0.024em;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
 }
 
+.theme-chat-info-button {
+  color: color-mix(in srgb, var(--color-text-soft) 72%, var(--color-text-muted));
+  opacity: 0.76;
+}
+
+.theme-chat-info-button:hover {
+  opacity: 1;
+}
+
 .theme-chat-subtitle {
+  min-width: 0;
+  max-width: 100%;
   color: color-mix(in srgb, var(--color-text-muted) 84%, var(--color-text-soft));
   letter-spacing: 0.01em;
+}
+
+.theme-chat-passion-pill {
+  border-radius: 999px;
+  padding-inline: 0.65rem;
+  background: color-mix(in srgb, var(--color-surface-muted) 88%, rgb(var(--color-primary-rgb) / 0.06));
+  border: 1px solid color-mix(in srgb, var(--color-border) 64%, rgb(var(--color-primary-rgb) / 0.16));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .theme-chat-toolbar {
@@ -812,14 +856,35 @@ body.oled-mode .theme-chat-scrim {
   border-color: color-mix(in srgb, var(--color-border) 58%, transparent);
 }
 
+.theme-composer-dock-shell {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 48%),
+    linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.05), transparent 76%),
+    color-mix(in srgb, var(--color-surface-elevated) 92%, rgba(8, 9, 12, 0.94));
+  border: 1px solid color-mix(in srgb, var(--color-border) 68%, rgb(var(--color-primary-rgb) / 0.12));
+  box-shadow: 0 34px 84px -46px rgba(0, 0, 0, 0.86), 0 18px 40px -36px rgba(0, 0, 0, 0.66), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(22px) saturate(132%);
+  -webkit-backdrop-filter: blur(22px) saturate(132%);
+}
+
+.theme-composer-suggestion-band {
+  align-items: center;
+}
+
+.theme-composer-suggestion-band + .theme-composer {
+  margin-top: 0.1rem;
+  border-top-left-radius: 1.45rem;
+  border-top-right-radius: 1.45rem;
+}
+
 .theme-suggestion-pill {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 44%),
-    linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.08), transparent 72%),
-    rgba(34, 37, 43, 0.96);
-  border: 1px solid color-mix(in srgb, var(--color-border) 58%, rgb(var(--color-primary-rgb) / 0.22));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 52%),
+    linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.06), transparent 76%),
+    color-mix(in srgb, var(--color-surface-muted) 92%, rgba(22, 24, 30, 0.98));
+  border: 1px solid color-mix(in srgb, var(--color-border) 62%, rgb(var(--color-primary-rgb) / 0.18));
   color: color-mix(in srgb, var(--color-text) 94%, rgba(244, 238, 232, 0.96));
-  box-shadow: 0 20px 36px -24px rgba(0, 0, 0, 0.56);
+  box-shadow: 0 14px 28px -26px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
 .theme-suggestion-pill .theme-suggestion-pill-icon {
@@ -829,16 +894,25 @@ body.oled-mode .theme-chat-scrim {
 .theme-suggestion-pill:hover {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 56%),
-    linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.06), transparent 78%),
-    color-mix(in srgb, var(--color-surface-elevated) 94%, rgba(18, 20, 23, 0.96));
-  border-color: color-mix(in srgb, var(--theme-accent-border) 72%, var(--color-border));
+    linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.08), transparent 80%),
+    color-mix(in srgb, var(--color-surface-elevated) 94%, rgba(16, 18, 22, 0.98));
+  border-color: color-mix(in srgb, var(--theme-accent-border) 74%, var(--color-border));
   color: var(--color-text);
-  box-shadow: 0 18px 32px -24px rgba(0, 0, 0, 0.56);
+  box-shadow: 0 18px 30px -26px rgba(0, 0, 0, 0.58);
   transform: translateY(-1px);
 }
 
 .theme-suggestion-pill:hover .theme-suggestion-pill-icon {
   color: color-mix(in srgb, var(--theme-accent-strong) 74%, var(--color-text));
+}
+
+:root[data-theme='light'] .theme-composer-dock-shell {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), transparent 52%),
+    linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.05), transparent 76%),
+    rgba(255, 250, 252, 0.96);
+  border: 1px solid color-mix(in srgb, var(--color-border) 72%, rgb(var(--color-primary-rgb) / 0.12));
+  box-shadow: 0 24px 60px -36px rgba(148, 163, 184, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 :root[data-theme='light'] .theme-suggestion-pill {
@@ -848,7 +922,7 @@ body.oled-mode .theme-chat-scrim {
     rgba(255, 246, 250, 0.96);
   border: 1px solid color-mix(in srgb, var(--color-border) 62%, rgb(var(--color-primary-rgb) / 0.18));
   color: color-mix(in srgb, var(--color-text) 94%, rgba(255, 255, 255, 0.08));
-  box-shadow: 0 14px 26px -24px rgba(148, 163, 184, 0.24);
+  box-shadow: 0 12px 24px -24px rgba(148, 163, 184, 0.2);
 }
 
 :root[data-theme='light'] .theme-suggestion-pill .theme-suggestion-pill-icon {
@@ -862,7 +936,7 @@ body.oled-mode .theme-chat-scrim {
     color-mix(in srgb, var(--color-surface-elevated) 96%, rgba(255, 244, 248, 0.96));
   border-color: color-mix(in srgb, var(--theme-accent-border) 74%, var(--color-border));
   color: var(--color-text);
-  box-shadow: 0 16px 28px -22px rgba(148, 163, 184, 0.28);
+  box-shadow: 0 14px 24px -22px rgba(148, 163, 184, 0.22);
 }
 
 :root[data-theme='light'] .theme-suggestion-pill:hover .theme-suggestion-pill-icon {
@@ -885,16 +959,16 @@ body.oled-mode .theme-chat-scrim {
 
 .theme-composer {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 60%),
-    linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.045), transparent 76%),
-    color-mix(in srgb, var(--color-surface-elevated) 96%, rgba(12, 13, 16, 0.96));
-  border: 1px solid color-mix(in srgb, var(--color-border) 74%, rgb(var(--color-primary-rgb) / 0.12));
-  box-shadow: 0 32px 72px -42px rgba(0, 0, 0, 0.82), 0 16px 36px -34px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 62%),
+    linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.04), transparent 82%),
+    color-mix(in srgb, var(--color-surface-elevated) 98%, rgba(11, 12, 15, 0.98));
+  border: 1px solid color-mix(in srgb, var(--color-border) 76%, rgb(var(--color-primary-rgb) / 0.1));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025), 0 20px 34px -34px rgba(0, 0, 0, 0.58);
 }
 
 .theme-composer:focus-within {
   border-color: color-mix(in srgb, var(--theme-accent-border) 76%, var(--color-border));
-  box-shadow: 0 34px 76px -42px rgba(0, 0, 0, 0.84), 0 0 0 1px rgb(var(--color-primary-rgb) / 0.24), 0 0 0 5px rgb(var(--color-primary-rgb) / 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025), 0 0 0 1px rgb(var(--color-primary-rgb) / 0.2), 0 0 0 4px rgb(var(--color-primary-rgb) / 0.05);
 }
 
 .theme-composer-input {
@@ -906,27 +980,28 @@ body.oled-mode .theme-chat-scrim {
 }
 
 .theme-composer-secondary {
-  background: color-mix(in srgb, var(--color-surface-muted) 72%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-border) 58%, transparent);
+  background: color-mix(in srgb, var(--color-surface-muted) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
   color: color-mix(in srgb, var(--color-text-soft) 82%, var(--color-text-muted));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.015);
 }
 
 .theme-composer-secondary:hover {
-  background: color-mix(in srgb, var(--color-surface-muted) 84%, rgb(var(--color-primary-rgb) / 0.05));
-  border-color: color-mix(in srgb, var(--color-border) 70%, rgb(var(--color-primary-rgb) / 0.1));
+  background: color-mix(in srgb, var(--color-surface-muted) 86%, rgb(var(--color-primary-rgb) / 0.04));
+  border-color: color-mix(in srgb, var(--color-border) 72%, rgb(var(--color-primary-rgb) / 0.1));
   color: var(--color-text);
 }
 
 .theme-composer-primary {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 82%, white 18%) 0%, color-mix(in srgb, var(--color-primary) 90%, var(--color-primary-dark)) 52%, color-mix(in srgb, var(--color-primary-dark) 88%, black 12%) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 76%, white 24%) 0%, color-mix(in srgb, var(--color-primary) 88%, var(--color-primary-dark)) 52%, color-mix(in srgb, var(--color-primary-dark) 88%, black 12%) 100%);
   border: 1px solid color-mix(in srgb, var(--theme-accent-border) 82%, transparent);
-  color: #17181b;
-  box-shadow: 0 22px 36px -24px rgb(var(--color-primary-rgb) / 0.44), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  color: #18191d;
+  box-shadow: 0 18px 30px -22px rgb(var(--color-primary-rgb) / 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .theme-composer-primary:hover {
   filter: brightness(1.03);
+  transform: translateY(-1px);
 }
 
 :root[data-theme='light'] .theme-composer {
@@ -935,12 +1010,12 @@ body.oled-mode .theme-chat-scrim {
     linear-gradient(180deg, rgb(var(--color-primary-rgb) / 0.05), transparent 76%),
     rgba(255, 251, 253, 0.96);
   border: 1px solid color-mix(in srgb, var(--color-border) 72%, rgb(var(--color-primary-rgb) / 0.14));
-  box-shadow: 0 24px 54px -34px rgba(148, 163, 184, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 12px 22px -24px rgba(148, 163, 184, 0.18);
 }
 
 :root[data-theme='light'] .theme-composer:focus-within {
   border-color: color-mix(in srgb, var(--theme-accent-border) 74%, var(--color-border));
-  box-shadow: 0 24px 56px -34px rgba(148, 163, 184, 0.3), 0 0 0 1px rgb(var(--color-primary-rgb) / 0.18), 0 0 0 5px rgb(var(--color-primary-rgb) / 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 0 0 1px rgb(var(--color-primary-rgb) / 0.18), 0 0 0 4px rgb(var(--color-primary-rgb) / 0.05);
 }
 
 :root[data-theme='light'] .theme-composer-secondary {

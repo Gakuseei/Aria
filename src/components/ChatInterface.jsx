@@ -1465,17 +1465,17 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       <div className={`theme-chat-header relative z-40 flex shrink-0 items-center justify-between px-6 py-4 transition-all duration-500 ${
         isVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
       }`}>
-        <div className="flex min-w-0 items-center gap-4">
+        <div className="theme-chat-identity flex min-w-0 items-center gap-4">
           <button
             onClick={handleBackNavigation}
-            className="theme-icon-button rounded-xl p-3 transition-all duration-200"
+            className="theme-chat-back-button theme-icon-button rounded-xl p-3 transition-all duration-200"
             title={t.chat.back}
             aria-label={t.chat.back}
           >
             <ArrowLeft size={22} strokeWidth={1.5} />
           </button>
 
-          <div className="theme-chat-avatar-shell">
+          <div className="theme-chat-avatar-shell shrink-0">
             <div
               className="theme-chat-avatar-ring theme-chat-header-avatar-ring flex h-14 w-14 items-center justify-center rounded-full text-lg font-bold text-white"
               style={{
@@ -1487,28 +1487,28 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             <div className="theme-success-dot absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-[color:var(--color-surface-elevated)]" />
           </div>
 
-          <div className="relative min-w-0">
-            <div className="flex items-center gap-3">
+          <div className="theme-chat-titleblock relative min-w-0">
+            <div className="theme-chat-name-row flex items-center gap-2.5">
               <h2 className="theme-chat-title truncate text-xl font-bold">
                 {character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name)}
               </h2>
               <button
                 onClick={() => setShowBioModal(true)}
-                className="theme-icon-button rounded-lg p-2 transition-all"
+                className="theme-chat-info-button theme-icon-button rounded-lg p-2 transition-all"
                 title={t.chat.viewBio}
                 aria-label={t.chat.viewBio}
               >
                 <Info size={18} strokeWidth={1.5} />
               </button>
             </div>
-            <div className="mt-1 flex items-center gap-2">
-              <p className="theme-chat-subtitle truncate text-sm">
+            <div className="theme-chat-meta-row mt-2 flex flex-wrap items-center gap-2.5">
+              <p className="theme-chat-subtitle flex-1 truncate text-sm">
                 {character.isCustom ? character.subtitle || character.role : (t.characters?.[character.id]?.subtitle || character.subtitle || character.role)}
               </p>
               {passionLevel > 0 && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowPassionPopover(prev => !prev); }}
-                  className="theme-passion-inline flex items-center gap-2 py-0.5 text-xs font-medium transition-colors cursor-pointer"
+                  className="theme-chat-passion-pill theme-passion-inline flex items-center gap-2 py-1 text-xs font-medium transition-colors cursor-pointer"
                   data-passion-popover
                 >
                   <span className="theme-passion-inline-bar" aria-hidden="true" />
@@ -1915,101 +1915,102 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       </div>
 
       {/* v1.0 ROSE NOIR: Floating Input "Cockpit" - BLOCK 6.7: Detached, premium styling */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-[68rem] z-50">
-        {/* Suggestion Skeleton Loading */}
-        {settings.smartSuggestionsEnabled && isGeneratingSuggestions && smartSuggestions.length === 0 && !isStreaming && !isImpersonating && (
-          <div className="mb-4 flex flex-wrap justify-center gap-2.5">
-            {[0, 1, 2].map(i => (
-              <div
-                key={`skeleton-${i}`}
-                className={`theme-suggestion-skeleton suggestion-skeleton flex items-center gap-2 rounded-full px-4 py-2 ${
-                  isGoldMode ? 'border-amber-500/20 bg-amber-500/5' : ''
-                }`}
-                style={{ animationDelay: `${i * 100}ms` }}
-              >
-                <div className={`theme-suggestion-skeleton-dot h-3 w-3 rounded-full ${isGoldMode ? 'bg-amber-500/20' : ''}`} />
-                <div className={`theme-suggestion-skeleton-line h-3 rounded-full ${isGoldMode ? 'bg-amber-500/15' : ''}`} style={{ width: `${60 + i * 20}px` }} />
-              </div>
-            ))}
-          </div>
-        )}
-        {/* Smart Suggestions - Rose Noir Pills */}
-        {settings.smartSuggestionsEnabled && smartSuggestions.length > 0 && !isStreaming && !isImpersonating && (
-          <div className="flex gap-2.5 mb-4 flex-wrap justify-center" role="group" aria-label={t.settings?.smartSuggestions || 'Suggestions'}>
-            {smartSuggestions.map((suggestion, i) => (
-              <button
-                key={`suggestion-${suggestion.slice(0, 20)}-${i}`}
-                onClick={() => handleSuggestionClick(suggestion)}
-                disabled={isLoading}
-                className={`theme-suggestion-pill suggestion-pill flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-all duration-200 shadow-lg disabled:opacity-50 ${
-                  isGoldMode
-                    ? 'border-amber-500/40 text-amber-100 hover:bg-amber-500/10 hover:shadow-[0_0_15px_-3px_rgba(245,158,11,0.3)] hover:border-amber-400'
-                    : ''
-                }`}
-                style={{ animationDelay: `${i * 75}ms` }}
-              >
-                <Sparkles size={12} className={isGoldMode ? 'text-amber-400/70' : 'theme-suggestion-pill-icon'} />
-                <span className="truncate max-w-[280px] sm:max-w-[400px] md:max-w-[500px]">{suggestion}</span>
-              </button>
-            ))}
-          </div>
-        )}
-        {/* Floating Input Bar - Premium Glass Cockpit */}
-        <div className={`theme-composer flex items-center gap-3 rounded-3xl px-5 py-4 transition-all duration-200 ${
-          isGoldMode ? 'border-amber-500/30 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50' : ''
+      <div className="theme-composer-dock fixed bottom-8 left-1/2 z-50 w-[92%] max-w-[70rem] -translate-x-1/2">
+        <div className={`theme-composer-dock-shell rounded-[2rem] px-3 py-2.5 transition-all duration-200 ${
+          isGoldMode ? 'border-amber-500/30' : ''
         }`}>
-          <textarea
-            ref={inputRef}
-            value={input}
-            rows={1}
-            spellCheck={false}
-            autoCorrect="off"
-            onChange={(e) => {
-              if (isImpersonating) {
-                abortImpersonateCall();
-                setIsImpersonating(false);
-              }
-              if (sendFailure) {
-                setSendFailure(null);
-              }
-              setInput(e.target.value);
-              e.target.style.height = 'auto';
-              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && !isStreaming) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder={t.chat.messageCharacter.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
-            disabled={isLoading}
-            className="chat-input theme-composer-input flex-1 min-w-0 resize-none overflow-y-auto border-none bg-transparent px-2 text-lg outline-none ring-0 focus:outline-none focus:ring-0 disabled:opacity-50"
-          />
-          <button
-            onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}
-            disabled={isLoading || isStreaming}
-            className={`theme-composer-secondary flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30 ${
-              isImpersonating
-                ? `${!input.trim() ? (isGoldMode ? 'impersonate-pulse-gold' : 'impersonate-pulse') : ''} text-[var(--color-text)]`
-                : isGoldMode
-                  ? 'text-amber-300'
-                  : ''
-            }`}
-            title={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
-            aria-label={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
-          >
-            {isImpersonating ? <X size={16} /> : <PenLine size={16} />}
-          </button>
-          <button
-            onClick={() => handleSend()}
-            disabled={isLoading || isStreaming || isImpersonating || !input.trim()}
-            className="theme-composer-primary flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 shadow-lg disabled:opacity-30"
-            title={t.chat.send}
-            aria-label={t.chat.send}
-          >
-            <Send size={18} strokeWidth={1.5} />
-          </button>
+          {settings.smartSuggestionsEnabled && isGeneratingSuggestions && smartSuggestions.length === 0 && !isStreaming && !isImpersonating && (
+            <div className="theme-composer-suggestion-band mb-3 flex flex-wrap gap-2.5 px-2 pt-1">
+              {[0, 1, 2].map(i => (
+                <div
+                  key={`skeleton-${i}`}
+                  className={`theme-suggestion-skeleton suggestion-skeleton flex items-center gap-2 rounded-full px-4 py-2 ${
+                    isGoldMode ? 'border-amber-500/20 bg-amber-500/5' : ''
+                  }`}
+                  style={{ animationDelay: `${i * 100}ms` }}
+                >
+                  <div className={`theme-suggestion-skeleton-dot h-3 w-3 rounded-full ${isGoldMode ? 'bg-amber-500/20' : ''}`} />
+                  <div className={`theme-suggestion-skeleton-line h-3 rounded-full ${isGoldMode ? 'bg-amber-500/15' : ''}`} style={{ width: `${60 + i * 20}px` }} />
+                </div>
+              ))}
+            </div>
+          )}
+          {settings.smartSuggestionsEnabled && smartSuggestions.length > 0 && !isStreaming && !isImpersonating && (
+            <div className="theme-composer-suggestion-band mb-3 flex flex-wrap gap-2.5 px-2 pt-1" role="group" aria-label={t.settings?.smartSuggestions || 'Suggestions'}>
+              {smartSuggestions.map((suggestion, i) => (
+                <button
+                  key={`suggestion-${suggestion.slice(0, 20)}-${i}`}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  disabled={isLoading}
+                  className={`theme-suggestion-pill suggestion-pill flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-all duration-200 disabled:opacity-50 ${
+                    isGoldMode
+                      ? 'border-amber-500/40 text-amber-100 hover:bg-amber-500/10 hover:shadow-[0_0_15px_-3px_rgba(245,158,11,0.3)] hover:border-amber-400'
+                      : ''
+                  }`}
+                  style={{ animationDelay: `${i * 75}ms` }}
+                >
+                  <Sparkles size={12} className={isGoldMode ? 'text-amber-400/70' : 'theme-suggestion-pill-icon'} />
+                  <span className="truncate max-w-[280px] sm:max-w-[400px] md:max-w-[500px]">{suggestion}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div className={`theme-composer flex items-center gap-3 rounded-[1.5rem] px-4 py-3.5 transition-all duration-200 ${
+            isGoldMode ? 'border-amber-500/30 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50' : ''
+          }`}>
+            <textarea
+              ref={inputRef}
+              value={input}
+              rows={1}
+              spellCheck={false}
+              autoCorrect="off"
+              onChange={(e) => {
+                if (isImpersonating) {
+                  abortImpersonateCall();
+                  setIsImpersonating(false);
+                }
+                if (sendFailure) {
+                  setSendFailure(null);
+                }
+                setInput(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && !isStreaming) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder={t.chat.messageCharacter.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
+              disabled={isLoading}
+              className="chat-input theme-composer-input flex-1 min-w-0 resize-none overflow-y-auto border-none bg-transparent px-2 text-[15px] md:text-base outline-none ring-0 focus:outline-none focus:ring-0 disabled:opacity-50"
+            />
+            <button
+              onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}
+              disabled={isLoading || isStreaming}
+              className={`theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30 ${
+                isImpersonating
+                  ? `${!input.trim() ? (isGoldMode ? 'impersonate-pulse-gold' : 'impersonate-pulse') : ''} text-[var(--color-text)]`
+                  : isGoldMode
+                    ? 'text-amber-300'
+                    : ''
+              }`}
+              title={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
+              aria-label={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
+            >
+              {isImpersonating ? <X size={16} /> : <PenLine size={16} />}
+            </button>
+            <button
+              onClick={() => handleSend()}
+              disabled={isLoading || isStreaming || isImpersonating || !input.trim()}
+              className="theme-composer-primary flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 shadow-lg disabled:opacity-30"
+              title={t.chat.send}
+              aria-label={t.chat.send}
+            >
+              <Send size={18} strokeWidth={1.5} />
+            </button>
+          </div>
         </div>
       </div>
 

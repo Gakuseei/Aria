@@ -243,9 +243,9 @@ describe('getRestoredSuggestions', () => {
     ];
 
     expect(getRestoredSuggestions(messages)).toEqual([
-      'Sit closer',
-      'Ask about the coffee',
-      'Smile back'
+      'Sit closer.',
+      'Ask about the coffee.',
+      'Smile back.'
     ]);
   });
 
@@ -285,8 +285,8 @@ describe('getRestoredSuggestions', () => {
     ];
 
     expect(getRestoredSuggestions(messages)).toEqual([
-      'Sit closer',
-      'Ask about the coffee'
+      'Sit closer.',
+      'Ask about the coffee.'
     ]);
   });
 
@@ -304,8 +304,8 @@ describe('getRestoredSuggestions', () => {
     ];
 
     expect(getRestoredSuggestions(messages)).toEqual([
-      'gently pats her shoulder in reassurance',
-      'Smile reassuringly to ease her nerves'
+      'gently pats her shoulder in reassurance.',
+      'Smile reassuringly to ease her nerves.'
     ]);
   });
 });
@@ -436,9 +436,9 @@ describe('suggestions stabilization', () => {
     );
 
     expect(parsed).toEqual([
-      'Continue kissing her neck',
-      'Offer her your hand',
-      'Pull her closer and murmur in her ear'
+      '*I continue kissing her neck.*',
+      '*I offer her my hand.*',
+      '*I pull her closer and murmur in her ear.*'
     ]);
   });
 
@@ -462,9 +462,9 @@ describe('suggestions stabilization', () => {
     );
 
     expect(parsed).toEqual([
-      'Lean in closer to Alice',
-      'Smile reassuringly to ease her nervousness',
-      "Gently adjust Alice's fingers on the pen to improve her grip"
+      '*I lean in closer to Alice.*',
+      '*I smile reassuringly to ease her nervousness.*',
+      "*I gently adjust Alice's fingers on the pen to improve her grip.*"
     ]);
   });
 
@@ -477,33 +477,32 @@ describe('suggestions stabilization', () => {
     );
 
     expect(parsed).toEqual([
-      'Ask what time works best',
-      'Confirm the requested duration'
+      'Ask what time works best.',
+      'Confirm the requested duration.'
     ]);
   });
 
   it('drops quoted dialogue and repeated phrase spam during normalization', () => {
     expect(normalizeSuggestionDisplayValue('gently pats her shoulder in reassurance gently pats her shoulder in reassurance'))
-      .toBe('gently pats her shoulder in reassurance');
+      .toBe('gently pats her shoulder in reassurance.');
     expect(normalizeSuggestionDisplayValue('Hold her gaze intently and smile*'))
-      .toBe('Hold her gaze intently and smile');
+      .toBe('Hold her gaze intently and smile*.');
     expect(parseSuggestionResponse(
       'Offer Alice a reassuring smile and nod "I have every confidence in you" | Guide her gently by the elbow towards the study | Push open the study door for her',
       '',
       []
     )).toEqual([
-      'Offer Alice a reassuring smile and nod',
-      'Guide her gently by the elbow towards the study',
-      'Push open the study door for her'
+      '*I offer Alice a reassuring smile and nod.*',
+      '*I guide her gently by the elbow towards the study.*',
+      '*I push open the study door for her.*'
     ]);
     expect(parseSuggestionResponse(
       "Smile warmly at Alice's attentiveness and begin listing out the day's duties | Gently pat the seat next to you | Ask Alice if she has any questions about today's tasks before continuing",
       '',
       []
     )).toEqual([
-      "Smile warmly at Alice's attentiveness",
-      'Gently pat the seat next to you',
-      "Ask Alice if she has any questions about today's tasks"
+      "Smile warmly at Alice's attentiveness.",
+      '*I gently pat the seat next to me.*'
     ]);
   });
 
@@ -515,8 +514,8 @@ describe('suggestions stabilization', () => {
     );
 
     expect(parsed).toEqual([
-      'Take a deep breath',
-      'Confide more details about the specific challenges at work'
+      '*I take a deep breath.*',
+      'Confide more details about the specific challenges at work.'
     ]);
   });
 
@@ -568,9 +567,9 @@ describe('suggestions stabilization', () => {
     });
 
     expect(suggestions).toEqual([
-      'Continue kissing her neck',
-      'Offer her your hand',
-      'Pull her closer and murmur in her ear'
+      '*I continue kissing her neck.*',
+      '*I offer her my hand.*',
+      '*I pull her closer and murmur in her ear.*'
     ]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -628,8 +627,8 @@ describe('suggestions stabilization', () => {
     });
 
     expect(suggestions).toEqual([
-      'Hold her gaze',
-      'Lean closer across the bar'
+      '*I hold her gaze.*',
+      '*I lean closer across the bar.*'
     ]);
   });
 });

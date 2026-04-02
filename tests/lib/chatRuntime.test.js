@@ -457,9 +457,10 @@ describe('assembleRuntimeContext', () => {
     expect(replyContext.systemPrompt).toContain('Active Scene:\nSetting:');
     expect(suggestionContext.systemPrompt).not.toContain('Global Core:');
     expect(suggestionContext.systemPrompt).toContain('same scene with Mei');
-    expect(suggestionContext.systemPrompt).toContain('no quotes, dialogue, commentary, or narrated prose');
-    expect(suggestionContext.systemPrompt).toContain('do not become timid, euphemistic, or generic');
-    expect(suggestionContext.userPrompt).toContain('3 actions for Erik');
+    expect(suggestionContext.systemPrompt).toContain('literal next user turn');
+    expect(suggestionContext.systemPrompt).toContain('Keep the order fixed but unlabeled');
+    expect(suggestionContext.systemPrompt).toContain('option 1 safest, option 2 warmer or bolder, option 3 most forward');
+    expect(suggestionContext.userPrompt).toContain('3 sendable next turns for Erik');
     expect(suggestionContext.userPrompt).toContain('Current beat:');
     expect(impersonateContext.systemPrompt).toContain('Character Reference:');
     expect(impersonateContext.systemPrompt).toContain('FIRST PERSON (I/me/my)');
@@ -532,6 +533,6 @@ describe('assembleRuntimeContext', () => {
     expect(replyContext.systemPrompt).not.toContain('Keep actions in third person inside *asterisks*');
     expect(replyContext.systemPrompt).not.toContain('Continue the active scene with DeskBot');
     expect(suggestionContext.systemPrompt).toContain('same exchange with DeskBot');
-    expect(suggestionContext.userPrompt).toContain('same exchange');
+    expect(suggestionContext.userPrompt).toContain('3 sendable replies for Erik in the same exchange');
   });
 });

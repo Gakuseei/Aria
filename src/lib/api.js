@@ -537,12 +537,13 @@ let suggestionAbortController = null;
 let suggestionRequestId = 0;
 const MIN_USABLE_SUGGESTIONS = 2;
 const SUGGESTION_TARGET_COUNT = 3;
-const SUGGESTION_MAX_WORDS = 11;
+const SUGGESTION_MAX_WORDS = 12;
 const SUGGESTION_MAX_CHARS = 84;
 const SUGGESTION_ROLE_ORDER = ['safe', 'bold', 'progress'];
 
 const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|note|options?|suggestions?)\b/i;
 const SUGGESTION_NON_ACTION_PATTERN = /^(?:explain|describe|clarify|suggest|propose)\b/i;
+const SUGGESTION_META_DIRECTIVE_LEAD_PATTERN = /^(?:ask|asking|compliment|complimenting|praise|praising|reassure|reassuring|explain|explaining|describe|describing|suggest|suggesting|propose|proposing)\b/i;
 const SUGGESTION_LABEL_PATTERN = /^(?:safe|bold|progress|option\s*\d+|action\s*\d+|match the current pace|current pace|same scene|bolder(?: or more forward)?|fresh angle|unexpected(?: angle)?)\s*[:\-]\s*/i;
 const SUGGESTION_BAD_LEAD_PATTERN = /^(?:i|you|he|she|they|we|it|this|that|these|those|there|here|please|option|action|pace|scene|same|bolder|fresh)\b/i;
 const SUGGESTION_DIALOGUE_PATTERN = /["“”]/;
@@ -552,6 +553,8 @@ const SUGGESTION_PROGRESSIVE_TAIL_PATTERN = /\s+and\s+(?:begin|starting|start|co
 const SUGGESTION_PASSIVE_PATTERN = /\b(?:smile|nod|look|glance|watch|wait|pause|listen)\b/i;
 const SUGGESTION_PROGRESS_PATTERN = /\b(?:invite|pull|guide|lead|bring|take|sit|move|close|touch|kiss|confess|admit|answer|ask|offer|decide|tell|reveal|reach)\b/i;
 const SUGGESTION_BOLD_PATTERN = /\b(?:touch|kiss|pull|guide|lean|closer|waist|thigh|lap|admit|confess|breath|neck)\b/i;
+const SUGGESTION_ACTION_OBJECT_PATTERN = /\b(?:her|him|them|their|his|face|hair|hand|hands|waist|chin|ear|ears|neck|arm|arms|shoulder|shoulders|cheek|cheeks|lips|mouth|fingers|throat|back|hip|hips|collarbone|knuckles|wrist|wrists)\b/i;
+const SUGGESTION_IMPERATIVE_ACTION_VERB_PATTERN = /\b(?:touch|take|guide|pull|hold|brush|stroke|tilt|rest|trail|trace|squeeze|cup|kiss|lean|step|move|reach|press|draw|bring|offer|wrap|tuck|lift|caress|slide|thread|graze|nudge|catch|keep|pat|cup)\b/i;
 const WRITE_FOR_ME_GENERIC_PATTERN = /\b(?:electricity between us|cannot deny|there'?s no denying|lingering for a heartbeat longer than necessary|beneath those long lashes|warm smile spreads|vision bathed in|presence has come to mean|hint of color in her cheeks|warmth between us|something unspoken)\b/i;
 const INCOMPLETE_SUGGESTION_ENDING_PATTERN = /\b(?:a|an|the|this|that|these|those|another|some|any|more|expensive|impressive)\s*$/i;
 const INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN = /\b(?:whispering|smirking|watching|waiting|looking|leaning|reaching|moving|commenting)\s*$/i;
@@ -708,6 +711,78 @@ function compactSuggestionCandidate(candidate) {
   return compact;
 }
 
+function shouldRewriteSuggestionAsAction(candidate, assistMode = 'sfw_only') {
+  const trimmed = String(candidate || '').trim();
+  if (!trimmed || assistMode === 'bot_conversation') return false;
+  if (trimmed.startsWith('*') || /^["“]/.test(trimmed)) return false;
+  if (/\b(?:I|me|my|mine|I'm|I've|I'll|I'd)\b/i.test(trimmed)) return false;
+  if (SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(trimmed)) return false;
+
+  return SUGGESTION_ACTION_OBJECT_PATTERN.test(trimmed)
+    || (/^(?:gently|softly|slowly|carefully|lightly|quietly|briefly|firmly)\b/i.test(trimmed) && SUGGESTION_IMPERATIVE_ACTION_VERB_PATTERN.test(trimmed))
+    || (/^(?:touch|take|guide|pull|hold|brush|stroke|tilt|rest|trail|trace|squeeze|cup|kiss|lean|step|move|reach|press|draw|bring|offer|wrap|tuck|lift|caress|slide|thread|graze|nudge|catch|pat)\b/i.test(trimmed) && !/\b(?:me|us)\b/i.test(trimmed));
+}
+
+function rewriteSuggestionAsFirstPersonAction(candidate) {
+  const trimmed = String(candidate || '').trim();
+  if (!trimmed) return '';
+
+  let normalized = trimmed
+    .replace(/\byourself\b/gi, 'myself')
+    .replace(/\byours\b/gi, 'mine')
+    .replace(/\byour\b/gi, 'my')
+    .replace(/\byou\b/gi, 'me');
+
+  normalized = repairLeadingNarrationSegment(normalized, 'I')
+    .replace(/^\*+|\*+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!/^I\b/.test(normalized)) {
+    normalized = `I ${normalized}`;
+  }
+
+  normalized = normalized.replace(/^I\s+([A-Z])/, (_, lead) => `I ${lead.toLowerCase()}`);
+  normalized = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  if (!/[.!?]$/.test(normalized)) {
+    normalized = `${normalized}.`;
+  }
+
+  return `*${normalized}*`;
+}
+
+function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only') {
+  let finalized = compactSuggestionCandidate(candidate);
+  if (!finalized) return '';
+
+  if (SUGGESTION_PROGRESSIVE_TAIL_PATTERN.test(finalized)) {
+    finalized = finalized.split(SUGGESTION_PROGRESSIVE_TAIL_PATTERN)[0].trim();
+  }
+
+  if (assistMode !== 'bot_conversation' && SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(finalized)) {
+    return '';
+  }
+
+  if (shouldRewriteSuggestionAsAction(finalized, assistMode)) {
+    finalized = rewriteSuggestionAsFirstPersonAction(finalized);
+  } else {
+    finalized = finalized
+      .replace(/^["“”]+/, '')
+      .replace(/["“”]+$/, '')
+      .trim();
+
+    if (assistMode !== 'bot_conversation' && !finalized.startsWith('*') && !/^[A-ZÄÖÜ"“]/.test(finalized)) {
+      return '';
+    }
+
+    if (!finalized.startsWith('*') && !/[.!?]$/.test(finalized)) {
+      finalized = `${finalized}.`;
+    }
+  }
+
+  return finalized.length <= SUGGESTION_MAX_CHARS ? finalized : '';
+}
+
 function dedupeSuggestionAgainstHistory(candidate, lastUserMsg, previousSuggestions = []) {
   if (lastUserMsg) {
     const candidateLower = candidate.toLowerCase().trim();
@@ -750,17 +825,20 @@ function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null, ass
   let score = 100;
 
   if (words.length < 2) score -= 40;
-  if (words.length > 7) score -= (words.length - 7) * 7;
-  if (text.length > 64) score -= Math.ceil((text.length - 64) / 6) * 5;
-  if (SUGGESTION_BAD_LEAD_PATTERN.test(text)) score -= 18;
-  if (SUGGESTION_DIALOGUE_PATTERN.test(rawCandidate)) score -= 16;
+  if (words.length > 8) score -= (words.length - 8) * 7;
+  if (text.length > 72) score -= Math.ceil((text.length - 72) / 6) * 5;
+  if (SUGGESTION_BAD_LEAD_PATTERN.test(text) && !/^\*?I\b/.test(text)) score -= 18;
+  if (SUGGESTION_DIALOGUE_PATTERN.test(rawCandidate) && !text.startsWith('*')) score -= 16;
   if (SUGGESTION_OVEREXPLAIN_PATTERN.test(text)) score -= 14;
-  if (/[,:;]/.test(text)) score -= 8;
+  if (/[,:;]/.test(text) && !text.startsWith('*')) score -= 8;
   if (/\b(?:master|mistress|sir)\b/i.test(lower)) score -= 10;
   if (SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN.test(text) && SUGGESTION_DIALOGUE_PATTERN.test(rawCandidate)) score -= 12;
-  if (!/^[A-Za-z]/.test(text)) score -= 10;
+  if (!/^[A-Za-z*]/.test(text)) score -= 10;
   if (SUGGESTION_PROGRESS_PATTERN.test(text)) score += 12;
   if (SUGGESTION_BOLD_PATTERN.test(text)) score += 6;
+  if (text.startsWith('*I ')) score += 10;
+  if (/^[A-Z][^*]+[.!?]$/.test(text) && !SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(text)) score += 6;
+  if (SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(text)) score -= 30;
   if (SUGGESTION_PASSIVE_PATTERN.test(text) && !SUGGESTION_PROGRESS_PATTERN.test(text)) score -= 8;
 
   if (role === 'safe') {
@@ -779,7 +857,7 @@ function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null, ass
     if (/\b(?:ask|answer|confirm|offer|clarify|review|check|tell|show|schedule|explain)\b/i.test(text)) score += 10;
   } else if (assistMode === 'sfw_only') {
     if (/\b(?:kiss|waist|thigh|lap|neck|body|make me|take me)\b/i.test(text)) score -= 22;
-    if (/\b(?:ask|smile|stay|tell|answer|offer|admit|reach|sit|look)\b/i.test(text)) score += 4;
+    if (/\b(?:smile|stay|tell|answer|offer|admit|reach|sit|look|hold|take|guide|touch)\b/i.test(text)) score += 4;
   } else if (assistMode === 'mixed_transition') {
     if (/\b(?:hardcore|fuck|cock|pussy|cum)\b/i.test(text)) score -= 30;
     if (/\b(?:closer|touch|kiss|admit|invite|pull|hold|lean)\b/i.test(text)) score += 8;
@@ -789,9 +867,24 @@ function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null, ass
 }
 
 export function normalizeSuggestionDisplayValue(suggestion) {
-  return collapseImmediateSuggestionRepeat(trimSuggestionCandidate(suggestion))
+  let normalized = collapseImmediateSuggestionRepeat(String(suggestion || ''))
     .replace(/\s+/g, ' ')
     .trim();
+
+  if (!normalized) return '';
+
+  normalized = normalized
+    .replace(/^["“”]+/, '')
+    .replace(/["“”]+$/, '')
+    .trim();
+
+  if (/^\*[^*]+\*$/.test(normalized)) {
+    const inner = normalized.slice(1, -1).trim();
+    if (!inner) return '';
+    return `*${/[.!?]$/.test(inner) ? inner : `${inner}.`}*`;
+  }
+
+  return /[.!?]$/.test(normalized) ? normalized : `${normalized}.`;
 }
 
 function isTooSimilarToSelected(candidate, selected) {
@@ -852,21 +945,21 @@ export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestio
 
   parts.forEach(({ raw: rawPart, cleaned: cleanedPart }) => {
     const role = detectSuggestionRole(rawPart);
-    const compact = compactSuggestionCandidate(cleanedPart);
-    if (!compact) return;
-    if (assistMode === 'bot_conversation' && BOT_PHYSICAL_SUGGESTION_PATTERN.test(compact)) return;
-    const wordCount = compact.split(/\s+/).filter(Boolean).length;
-    if (compact.length < 2 || compact.length > SUGGESTION_MAX_CHARS || wordCount < 2 || wordCount > SUGGESTION_MAX_WORDS) return;
-    if (SUGGESTION_META_PATTERN.test(compact) || SUGGESTION_NON_ACTION_PATTERN.test(compact)) return;
-    if (!dedupeSuggestionAgainstHistory(compact, lastUserMsg, previousSuggestions)) return;
-    if (isTooSimilarToSelected(compact, selected)) return;
-    if (scoreSuggestionCandidate(compact, rawPart, role, assistMode) < 44) return;
+    const finalized = finalizeSuggestionCandidate(cleanedPart, assistMode);
+    if (!finalized) return;
+    if (assistMode === 'bot_conversation' && BOT_PHYSICAL_SUGGESTION_PATTERN.test(finalized)) return;
+    const wordCount = finalized.replace(/["“”*]/g, '').split(/\s+/).filter(Boolean).length;
+    if (finalized.length < 2 || finalized.length > SUGGESTION_MAX_CHARS || wordCount < 2 || wordCount > SUGGESTION_MAX_WORDS) return;
+    if (SUGGESTION_META_PATTERN.test(finalized) || SUGGESTION_NON_ACTION_PATTERN.test(finalized) || (assistMode !== 'bot_conversation' && SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(finalized))) return;
+    if (!dedupeSuggestionAgainstHistory(finalized, lastUserMsg, previousSuggestions)) return;
+    if (isTooSimilarToSelected(finalized, selected)) return;
+    if (scoreSuggestionCandidate(finalized, rawPart, role, assistMode) < 44) return;
     if (role && !roleBuckets[role]) {
-      roleBuckets[role] = compact;
-      selected.push(compact);
+      roleBuckets[role] = finalized;
+      selected.push(finalized);
       return;
     }
-    selected.push(compact);
+    selected.push(finalized);
   });
 
   const ordered = SUGGESTION_ROLE_ORDER
@@ -940,7 +1033,7 @@ export async function generateSuggestionsBackground(history, character, userName
     }
   });
   const runtimeContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState });
-  const retrySystemPrompt = `${runtimeContext.systemPrompt}\n\nFORMAT CHECK:\n- Return exactly 3 short actions separated by |.\n- No numbering, labels, commentary, explanations, quotes, or dialogue.\n- Keep every action in the same current scene and make it directly clickable.\n- Keep actions compact and click-ready, about 3-9 words each.`;
+  const retrySystemPrompt = `${runtimeContext.systemPrompt}\n\nFORMAT CHECK:\n- Return exactly 3 compact next-turn options separated by |.\n- Keep the order safest | warmer/bolder | most forward, but do not label them.\n- Each option must be directly sendable as the user's next message.\n- For roleplay, use either *I ...* first-person action or a short direct spoken line.\n- No numbering, labels, commentary, explanations, or meta instructions.`;
   const parseSuggestions = (raw) => parseSuggestionResponse(raw, lastUserMsg, previousSuggestions, {
     assistMode: runtimeState.assistMode
   });

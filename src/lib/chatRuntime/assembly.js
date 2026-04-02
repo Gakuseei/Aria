@@ -172,22 +172,30 @@ function buildSuggestionLateSteering(runtimeState) {
 
   return [
     isBot
-      ? `Suggest what ${runtimeState.userName} does or says next in the same exchange with ${runtimeState.characterName}.`
-      : `Suggest what ${runtimeState.userName} does next in the same scene with ${runtimeState.characterName}.`,
-    'Return exactly 3 click-ready actions separated by | and nothing else.',
-    'Use this fixed ladder: safe: ... | bold: ... | progress: ...',
-    'Each action should stay short, user-side, clickable, with no quotes, dialogue, commentary, or narrated prose.',
+      ? `Suggest ${runtimeState.userName}'s next sendable reply in the same exchange with ${runtimeState.characterName}.`
+      : `Suggest ${runtimeState.userName}'s next sendable turn in the same scene with ${runtimeState.characterName}.`,
+    'Return exactly 3 options separated by | and nothing else.',
+    'Keep the order fixed but unlabeled: option 1 safest, option 2 warmer or bolder, option 3 most forward.',
+    'Each option must already be the literal next user turn, not an instruction about what to do.',
+    isBot
+      ? 'Write compact user-side replies, questions, or confirmations that can be sent as-is.'
+      : 'Use either a first-person action in *asterisks* or a short direct spoken line that can be sent as-is.',
+    isBot
+      ? 'Do not narrate the bot or restart the task context.'
+      : 'Prefer direct in-scene action or direct dialogue over commands, summaries, or writing prompts.',
+    'Do not use labels, numbering, commentary, explanation, or meta framing.',
+    'Do not start with instruction verbs like ask, compliment, reassure, explain, describe, suggest, or propose.',
     runtimeState.runtimeSteering.passionLevel > 15
       ? 'In explicit scenes, do not become timid, euphemistic, or generic.'
       : '',
-    'safe matches the current pace naturally.',
-    'bold is more daring or intimate without breaking character or scene continuity.',
-    'progress must clearly move the scene forward: answer the open thread, make a choice, deepen tension, escalate, or shift the beat within the same scene.',
+    'Option 1 should match the current pace naturally.',
+    'Option 2 should be meaningfully bolder without breaking character or scene continuity.',
+    'Option 3 should clearly move the beat forward inside the same scene or exchange.',
     isBot
       ? 'Stay inside the current exchange and do not reset the task or context.'
       : 'Stay in the current scene. Do not relocate the characters unless the scene is already moving there.',
     'Make the 3 options meaningfully different instead of three phrasings of the same move.',
-    `Base the actions on what ${runtimeState.characterName} just did or said.`,
+    `Base the options on what ${runtimeState.characterName} just did or said.`,
     runtimeState.compiledRuntimeCard.personaAnchor
       ? `Keep ${runtimeState.userName}'s options grounded in ${runtimeState.characterName}'s specific persona, not generic flirtation.`
       : '',
@@ -391,17 +399,18 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
 
   if (profile === 'suggestions') {
     const isBot = runtimeState.compiledRuntimeCard.runtimeDefaults.type === 'bot';
-    const recentTail = runtimeState.selectedRecentHistory.messages.slice(-3);
+    const recentTail = runtimeState.selectedRecentHistory.messages.slice(-2);
     const currentBeat = [
       runtimeState.activeScene.latest_character_action_or_reaction ? `${runtimeState.characterName}: ${runtimeState.activeScene.latest_character_action_or_reaction}` : '',
       runtimeState.activeScene.latest_user_action_or_request ? `${runtimeState.userName}: ${runtimeState.activeScene.latest_user_action_or_request}` : ''
     ].filter(Boolean).join('\n');
+    const compactScene = renderActiveScene(runtimeState.activeScene, { compact: true });
     const systemPrompt = [
       buildPlainTextBlock('Character Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)),
       runtimeState.compiledRuntimeCard.personaAnchor
         ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, 75))
         : '',
-      buildPlainTextBlock('Active Scene', clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene, 115)),
+      buildPlainTextBlock('Active Scene', clipStructuredSceneText(compactScene, targets.activeScene, 115)),
       buildPlainTextBlock('Late Steering', clipToTokenTarget(buildSuggestionLateSteering(runtimeState), targets.lateSteering))
     ].filter(Boolean).join('\n\n');
 
@@ -417,7 +426,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     return {
       profile,
       systemPrompt,
-      userPrompt: `Current beat:\n${currentBeat || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 160)}\n\nOpen thread:\n${trimPromptSnippet(runtimeState.activeScene.open_thread || 'Carry the scene forward from the latest beat.', 140)}\n\nRecent scene tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 220)}\n\n${isBot ? `3 next moves for ${runtimeState.userName} in the same exchange:` : `3 actions for ${runtimeState.userName} in the same scene:`}`,
+      userPrompt: `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}\n\nOpen thread:\n${trimPromptSnippet(runtimeState.activeScene.open_thread || 'Carry the scene forward from the latest beat.', 96)}\n\nRecent tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}\n\n${isBot ? `3 sendable replies for ${runtimeState.userName} in the same exchange:` : `3 sendable next turns for ${runtimeState.userName} in the same scene:`}`,
       debug: {
         ...debug,
         historyCountKept: recentTail.length

@@ -775,6 +775,11 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only') {
       return '';
     }
 
+    if (assistMode !== 'bot_conversation' && !finalized.startsWith('*')) {
+      const spokenWordCount = finalized.split(/\s+/).filter(Boolean).length;
+      if (spokenWordCount < 3) return '';
+    }
+
     if (!finalized.startsWith('*') && !/[.!?]$/.test(finalized)) {
       finalized = `${finalized}.`;
     }

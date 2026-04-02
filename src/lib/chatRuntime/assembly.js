@@ -179,12 +179,17 @@ function buildSuggestionLateSteering(runtimeState) {
     'Each option must already be the literal next user turn, not an instruction about what to do.',
     isBot
       ? 'Write compact user-side replies, questions, or confirmations that can be sent as-is.'
-      : 'Use either a first-person action in *asterisks* or a short direct spoken line that can be sent as-is.',
+      : 'Default to first-person in-scene actions in *asterisks*. Use direct spoken lines only when they are clearly stronger and fully complete on their own.',
     isBot
       ? 'Do not narrate the bot or restart the task context.'
-      : 'Prefer direct in-scene action or direct dialogue over commands, summaries, or writing prompts.',
+      : 'Prefer direct in-scene action or direct dialogue over commands, summaries, status updates, or writing prompts.',
     'Do not use labels, numbering, commentary, explanation, or meta framing.',
     'Do not start with instruction verbs like ask, compliment, reassure, explain, describe, suggest, or propose.',
+    isBot
+      ? 'Avoid vague filler replies.'
+      : 'Avoid weak filler openings, empty availability lines, or lines that stall the scene instead of moving it.',
+    'Avoid filler or dead-end spoken lines like "Actually...", "Well...", or "There is nothing else right now."',
+    'If you write spoken dialogue, make it specific, scene-active, and emotionally pointed rather than generic housekeeping.',
     runtimeState.runtimeSteering.passionLevel > 15
       ? 'In explicit scenes, do not become timid, euphemistic, or generic.'
       : '',

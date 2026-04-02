@@ -535,8 +535,8 @@ function isElectron() {
  */
 let suggestionAbortController = null;
 let suggestionRequestId = 0;
-const MIN_USABLE_SUGGESTIONS = 2;
-const SUGGESTION_TARGET_COUNT = 3;
+const MIN_USABLE_SUGGESTIONS = 1;
+const SUGGESTION_TARGET_COUNT = 2;
 const SUGGESTION_MAX_WORDS = 12;
 const SUGGESTION_MAX_CHARS = 84;
 const SUGGESTION_ROLE_ORDER = ['safe', 'bold', 'progress'];
@@ -711,14 +711,16 @@ function compactSuggestionCandidate(candidate) {
   return compact;
 }
 
-function shouldRewriteSuggestionAsAction(candidate, assistMode = 'sfw_only') {
+function shouldRewriteSuggestionAsAction(candidate, assistMode = 'sfw_only', rawCandidate = '') {
   const trimmed = String(candidate || '').trim();
+  const raw = String(rawCandidate || '');
   if (!trimmed || assistMode === 'bot_conversation') return false;
   if (trimmed.startsWith('*') || /^["“]/.test(trimmed)) return false;
   if (/\b(?:I|me|my|mine|I'm|I've|I'll|I'd)\b/i.test(trimmed)) return false;
   if (SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(trimmed)) return false;
 
-  return SUGGESTION_ACTION_OBJECT_PATTERN.test(trimmed)
+  return (SUGGESTION_DIALOGUE_PATTERN.test(raw) && /^[\p{Ll}]/u.test(trimmed))
+    || SUGGESTION_ACTION_OBJECT_PATTERN.test(trimmed)
     || (/^(?:gently|softly|slowly|carefully|lightly|quietly|briefly|firmly)\b/i.test(trimmed) && SUGGESTION_IMPERATIVE_ACTION_VERB_PATTERN.test(trimmed))
     || (/^(?:touch|take|guide|pull|hold|brush|stroke|tilt|rest|trail|trace|squeeze|cup|kiss|lean|step|move|reach|press|draw|bring|offer|wrap|tuck|lift|caress|slide|thread|graze|nudge|catch|pat)\b/i.test(trimmed) && !/\b(?:me|us)\b/i.test(trimmed));
 }
@@ -728,6 +730,7 @@ function rewriteSuggestionAsFirstPersonAction(candidate) {
   if (!trimmed) return '';
 
   let normalized = trimmed
+    .replace(/^\*+|\*+$/g, '')
     .replace(/\byourself\b/gi, 'myself')
     .replace(/\byours\b/gi, 'mine')
     .replace(/\byour\b/gi, 'my')
@@ -742,6 +745,10 @@ function rewriteSuggestionAsFirstPersonAction(candidate) {
     normalized = `I ${normalized}`;
   }
 
+  normalized = normalized.replace(/^I\s+((?:[A-Za-z']+ly\s+)*)((?:[A-Za-z']+))/i, (match, adverbs = '', verb = '') => {
+    const repairedVerb = deconjugateSimplePresent(verb) || verb;
+    return `I ${adverbs}${repairedVerb}`;
+  });
   normalized = normalized.replace(/^I\s+([A-Z])/, (_, lead) => `I ${lead.toLowerCase()}`);
   normalized = normalized.charAt(0).toUpperCase() + normalized.slice(1);
   if (!/[.!?]$/.test(normalized)) {
@@ -751,7 +758,7 @@ function rewriteSuggestionAsFirstPersonAction(candidate) {
   return `*${normalized}*`;
 }
 
-function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only') {
+function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCandidate = '') {
   let finalized = compactSuggestionCandidate(candidate);
   if (!finalized) return '';
 
@@ -763,13 +770,28 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only') {
     return '';
   }
 
-  if (shouldRewriteSuggestionAsAction(finalized, assistMode)) {
+  if (assistMode !== 'bot_conversation' && /^\*[^*]+\*$/.test(finalized) && !/^\*I\b/i.test(finalized)) {
+    finalized = repairLeadingActionBlock(finalized, 'I');
+    if (/^\*I\b[^*]*\bme\b/i.test(finalized)) {
+      return '';
+    }
+  }
+
+  if (shouldRewriteSuggestionAsAction(finalized, assistMode, rawCandidate)) {
     finalized = rewriteSuggestionAsFirstPersonAction(finalized);
+    if (/^\*I\b[^*]*\bme\b/i.test(finalized)) {
+      return '';
+    }
   } else {
+    const hadQuotedDialogue = SUGGESTION_DIALOGUE_PATTERN.test(String(rawCandidate || '')) || SUGGESTION_DIALOGUE_PATTERN.test(String(candidate || ''));
     finalized = finalized
       .replace(/^["“”]+/, '')
       .replace(/["“”]+$/, '')
       .trim();
+
+    if (assistMode !== 'bot_conversation' && !finalized.startsWith('*') && !hadQuotedDialogue) {
+      return '';
+    }
 
     if (assistMode !== 'bot_conversation' && !finalized.startsWith('*') && !/^[A-ZÄÖÜ"“]/.test(finalized)) {
       return '';
@@ -871,12 +893,54 @@ function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null, ass
   return score;
 }
 
+function isMalformedSuggestionCandidate(candidate) {
+  const text = String(candidate || '').trim();
+  if (!text) return true;
+
+  const visible = text.replace(/["“”*]/g, '').trim();
+  const words = visible.split(/\s+/).filter(Boolean);
+  if (words.length >= 4 && text.startsWith('*I ')) {
+    const tail = words[words.length - 1]?.replace(/[^\p{L}\p{N}'-]+/gu, '') || '';
+    if (tail && tail.length <= 2) return true;
+  }
+
+  return false;
+}
+
+function pickBetterSuggestionBatch(primary, fallback, assistMode = 'sfw_only') {
+  const primaryBatch = Array.isArray(primary) ? primary : [];
+  const fallbackBatch = Array.isArray(fallback) ? fallback : [];
+  const summarize = (batch) => ({
+    batch,
+    malformedCount: batch.filter(isMalformedSuggestionCandidate).length,
+    scoreSum: batch.reduce((sum, candidate) => sum + scoreSuggestionCandidate(candidate, candidate, null, assistMode), 0)
+  });
+
+  const left = summarize(primaryBatch);
+  const right = summarize(fallbackBatch);
+
+  if (right.malformedCount !== left.malformedCount) {
+    return right.malformedCount < left.malformedCount ? right.batch : left.batch;
+  }
+
+  if (right.batch.length !== left.batch.length) {
+    return right.batch.length > left.batch.length ? right.batch : left.batch;
+  }
+
+  return right.scoreSum > left.scoreSum ? right.batch : left.batch;
+}
+
 export function normalizeSuggestionDisplayValue(suggestion) {
   let normalized = collapseImmediateSuggestionRepeat(String(suggestion || ''))
     .replace(/\s+/g, ' ')
     .trim();
 
   if (!normalized) return '';
+
+  const quoteCount = (normalized.match(/["“”]/g) || []).length;
+  if (quoteCount % 2 === 1) {
+    normalized = `${normalized}"`;
+  }
 
   normalized = normalized
     .replace(/^["“”]+/, '')
@@ -886,7 +950,9 @@ export function normalizeSuggestionDisplayValue(suggestion) {
   if (/^\*[^*]+\*$/.test(normalized)) {
     const inner = normalized.slice(1, -1).trim();
     if (!inner) return '';
-    return `*${/[.!?]$/.test(inner) ? inner : `${inner}.`}*`;
+    const innerQuoteCount = (inner.match(/["“”]/g) || []).length;
+    const repairedInner = innerQuoteCount % 2 === 1 ? `${inner}"` : inner;
+    return `*${/[.!?]$/.test(repairedInner) ? repairedInner : `${repairedInner}.`}*`;
   }
 
   return /[.!?]$/.test(normalized) ? normalized : `${normalized}.`;
@@ -950,7 +1016,7 @@ export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestio
 
   parts.forEach(({ raw: rawPart, cleaned: cleanedPart }) => {
     const role = detectSuggestionRole(rawPart);
-    const finalized = finalizeSuggestionCandidate(cleanedPart, assistMode);
+    const finalized = finalizeSuggestionCandidate(cleanedPart, assistMode, rawPart);
     if (!finalized) return;
     if (assistMode === 'bot_conversation' && BOT_PHYSICAL_SUGGESTION_PATTERN.test(finalized)) return;
     const wordCount = finalized.replace(/["“”*]/g, '').split(/\s+/).filter(Boolean).length;
@@ -1038,10 +1104,92 @@ export async function generateSuggestionsBackground(history, character, userName
     }
   });
   const runtimeContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState });
-  const retrySystemPrompt = `${runtimeContext.systemPrompt}\n\nFORMAT CHECK:\n- Return exactly 3 compact next-turn options separated by |.\n- Keep the order safest | warmer/bolder | most forward, but do not label them.\n- Each option must be directly sendable as the user's next message.\n- For roleplay, use either *I ...* first-person action or a short direct spoken line.\n- No numbering, labels, commentary, explanations, or meta instructions.`;
+  const retrySystemPrompt = `${runtimeContext.systemPrompt}\n\nFORMAT CHECK:\n- Return exactly 2 compact next-turn options separated by |.\n- Let the 2 options naturally vary from gentler to more forward without labels, rationale, or lane language.\n- Keep each option very short, usually 4-10 words, one decisive beat only.\n- Each option must be directly sendable as the user's next message.\n- For roleplay, use either *I ...* first-person action or a short quoted spoken line.\n- No numbering, labels, commentary, explanations, or meta instructions.`;
   const parseSuggestions = (raw) => parseSuggestionResponse(raw, lastUserMsg, previousSuggestions, {
     assistMode: runtimeState.assistMode
   });
+  const charName = character?.name || 'Character';
+  const stop = [`\n${charName}:`, `\n${charName} :`, `${charName}:`];
+  const generateFallbackSuggestion = async () => {
+    const fallbackNumCtx = Math.min(numCtx, budgetConfig.impersonateNumCtxCap);
+    const fallbackRuntimeState = buildRuntimeState({
+      character,
+      history,
+      userName,
+      runtimeSteering: {
+        profile: 'impersonate',
+        availableContextTokens: Math.max(320, fallbackNumCtx - budgetConfig.impersonateContextReserve),
+        passionLevel,
+        unchainedMode,
+        assistBudgetTier,
+        persistedSceneMemory: sceneMemory
+      }
+    });
+    const fallbackContext = assembleRuntimeContext({ profile: 'impersonate', runtimeState: fallbackRuntimeState });
+    const fallbackUserPrompt = `${fallbackContext.userPrompt}\n\nWrite one short sendable next turn only. Prefer one clear move over variety. End cleanly. No commentary.`;
+
+    try {
+      if (isElectron()) {
+        const result = await window.electronAPI.aiChat({
+          messages: [{ role: 'user', content: fallbackUserPrompt }],
+          systemPrompt: fallbackContext.systemPrompt,
+          model,
+          isOllama: true,
+          ollamaUrl,
+          temperature: 0.56,
+          maxTokens: Math.max(72, budgetConfig.impersonateFirstTokens),
+          num_ctx: fallbackNumCtx,
+          stop,
+          tag: 'suggestions'
+        });
+        if (!result?.success) return [];
+        const finalized = finalizeImpersonateDraft(result.content || '', { charName, userName });
+        if (!finalized?.valid || !finalized.text) return [];
+        const shortenedDraft = shortenWriteForMeDraft(finalized.text) || finalized.text;
+        const compactSeed = trimSuggestionCandidate(shortenedDraft) || shortenedDraft;
+        const compact = finalizeSuggestionCandidate(compactSeed, fallbackRuntimeState.assistMode, compactSeed)
+          || normalizeSuggestionDisplayValue(compactSeed);
+        return compact ? [compact] : [];
+      }
+
+      const res = await fetch(`${ollamaUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: suggestionAbortController?.signal,
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: fallbackContext.systemPrompt },
+            { role: 'user', content: fallbackUserPrompt }
+          ],
+          stream: false,
+          options: {
+            num_predict: Math.max(72, budgetConfig.impersonateFirstTokens),
+            temperature: 0.56,
+            num_ctx: fallbackNumCtx,
+            stop
+          }
+        })
+      });
+      const data = await res.json();
+      const finalized = finalizeImpersonateDraft(data.message?.content || '', { charName, userName });
+      if (!finalized?.valid || !finalized.text) return [];
+      const shortenedDraft = shortenWriteForMeDraft(finalized.text) || finalized.text;
+      const compactSeed = trimSuggestionCandidate(shortenedDraft) || shortenedDraft;
+      const compact = finalizeSuggestionCandidate(compactSeed, fallbackRuntimeState.assistMode, compactSeed)
+        || normalizeSuggestionDisplayValue(compactSeed);
+      return compact ? [compact] : [];
+    } catch {
+      return [];
+    }
+  };
+
+  if (!lastUserMsg) {
+    const fallback = await generateFallbackSuggestion();
+    console.log(`[API] Suggestions opening fallback: ${fallback.length}`);
+    callback(fallback.length >= MIN_USABLE_SUGGESTIONS ? fallback : null);
+    return;
+  }
 
   const chatParams = {
     messages: [{ role: 'user', content: runtimeContext.userPrompt }],
@@ -1073,19 +1221,27 @@ export async function generateSuggestionsBackground(history, character, userName
         if (!result.success) { callback(null); return; }
         const raw = result.content || '';
         const suggestions = parseSuggestions(raw);
+        const needsRetry = suggestions.length < Math.min(SUGGESTION_TARGET_COUNT, budgetConfig.suggestionRetryTarget)
+          || suggestions.some(isMalformedSuggestionCandidate);
         console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
-        if (suggestions.length >= Math.min(SUGGESTION_TARGET_COUNT, budgetConfig.suggestionRetryTarget)) {
+        if (!needsRetry) {
           callback(suggestions);
           return;
         }
         console.log(`[API] Suggestions: retrying (got ${suggestions.length})`);
-        return window.electronAPI.aiChat(retryTaggedParams).then(retryResult => {
+        return window.electronAPI.aiChat(retryTaggedParams).then(async (retryResult) => {
           if (currentRequestId !== suggestionRequestId) return;
           const retryRaw = retryResult.success ? retryResult.content || '' : '';
           const retrySuggestions = parseSuggestions(retryRaw);
           console.log(`[API] Suggestions retry: ${retrySuggestions.length} from "${retryRaw.trim().slice(0, 120)}"`);
-          const best = retrySuggestions.length >= suggestions.length ? retrySuggestions : suggestions;
-          callback(best.length >= MIN_USABLE_SUGGESTIONS ? best : null);
+          const best = pickBetterSuggestionBatch(suggestions, retrySuggestions, runtimeState.assistMode);
+          if (best.length >= MIN_USABLE_SUGGESTIONS) {
+            callback(best);
+            return;
+          }
+          const fallback = await generateFallbackSuggestion();
+          console.log(`[API] Suggestions fallback: ${fallback.length}`);
+          callback(fallback.length >= MIN_USABLE_SUGGESTIONS ? fallback : null);
         });
       })
       .catch(err => {
@@ -1122,8 +1278,10 @@ export async function generateSuggestionsBackground(history, character, userName
         if (currentRequestId !== suggestionRequestId) { suggestionAbortController = null; return; }
         const raw = data.message?.content || '';
         const suggestions = parseSuggestions(raw);
+        const needsRetry = suggestions.length < Math.min(SUGGESTION_TARGET_COUNT, budgetConfig.suggestionRetryTarget)
+          || suggestions.some(isMalformedSuggestionCandidate);
         console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
-        if (suggestions.length >= Math.min(SUGGESTION_TARGET_COUNT, budgetConfig.suggestionRetryTarget)) {
+        if (!needsRetry) {
           suggestionAbortController = null;
           callback(suggestions);
           return;
@@ -1131,14 +1289,20 @@ export async function generateSuggestionsBackground(history, character, userName
         console.log(`[API] Suggestions: retrying (got ${suggestions.length})`);
         return fetch(`${ollamaUrl}/api/chat`, buildFetchOpts(retryChatParams, controller.signal))
           .then(r => r.json())
-          .then(d => {
+          .then(async (d) => {
             suggestionAbortController = null;
             if (currentRequestId !== suggestionRequestId) return;
             const retryRaw = d.message?.content || '';
             const retrySuggestions = parseSuggestions(retryRaw);
             console.log(`[API] Suggestions retry: ${retrySuggestions.length} from "${retryRaw.trim().slice(0, 120)}"`);
-            const best = retrySuggestions.length >= suggestions.length ? retrySuggestions : suggestions;
-            callback(best.length >= MIN_USABLE_SUGGESTIONS ? best : null);
+            const best = pickBetterSuggestionBatch(suggestions, retrySuggestions, runtimeState.assistMode);
+            if (best.length >= MIN_USABLE_SUGGESTIONS) {
+              callback(best);
+              return;
+            }
+            const fallback = await generateFallbackSuggestion();
+            console.log(`[API] Suggestions fallback: ${fallback.length}`);
+            callback(fallback.length >= MIN_USABLE_SUGGESTIONS ? fallback : null);
           });
       })
       .catch(err => {

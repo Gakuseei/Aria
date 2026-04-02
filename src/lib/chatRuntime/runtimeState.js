@@ -108,7 +108,7 @@ const CONTINUITY_KEYWORDS = [
 const EXPLICIT_INTIMACY_PATTERN = /\b(?:sex|sexual|naked|nude|moan|thrust|grind|ride|cock|dick|pussy|clit|cum|orgasm|breasts?|nipples?|between (?:my|your|her|his) legs|inside (?:me|you|her|him)|hardcore|fuck(?:ing|ed)?|suck(?:ing|ed)?|lick(?:ing|ed)?|spread(?:ing)? (?:my|your|her|his) legs)\b/i;
 const FLIRTY_TENSION_PATTERN = /\b(?:blush(?:ing)?|flush(?:ed|ing)?|shiver(?:ing)?|breath(?:less|ing)?|tension|chemistry|closer|close|linger(?:ing)?|lean(?:ing)?|touch(?:ing|es)?|waist|throat|chin|lips?|kiss(?:es|ed|ing)?|hold(?:ing)?|stay|invite|pull(?:ing)?|want(?:s|ed|ing)?|need(?:s|ed|ing)?)\b/i;
 const ESCALATION_OPENING_PATTERN = /\b(?:come closer|closer|kiss me|kiss me properly|touch me|hold me|stay with me|stay close|come here|pull me|pull me in|want you|need you|show me|don't stop|keep going|keep me right here|let me|invite me|take me|want this)\b/i;
-const DEESCALATION_PATTERN = /\b(?:stop|slow down|not now|later|focus|back to work|back to the task|let'?s keep this professional|we should behave|we should stop|that's enough)\b/i;
+const DEESCALATION_PATTERN = /\b(?:please stop|stop that|stop this|stop now|slow down|not now|later|focus|back to work|back to the task|let'?s keep this professional|we should behave|we should stop|that's enough)\b/i;
 
 function collectAssistSignals({ history = [], activeScene, sceneState, persistedSceneMemory }) {
   const recentMessages = history.slice(-6);
@@ -202,7 +202,7 @@ function deriveAssistMode({ character, runtimeSteering, activeScene, sceneState,
     && !explicitScene
     && !signals.deescalating
     && (signals.escalationOpening || flirtScene)
-    && (elevatedPassion || signals.escalationOpening || signals.flirtyHits >= 2 || strongPassion)
+    && (unchainedMode || elevatedPassion || signals.escalationOpening || signals.flirtyHits >= 2 || strongPassion)
   ) {
     return {
       value: 'mixed_transition',

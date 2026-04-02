@@ -713,9 +713,17 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       setIsGeneratingSuggestions(true);
       generateSuggestionsBackground([greetingMsg], character, userName, settings, (suggestions) => {
         const result = normalizeSuggestionList((suggestions && suggestions.length > 0) ? suggestions : []);
-        const latestAssistantTimestamp = [...messagesRef.current].reverse().find((message) => message.role === 'assistant')?.timestamp ?? sourceAssistantTimestamp;
-        if (latestAssistantTimestamp !== sourceAssistantTimestamp) {
+        const latestAssistant = [...messagesRef.current].reverse().find((message) => message.role === 'assistant') || null;
+        const latestAssistantTimestamp = latestAssistant?.timestamp ?? sourceAssistantTimestamp;
+        const sameGreetingReplay = Boolean(latestAssistant)
+          && latestAssistant.content === greetingMsg.content
+          && !messagesRef.current.some((message) => message.role === 'user');
+        if (latestAssistantTimestamp !== sourceAssistantTimestamp && !sameGreetingReplay) {
           console.log('[ChatInterface] Discarded stale greeting suggestions');
+          setIsGeneratingSuggestions(false);
+          return;
+        }
+        if (result.length === 0 && sameGreetingReplay && Array.isArray(latestAssistant?.suggestions) && latestAssistant.suggestions.length > 0) {
           setIsGeneratingSuggestions(false);
           return;
         }

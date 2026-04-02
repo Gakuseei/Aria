@@ -68,7 +68,7 @@ function getAssistModeRules(runtimeState, feature) {
   }
 
   return feature === 'suggestions'
-    ? ['Keep the options non-explicit. Favor emotional, conversational, or lightly physical moves over hidden heat-pushes.']
+    ? ['Keep the options non-explicit. Favor emotional, conversational, or lightly physical moves over hidden heat-pushes.', 'Keep them grounded in the current shared activity, topic, or question instead of drifting into generic flirting.']
     : ['Keep the interaction non-explicit. Do not inject hidden sexual escalation.'];
 }
 
@@ -167,45 +167,29 @@ function buildSuggestionLateSteering(runtimeState) {
   const isBot = runtimeState.compiledRuntimeCard.runtimeDefaults.type === 'bot';
   const avoidList = (runtimeState.runtimeSteering.avoidSuggestions || []).filter(Boolean);
   const intensityLine = runtimeState.runtimeSteering.passionLevel > 15
-    ? `Scene intensity: ${runtimeState.runtimeSteering.passionLevel}/100. Suggestions must match the current intensity without softening it.`
+    ? `Match the current scene intensity at ${runtimeState.runtimeSteering.passionLevel}/100 without softening it.`
     : '';
 
   return [
     isBot
-      ? `Suggest ${runtimeState.userName}'s next sendable reply in the same exchange with ${runtimeState.characterName}.`
-      : `Suggest ${runtimeState.userName}'s next sendable turn in the same scene with ${runtimeState.characterName}.`,
-    'Return exactly 3 options separated by | and nothing else.',
-    'Keep the order fixed but unlabeled: option 1 safest, option 2 warmer or bolder, option 3 most forward.',
-    'Each option must already be the literal next user turn, not an instruction about what to do.',
+      ? `Write ${runtimeState.userName}'s next sendable reply in the same exchange with ${runtimeState.characterName}.`
+      : `Write ${runtimeState.userName}'s next sendable turn in the same scene with ${runtimeState.characterName}.`,
+    'Return exactly 2 options separated by | and nothing else.',
+    'Keep each option short, direct, and complete.',
+    'Let the 2 options vary from gentler to more forward without labels or explanation.',
     isBot
-      ? 'Write compact user-side replies, questions, or confirmations that can be sent as-is.'
-      : 'Default to first-person in-scene actions in *asterisks*. Use direct spoken lines only when they are clearly stronger and fully complete on their own.',
+      ? 'Write compact replies, questions, or confirmations that can be sent as-is.'
+      : 'Prefer first-person in-scene actions in *asterisks*. Use a short quoted spoken line only when it lands better than an action.',
+    'Answer the latest beat directly. If there is a clear question or invitation, at least one option should answer it plainly.',
     isBot
-      ? 'Do not narrate the bot or restart the task context.'
-      : 'Prefer direct in-scene action or direct dialogue over commands, summaries, status updates, or writing prompts.',
-    'Do not use labels, numbering, commentary, explanation, or meta framing.',
-    'Do not start with instruction verbs like ask, compliment, reassure, explain, describe, suggest, or propose.',
-    isBot
-      ? 'Avoid vague filler replies.'
-      : 'Avoid weak filler openings, empty availability lines, or lines that stall the scene instead of moving it.',
-    'Avoid filler or dead-end spoken lines like "Actually...", "Well...", or "There is nothing else right now."',
-    'If you write spoken dialogue, make it specific, scene-active, and emotionally pointed rather than generic housekeeping.',
-    runtimeState.runtimeSteering.passionLevel > 15
-      ? 'In explicit scenes, do not become timid, euphemistic, or generic.'
-      : '',
-    'Option 1 should match the current pace naturally.',
-    'Option 2 should be meaningfully bolder without breaking character or scene continuity.',
-    'Option 3 should clearly move the beat forward inside the same scene or exchange.',
-    isBot
-      ? 'Stay inside the current exchange and do not reset the task or context.'
-      : 'Stay in the current scene. Do not relocate the characters unless the scene is already moving there.',
-    'Make the 3 options meaningfully different instead of three phrasings of the same move.',
-    `Base the options on what ${runtimeState.characterName} just did or said.`,
+      ? 'Stay inside the current exchange.'
+      : 'Stay inside the current scene and move it forward instead of stalling or resetting it.',
+    'Do not use labels, rationale, commentary, or advice about what to do.',
     runtimeState.compiledRuntimeCard.personaAnchor
-      ? `Keep ${runtimeState.userName}'s options grounded in ${runtimeState.characterName}'s specific persona, not generic flirtation.`
+      ? `Keep the options grounded in ${runtimeState.characterName}'s specific persona and chemistry.`
       : '',
     ...getAssistModeRules(runtimeState, 'suggestions'),
-    'Match the conversation language and the current scene tone.',
+    'Match the conversation language and tone.',
     intensityLine,
     avoidList.length > 0 ? `Do not repeat: ${avoidList.join(' | ')}` : ''
   ].filter(Boolean).join('\n');
@@ -431,7 +415,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     return {
       profile,
       systemPrompt,
-      userPrompt: `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}\n\nOpen thread:\n${trimPromptSnippet(runtimeState.activeScene.open_thread || 'Carry the scene forward from the latest beat.', 96)}\n\nRecent tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}\n\n${isBot ? `3 sendable replies for ${runtimeState.userName} in the same exchange:` : `3 sendable next turns for ${runtimeState.userName} in the same scene:`}`,
+      userPrompt: `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}\n\nOpen thread:\n${trimPromptSnippet(runtimeState.activeScene.open_thread || 'Carry the scene forward from the latest beat.', 96)}\n\nRecent tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}\n\n${isBot ? `2 sendable replies for ${runtimeState.userName} in the same exchange:` : `2 sendable next turns for ${runtimeState.userName} in the same scene:`}`,
       debug: {
         ...debug,
         historyCountKept: recentTail.length

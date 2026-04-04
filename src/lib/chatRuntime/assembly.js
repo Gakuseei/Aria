@@ -52,7 +52,10 @@ function getAssistModeRules(runtimeState, feature) {
   const isBot = runtimeState.compiledRuntimeCard.runtimeDefaults.type === 'bot';
   if (isBot || assistMode === 'bot_conversation') {
     return feature === 'suggestions'
-      ? ['Keep every option grounded in the active exchange. Never turn task or bot chat into bodily roleplay.']
+      ? [
+          'Keep every option grounded in the active exchange. Never turn task or bot chat into bodily roleplay.',
+          'Write plain spoken quick replies only. No asterisks, no stage directions, and no status-log style self actions.'
+        ]
       : ['Stay inside the active exchange. Do not introduce bodily roleplay framing.'];
   }
 
@@ -182,11 +185,11 @@ function buildSuggestionLateSteering(runtimeState) {
       : `Write ${runtimeState.userName}'s next sendable turn in the same scene with ${runtimeState.characterName}.`,
     'Return only valid JSON with exactly these string keys: stay, progress, bold.',
     isBot
-      ? 'Each value must be a compact reply that can be sent as-is.'
+      ? 'Each value must be a compact spoken reply that can be sent as-is.'
       : `Write only ${runtimeState.userName}'s next turn. NEVER write as ${runtimeState.characterName}.`,
     isBot
-      ? 'Keep each value very short, direct, and complete.'
-      : `Write each value in FIRST PERSON from ${runtimeState.userName}'s point of view (I/me/my).`,
+      ? 'Keep each value very short, direct, complete, at least 3 words, and written as plain chat text with no asterisks.'
+      : 'Keep each value as a short spoken line the user can say out loud right now. No asterisks, no stage directions, and no mixed narration plus dialogue.',
     isBot
       ? ''
       : `NEVER narrate ${runtimeState.userName} from outside in second or third person.`,
@@ -195,17 +198,22 @@ function buildSuggestionLateSteering(runtimeState) {
       : `Do not describe ${runtimeState.characterName}'s feelings or actions as if they belong to ${runtimeState.userName}.`,
     isBot
       ? ''
-      : 'Each value must be a sendable first-person action in *asterisks* or a short quoted spoken line.',
+      : 'Write from the user side as something they would actually say, not a description of them from outside.',
     'Keep every value very short, usually 3 to 6 words and never more than 12 words.',
     'Avoid third-person ownership confusion. Keep subject and target clear from the user point of view.',
     'Each value must be a literal next turn the user can send right now, not advice, not commentary, not a plan, and not a description of what to do later.',
     'stay = small reaction that keeps the current beat alive.',
     'progress = one clear next step that moves the same interaction forward.',
     'bold = more forward, but still earned by the same moment and still true to the current tone.',
+    'Respond to the very last thing the character just said or did, not to the general setting or broad character lore.',
+    'If a value could fit almost any scene with this character, it is too generic.',
     'Anchor every value to the latest beat, object, request, or question.',
-    'Do not invent a new garment, prop, task, room, food, drink, or third character that is not already present in the latest beat.',
+    'Do not invent a new garment, prop, task, room, food, drink, protocol, or third character that is not already present in the latest beat.',
     isBot
       ? 'Stay inside the current exchange.'
+      : 'Do not assume the user has a specific body, anatomy, or gender unless the latest user turn already named it.',
+    isBot
+      ? ''
       : 'Stay inside the current scene. Do not reset or drift generic.',
     'No commentary or extra keys.',
     runtimeState.compiledRuntimeCard.personaAnchor

@@ -545,9 +545,9 @@ const SUGGESTION_JSON_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   properties: {
-    stay: { type: 'string', maxLength: 84 },
-    progress: { type: 'string', maxLength: 84 },
-    bold: { type: 'string', maxLength: 84 }
+    stay: { type: 'string', maxLength: 72 },
+    progress: { type: 'string', maxLength: 72 },
+    bold: { type: 'string', maxLength: 72 }
   },
   required: ['stay', 'progress', 'bold']
 };
@@ -556,6 +556,7 @@ const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|n
 const SUGGESTION_NON_ACTION_PATTERN = /^(?:explain|describe|clarify|suggest|propose)\b/i;
 const SUGGESTION_DETACHED_DIRECTIVE_PATTERN = /^(?:watch|inspect|examine|evaluate|assess|verify|check|observe|monitor)\b/i;
 const SUGGESTION_SELF_INSTRUCTION_PATTERN = /^(?:maintain|keep)\s+(?:eye contact|my gaze|gaze)\b/i;
+const SUGGESTION_FIRST_PERSON_SELF_INSTRUCTION_PATTERN = /^\*?I\s+(?:maintain|keep)\s+(?:eye contact|my gaze|gaze)\b/i;
 const SUGGESTION_META_DIRECTIVE_LEAD_PATTERN = /^(?:ask|asking|compliment|complimenting|praise|praising|reassure|reassuring|explain|explaining|describe|describing|suggest|suggesting|propose|proposing)\b/i;
 const SUGGESTION_LABEL_PATTERN = /^(?:stay|safe|progress|bold|option\s*\d+|action\s*\d+|current beat|stay in scene|move forward|bolder(?: or more forward)?|fresh angle|unexpected(?: angle)?)\s*[:\-]\s*/i;
 const SUGGESTION_BAD_LEAD_PATTERN = /^(?:i|you|he|she|they|we|it|this|that|these|those|there|here|please|option|action|pace|scene|same|stay|progress|bolder|fresh)\b/i;
@@ -563,6 +564,8 @@ const SUGGESTION_DIALOGUE_PATTERN = /["“”]/;
 const SUGGESTION_OVEREXPLAIN_PATTERN = /\b(?:because|while|so that|which makes|letting|making|feeling|as you|as she|as he)\b/i;
 const SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN = /\b(?:say|saying|said|murmur|murmuring|whisper|whispering|tell|telling|ask|asking)\b/i;
 const SUGGESTION_PROGRESSIVE_TAIL_PATTERN = /\s+and\s+(?:begin|starting|start|continue|continuing|keep|keeping|list|listing|tell|telling|explain|explaining|show|showing|reveal|revealing)\b/i;
+const SUGGESTION_FUTURE_PLAN_PATTERN = /\b(?:in future|from now on|next time|later tonight|tomorrow|going forward)\b/i;
+const SUGGESTION_AUTHORITY_TONE_PATTERN = /\b(?:i command|i order|i insist|you will|you must)\b/i;
 const SUGGESTION_PASSIVE_PATTERN = /\b(?:smile|nod|look|glance|watch|wait|pause|listen)\b/i;
 const SUGGESTION_PROGRESS_PATTERN = /\b(?:invite|pull|guide|lead|bring|take|sit|move|close|touch|kiss|confess|admit|answer|ask|offer|decide|tell|reveal|reach)\b/i;
 const SUGGESTION_BOLD_PATTERN = /\b(?:touch|kiss|pull|guide|lean|closer|waist|thigh|lap|admit|confess|breath|neck)\b/i;
@@ -774,6 +777,10 @@ function normalizeSuggestionDialogue(dialogue) {
     return '';
   }
 
+  if (/\b(?:aren't|wasn't|weren't|not)\s+me\b/i.test(normalized)) {
+    return '';
+  }
+
   const wordCount = normalized.split(/\s+/).filter(Boolean).length;
   if (wordCount < 2) return '';
 
@@ -830,6 +837,7 @@ function rewriteSuggestionAsFirstPersonAction(candidate) {
     return `I ${adverbs}${repairedVerb}`;
   });
   normalized = repairFirstPersonOwnershipDrift(normalized);
+  if (/\bbehind\s+(?:him|her)\b/i.test(normalized)) return '';
   normalized = normalized.replace(/^I\s+([A-Z])/, (_, lead) => `I ${lead.toLowerCase()}`);
   normalized = normalized.charAt(0).toUpperCase() + normalized.slice(1);
   if (!/[.!?]$/.test(normalized)) {
@@ -842,6 +850,13 @@ function rewriteSuggestionAsFirstPersonAction(candidate) {
 }
 
 function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCandidate = '') {
+  const hasSuspiciousTrailingFragment = (value) => {
+    const visible = String(value || '').replace(/["“”*]/g, ' ').trim();
+    if (!visible) return false;
+    const lastWord = visible.split(/\s+/).pop()?.replace(/[^A-Za-z]/g, '') || '';
+    return lastWord.length === 1 && !['a', 'i'].includes(lastWord.toLowerCase());
+  };
+
   let finalized = compactSuggestionCandidate(candidate);
   if (!finalized) return '';
 
@@ -850,6 +865,14 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
   }
 
   if (assistMode !== 'bot_conversation' && (SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(finalized) || SUGGESTION_DETACHED_DIRECTIVE_PATTERN.test(finalized) || SUGGESTION_SELF_INSTRUCTION_PATTERN.test(finalized))) {
+    return '';
+  }
+
+  if (assistMode !== 'bot_conversation' && SUGGESTION_FUTURE_PLAN_PATTERN.test(finalized)) {
+    return '';
+  }
+
+  if ((assistMode === 'sfw_only' || assistMode === 'mixed_transition') && SUGGESTION_AUTHORITY_TONE_PATTERN.test(finalized)) {
     return '';
   }
 
@@ -863,7 +886,12 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
   if (shouldRewriteSuggestionAsAction(finalized, assistMode, rawCandidate)) {
     const rewriteSource = SUGGESTION_DIALOGUE_PATTERN.test(String(rawCandidate || '')) ? rawCandidate : finalized;
     finalized = rewriteSuggestionAsFirstPersonAction(rewriteSource);
-    if (/^\*I\b[^*]*\bme\b/i.test(finalized) || hasSuspiciousFirstPersonSubjectSwitch(finalized)) {
+    if (
+      /^\*I\b[^*]*\bme\b/i.test(finalized)
+      || hasSuspiciousFirstPersonSubjectSwitch(finalized)
+      || SUGGESTION_FIRST_PERSON_SELF_INSTRUCTION_PATTERN.test(finalized)
+      || hasSuspiciousTrailingFragment(finalized)
+    ) {
       return '';
     }
   } else {
@@ -889,6 +917,10 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
     if (!finalized.startsWith('*') && !/[.!?]$/.test(finalized)) {
       finalized = `${finalized}.`;
     }
+  }
+
+  if (SUGGESTION_FIRST_PERSON_SELF_INSTRUCTION_PATTERN.test(finalized) || hasSuspiciousTrailingFragment(finalized)) {
+    return '';
   }
 
   return finalized.length <= SUGGESTION_MAX_CHARS ? finalized : '';
@@ -950,6 +982,8 @@ function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null, ass
   if (text.startsWith('*I ')) score += 10;
   if (/^[A-Z][^*]+[.!?]$/.test(text) && !SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(text)) score += 6;
   if (SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(text)) score -= 30;
+  if (SUGGESTION_FUTURE_PLAN_PATTERN.test(text)) score -= 24;
+  if (SUGGESTION_AUTHORITY_TONE_PATTERN.test(text)) score -= 20;
   if (SUGGESTION_PASSIVE_PATTERN.test(text) && !SUGGESTION_PROGRESS_PATTERN.test(text)) score -= 8;
 
   if (role === 'stay') {

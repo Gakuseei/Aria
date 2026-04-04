@@ -13,6 +13,7 @@ const PROFILE_BUDGET_TARGETS = {
     lateSteering: 145
   },
   suggestions: {
+    writerRole: 80,
     characterCore: 145,
     activeScene: 90,
     lateSteering: 170
@@ -195,7 +196,7 @@ function buildSuggestionLateSteering(runtimeState) {
     isBot
       ? ''
       : 'Each value must be a sendable first-person action in *asterisks* or a short quoted spoken line.',
-    'Keep every value very short, usually 3 to 8 words if possible.',
+    'Keep every value very short, usually 3 to 6 words and never more than 12 words.',
     'Avoid third-person ownership confusion. Keep subject and target clear from the user point of view.',
     'Each value must be a literal next turn the user can send right now, not advice, not commentary, not a plan, and not a description of what to do later.',
     'stay = small reaction that keeps the current beat alive.',
@@ -214,6 +215,23 @@ function buildSuggestionLateSteering(runtimeState) {
     'Match the conversation language and tone.',
     intensityLine,
     avoidList.length > 0 ? `Do not repeat: ${avoidList.join(' | ')}` : ''
+  ].filter(Boolean).join('\n');
+}
+
+function buildSuggestionWriterRole(runtimeState) {
+  const isBot = runtimeState.compiledRuntimeCard.runtimeDefaults.type === 'bot';
+
+  return [
+    isBot
+      ? `You are the quick-reply ghostwriter for ${runtimeState.userName} in an ongoing chat with ${runtimeState.characterName}.`
+      : `You are the next-turn ghostwriter for ${runtimeState.userName} inside an ongoing scene with ${runtimeState.characterName}.`,
+    'Your job is to produce premium, clickable quick replies that the user can actually send right now.',
+    isBot
+      ? `Write only ${runtimeState.userName}'s side of the exchange. Never write ${runtimeState.characterName}'s side.`
+      : `Write only ${runtimeState.userName}'s side of the scene. Never write ${runtimeState.characterName}'s side.`,
+    'Think like a human ghostwriter, not a planner, not an evaluator, not a safety note, and not a narrator explaining the move.',
+    'Prefer the most sendable, scene-true wording over clever wording.',
+    'Keep the user voice grounded in the current chemistry, power dynamic, and immediate beat.'
   ].filter(Boolean).join('\n');
 }
 
@@ -416,16 +434,18 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       runtimeState.activeScene.latest_user_action_or_request ? `${runtimeState.userName}: ${runtimeState.activeScene.latest_user_action_or_request}` : ''
     ].filter(Boolean).join('\n');
     const compactScene = renderActiveScene(runtimeState.activeScene, { compact: true });
+    const voiceExamples = buildRecentUserVoiceExamples(runtimeState);
     const personaAnchor = runtimeState.compiledRuntimeCard.personaAnchor
       ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, 75))
       : buildPlainTextBlock('Character Reference', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, 60));
     const systemPrompt = [
+      buildPlainTextBlock('Suggestion Writer Role', clipToTokenTarget(buildSuggestionWriterRole(runtimeState), targets.writerRole || 80)),
       personaAnchor,
       buildPlainTextBlock('Active Scene', clipStructuredSceneText(compactScene, targets.activeScene, 115)),
       buildPlainTextBlock('Late Steering', clipToTokenTarget(buildSuggestionLateSteering(runtimeState), targets.lateSteering))
     ].filter(Boolean).join('\n\n');
 
-    debug.includedBlocks.push('Active Scene', 'Late Steering');
+    debug.includedBlocks.push('Suggestion Writer Role', 'Active Scene', 'Late Steering');
     debug.droppedBlocks.push('Global Core', 'Example Seed');
     if (runtimeState.compiledRuntimeCard.personaAnchor) {
       debug.includedBlocks.push('Persona Anchor');
@@ -438,7 +458,14 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     return {
       profile,
       systemPrompt,
-      userPrompt: `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}\n\nRecent tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}\n\n${isBot ? `3 sendable replies for ${runtimeState.userName} in the same exchange:` : `3 sendable next turns for ${runtimeState.userName} in the same scene:`}`,
+      userPrompt: [
+        `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}`,
+        voiceExamples ? `Recent ${runtimeState.userName} voice examples:\n${voiceExamples}` : '',
+        `Recent tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}`,
+        isBot
+          ? `Fill stay, progress, and bold with 3 sendable replies for ${runtimeState.userName} in the same exchange.`
+          : `Fill stay, progress, and bold with 3 sendable next turns for ${runtimeState.userName} in the same scene.`
+      ].filter(Boolean).join('\n\n'),
       debug: {
         ...debug,
         historyCountKept: recentTail.length

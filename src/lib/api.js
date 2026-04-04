@@ -579,7 +579,6 @@ const INCOMPLETE_SUGGESTION_VERB_ENDING_PATTERN = /\b(?:have|enjoy|appreciate|li
 const INCOMPLETE_SUGGESTION_PHRASE_ENDING_PATTERN = /\b(?:how much(?: you)?|on how|how|it's okay to|okay to|by\s+(?:commenting|saying|asking|mentioning|telling)|in the future|related to your\s+[a-z'-]+|to\s+(?:test|consider|discuss|explore|adjust)|behind closed|beyond|not)\s*$/i;
 const BOT_PHYSICAL_SUGGESTION_PATTERN = /\b(?:kiss|waist|thigh|lap|neck|body|breath|touch|lick|ride|grind)\b/i;
 const USER_ANATOMY_ASSUMPTION_PATTERN = /\b(?:cock|dick|shaft|breasts?|boobs?|tits?|nipples?|pussy|clit|balls?|curves?)\b/i;
-const SUGGESTION_SUSPICIOUS_SELF_TARGET_PATTERN = /\b(?:caress|cup|kiss|trace|brush|stroke|press|trail|slide|touch|bring|draw|rest|place|reach|lean|tilt)\b[^.!?]{0,80}\b(?:my\s+(?:chin|cheek|cheeks|face|jawline|cheekbone|cheekbones|ear|ears|neck|throat|lips?|mouth|waist|hip|hips|back|chest|collarbone|shoulder|shoulders|skin)|small\s+of\s+my\s+back)\b/i;
 const SUGGESTION_GENERIC_ACTION_PATTERN = /^(?:change the subject|keep talking|say something nice|say more)$/i;
 const WRITE_FOR_ME_META_LEAD_PATTERN = /\b(?:I decide to|I choose to|I can't help but|I find myself)\b/i;
 const WRITE_FOR_ME_MALFORMED_LEAD_PATTERN = /^\*?\s*I\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/;
@@ -808,14 +807,6 @@ function hasSuspiciousFirstPersonSubjectSwitch(candidate) {
   return /,\s+(?!and\b|then\b|I\b|my\b|gently\b|softly\b|slowly\b|carefully\b|lightly\b|quietly\b|looking\b|letting\b|keeping\b|holding\b|drawing\b|pressing\b|pulling\b|reaching\b|guiding\b|moving\b|bringing\b|smiling\b|nodding\b|waiting\b|leaning\b|resting\b|tracing\b|brushing\b)(?:[a-z]+s)\b/i.test(inner);
 }
 
-function hasSuspiciousFirstPersonOwnershipDrift(candidate) {
-  const inner = String(candidate || '').trim().replace(/^\*|\*$/g, '');
-  if (!/^I\b/i.test(inner)) return false;
-  if (/^I\s+my\b/i.test(inner)) return true;
-  if (/\b(?:into|toward|towards)\s+my\s+eyes\b/i.test(inner)) return true;
-  return SUGGESTION_SUSPICIOUS_SELF_TARGET_PATTERN.test(inner);
-}
-
 function rewriteSuggestionAsFirstPersonAction(candidate) {
   const trimmed = String(candidate || '').trim();
   if (!trimmed) return '';
@@ -920,7 +911,6 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
     if (
       /^\*I\b[^*]*\bme\b/i.test(finalized)
       || hasSuspiciousFirstPersonSubjectSwitch(finalized)
-      || hasSuspiciousFirstPersonOwnershipDrift(finalized)
       || SUGGESTION_FIRST_PERSON_SELF_INSTRUCTION_PATTERN.test(finalized)
       || hasSuspiciousTrailingFragment(finalized)
     ) {
@@ -956,7 +946,7 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
     return '';
   }
 
-  if (SUGGESTION_FIRST_PERSON_SELF_INSTRUCTION_PATTERN.test(finalized) || hasSuspiciousFirstPersonOwnershipDrift(finalized) || hasSuspiciousTrailingFragment(finalized)) {
+  if (SUGGESTION_FIRST_PERSON_SELF_INSTRUCTION_PATTERN.test(finalized) || hasSuspiciousTrailingFragment(finalized)) {
     return '';
   }
 

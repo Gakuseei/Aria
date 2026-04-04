@@ -68,7 +68,12 @@ function getAssistModeRules(runtimeState, feature) {
   }
 
   return feature === 'suggestions'
-    ? ['Keep the options non-explicit. Favor emotional, conversational, or lightly physical moves over hidden heat-pushes.', 'Keep them grounded in the current shared activity, topic, or question instead of drifting into generic flirting.']
+    ? [
+        'Keep the options non-explicit. Favor emotional, conversational, or lightly physical moves over hidden heat-pushes.',
+        'Keep them grounded in the current shared activity, topic, or question instead of drifting into generic flirting.',
+        'Do not turn the user into a detached evaluator, inspector, observer, or task-giver unless the latest beat already clearly asks for that.',
+        'Avoid sudden harsh dominance, discipline, or contempt unless the latest beat already establishes that tone.'
+      ]
     : ['Keep the interaction non-explicit. Do not inject hidden sexual escalation.'];
 }
 
@@ -192,9 +197,10 @@ function buildSuggestionLateSteering(runtimeState) {
       : 'Each value must be a sendable first-person action in *asterisks* or a short quoted spoken line.',
     'Keep every value very short, usually 3 to 8 words if possible.',
     'Avoid third-person ownership confusion. Keep subject and target clear from the user point of view.',
-    'stay = small reaction to the latest beat.',
-    'progress = one clear next step.',
-    'bold = more forward, but still earned by the same moment.',
+    'Each value must be a literal next turn the user can send right now, not advice, not commentary, not a plan, and not a description of what to do later.',
+    'stay = small reaction that keeps the current beat alive.',
+    'progress = one clear next step that moves the same interaction forward.',
+    'bold = more forward, but still earned by the same moment and still true to the current tone.',
     'Anchor every value to the latest beat, object, request, or question.',
     'Do not invent a new garment, prop, task, room, food, drink, or third character that is not already present in the latest beat.',
     isBot

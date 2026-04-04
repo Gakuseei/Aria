@@ -15,7 +15,7 @@ const PROFILE_BUDGET_TARGETS = {
   suggestions: {
     characterCore: 145,
     activeScene: 90,
-    lateSteering: 105
+    lateSteering: 170
   },
   impersonate: {
     characterCore: 90,
@@ -174,21 +174,23 @@ function buildSuggestionLateSteering(runtimeState) {
     isBot
       ? `Write ${runtimeState.userName}'s next sendable reply in the same exchange with ${runtimeState.characterName}.`
       : `Write ${runtimeState.userName}'s next sendable turn in the same scene with ${runtimeState.characterName}.`,
-    'Return exactly 3 options separated by | and nothing else.',
-    'Use this exact role order and labels so parsing stays stable: stay: ... | progress: ... | bold: ...',
-    'Keep each option short, direct, complete, and immediately sendable.',
-    'stay keeps the current beat alive without stalling.',
-    'progress advances the scene by one clear step.',
-    'bold is more forward, but still earned by the current beat and never a random jump.',
+    'Return only valid JSON with exactly these string keys: stay, progress, bold.',
     isBot
-      ? 'Write compact replies, questions, or confirmations that can be sent as-is.'
-      : 'Prefer first-person in-scene actions in *asterisks*. Use a short quoted spoken line only when it lands better than an action.',
-    'Each option must respond directly to the latest assistant beat. Reuse the current scene details instead of drifting generic.',
-    'If there is a clear question, invitation, or revealed object, all 3 options should stay anchored to that same moment.',
+      ? 'Each value must be a compact reply that can be sent as-is.'
+      : `Write only ${runtimeState.userName}'s next turn. Never write as ${runtimeState.characterName} or describe ${runtimeState.characterName}'s feelings/actions as if they belong to ${runtimeState.userName}.`,
+    isBot
+      ? 'Keep each value very short, direct, and complete.'
+      : 'Each value must be a sendable first-person action in *asterisks* or a short quoted spoken line.',
+    'Keep every value very short, usually 3 to 8 words if possible.',
+    'stay = small reaction to the latest beat.',
+    'progress = one clear next step.',
+    'bold = more forward, but still earned by the same moment.',
+    'Anchor every value to the latest beat, object, request, or question.',
+    'Do not invent a new garment, prop, task, or scene detail that is not already present in the latest beat.',
     isBot
       ? 'Stay inside the current exchange.'
-      : 'Stay inside the current scene and move it forward instead of stalling, resetting, or summarizing.',
-    'No rationale, commentary, advice, numbering, or meta instructions.',
+      : 'Stay inside the current scene. Do not reset or drift generic.',
+    'No commentary or extra keys.',
     runtimeState.compiledRuntimeCard.personaAnchor
       ? `Keep the options grounded in ${runtimeState.characterName}'s specific persona and chemistry.`
       : '',
@@ -398,23 +400,24 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       runtimeState.activeScene.latest_user_action_or_request ? `${runtimeState.userName}: ${runtimeState.activeScene.latest_user_action_or_request}` : ''
     ].filter(Boolean).join('\n');
     const compactScene = renderActiveScene(runtimeState.activeScene, { compact: true });
+    const personaAnchor = runtimeState.compiledRuntimeCard.personaAnchor
+      ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, 75))
+      : buildPlainTextBlock('Character Reference', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, 60));
     const systemPrompt = [
-      buildPlainTextBlock('Character Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)),
-      runtimeState.compiledRuntimeCard.personaAnchor
-        ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, 75))
-        : '',
+      personaAnchor,
       buildPlainTextBlock('Active Scene', clipStructuredSceneText(compactScene, targets.activeScene, 115)),
       buildPlainTextBlock('Late Steering', clipToTokenTarget(buildSuggestionLateSteering(runtimeState), targets.lateSteering))
     ].filter(Boolean).join('\n\n');
 
-    debug.includedBlocks.push('Character Core', 'Active Scene', 'Late Steering');
-    debug.droppedBlocks.push('Global Core');
+    debug.includedBlocks.push('Active Scene', 'Late Steering');
+    debug.droppedBlocks.push('Global Core', 'Example Seed');
     if (runtimeState.compiledRuntimeCard.personaAnchor) {
       debug.includedBlocks.push('Persona Anchor');
+      debug.droppedBlocks.push('Character Core');
     } else {
-      debug.droppedBlocks.push('Persona Anchor');
+      debug.includedBlocks.push('Character Reference');
+      debug.droppedBlocks.push('Persona Anchor', 'Character Core');
     }
-    debug.droppedBlocks.push('Example Seed');
 
     return {
       profile,

@@ -304,7 +304,7 @@ const ASSIST_BUDGET_CONFIG = {
   constrained: {
     suggestionNumCtxCap: 4096,
     suggestionContextReserve: 768,
-    suggestionMaxTokens: 112,
+    suggestionMaxTokens: 108,
     suggestionRetryTarget: 3,
     impersonateNumCtxCap: 3072,
     impersonateContextReserve: 384,
@@ -316,7 +316,7 @@ const ASSIST_BUDGET_CONFIG = {
   default: {
     suggestionNumCtxCap: 4096,
     suggestionContextReserve: 768,
-    suggestionMaxTokens: 120,
+    suggestionMaxTokens: 108,
     suggestionRetryTarget: 3,
     impersonateNumCtxCap: 4096,
     impersonateContextReserve: 256,
@@ -328,7 +328,7 @@ const ASSIST_BUDGET_CONFIG = {
   roomy: {
     suggestionNumCtxCap: 4096,
     suggestionContextReserve: 704,
-    suggestionMaxTokens: 132,
+    suggestionMaxTokens: 120,
     suggestionRetryTarget: 3,
     impersonateNumCtxCap: 4096,
     impersonateContextReserve: 192,
@@ -537,11 +537,21 @@ let suggestionAbortController = null;
 let suggestionRequestId = 0;
 const MIN_USABLE_SUGGESTIONS = 1;
 const SUGGESTION_TARGET_COUNT = 3;
-const SUGGESTION_MAX_WORDS = 12;
-const SUGGESTION_MAX_CHARS = 84;
+const SUGGESTION_MAX_WORDS = 14;
+const SUGGESTION_MAX_CHARS = 96;
 const SUGGESTION_ROLE_ORDER = ['stay', 'progress', 'bold'];
 
-const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|note|options?|suggestions?)\b/i;
+const SUGGESTION_JSON_SCHEMA = {
+  type: 'object',
+  properties: {
+    stay: { type: 'string' },
+    progress: { type: 'string' },
+    bold: { type: 'string' }
+  },
+  required: ['stay', 'progress', 'bold']
+};
+
+const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|note|options?|suggestions?|you could say|you might say|try saying)\b/i;
 const SUGGESTION_NON_ACTION_PATTERN = /^(?:explain|describe|clarify|suggest|propose)\b/i;
 const SUGGESTION_META_DIRECTIVE_LEAD_PATTERN = /^(?:ask|asking|compliment|complimenting|praise|praising|reassure|reassuring|explain|explaining|describe|describing|suggest|suggesting|propose|proposing)\b/i;
 const SUGGESTION_LABEL_PATTERN = /^(?:stay|safe|progress|bold|option\s*\d+|action\s*\d+|current beat|stay in scene|move forward|bolder(?: or more forward)?|fresh angle|unexpected(?: angle)?)\s*[:\-]\s*/i;
@@ -715,6 +725,7 @@ function shouldRewriteSuggestionAsAction(candidate, assistMode = 'sfw_only', raw
   const trimmed = String(candidate || '').trim();
   const raw = String(rawCandidate || '');
   if (!trimmed || assistMode === 'bot_conversation') return false;
+  if (raw.trim().startsWith('*')) return true;
   if (trimmed.startsWith('*') || /^["“]/.test(trimmed)) return false;
   if (/\b(?:I|me|my|mine|I'm|I've|I'll|I'd)\b/i.test(trimmed)) return false;
   if (SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(trimmed)) return false;
@@ -937,6 +948,16 @@ export function normalizeSuggestionDisplayValue(suggestion) {
 
   if (!normalized) return '';
 
+  const mixedActionMatch = normalized.match(/^\*([^*]+)\*\s+(.+)$/);
+  if (mixedActionMatch) {
+    const action = String(mixedActionMatch[1] || '').trim().replace(/["“”*]+/g, '').trim();
+    const dialogue = String(mixedActionMatch[2] || '').trim().replace(/^["“”*\s]+/, '').replace(/["“”*\s]+$/, '').trim();
+    const fixedAction = action ? `*${/[.!?]$/.test(action) ? action : `${action}.`}*` : '';
+    if (!dialogue) return fixedAction;
+    const fixedDialogue = `"${/[.!?]$/.test(dialogue) ? dialogue : `${dialogue}.`}"`;
+    return [fixedAction, fixedDialogue].filter(Boolean).join(' ');
+  }
+
   const quoteCount = (normalized.match(/["“”]/g) || []).length;
   if (quoteCount % 2 === 1) {
     normalized = `${normalized}"`;
@@ -985,7 +1006,52 @@ function isTooSimilarToSelected(candidate, selected) {
 
 export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestions = [], options = {}) {
   const assistMode = options.assistMode || 'sfw_only';
-  const cleaned = String(raw || '').trim()
+  const original = String(raw || '').trim();
+  const parseJsonObjectParts = (obj) => {
+    const objectParts = ['stay', 'progress', 'bold']
+      .map((role) => ({ role, value: typeof obj?.[role] === 'string' ? obj[role] : '' }))
+      .filter((entry) => entry.value.trim());
+    if (objectParts.length === 0) return null;
+    const selected = [];
+    const roleBuckets = { stay: null, progress: null, bold: null };
+    objectParts.forEach(({ role, value }) => {
+      const rawValue = value.includes('*') ? value : `"${value}"`;
+      const finalized = finalizeSuggestionCandidate(cleanSuggestionCandidate(rawValue), assistMode, rawValue);
+      if (!finalized) return;
+      if (assistMode === 'bot_conversation' && BOT_PHYSICAL_SUGGESTION_PATTERN.test(finalized)) return;
+      const wordCount = finalized.replace(/["“”*]/g, '').split(/\s+/).filter(Boolean).length;
+      if (finalized.length < 2 || finalized.length > SUGGESTION_MAX_CHARS || wordCount < 2 || wordCount > SUGGESTION_MAX_WORDS) return;
+      if (SUGGESTION_META_PATTERN.test(finalized) || SUGGESTION_NON_ACTION_PATTERN.test(finalized) || (assistMode !== 'bot_conversation' && SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(finalized))) return;
+      if (!dedupeSuggestionAgainstHistory(finalized, lastUserMsg, previousSuggestions)) return;
+      if (isTooSimilarToSelected(finalized, selected)) return;
+      if (scoreSuggestionCandidate(finalized, value, role, assistMode) < 44) return;
+      roleBuckets[role] = finalized;
+      selected.push(finalized);
+    });
+    return SUGGESTION_ROLE_ORDER.map((role) => roleBuckets[role]).filter(Boolean).slice(0, SUGGESTION_TARGET_COUNT);
+  };
+
+  try {
+    const parsed = JSON.parse(original);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const parsedObjectParts = parseJsonObjectParts(parsed);
+      if (parsedObjectParts) return parsedObjectParts;
+    }
+  } catch {
+    const partial = {};
+    const fieldPattern = /"(stay|progress|bold)"\s*:\s*"((?:\\.|[^"\\])*)"/g;
+    let match;
+    while ((match = fieldPattern.exec(original)) !== null) {
+      partial[match[1]] = match[2]
+        .replace(/\\n/g, ' ')
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, '\\');
+    }
+    const partialObjectParts = parseJsonObjectParts(partial);
+    if (partialObjectParts) return partialObjectParts;
+  }
+
+  const cleaned = original
     .replace(/\[TOOL_CALLS\]/gi, '')
     .replace(/<\/?s>/gi, '')
     .replace(/\bassistant\b/gi, '')
@@ -1114,9 +1180,10 @@ export async function generateSuggestionsBackground(history, character, userName
     model,
     isOllama: true,
     ollamaUrl,
-    temperature: 0.68,
+    temperature: 0.55,
     maxTokens: budgetConfig.suggestionMaxTokens,
-    num_ctx: suggestionNumCtx
+    num_ctx: suggestionNumCtx,
+    format: SUGGESTION_JSON_SCHEMA
   };
 
   console.log('[API] Suggestions runtime:', runtimeContext.debug);
@@ -1155,7 +1222,8 @@ export async function generateSuggestionsBackground(history, character, userName
           num_predict: params.maxTokens,
           temperature: params.temperature,
           num_ctx: params.num_ctx
-        }
+        },
+        ...(params.format ? { format: params.format } : {})
       })
     });
 

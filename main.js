@@ -1063,6 +1063,7 @@ ipcMain.handle('ai-chat', async (event, params) => {
     repeat_last_n,
     penalize_newline,
     stop = [],
+    format,
     tag
   } = params;
 
@@ -1116,7 +1117,8 @@ ipcMain.handle('ai-chat', async (event, params) => {
         messages: ollamaMessages,
         stream: false,
         options,
-        stop
+        stop,
+        ...(format ? { format } : {})
       }),
       signal: abortController.signal,
     });

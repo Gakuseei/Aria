@@ -177,16 +177,26 @@ function buildSuggestionLateSteering(runtimeState) {
     'Return only valid JSON with exactly these string keys: stay, progress, bold.',
     isBot
       ? 'Each value must be a compact reply that can be sent as-is.'
-      : `Write only ${runtimeState.userName}'s next turn. Never write as ${runtimeState.characterName} or describe ${runtimeState.characterName}'s feelings/actions as if they belong to ${runtimeState.userName}.`,
+      : `Write only ${runtimeState.userName}'s next turn. NEVER write as ${runtimeState.characterName}.`,
     isBot
       ? 'Keep each value very short, direct, and complete.'
+      : `Write each value in FIRST PERSON from ${runtimeState.userName}'s point of view (I/me/my).`,
+    isBot
+      ? ''
+      : `NEVER narrate ${runtimeState.userName} from outside in second or third person.`,
+    isBot
+      ? ''
+      : `Do not describe ${runtimeState.characterName}'s feelings or actions as if they belong to ${runtimeState.userName}.`,
+    isBot
+      ? ''
       : 'Each value must be a sendable first-person action in *asterisks* or a short quoted spoken line.',
     'Keep every value very short, usually 3 to 8 words if possible.',
+    'Avoid third-person ownership confusion. Keep subject and target clear from the user point of view.',
     'stay = small reaction to the latest beat.',
     'progress = one clear next step.',
     'bold = more forward, but still earned by the same moment.',
     'Anchor every value to the latest beat, object, request, or question.',
-    'Do not invent a new garment, prop, task, or scene detail that is not already present in the latest beat.',
+    'Do not invent a new garment, prop, task, room, food, drink, or third character that is not already present in the latest beat.',
     isBot
       ? 'Stay inside the current exchange.'
       : 'Stay inside the current scene. Do not reset or drift generic.',
@@ -422,7 +432,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     return {
       profile,
       systemPrompt,
-      userPrompt: `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}\n\nOpen thread:\n${trimPromptSnippet(runtimeState.activeScene.open_thread || 'Carry the scene forward from the latest beat.', 96)}\n\nRecent tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}\n\n${isBot ? `3 sendable replies for ${runtimeState.userName} in the same exchange:` : `3 sendable next turns for ${runtimeState.userName} in the same scene:`}`,
+      userPrompt: `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}\n\nRecent tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}\n\n${isBot ? `3 sendable replies for ${runtimeState.userName} in the same exchange:` : `3 sendable next turns for ${runtimeState.userName} in the same scene:`}`,
       debug: {
         ...debug,
         historyCountKept: recentTail.length

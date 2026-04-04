@@ -733,24 +733,82 @@ function shouldRewriteSuggestionAsAction(candidate, assistMode = 'sfw_only', raw
   return (SUGGESTION_DIALOGUE_PATTERN.test(raw) && /^[\p{Ll}]/u.test(trimmed))
     || SUGGESTION_ACTION_OBJECT_PATTERN.test(trimmed)
     || (/^(?:gently|softly|slowly|carefully|lightly|quietly|briefly|firmly)\b/i.test(trimmed) && SUGGESTION_IMPERATIVE_ACTION_VERB_PATTERN.test(trimmed))
-    || (/^(?:touch|take|guide|pull|hold|brush|stroke|tilt|rest|trail|trace|squeeze|cup|kiss|lean|step|move|reach|press|draw|bring|offer|wrap|tuck|lift|caress|slide|thread|graze|nudge|catch|pat)\b/i.test(trimmed) && !/\b(?:me|us)\b/i.test(trimmed));
+    || (/^(?:touch|take|guide|pull|hold|brush|stroke|tilt|rest|trail|trace|squeeze|cup|kiss|lean|step|move|reach|press|draw|bring|offer|wrap|tuck|lift|caress|slide|thread|graze|nudge|catch|pat)\b/i.test(trimmed) && !/\b(?:me|us)\b/i.test(trimmed))
+    || (/^(?:smile|smiles|nod|nods|glance|glances|look|looks|wait|waits|pause|pauses|lean|leans|reach|reaches|take|takes|give|gives|maintain|maintains|keep|keeps|step|steps|move|moves|bring|brings|touch|touches|guide|guides|pull|pulls|hold|holds|cup|cups|brush|brushes|trace|traces|stroke|strokes|offer|offers|place|places)\b/i.test(trimmed) && !/\b(?:me|us)\b/i.test(trimmed));
+}
+
+function splitSuggestionDialogue(candidate) {
+  const text = String(candidate || '').trim();
+  const quoteMatch = text.match(/["“”]|(?:^|[\s([{])'/);
+  if (!quoteMatch || typeof quoteMatch.index !== 'number') {
+    return { narration: text, dialogue: '' };
+  }
+
+  const quoteToken = quoteMatch[0];
+  const quoteIndex = quoteMatch.index + (quoteToken.length > 1 ? quoteToken.length - 1 : 0);
+
+  return {
+    narration: text.slice(0, quoteIndex).trim(),
+    dialogue: text.slice(quoteIndex).trim()
+  };
+}
+
+function normalizeSuggestionDialogue(dialogue) {
+  let normalized = String(dialogue || '')
+    .replace(/^["“”'\s]+/, '')
+    .replace(/["“”'\s]+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!normalized) return '';
+  if (/\b(?:me|my)'(?:ve|ll|d|m|re|s)\b/i.test(normalized)) return '';
+
+  const wordCount = normalized.split(/\s+/).filter(Boolean).length;
+  if (wordCount < 2) return '';
+
+  if (!/[.!?]$/.test(normalized)) {
+    normalized = `${normalized}.`;
+  }
+
+  return `"${normalized}"`;
+}
+
+function repairFirstPersonOwnershipDrift(action) {
+  return String(action || '').replace(
+    /\b((?:hold(?:ing)?|pull(?:ing)?|draw(?:ing)?|press(?:ing)?|gather(?:ing)?|wrap(?:ping)?|tuck(?:ing)?)\b[^.!?]{0,80}\b(?:against|to|into|onto)\s+)(his|her)\s+(chest|body|frame|waist|arms?|side)\b/gi,
+    '$1my $3'
+  );
+}
+
+function hasSuspiciousFirstPersonSubjectSwitch(candidate) {
+  const inner = String(candidate || '').trim().replace(/^\*|\*$/g, '');
+  if (!/^I\b/i.test(inner)) return false;
+
+  return /,\s+(?!and\b|then\b|I\b|my\b|gently\b|softly\b|slowly\b|carefully\b|lightly\b|quietly\b|looking\b|letting\b|keeping\b|holding\b|drawing\b|pressing\b|pulling\b|reaching\b|guiding\b|moving\b|bringing\b|smiling\b|nodding\b|waiting\b|leaning\b|resting\b|tracing\b|brushing\b)(?:[a-z]+s)\b/i.test(inner);
 }
 
 function rewriteSuggestionAsFirstPersonAction(candidate) {
   const trimmed = String(candidate || '').trim();
   if (!trimmed) return '';
 
-  let normalized = trimmed
+  const { narration, dialogue } = splitSuggestionDialogue(trimmed);
+  const actionSource = cleanSuggestionCandidate(narration || trimmed);
+  const cleanedDialogue = String(dialogue || '').trim();
+
+  let normalized = actionSource
     .replace(/^\*+|\*+$/g, '')
+    .replace(cleanedDialogue ? /\b(?:and|then)\s+(?:say|says|said|whisper|whispers|whispered|murmur|murmurs|murmured|tell|tells|told)\b.*$/i : /$^/, '')
     .replace(/\byourself\b/gi, 'myself')
     .replace(/\byours\b/gi, 'mine')
     .replace(/\byour\b/gi, 'my')
-    .replace(/\byou\b/gi, 'me');
+    .replace(/\byou\b(?!['’])/gi, 'me');
 
   normalized = repairLeadingNarrationSegment(normalized, 'I')
     .replace(/^\*+|\*+$/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+
+  if (!normalized) return '';
 
   if (!/^I\b/.test(normalized)) {
     normalized = `I ${normalized}`;
@@ -760,13 +818,16 @@ function rewriteSuggestionAsFirstPersonAction(candidate) {
     const repairedVerb = deconjugateSimplePresent(verb) || verb;
     return `I ${adverbs}${repairedVerb}`;
   });
+  normalized = repairFirstPersonOwnershipDrift(normalized);
   normalized = normalized.replace(/^I\s+([A-Z])/, (_, lead) => `I ${lead.toLowerCase()}`);
   normalized = normalized.charAt(0).toUpperCase() + normalized.slice(1);
   if (!/[.!?]$/.test(normalized)) {
     normalized = `${normalized}.`;
   }
 
-  return `*${normalized}*`;
+  const action = `*${normalized}*`;
+  const normalizedDialogue = normalizeSuggestionDialogue(cleanedDialogue);
+  return [action, normalizedDialogue].filter(Boolean).join(' ');
 }
 
 function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCandidate = '') {
@@ -789,8 +850,9 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
   }
 
   if (shouldRewriteSuggestionAsAction(finalized, assistMode, rawCandidate)) {
-    finalized = rewriteSuggestionAsFirstPersonAction(finalized);
-    if (/^\*I\b[^*]*\bme\b/i.test(finalized)) {
+    const rewriteSource = SUGGESTION_DIALOGUE_PATTERN.test(String(rawCandidate || '')) ? rawCandidate : finalized;
+    finalized = rewriteSuggestionAsFirstPersonAction(rewriteSource);
+    if (/^\*I\b[^*]*\bme\b/i.test(finalized) || hasSuspiciousFirstPersonSubjectSwitch(finalized)) {
       return '';
     }
   } else {

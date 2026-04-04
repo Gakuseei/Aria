@@ -864,7 +864,19 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
   };
 
   let finalized = compactSuggestionCandidate(candidate);
+  let effectiveRawCandidate = String(rawCandidate || '');
   if (!finalized) return '';
+
+  if (assistMode !== 'bot_conversation') {
+    const mixedLeadingActionMatch = effectiveRawCandidate.trim().match(/^\*([^*]+)\*\s+(.+)$/s);
+    if (mixedLeadingActionMatch) {
+      const actionOnly = cleanSuggestionCandidate(`*${mixedLeadingActionMatch[1]}*`);
+      if (actionOnly) {
+        finalized = compactSuggestionCandidate(actionOnly) || finalized;
+        effectiveRawCandidate = `*${mixedLeadingActionMatch[1].trim()}*`;
+      }
+    }
+  }
 
   if (SUGGESTION_PROGRESSIVE_TAIL_PATTERN.test(finalized)) {
     finalized = finalized.split(SUGGESTION_PROGRESSIVE_TAIL_PATTERN)[0].trim();
@@ -893,8 +905,8 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
     }
   }
 
-  if (shouldRewriteSuggestionAsAction(finalized, assistMode, rawCandidate)) {
-    const rewriteSource = SUGGESTION_DIALOGUE_PATTERN.test(String(rawCandidate || '')) ? rawCandidate : finalized;
+  if (shouldRewriteSuggestionAsAction(finalized, assistMode, effectiveRawCandidate)) {
+    const rewriteSource = SUGGESTION_DIALOGUE_PATTERN.test(effectiveRawCandidate) ? effectiveRawCandidate : finalized;
     finalized = rewriteSuggestionAsFirstPersonAction(rewriteSource);
     if (
       /^\*I\b[^*]*\bme\b/i.test(finalized)
@@ -905,7 +917,7 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
       return '';
     }
   } else {
-    const hadQuotedDialogue = SUGGESTION_DIALOGUE_PATTERN.test(String(rawCandidate || '')) || SUGGESTION_DIALOGUE_PATTERN.test(String(candidate || ''));
+    const hadQuotedDialogue = SUGGESTION_DIALOGUE_PATTERN.test(effectiveRawCandidate) || SUGGESTION_DIALOGUE_PATTERN.test(String(candidate || ''));
     finalized = finalized
       .replace(/^["“”]+/, '')
       .replace(/["“”]+$/, '')

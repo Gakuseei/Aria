@@ -189,7 +189,16 @@ function buildSuggestionLateSteering(runtimeState) {
       : `Write only ${runtimeState.userName}'s next turn. NEVER write as ${runtimeState.characterName}.`,
     isBot
       ? 'Keep each value very short, direct, complete, at least 3 words, and written as plain chat text with no asterisks.'
-      : 'Keep each value as a short spoken line the user can say out loud right now. No asterisks, no stage directions, and no mixed narration plus dialogue.',
+      : 'For roleplay scenes, each value may be either a short spoken line or a brief first-person action in *asterisks* that the user can send right now.',
+    isBot
+      ? ''
+      : 'When the latest beat is physical, at least one of progress or bold should be a concrete *I ...* action instead of forcing all three values into dialogue.',
+    isBot
+      ? ''
+      : 'Do not combine action and dialogue in the same value. Pick one clean sendable move.',
+    isBot
+      ? ''
+      : 'No detached stage-direction sludge, no advice, and no planner-style wording.',
     isBot
       ? ''
       : `NEVER narrate ${runtimeState.userName} from outside in second or third person.`,

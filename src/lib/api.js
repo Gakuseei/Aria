@@ -304,7 +304,7 @@ const ASSIST_BUDGET_CONFIG = {
   constrained: {
     suggestionNumCtxCap: 4096,
     suggestionContextReserve: 768,
-    suggestionMaxTokens: 108,
+    suggestionMaxTokens: 120,
     suggestionRetryTarget: 3,
     impersonateNumCtxCap: 3072,
     impersonateContextReserve: 384,
@@ -316,7 +316,7 @@ const ASSIST_BUDGET_CONFIG = {
   default: {
     suggestionNumCtxCap: 4096,
     suggestionContextReserve: 768,
-    suggestionMaxTokens: 108,
+    suggestionMaxTokens: 120,
     suggestionRetryTarget: 3,
     impersonateNumCtxCap: 4096,
     impersonateContextReserve: 256,
@@ -328,7 +328,7 @@ const ASSIST_BUDGET_CONFIG = {
   roomy: {
     suggestionNumCtxCap: 4096,
     suggestionContextReserve: 704,
-    suggestionMaxTokens: 120,
+    suggestionMaxTokens: 132,
     suggestionRetryTarget: 3,
     impersonateNumCtxCap: 4096,
     impersonateContextReserve: 192,
@@ -543,10 +543,11 @@ const SUGGESTION_ROLE_ORDER = ['stay', 'progress', 'bold'];
 
 const SUGGESTION_JSON_SCHEMA = {
   type: 'object',
+  additionalProperties: false,
   properties: {
-    stay: { type: 'string' },
-    progress: { type: 'string' },
-    bold: { type: 'string' }
+    stay: { type: 'string', maxLength: 84 },
+    progress: { type: 'string', maxLength: 84 },
+    bold: { type: 'string', maxLength: 84 }
   },
   required: ['stay', 'progress', 'bold']
 };
@@ -566,7 +567,7 @@ const SUGGESTION_BOLD_PATTERN = /\b(?:touch|kiss|pull|guide|lean|closer|waist|th
 const SUGGESTION_ACTION_OBJECT_PATTERN = /\b(?:her|him|them|their|his|face|hair|hand|hands|waist|chin|ear|ears|neck|arm|arms|shoulder|shoulders|cheek|cheeks|lips|mouth|fingers|throat|back|hip|hips|collarbone|knuckles|wrist|wrists)\b/i;
 const SUGGESTION_IMPERATIVE_ACTION_VERB_PATTERN = /\b(?:touch|take|guide|pull|hold|brush|stroke|tilt|rest|trail|trace|squeeze|cup|kiss|lean|step|move|reach|press|draw|bring|offer|wrap|tuck|lift|caress|slide|thread|graze|nudge|catch|keep|pat|cup)\b/i;
 const WRITE_FOR_ME_GENERIC_PATTERN = /\b(?:electricity between us|cannot deny|there'?s no denying|lingering for a heartbeat longer than necessary|beneath those long lashes|warm smile spreads|vision bathed in|presence has come to mean|hint of color in her cheeks|warmth between us|something unspoken)\b/i;
-const INCOMPLETE_SUGGESTION_ENDING_PATTERN = /\b(?:a|an|the|this|that|these|those|another|some|any|more|expensive|impressive)\s*$/i;
+const INCOMPLETE_SUGGESTION_ENDING_PATTERN = /\b(?:a|an|the|this|that|these|those|another|some|any|more|expensive|impressive|your|my|her|his|their|our)\s*$/i;
 const INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN = /\b(?:whispering|smirking|watching|waiting|looking|leaning|reaching|moving|commenting)\s*$/i;
 const INCOMPLETE_SUGGESTION_ADJECTIVE_ENDING_PATTERN = /\b(?:quick|warm|small|gentle|soft|slow|long|brief)\s*$/i;
 const INCOMPLETE_SUGGESTION_VERB_ENDING_PATTERN = /\b(?:have|enjoy|appreciate|like|love|let)\s*$/i;
@@ -762,6 +763,14 @@ function normalizeSuggestionDialogue(dialogue) {
 
   if (!normalized) return '';
   if (/\b(?:me|my)'(?:ve|ll|d|m|re|s)\b/i.test(normalized)) return '';
+
+  normalized = normalized
+    .replace(/\b(the way|how|why)\s+me\s+([a-z][a-z'-]*)\b/gi, '$1 you $2')
+    .replace(/^Me\s+([a-z][a-z'-]*)\b/, 'You $1');
+
+  if (/\bme\s+(?:am|is|are|was|were|have|has|had|do|does|did|can|could|will|would|should|need|want|command|look|looks|sound|sounds|feel|feels|deserve|deserves)\b/i.test(normalized)) {
+    return '';
+  }
 
   const wordCount = normalized.split(/\s+/).filter(Boolean).length;
   if (wordCount < 2) return '';

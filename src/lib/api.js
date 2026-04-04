@@ -302,10 +302,10 @@ const LEGACY_CONTEXT_SIZE_MAP = {
 
 const ASSIST_BUDGET_CONFIG = {
   constrained: {
-    suggestionNumCtxCap: 2560,
-    suggestionContextReserve: 1024,
-    suggestionMaxTokens: 56,
-    suggestionRetryTarget: 2,
+    suggestionNumCtxCap: 4096,
+    suggestionContextReserve: 768,
+    suggestionMaxTokens: 112,
+    suggestionRetryTarget: 3,
     impersonateNumCtxCap: 3072,
     impersonateContextReserve: 384,
     impersonateFirstTokens: 104,
@@ -314,10 +314,10 @@ const ASSIST_BUDGET_CONFIG = {
     allowInvalidRetry: true
   },
   default: {
-    suggestionNumCtxCap: 3072,
-    suggestionContextReserve: 896,
-    suggestionMaxTokens: 64,
-    suggestionRetryTarget: 2,
+    suggestionNumCtxCap: 4096,
+    suggestionContextReserve: 768,
+    suggestionMaxTokens: 120,
+    suggestionRetryTarget: 3,
     impersonateNumCtxCap: 4096,
     impersonateContextReserve: 256,
     impersonateFirstTokens: 120,
@@ -327,8 +327,8 @@ const ASSIST_BUDGET_CONFIG = {
   },
   roomy: {
     suggestionNumCtxCap: 4096,
-    suggestionContextReserve: 832,
-    suggestionMaxTokens: 72,
+    suggestionContextReserve: 704,
+    suggestionMaxTokens: 132,
     suggestionRetryTarget: 3,
     impersonateNumCtxCap: 4096,
     impersonateContextReserve: 192,
@@ -536,16 +536,16 @@ function isElectron() {
 let suggestionAbortController = null;
 let suggestionRequestId = 0;
 const MIN_USABLE_SUGGESTIONS = 1;
-const SUGGESTION_TARGET_COUNT = 2;
+const SUGGESTION_TARGET_COUNT = 3;
 const SUGGESTION_MAX_WORDS = 12;
 const SUGGESTION_MAX_CHARS = 84;
-const SUGGESTION_ROLE_ORDER = ['safe', 'bold', 'progress'];
+const SUGGESTION_ROLE_ORDER = ['stay', 'progress', 'bold'];
 
 const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|note|options?|suggestions?)\b/i;
 const SUGGESTION_NON_ACTION_PATTERN = /^(?:explain|describe|clarify|suggest|propose)\b/i;
 const SUGGESTION_META_DIRECTIVE_LEAD_PATTERN = /^(?:ask|asking|compliment|complimenting|praise|praising|reassure|reassuring|explain|explaining|describe|describing|suggest|suggesting|propose|proposing)\b/i;
-const SUGGESTION_LABEL_PATTERN = /^(?:safe|bold|progress|option\s*\d+|action\s*\d+|match the current pace|current pace|same scene|bolder(?: or more forward)?|fresh angle|unexpected(?: angle)?)\s*[:\-]\s*/i;
-const SUGGESTION_BAD_LEAD_PATTERN = /^(?:i|you|he|she|they|we|it|this|that|these|those|there|here|please|option|action|pace|scene|same|bolder|fresh)\b/i;
+const SUGGESTION_LABEL_PATTERN = /^(?:stay|safe|progress|bold|option\s*\d+|action\s*\d+|current beat|stay in scene|move forward|bolder(?: or more forward)?|fresh angle|unexpected(?: angle)?)\s*[:\-]\s*/i;
+const SUGGESTION_BAD_LEAD_PATTERN = /^(?:i|you|he|she|they|we|it|this|that|these|those|there|here|please|option|action|pace|scene|same|stay|progress|bolder|fresh)\b/i;
 const SUGGESTION_DIALOGUE_PATTERN = /["“”]/;
 const SUGGESTION_OVEREXPLAIN_PATTERN = /\b(?:because|while|so that|which makes|letting|making|feeling|as you|as she|as he)\b/i;
 const SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN = /\b(?:say|saying|said|murmur|murmuring|whisper|whispering|tell|telling|ask|asking)\b/i;
@@ -568,9 +568,9 @@ const WRITE_FOR_ME_MALFORMED_LEAD_PATTERN = /^\*?\s*I\s+[A-Z][a-z]+(?:\s+[A-Z][a
 
 function detectSuggestionRole(text = '') {
   const lowered = String(text || '').toLowerCase();
-  if (/^\s*safe\s*[:\-]/i.test(lowered)) return 'safe';
-  if (/^\s*bold\s*[:\-]/i.test(lowered)) return 'bold';
+  if (/^\s*(?:stay|safe)\s*[:\-]/i.test(lowered)) return 'stay';
   if (/^\s*progress\s*[:\-]/i.test(lowered)) return 'progress';
+  if (/^\s*bold\s*[:\-]/i.test(lowered)) return 'bold';
   return null;
 }
 
@@ -868,7 +868,7 @@ function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null, ass
   if (SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(text)) score -= 30;
   if (SUGGESTION_PASSIVE_PATTERN.test(text) && !SUGGESTION_PROGRESS_PATTERN.test(text)) score -= 8;
 
-  if (role === 'safe') {
+  if (role === 'stay') {
     if (SUGGESTION_PASSIVE_PATTERN.test(text)) score += 4;
     if (SUGGESTION_BOLD_PATTERN.test(text)) score -= 4;
   } else if (role === 'bold') {
@@ -1012,7 +1012,7 @@ export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestio
   }
 
   const selected = [];
-  const roleBuckets = { safe: null, bold: null, progress: null };
+  const roleBuckets = { stay: null, progress: null, bold: null };
 
   parts.forEach(({ raw: rawPart, cleaned: cleanedPart }) => {
     const role = detectSuggestionRole(rawPart);
@@ -1104,92 +1104,9 @@ export async function generateSuggestionsBackground(history, character, userName
     }
   });
   const runtimeContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState });
-  const retrySystemPrompt = `${runtimeContext.systemPrompt}\n\nFORMAT CHECK:\n- Return exactly 2 compact next-turn options separated by |.\n- Let the 2 options naturally vary from gentler to more forward without labels, rationale, or lane language.\n- Keep each option very short, usually 4-10 words, one decisive beat only.\n- Each option must be directly sendable as the user's next message.\n- For roleplay, use either *I ...* first-person action or a short quoted spoken line.\n- No numbering, labels, commentary, explanations, or meta instructions.`;
   const parseSuggestions = (raw) => parseSuggestionResponse(raw, lastUserMsg, previousSuggestions, {
     assistMode: runtimeState.assistMode
   });
-  const charName = character?.name || 'Character';
-  const stop = [`\n${charName}:`, `\n${charName} :`, `${charName}:`];
-  const generateFallbackSuggestion = async () => {
-    const fallbackNumCtx = Math.min(numCtx, budgetConfig.impersonateNumCtxCap);
-    const fallbackRuntimeState = buildRuntimeState({
-      character,
-      history,
-      userName,
-      runtimeSteering: {
-        profile: 'impersonate',
-        availableContextTokens: Math.max(320, fallbackNumCtx - budgetConfig.impersonateContextReserve),
-        passionLevel,
-        unchainedMode,
-        assistBudgetTier,
-        persistedSceneMemory: sceneMemory
-      }
-    });
-    const fallbackContext = assembleRuntimeContext({ profile: 'impersonate', runtimeState: fallbackRuntimeState });
-    const fallbackUserPrompt = `${fallbackContext.userPrompt}\n\nWrite one short sendable next turn only. Prefer one clear move over variety. End cleanly. No commentary.`;
-
-    try {
-      if (isElectron()) {
-        const result = await window.electronAPI.aiChat({
-          messages: [{ role: 'user', content: fallbackUserPrompt }],
-          systemPrompt: fallbackContext.systemPrompt,
-          model,
-          isOllama: true,
-          ollamaUrl,
-          temperature: 0.56,
-          maxTokens: Math.max(72, budgetConfig.impersonateFirstTokens),
-          num_ctx: fallbackNumCtx,
-          stop,
-          tag: 'suggestions'
-        });
-        if (!result?.success) return [];
-        const finalized = finalizeImpersonateDraft(result.content || '', { charName, userName });
-        if (!finalized?.valid || !finalized.text) return [];
-        const shortenedDraft = shortenWriteForMeDraft(finalized.text) || finalized.text;
-        const compactSeed = trimSuggestionCandidate(shortenedDraft) || shortenedDraft;
-        const compact = finalizeSuggestionCandidate(compactSeed, fallbackRuntimeState.assistMode, compactSeed)
-          || normalizeSuggestionDisplayValue(compactSeed);
-        return compact ? [compact] : [];
-      }
-
-      const res = await fetch(`${ollamaUrl}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: suggestionAbortController?.signal,
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: fallbackContext.systemPrompt },
-            { role: 'user', content: fallbackUserPrompt }
-          ],
-          stream: false,
-          options: {
-            num_predict: Math.max(72, budgetConfig.impersonateFirstTokens),
-            temperature: 0.56,
-            num_ctx: fallbackNumCtx,
-            stop
-          }
-        })
-      });
-      const data = await res.json();
-      const finalized = finalizeImpersonateDraft(data.message?.content || '', { charName, userName });
-      if (!finalized?.valid || !finalized.text) return [];
-      const shortenedDraft = shortenWriteForMeDraft(finalized.text) || finalized.text;
-      const compactSeed = trimSuggestionCandidate(shortenedDraft) || shortenedDraft;
-      const compact = finalizeSuggestionCandidate(compactSeed, fallbackRuntimeState.assistMode, compactSeed)
-        || normalizeSuggestionDisplayValue(compactSeed);
-      return compact ? [compact] : [];
-    } catch {
-      return [];
-    }
-  };
-
-  if (!lastUserMsg) {
-    const fallback = await generateFallbackSuggestion();
-    console.log(`[API] Suggestions opening fallback: ${fallback.length}`);
-    callback(fallback.length >= MIN_USABLE_SUGGESTIONS ? fallback : null);
-    return;
-  }
 
   const chatParams = {
     messages: [{ role: 'user', content: runtimeContext.userPrompt }],
@@ -1197,15 +1114,9 @@ export async function generateSuggestionsBackground(history, character, userName
     model,
     isOllama: true,
     ollamaUrl,
-    temperature: 0.72,
+    temperature: 0.68,
     maxTokens: budgetConfig.suggestionMaxTokens,
     num_ctx: suggestionNumCtx
-  };
-  const retryChatParams = {
-    ...chatParams,
-    systemPrompt: retrySystemPrompt,
-    temperature: 0.6,
-    maxTokens: Math.max(48, budgetConfig.suggestionMaxTokens - 8)
   };
 
   console.log('[API] Suggestions runtime:', runtimeContext.debug);
@@ -1213,7 +1124,6 @@ export async function generateSuggestionsBackground(history, character, userName
   if (isElectron()) {
     suggestionAbortController = null;
     const taggedParams = { ...chatParams, tag: 'suggestions' };
-    const retryTaggedParams = { ...retryChatParams, tag: 'suggestions' };
 
     window.electronAPI.aiChat(taggedParams)
       .then(result => {
@@ -1221,28 +1131,8 @@ export async function generateSuggestionsBackground(history, character, userName
         if (!result.success) { callback(null); return; }
         const raw = result.content || '';
         const suggestions = parseSuggestions(raw);
-        const needsRetry = suggestions.length < Math.min(SUGGESTION_TARGET_COUNT, budgetConfig.suggestionRetryTarget)
-          || suggestions.some(isMalformedSuggestionCandidate);
-        console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
-        if (!needsRetry) {
-          callback(suggestions);
-          return;
-        }
-        console.log(`[API] Suggestions: retrying (got ${suggestions.length})`);
-        return window.electronAPI.aiChat(retryTaggedParams).then(async (retryResult) => {
-          if (currentRequestId !== suggestionRequestId) return;
-          const retryRaw = retryResult.success ? retryResult.content || '' : '';
-          const retrySuggestions = parseSuggestions(retryRaw);
-          console.log(`[API] Suggestions retry: ${retrySuggestions.length} from "${retryRaw.trim().slice(0, 120)}"`);
-          const best = pickBetterSuggestionBatch(suggestions, retrySuggestions, runtimeState.assistMode);
-          if (best.length >= MIN_USABLE_SUGGESTIONS) {
-            callback(best);
-            return;
-          }
-          const fallback = await generateFallbackSuggestion();
-          console.log(`[API] Suggestions fallback: ${fallback.length}`);
-          callback(fallback.length >= MIN_USABLE_SUGGESTIONS ? fallback : null);
-        });
+        console.log(`[API] Suggestions first-try: ${suggestions.length} from "${raw.trim().slice(0, 160)}"`);
+        callback(suggestions.length >= MIN_USABLE_SUGGESTIONS ? suggestions : null);
       })
       .catch(err => {
         if (err?.message === 'aborted') return;
@@ -1278,32 +1168,9 @@ export async function generateSuggestionsBackground(history, character, userName
         if (currentRequestId !== suggestionRequestId) { suggestionAbortController = null; return; }
         const raw = data.message?.content || '';
         const suggestions = parseSuggestions(raw);
-        const needsRetry = suggestions.length < Math.min(SUGGESTION_TARGET_COUNT, budgetConfig.suggestionRetryTarget)
-          || suggestions.some(isMalformedSuggestionCandidate);
-        console.log(`[API] Suggestions: ${suggestions.length} from "${raw.trim().slice(0, 120)}"`);
-        if (!needsRetry) {
-          suggestionAbortController = null;
-          callback(suggestions);
-          return;
-        }
-        console.log(`[API] Suggestions: retrying (got ${suggestions.length})`);
-        return fetch(`${ollamaUrl}/api/chat`, buildFetchOpts(retryChatParams, controller.signal))
-          .then(r => r.json())
-          .then(async (d) => {
-            suggestionAbortController = null;
-            if (currentRequestId !== suggestionRequestId) return;
-            const retryRaw = d.message?.content || '';
-            const retrySuggestions = parseSuggestions(retryRaw);
-            console.log(`[API] Suggestions retry: ${retrySuggestions.length} from "${retryRaw.trim().slice(0, 120)}"`);
-            const best = pickBetterSuggestionBatch(suggestions, retrySuggestions, runtimeState.assistMode);
-            if (best.length >= MIN_USABLE_SUGGESTIONS) {
-              callback(best);
-              return;
-            }
-            const fallback = await generateFallbackSuggestion();
-            console.log(`[API] Suggestions fallback: ${fallback.length}`);
-            callback(fallback.length >= MIN_USABLE_SUGGESTIONS ? fallback : null);
-          });
+        suggestionAbortController = null;
+        console.log(`[API] Suggestions first-try: ${suggestions.length} from "${raw.trim().slice(0, 160)}"`);
+        callback(suggestions.length >= MIN_USABLE_SUGGESTIONS ? suggestions : null);
       })
       .catch(err => {
         suggestionAbortController = null;

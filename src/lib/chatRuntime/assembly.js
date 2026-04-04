@@ -174,17 +174,21 @@ function buildSuggestionLateSteering(runtimeState) {
     isBot
       ? `Write ${runtimeState.userName}'s next sendable reply in the same exchange with ${runtimeState.characterName}.`
       : `Write ${runtimeState.userName}'s next sendable turn in the same scene with ${runtimeState.characterName}.`,
-    'Return exactly 2 options separated by | and nothing else.',
-    'Keep each option short, direct, and complete.',
-    'Let the 2 options vary from gentler to more forward without labels or explanation.',
+    'Return exactly 3 options separated by | and nothing else.',
+    'Use this exact role order and labels so parsing stays stable: stay: ... | progress: ... | bold: ...',
+    'Keep each option short, direct, complete, and immediately sendable.',
+    'stay keeps the current beat alive without stalling.',
+    'progress advances the scene by one clear step.',
+    'bold is more forward, but still earned by the current beat and never a random jump.',
     isBot
       ? 'Write compact replies, questions, or confirmations that can be sent as-is.'
       : 'Prefer first-person in-scene actions in *asterisks*. Use a short quoted spoken line only when it lands better than an action.',
-    'Answer the latest beat directly. If there is a clear question or invitation, at least one option should answer it plainly.',
+    'Each option must respond directly to the latest assistant beat. Reuse the current scene details instead of drifting generic.',
+    'If there is a clear question, invitation, or revealed object, all 3 options should stay anchored to that same moment.',
     isBot
       ? 'Stay inside the current exchange.'
-      : 'Stay inside the current scene and move it forward instead of stalling or resetting it.',
-    'Do not use labels, rationale, commentary, or advice about what to do.',
+      : 'Stay inside the current scene and move it forward instead of stalling, resetting, or summarizing.',
+    'No rationale, commentary, advice, numbering, or meta instructions.',
     runtimeState.compiledRuntimeCard.personaAnchor
       ? `Keep the options grounded in ${runtimeState.characterName}'s specific persona and chemistry.`
       : '',
@@ -415,7 +419,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     return {
       profile,
       systemPrompt,
-      userPrompt: `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}\n\nOpen thread:\n${trimPromptSnippet(runtimeState.activeScene.open_thread || 'Carry the scene forward from the latest beat.', 96)}\n\nRecent tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}\n\n${isBot ? `2 sendable replies for ${runtimeState.userName} in the same exchange:` : `2 sendable next turns for ${runtimeState.userName} in the same scene:`}`,
+      userPrompt: `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}\n\nOpen thread:\n${trimPromptSnippet(runtimeState.activeScene.open_thread || 'Carry the scene forward from the latest beat.', 96)}\n\nRecent tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}\n\n${isBot ? `3 sendable replies for ${runtimeState.userName} in the same exchange:` : `3 sendable next turns for ${runtimeState.userName} in the same scene:`}`,
       debug: {
         ...debug,
         historyCountKept: recentTail.length

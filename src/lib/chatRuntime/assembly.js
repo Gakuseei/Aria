@@ -13,10 +13,11 @@ const PROFILE_BUDGET_TARGETS = {
     lateSteering: 145
   },
   suggestions: {
-    writerRole: 80,
+    writerRole: 64,
     characterCore: 145,
-    activeScene: 90,
-    lateSteering: 170
+    activeScene: 84,
+    exampleSeed: 90,
+    lateSteering: 145
   },
   impersonate: {
     characterCore: 90,
@@ -203,13 +204,14 @@ function buildSuggestionLateSteering(runtimeState) {
       : `Write only ${runtimeState.userName}'s side of the scene. NEVER write as ${runtimeState.characterName}.`,
     isBot
       ? 'Answer only the latest message. No advice, commentary, or planner wording.'
-      : 'Prefer a brief first-person *I ...* action when action feels natural here. If dialogue is more natural for this exact beat, use dialogue instead.',
+      : 'Prefer the shortest sendable move that fits this exact beat. Use first-person *I ...* action only when action is clearly the most natural move. If dialogue is more natural, use dialogue instead.',
     'Anchor the line to the exact latest beat, not to the broad setup, trope, lore, or default premise.',
     'Use a concrete detail, action, request, or emotional cue from the latest exchange when natural so the line clearly belongs to this moment.',
     'Do not pull in background lore, job framing, relationship labels, worldbuilding, or premise details unless the latest exchange clearly invokes them.',
     'Reply to the character\'s latest line or action, not to your own earlier turn.',
     'Stay in the same moment. Do not reset the scene or drift generic.',
     'If the line could work in many unrelated scenes, it is too generic.',
+    'Skip setup clauses and reflective filler. Avoid openings like I appreciate..., I understand..., I can\'t help but..., I find myself..., I must admit..., Well....',
     isBot
       ? ''
       : `Do not describe ${runtimeState.characterName}'s feelings or actions as if they belong to ${runtimeState.userName}.`,
@@ -448,18 +450,27 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     const currentBeat = [latestCharacterBeat, latestUserBeat].filter(Boolean).join('\n');
     const compactScene = renderActiveScene(runtimeState.activeScene, { compact: true });
     const voiceExamples = buildRecentUserVoiceExamples(runtimeState);
+    const suggestionExampleSeed = runtimeState.compiledRuntimeCard.exampleSeed && runtimeState.compiledRuntimeCard.runtimeDefaults.type !== 'bot'
+      ? clipToTokenTarget(runtimeState.compiledRuntimeCard.exampleSeed, targets.exampleSeed || 90)
+      : '';
     const personaAnchor = runtimeState.compiledRuntimeCard.personaAnchor
-      ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, 40))
-      : buildPlainTextBlock('Character Reference', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, 36));
+      ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, 36))
+      : buildPlainTextBlock('Character Reference', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, 34));
     const systemPrompt = [
-      buildPlainTextBlock('Suggestion Writer Role', clipToTokenTarget(buildSuggestionWriterRole(runtimeState), targets.writerRole || 80)),
-      buildPlainTextBlock('Active Scene', clipStructuredSceneText(compactScene, targets.activeScene, 115)),
+      buildPlainTextBlock('Suggestion Writer Role', clipToTokenTarget(buildSuggestionWriterRole(runtimeState), targets.writerRole || 64)),
+      buildPlainTextBlock('Active Scene', clipStructuredSceneText(compactScene, targets.activeScene, 110)),
+      suggestionExampleSeed ? buildPlainTextBlock('Voice Seed', suggestionExampleSeed) : '',
       buildPlainTextBlock('Late Steering', clipToTokenTarget(buildSuggestionLateSteering(runtimeState), targets.lateSteering)),
       personaAnchor
     ].filter(Boolean).join('\n\n');
 
     debug.includedBlocks.push('Suggestion Writer Role', 'Active Scene', 'Late Steering');
-    debug.droppedBlocks.push('Global Core', 'Example Seed');
+    if (suggestionExampleSeed) {
+      debug.includedBlocks.push('Voice Seed');
+    } else {
+      debug.droppedBlocks.push('Voice Seed');
+    }
+    debug.droppedBlocks.push('Global Core');
     if (runtimeState.compiledRuntimeCard.personaAnchor) {
       debug.includedBlocks.push('Persona Anchor');
       debug.droppedBlocks.push('Character Core');
@@ -472,14 +483,13 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       profile,
       systemPrompt,
       userPrompt: [
+        `Latest exchange anchor:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}`,
         latestCharacterBeat ? `Latest character beat:\n${latestCharacterBeat}` : '',
         latestUserBeat ? `Previous user beat:\n${latestUserBeat}` : `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}`,
-        `Latest exchange anchor:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}`,
         voiceExamples ? `Recent ${runtimeState.userName} voice examples:\n${voiceExamples}` : '',
-        `Recent tail:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}`,
         isBot
           ? `Write one ${runtimeState.runtimeSteering.suggestionRole || 'stay'} sendable reply for ${runtimeState.userName} in the same exchange. Return JSON with {"suggestion":"..."}.`
-          : `Write one ${runtimeState.runtimeSteering.suggestionRole || 'stay'} sendable next turn for ${runtimeState.userName} in the same scene. Let the style come from the latest exchange, not from generic character setup. Return JSON with {"suggestion":"..."}.`
+          : `Write one ${runtimeState.runtimeSteering.suggestionRole || 'stay'} sendable next turn for ${runtimeState.userName} in the same scene. Make it a short sendable move, not a full explanatory sentence. Let the style come from the latest exchange, not from generic character setup. Return JSON with {"suggestion":"..."}.`
       ].filter(Boolean).join('\n\n'),
       debug: {
         ...debug,

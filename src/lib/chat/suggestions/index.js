@@ -3,6 +3,7 @@ import { assembleRuntimeContext, buildRuntimeState } from '../../chatRuntime/ind
 import { ASSIST_BUDGET_CONFIG, deriveAssistBudgetTier, getModelCtx, getModelCapabilities } from '../../ollama/index.js';
 import { isElectron } from '../platform.js';
 import { deconjugateSimplePresent, repairLeadingActionBlock, repairLeadingNarrationSegment } from '../language.js';
+import { getModelProfile } from '../../modelProfiles.js';
 
 let suggestionAbortController = null;
 let suggestionRequestId = 0;
@@ -16,7 +17,7 @@ const SINGLE_SUGGESTION_JSON_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   properties: {
-    suggestion: { type: 'string', maxLength: 60 }
+    suggestion: { type: 'string', maxLength: 120 }
   },
   required: ['suggestion']
 };
@@ -58,8 +59,8 @@ const BOT_PHYSICAL_SUGGESTION_PATTERN = /\b(?:kiss|waist|thigh|lap|neck|body|bre
 const USER_ANATOMY_ASSUMPTION_PATTERN = /\b(?:cock|dick|shaft|breasts?|boobs?|tits?|nipples?|pussy|clit|balls?|curves?)\b/i;
 const SUGGESTION_SUSPICIOUS_SELF_TARGET_PATTERN = /\b(?:caress|cup|kiss|trace|brush|stroke|press|trail|slide|touch|bring|draw|rest|place|reach|lean|tilt|guide|pull|hold)\b[^.!?]{0,80}\b(?:my\s+(?:chin|cheek|cheeks|face|jawline|cheekbone|cheekbones|ear|ears|neck|throat|lips?|mouth|waist|hip|hips|back|chest|collarbone|shoulder|shoulders|skin)|small\s+of\s+my\s+back)\b/i;
 const SUGGESTION_GENERIC_ACTION_PATTERN = /^(?:change the subject|keep talking|say something nice|say more)$/i;
-const WRITE_FOR_ME_META_LEAD_PATTERN = /\b(?:I decide to|I choose to|I can't help but|I find myself)\b/i;
-const WRITE_FOR_ME_MALFORMED_LEAD_PATTERN = /^\*?\s*I\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/;
+const SUGGESTION_REFLECTIVE_META_LEAD_PATTERN = /^(?:I\s+(?:can't help but|find myself|appreciate|understand|must admit|suppose)|Well\b|Thank you\b)/i;
+const SUGGESTION_MALFORMED_META_LEAD_PATTERN = /^\*?\s*I\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/;
 
 function detectSuggestionRole(text = '') {
   const lowered = String(text || '').toLowerCase();
@@ -111,6 +112,7 @@ function trimSuggestionCandidate(candidate) {
   if (!compact) return '';
 
   compact = compact.replace(/\s+/g, ' ').trim();
+  compact = compact.replace(/^Well\s*,?\s*/i, '').trim();
   compact = compact.replace(/\s*["“”][^"“”]*["“”]\s*$/g, '').trim();
 
   const dialogueCut = compact.search(/\s+["“”]/);
@@ -376,6 +378,10 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
     return '';
   }
 
+  if (assistMode !== 'bot_conversation' && !finalized.startsWith('*') && (SUGGESTION_REFLECTIVE_META_LEAD_PATTERN.test(finalized) || SUGGESTION_MALFORMED_META_LEAD_PATTERN.test(finalized))) {
+    return '';
+  }
+
   if (finalized.includes('*')) {
     return '';
   }
@@ -492,6 +498,7 @@ function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null, ass
   if (SUGGESTION_BAD_LEAD_PATTERN.test(text) && !/^\*?I\b/.test(text)) score -= 18;
   if (SUGGESTION_DIALOGUE_PATTERN.test(rawCandidate) && !text.startsWith('*')) score -= 16;
   if (SUGGESTION_OVEREXPLAIN_PATTERN.test(text)) score -= 14;
+  if (SUGGESTION_REFLECTIVE_META_LEAD_PATTERN.test(text)) score -= 22;
   if (/[,:;]/.test(text) && !text.startsWith('*')) score -= 8;
   if (/\b(?:master|mistress|sir)\b/i.test(lower)) score -= 10;
   if (SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN.test(text) && SUGGESTION_DIALOGUE_PATTERN.test(rawCandidate)) score -= 12;
@@ -856,7 +863,13 @@ async function requestSuggestionContent(chatParams, currentRequestId) {
         options: {
           num_predict: chatParams.maxTokens,
           temperature: chatParams.temperature,
-          num_ctx: chatParams.num_ctx
+          num_ctx: chatParams.num_ctx,
+          ...(typeof chatParams.top_k === 'number' ? { top_k: chatParams.top_k } : {}),
+          ...(typeof chatParams.top_p === 'number' ? { top_p: chatParams.top_p } : {}),
+          ...(typeof chatParams.min_p === 'number' ? { min_p: chatParams.min_p } : {}),
+          ...(typeof chatParams.repeat_penalty === 'number' ? { repeat_penalty: chatParams.repeat_penalty } : {}),
+          ...(typeof chatParams.repeat_last_n === 'number' ? { repeat_last_n: chatParams.repeat_last_n } : {}),
+          ...(typeof chatParams.penalize_newline === 'boolean' ? { penalize_newline: chatParams.penalize_newline } : {})
         },
         ...(chatParams.format ? { format: chatParams.format } : {})
       })
@@ -911,6 +924,7 @@ export async function generateSuggestionsBackground(history, character, userName
   });
   const budgetConfig = ASSIST_BUDGET_CONFIG[assistBudgetTier];
   const suggestionNumCtx = Math.min(numCtx, budgetConfig.suggestionNumCtxCap);
+  const profile = getModelProfile(model);
   const lastUserMsg = [...(history || [])].reverse().find((message) => message?.role === 'user')?.content || '';
   const baseRuntimeState = buildRuntimeState({
     character,
@@ -961,6 +975,12 @@ export async function generateSuggestionsBackground(history, character, userName
         temperature: spec.temperature,
         maxTokens: Math.min(budgetConfig.suggestionMaxTokens, spec.maxTokens),
         num_ctx: suggestionNumCtx,
+        top_k: settings.topK ?? profile.topK,
+        top_p: settings.topP ?? profile.topP,
+        min_p: settings.minP ?? profile.minP,
+        repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty,
+        repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
+        penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline,
         format: SINGLE_SUGGESTION_JSON_SCHEMA
       };
 

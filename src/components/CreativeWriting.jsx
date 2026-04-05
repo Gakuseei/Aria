@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { generateStory, continueStory, cleanStoryOutput } from '../lib/StoryEngine';
-import { saveSession, generateSessionId, autoDetectAndSetModel, getModelCtx, fetchOllamaModels } from '../lib/api';
+import { autoDetectAndSetModel, fetchOllamaModels, getModelCtx } from '../lib/ollama';
+import { saveSession, generateSessionId } from '../lib/storage/sessions';
 import { GAME_MODES } from '../App';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';

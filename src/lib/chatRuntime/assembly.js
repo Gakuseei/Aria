@@ -1,4 +1,4 @@
-import { getDepthInstruction } from '../PassionManager.js';
+import { getDepthInstruction } from '../chat/passion/index.js';
 import { getResponseModeConfig, normalizeResponseMode } from '../responseModes.js';
 import { buildPlainTextBlock, clipToTokenTarget, estimateTokens, trimPromptSnippet } from './text.js';
 import { renderActiveScene } from './runtimeState.js';
@@ -183,19 +183,19 @@ function buildSuggestionLateSteering(runtimeState) {
     isBot
       ? `Write ${runtimeState.userName}'s next sendable reply in the same exchange with ${runtimeState.characterName}.`
       : `Write ${runtimeState.userName}'s next sendable turn in the same scene with ${runtimeState.characterName}.`,
-    'Return only valid JSON with exactly these string keys: stay, progress, bold.',
+    'Return only valid JSON with exactly these string keys: stay, bold, progress.',
     isBot
       ? 'Each value must be a compact spoken reply that can be sent as-is.'
       : `Write only ${runtimeState.userName}'s next turn. NEVER write as ${runtimeState.characterName}.`,
     isBot
       ? 'Keep each value very short, direct, complete, at least 3 words, and written as plain chat text with no asterisks.'
-      : 'For roleplay scenes, each value may be either a short spoken line or a brief first-person action in *asterisks* that the user can send right now.',
-    isBot
-      ? ''
-      : 'When the latest beat is physical, at least one of progress or bold should be a concrete *I ...* action instead of forcing all three values into dialogue.',
+      : 'For roleplay scenes, prefer brief first-person *I ...* actions. Use spoken dialogue only when dialogue is clearly more natural than action.',
     isBot
       ? ''
       : 'Do not combine action and dialogue in the same value. Pick one clean sendable move.',
+    isBot
+      ? ''
+      : 'Default to actions for at least two of the three values when the scene is roleplay and the latest beat allows it.',
     isBot
       ? ''
       : 'No detached stage-direction sludge, no advice, and no planner-style wording.',
@@ -207,13 +207,16 @@ function buildSuggestionLateSteering(runtimeState) {
       : `Do not describe ${runtimeState.characterName}'s feelings or actions as if they belong to ${runtimeState.userName}.`,
     isBot
       ? ''
-      : 'Write from the user side as something they would actually say, not a description of them from outside.',
-    'Keep every value very short, usually 3 to 6 words and never more than 12 words.',
+      : 'Write from the user side as something they would actually send right now.',
+    'Keep every value tiny, usually 2 to 7 words and never more than 10 words.',
     'Avoid third-person ownership confusion. Keep subject and target clear from the user point of view.',
     'Each value must be a literal next turn the user can send right now, not advice, not commentary, not a plan, and not a description of what to do later.',
-    'stay = small reaction that keeps the current beat alive.',
-    'progress = one clear next step that moves the same interaction forward.',
-    'bold = more forward, but still earned by the same moment and still true to the current tone.',
+    'stay = the most natural immediate reply to the latest beat.',
+    'bold = slightly bolder than stay, but still earned by the same moment.',
+    'progress = one clear move that opens the next beat and pushes the story forward.',
+    isBot
+      ? ''
+      : 'Good roleplay shape: stay = *I hold her gaze.* | bold = *I draw her a little closer.* | progress = *I guide her toward the couch.*',
     'Respond to the very last thing the character just said or did, not to the general setting or broad character lore.',
     'If a value could fit almost any scene with this character, it is too generic.',
     'Anchor every value to the latest beat, object, request, or question.',

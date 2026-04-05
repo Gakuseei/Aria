@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { fileToBase64 } from '../lib/api';
+import { fileToBase64 } from '../lib/chat/characters';
 import { MAX_FILE_SIZE_BYTES } from '../lib/defaults';
 import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
 import CustomDropdown from './CustomDropdown';
 import ResponseModeField from './ResponseModeField';
+import { fetchOllamaModels } from '../lib/ollama';
 import { normalizeResponseMode } from '../lib/responseModes';
 
 function RegenerateButton({ field, regeneratingField, onRegenerate, t }) {
@@ -68,19 +69,44 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
   const [selectedType, setSelectedType] = useState('character');
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
+  const electronApi = typeof window !== 'undefined' ? window.electronAPI : null;
+  const canUseNativeAiBuilder = Boolean(electronApi?.aiGenerateCharacter);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadModels() {
-      const result = await window.electronAPI.ollamaModels({ ollamaUrl: settings.ollamaUrl });
-      if (result.success) {
-        setAvailableModels(result.models);
-        if (result.models.length > 0) {
-          setSelectedModel(prev => prev || settings.ollamaModel || result.models[0]);
+      try {
+        let models = [];
+
+        if (electronApi?.ollamaModels) {
+          const result = await electronApi.ollamaModels({ ollamaUrl: settings.ollamaUrl });
+          if (result?.success) {
+            models = result.models || [];
+          }
+        } else {
+          models = await fetchOllamaModels(settings.ollamaUrl);
         }
+
+        if (cancelled) return;
+
+        setAvailableModels(models);
+        if (models.length > 0) {
+          setSelectedModel(prev => prev || settings.ollamaModel || models[0]);
+        }
+      } catch (loadError) {
+        if (cancelled) return;
+        console.error('[AICharacterBuilder] Failed to load models:', loadError);
+        setAvailableModels([]);
       }
     }
+
     loadModels();
-  }, [settings.ollamaUrl, settings.ollamaModel]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [electronApi, settings.ollamaUrl, settings.ollamaModel]);
 
   const dispatchBuilderEvent = useCallback((type, message) => {
     window.dispatchEvent(new CustomEvent('aria-api-stats', {
@@ -91,13 +117,20 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
   const handleGenerate = async () => {
     if (!description.trim() || !selectedModel) return;
 
+    if (!canUseNativeAiBuilder) {
+      const message = t.aiCharacterBuilder?.browserPreviewUnavailable || 'AI generation is only available in the Electron app right now.';
+      setError(message);
+      dispatchBuilderEvent('unavailable', message);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setCurrentStep(2);
     dispatchBuilderEvent('generate', `Starting with ${selectedModel}, lang=${selectedLanguage}`);
 
     const startTime = Date.now();
-    const result = await window.electronAPI.aiGenerateCharacter({
+    const result = await electronApi.aiGenerateCharacter({
       description: description.trim(),
       model: selectedModel,
       language: selectedLanguage,
@@ -116,7 +149,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       if (missingFields.length > 0) {
         dispatchBuilderEvent('auto-heal', `Fixing missing fields: ${missingFields.join(', ')}`);
         for (const fieldName of missingFields) {
-          const healResult = await window.electronAPI.aiGenerateCharacter({
+          const healResult = await electronApi.aiGenerateCharacter({
             description: description.trim(),
             model: selectedModel,
             language: selectedLanguage,
@@ -148,16 +181,23 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
   };
 
   const handleCancel = () => {
-    window.electronAPI.abortAiChat('character-builder');
+    electronApi?.abortAiChat?.('character-builder');
     setLoading(false);
     setCurrentStep(1);
   };
 
   const handleRegenerateField = async (fieldName) => {
+    if (!canUseNativeAiBuilder) {
+      const message = t.aiCharacterBuilder?.browserPreviewUnavailable || 'AI generation is only available in the Electron app right now.';
+      setError(message);
+      dispatchBuilderEvent('regenerate-unavailable', message);
+      return;
+    }
+
     setRegeneratingField(fieldName);
     dispatchBuilderEvent('regenerate', `Regenerating "${fieldName}"`);
 
-    const result = await window.electronAPI.aiGenerateCharacter({
+    const result = await electronApi.aiGenerateCharacter({
       description: description.trim(),
       model: selectedModel,
       language: selectedLanguage,
@@ -411,6 +451,12 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
               </div>
             </div>
 
+            {!canUseNativeAiBuilder && (
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                {t.aiCharacterBuilder?.browserPreviewUnavailable || 'AI generation is only available in the Electron app right now.'}
+              </div>
+            )}
+
             {error && (
               <div className="bg-red-900/20 border border-red-700/30 rounded-xl p-4 text-red-400 text-sm whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
                 {error}
@@ -419,9 +465,9 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
 
             <button
               onClick={handleGenerate}
-              disabled={!description.trim() || !selectedModel || loading}
+              disabled={!description.trim() || !selectedModel || loading || !canUseNativeAiBuilder}
               className={`w-full py-4 rounded-xl font-medium text-lg transition-all duration-200 flex items-center justify-center gap-3 ${
-                !description.trim() || !selectedModel
+                !description.trim() || !selectedModel || !canUseNativeAiBuilder
                   ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
                   : isGoldMode
                     ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-black hover:from-amber-400 hover:to-yellow-400'

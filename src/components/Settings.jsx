@@ -1,7 +1,7 @@
 // ARIA v1.0 RELEASE - Settings (Rose Noir Theme)
 
 import { useState, useEffect, useRef } from 'react';
-import { CONTEXT_SIZE_OPTIONS, fetchOllamaModels, getRecommendedContextSizeForModel, normalizeContextSize, testOllamaConnection } from '../lib/api';
+import { CONTEXT_SIZE_OPTIONS, fetchOllamaModels, getRecommendedContextSizeForModel, normalizeContextSize, testOllamaConnection } from '../lib/ollama';
 import { Globe, Zap, Moon, RefreshCw, Check, X, User, Image, Volume2, HelpCircle, FolderOpen } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import ImageGenSetup from './tutorials/ImageGenSetup';

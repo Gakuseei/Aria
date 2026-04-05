@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { fileToBase64, saveCustomCharacter } from '../lib/api';
+import { fileToBase64, saveCustomCharacter } from '../lib/chat/characters';
 import { useLanguage } from '../context/LanguageContext';
 import { MAX_FILE_SIZE_BYTES } from '../lib/defaults';
 import { normalizeResponseMode } from '../lib/responseModes';

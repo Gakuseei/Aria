@@ -5,8 +5,14 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendMessage, saveSession, generateSessionId, deleteSession, autoDetectAndSetModel, generateSuggestionsBackground, abortSuggestionCall, impersonateUser, abortImpersonateCall, resolveTemplates, unloadOllamaModel, normalizeSuggestionDisplayValue } from '../lib/api';
-import { passionManager, getTierKey, PASSION_TIERS } from '../lib/PassionManager';
+import { autoDetectAndSetModel } from '../lib/ollama';
+import { saveSession, generateSessionId, deleteSession } from '../lib/storage/sessions';
+import { unloadOllamaModel } from '../lib/ollama';
+import { resolveTemplates } from '../lib/chat/common';
+import { sendMessage } from '../lib/chat/reply';
+import { generateSuggestionsBackground, abortSuggestionCall, normalizeSuggestionDisplayValue } from '../lib/chat/suggestions';
+import { impersonateUser, abortImpersonateCall } from '../lib/chat/impersonate';
+import { passionManager, getTierKey, PASSION_TIERS } from '../lib/chat/passion';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
 import { generateImage, extractConversationContext } from '../lib/imageGen';

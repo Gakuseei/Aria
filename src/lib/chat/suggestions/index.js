@@ -12,16 +12,22 @@ const SUGGESTION_MAX_WORDS = 12;
 const SUGGESTION_MAX_CHARS = 84;
 const SUGGESTION_ROLE_ORDER = ['stay', 'bold', 'progress'];
 
-const SUGGESTION_JSON_SCHEMA = {
+const SINGLE_SUGGESTION_JSON_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   properties: {
-    stay: { type: 'string', maxLength: 60 },
-    bold: { type: 'string', maxLength: 60 },
-    progress: { type: 'string', maxLength: 60 }
+    suggestion: { type: 'string', maxLength: 60 }
   },
-  required: ['stay', 'bold', 'progress']
+  required: ['suggestion']
 };
+
+const SUGGESTION_REQUEST_SPECS = [
+  { role: 'stay', temperature: 0.36, maxTokens: 48 },
+  { role: 'bold', temperature: 0.46, maxTokens: 56 },
+  { role: 'progress', temperature: 0.42, maxTokens: 60 }
+];
+
+const SUGGESTION_RETRY_NOTE = 'Retry note: the previous answer drifted, got too generic, or broke formatting. Return one cleaner suggestion that is tightly anchored to the latest exchange, uses a concrete detail when natural, and stays sendable right now.';
 
 const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|note|options?|suggestions?|you could say|you might say|try saying)\b/i;
 const SUGGESTION_NON_ACTION_PATTERN = /^(?:explain|describe|clarify|suggest|propose)\b/i;
@@ -404,8 +410,14 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
       .replace(/["“”]+$/, '')
       .trim();
 
-    if (assistMode !== 'bot_conversation' && !finalized.startsWith('*') && !hadQuotedDialogue) {
-      return '';
+    if (
+      assistMode !== 'bot_conversation'
+      && !finalized.startsWith('*')
+      && !hadQuotedDialogue
+      && /^I\b/i.test(finalized)
+      && !SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN.test(finalized)
+    ) {
+      finalized = normalizeSuggestionDisplayValue(`*${finalized.replace(/^[*\s]+|[*\s]+$/g, '')}*`);
     }
 
     if (assistMode !== 'bot_conversation' && !finalized.startsWith('*') && !/^[A-ZÄÖÜ"“]/.test(finalized)) {
@@ -414,12 +426,11 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
 
     if (!finalized.startsWith('*')) {
       const spokenWordCount = finalized.split(/\s+/).filter(Boolean).length;
-      if (spokenWordCount < 3) return '';
+      if (assistMode !== 'bot_conversation' && spokenWordCount < 2) return '';
       if (assistMode === 'bot_conversation' && spokenWordCount < 4 && !/[.!?]$/.test(finalized)) return '';
-    }
-
-    if (!finalized.startsWith('*') && !/[.!?]$/.test(finalized)) {
-      finalized = `${finalized}.`;
+      if (!/[.!?]$/.test(finalized)) {
+        finalized = `${finalized}.`;
+      }
     }
   }
 
@@ -570,12 +581,12 @@ function buildSuggestionSafetyFallback(history = [], runtimeState = null, lastUs
         ? ['Give me the short version.', 'What do you recommend right now?', 'Draft the first line for me.']
         : ['Summarize that for me.', 'What do you recommend next?', 'Draft the first line for me.'])
     : assistMode === 'nsfw_only'
-      ? ['Don\'t stop.', 'Touch me again.', 'Take me somewhere private.']
+      ? ['Don\'t stop.', 'Come closer.', 'Show me what you want.']
       : assistMode === 'mixed_transition'
-        ? ['Keep going.', 'Come closer and say that again.', 'Take me somewhere private.']
+        ? ['Keep going.', 'Come a little closer.', 'Show me what you mean.']
         : (/\b(?:nervous|safe|relax|worried|thinking|comfort|eat|meal)\b/i.test(lastAssistantLower)
             ? ['Tell me more.', 'You can relax around me.', 'Come sit with me.']
-            : ['Tell me more.', 'Come a little closer.', 'What do you want from me?']);
+            : ['Tell me more.', 'Come a little closer.', 'Show me what you mean.']);
 
   const normalized = templates
     .map((candidate) => normalizeSuggestionDisplayValue(candidate))
@@ -584,6 +595,21 @@ function buildSuggestionSafetyFallback(history = [], runtimeState = null, lastUs
     .filter((candidate) => dedupeSuggestionAgainstHistory(candidate, lastUserMsg, []));
 
   return Array.from(new Set(normalized)).slice(0, SUGGESTION_TARGET_COUNT);
+}
+
+function pickRoleFallbackSuggestion(role, history = [], runtimeState = null, lastUserMsg = '', previousSuggestions = []) {
+  const roleIndex = SUGGESTION_ROLE_ORDER.indexOf(role);
+  const candidates = buildSuggestionSafetyFallback(history, runtimeState, lastUserMsg);
+  const preferred = roleIndex >= 0 ? candidates[roleIndex] : '';
+  const options = [preferred, ...candidates].filter(Boolean);
+
+  for (const option of options) {
+    if (!dedupeSuggestionAgainstHistory(option, lastUserMsg, previousSuggestions)) continue;
+    if (isTooSimilarToSelected(option, previousSuggestions)) continue;
+    return option;
+  }
+
+  return '';
 }
 
 export function normalizeSuggestionDisplayValue(suggestion) {
@@ -763,6 +789,86 @@ export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestio
   return ordered.slice(0, SUGGESTION_TARGET_COUNT);
 }
 
+function parseSingleSuggestionResponse(raw, role, lastUserMsg = '', previousSuggestions = [], options = {}) {
+  const assistMode = options.assistMode || 'sfw_only';
+  const original = String(raw || '').trim();
+  if (!original) return '';
+
+  let rawValue = original;
+  try {
+    const parsed = JSON.parse(original);
+    if (typeof parsed?.suggestion === 'string') {
+      rawValue = parsed.suggestion;
+    } else if (typeof parsed?.[role] === 'string') {
+      rawValue = parsed[role];
+    }
+  } catch {
+    const match = original.match(/"(?:suggestion|stay|bold|progress)"\s*:\s*"((?:\\.|[^"\\])*)"/);
+    if (match?.[1]) {
+      rawValue = match[1]
+        .replace(/\\n/g, ' ')
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, '\\');
+    }
+  }
+
+  const finalized = finalizeSuggestionCandidate(cleanSuggestionCandidate(rawValue), assistMode, rawValue);
+  if (!finalized) return '';
+  if (assistMode === 'bot_conversation' && BOT_PHYSICAL_SUGGESTION_PATTERN.test(finalized)) return '';
+  if (USER_ANATOMY_ASSUMPTION_PATTERN.test(finalized) && !USER_ANATOMY_ASSUMPTION_PATTERN.test(lastUserMsg || '')) return '';
+
+  const wordCount = finalized.replace(/["“”*]/g, '').split(/\s+/).filter(Boolean).length;
+  if (finalized.length < 2 || finalized.length > SUGGESTION_MAX_CHARS || wordCount < 2 || wordCount > SUGGESTION_MAX_WORDS) return '';
+  if (SUGGESTION_META_PATTERN.test(finalized) || SUGGESTION_NON_ACTION_PATTERN.test(finalized) || (assistMode !== 'bot_conversation' && SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(finalized))) return '';
+  if (!dedupeSuggestionAgainstHistory(finalized, lastUserMsg, previousSuggestions)) return '';
+  if (isTooSimilarToSelected(finalized, previousSuggestions)) return '';
+
+  const minScore = role === 'stay' ? 40 : 44;
+  if (scoreSuggestionCandidate(finalized, rawValue, role, assistMode) < minScore) return '';
+
+  return finalized;
+}
+
+async function requestSuggestionContent(chatParams, currentRequestId) {
+  if (isElectron()) {
+    suggestionAbortController = null;
+    const result = await window.electronAPI.aiChat({ ...chatParams, tag: 'suggestions' });
+    if (currentRequestId !== suggestionRequestId) return null;
+    if (!result?.success) throw new Error(result?.error || 'Suggestion generation failed');
+    return result.content || '';
+  }
+
+  const controller = new AbortController();
+  suggestionAbortController = controller;
+
+  try {
+    const res = await fetch(`${chatParams.ollamaUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: chatParams.model,
+        messages: [
+          { role: 'system', content: chatParams.systemPrompt },
+          { role: 'user', content: chatParams.messages[0].content }
+        ],
+        stream: false,
+        options: {
+          num_predict: chatParams.maxTokens,
+          temperature: chatParams.temperature,
+          num_ctx: chatParams.num_ctx
+        },
+        ...(chatParams.format ? { format: chatParams.format } : {})
+      })
+    });
+    const data = await res.json();
+    if (currentRequestId !== suggestionRequestId) return null;
+    return data.message?.content || '';
+  } finally {
+    suggestionAbortController = null;
+  }
+}
+
 /**
  * Abort any in-flight suggestion generation.
  * Call before sendMessage/regenerate so Ollama is free for the chat stream.
@@ -806,7 +912,7 @@ export async function generateSuggestionsBackground(history, character, userName
   const budgetConfig = ASSIST_BUDGET_CONFIG[assistBudgetTier];
   const suggestionNumCtx = Math.min(numCtx, budgetConfig.suggestionNumCtxCap);
   const lastUserMsg = [...(history || [])].reverse().find((message) => message?.role === 'user')?.content || '';
-  const runtimeState = buildRuntimeState({
+  const baseRuntimeState = buildRuntimeState({
     character,
     history,
     userName,
@@ -820,96 +926,88 @@ export async function generateSuggestionsBackground(history, character, userName
       persistedSceneMemory: sceneMemory
     }
   });
-  const runtimeContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState });
-  const effectiveSuggestionAssistMode = runtimeState.compiledRuntimeCard?.runtimeDefaults?.type === 'bot'
+  const effectiveSuggestionAssistMode = baseRuntimeState.compiledRuntimeCard?.runtimeDefaults?.type === 'bot'
     ? 'bot_conversation'
-    : runtimeState.assistMode;
-  const parseSuggestions = (raw) => parseSuggestionResponse(raw, lastUserMsg, previousSuggestions, {
-    assistMode: effectiveSuggestionAssistMode
-  });
+    : baseRuntimeState.assistMode;
+  const selected = [];
 
-  const chatParams = {
-    messages: [{ role: 'user', content: runtimeContext.userPrompt }],
-    systemPrompt: runtimeContext.systemPrompt,
-    model,
-    isOllama: true,
-    ollamaUrl,
-    temperature: 0.55,
-    maxTokens: budgetConfig.suggestionMaxTokens,
-    num_ctx: suggestionNumCtx,
-    format: SUGGESTION_JSON_SCHEMA
-  };
+  try {
+    for (const spec of SUGGESTION_REQUEST_SPECS) {
+      if (currentRequestId !== suggestionRequestId) return;
 
-  console.log('[API] Suggestions runtime:', runtimeContext.debug);
-
-  if (isElectron()) {
-    suggestionAbortController = null;
-    const taggedParams = { ...chatParams, tag: 'suggestions' };
-
-    window.electronAPI.aiChat(taggedParams)
-      .then(result => {
-        if (currentRequestId !== suggestionRequestId) return;
-        if (!result.success) { callback(null); return; }
-        const raw = result.content || '';
-        const suggestions = parseSuggestions(raw);
-        const fallbackSuggestions = buildSuggestionSafetyFallback(history, runtimeState, lastUserMsg);
-        const finalSuggestions = suggestions.length >= MIN_USABLE_SUGGESTIONS
-          ? suggestions
-          : fallbackSuggestions;
-        console.log(`[API] Suggestions first-try: ${suggestions.length} from "${raw.trim().slice(0, 160)}"`);
-        callback(finalSuggestions.length >= MIN_USABLE_SUGGESTIONS ? finalSuggestions : null);
-      })
-      .catch(err => {
-        if (err?.message === 'aborted') return;
-        console.warn('[API] Suggestion generation failed:', err?.message);
-        callback(null);
-      });
-  } else {
-    const buildFetchOpts = (params, signal) => ({
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal,
-      body: JSON.stringify({
-        model: params.model,
-        messages: [
-          { role: 'system', content: params.systemPrompt },
-          { role: 'user', content: params.messages[0].content }
-        ],
-        stream: false,
-        options: {
-          num_predict: params.maxTokens,
-          temperature: params.temperature,
-          num_ctx: params.num_ctx
-        },
-        ...(params.format ? { format: params.format } : {})
-      })
-    });
-
-    const controller = new AbortController();
-    suggestionAbortController = controller;
-
-    fetch(`${ollamaUrl}/api/chat`, buildFetchOpts(chatParams, controller.signal))
-      .then(res => res.json())
-      .then(data => {
-        if (currentRequestId !== suggestionRequestId) { suggestionAbortController = null; return; }
-        const raw = data.message?.content || '';
-        const suggestions = parseSuggestions(raw);
-        const fallbackSuggestions = buildSuggestionSafetyFallback(history, runtimeState, lastUserMsg);
-        const finalSuggestions = suggestions.length >= MIN_USABLE_SUGGESTIONS
-          ? suggestions
-          : fallbackSuggestions;
-        suggestionAbortController = null;
-        console.log(`[API] Suggestions first-try: ${suggestions.length} from "${raw.trim().slice(0, 160)}"`);
-        callback(finalSuggestions.length >= MIN_USABLE_SUGGESTIONS ? finalSuggestions : null);
-      })
-      .catch(err => {
-        suggestionAbortController = null;
-        if (err?.name === 'AbortError') {
-          console.log('[API] Suggestion call aborted');
-          return;
+      const roleRuntimeState = buildRuntimeState({
+        character,
+        history,
+        userName,
+        runtimeSteering: {
+          profile: 'suggestions',
+          suggestionRole: spec.role,
+          availableContextTokens: Math.max(256, suggestionNumCtx - budgetConfig.suggestionContextReserve),
+          passionLevel,
+          unchainedMode,
+          assistBudgetTier,
+          avoidSuggestions: [...previousSuggestions, ...selected, lastUserMsg ? lastUserMsg.slice(0, 80) : ''].filter(Boolean),
+          persistedSceneMemory: sceneMemory
         }
-        console.warn('[API] Suggestion generation failed:', err?.message);
-        callback(null);
       });
+      const runtimeContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState: roleRuntimeState });
+      const rolePreviousSuggestions = [...previousSuggestions, ...selected];
+      const chatParams = {
+        messages: [{ role: 'user', content: runtimeContext.userPrompt }],
+        systemPrompt: runtimeContext.systemPrompt,
+        model,
+        isOllama: true,
+        ollamaUrl,
+        temperature: spec.temperature,
+        maxTokens: Math.min(budgetConfig.suggestionMaxTokens, spec.maxTokens),
+        num_ctx: suggestionNumCtx,
+        format: SINGLE_SUGGESTION_JSON_SCHEMA
+      };
+
+      console.log(`[API] Suggestions runtime (${spec.role}):`, runtimeContext.debug);
+
+      let candidate = '';
+      try {
+        const raw = await requestSuggestionContent(chatParams, currentRequestId);
+        if (currentRequestId !== suggestionRequestId) return;
+        candidate = parseSingleSuggestionResponse(raw || '', spec.role, lastUserMsg, rolePreviousSuggestions, {
+          assistMode: effectiveSuggestionAssistMode
+        });
+        console.log(`[API] Suggestions ${spec.role}: ${candidate ? 'ok' : 'miss'} from "${String(raw || '').trim().slice(0, 160)}"`);
+
+        if (!candidate) {
+          const retryParams = {
+            ...chatParams,
+            temperature: Math.max(0.2, spec.temperature - 0.06),
+            messages: [{ role: 'user', content: `${runtimeContext.userPrompt}\n\n${SUGGESTION_RETRY_NOTE}` }]
+          };
+          const retryRaw = await requestSuggestionContent(retryParams, currentRequestId);
+          if (currentRequestId !== suggestionRequestId) return;
+          candidate = parseSingleSuggestionResponse(retryRaw || '', spec.role, lastUserMsg, rolePreviousSuggestions, {
+            assistMode: effectiveSuggestionAssistMode
+          });
+          console.log(`[API] Suggestions ${spec.role} retry: ${candidate ? 'ok' : 'miss'} from "${String(retryRaw || '').trim().slice(0, 160)}"`);
+        }
+      } catch (err) {
+        if (err?.name === 'AbortError' || err?.message === 'aborted') return;
+        console.warn(`[API] Suggestion generation failed for ${spec.role}:`, err?.message);
+      }
+
+      if (!candidate && selected.length === 0) {
+        candidate = pickRoleFallbackSuggestion(spec.role, history, roleRuntimeState, lastUserMsg, selected);
+      }
+
+      if (!candidate) continue;
+      if (!dedupeSuggestionAgainstHistory(candidate, lastUserMsg, rolePreviousSuggestions)) continue;
+      if (isTooSimilarToSelected(candidate, selected)) continue;
+      selected.push(candidate);
+    }
+
+    if (currentRequestId !== suggestionRequestId) return;
+    callback(selected.length >= MIN_USABLE_SUGGESTIONS ? selected : null);
+  } catch (err) {
+    if (err?.name === 'AbortError' || err?.message === 'aborted') return;
+    console.warn('[API] Suggestion generation failed:', err?.message);
+    callback(selected.length >= MIN_USABLE_SUGGESTIONS ? selected : null);
   }
 }

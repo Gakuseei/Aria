@@ -209,6 +209,8 @@ function buildSuggestionLateSteering(runtimeState) {
     'Use a concrete detail, action, request, or emotional cue from the latest exchange when natural so the line clearly belongs to this moment.',
     'Do not pull in background lore, job framing, relationship labels, worldbuilding, or premise details unless the latest exchange clearly invokes them.',
     'Reply to the character\'s latest line or action, not to your own earlier turn.',
+    'If the latest character move is a question, invitation, challenge, or instruction, prefer a line that answers it directly or advances that exact exchange.',
+    'If the latest character move contains advice, a recommendation, or a proposed next step, prefer a line that accepts it, refuses it, questions it, or modifies it directly.',
     'Stay in the same moment. Do not reset the scene or drift generic.',
     'If the line could work in many unrelated scenes, it is too generic.',
     'Skip setup clauses and reflective filler. Avoid openings like I appreciate..., I understand..., I can\'t help but..., I find myself..., I must admit..., Well....',

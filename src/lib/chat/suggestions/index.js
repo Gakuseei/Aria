@@ -33,14 +33,14 @@ const SUGGESTION_RETRY_NOTE = 'Retry note: the previous answer drifted, got too 
 const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|note|options?|suggestions?|you could say|you might say|try saying)\b/i;
 const SUGGESTION_NON_ACTION_PATTERN = /^(?:explain|describe|clarify|suggest|propose)\b/i;
 const SUGGESTION_DETACHED_DIRECTIVE_PATTERN = /^(?:watch|inspect|examine|evaluate|assess|verify|check|observe|monitor)\b/i;
-const SUGGESTION_SELF_INSTRUCTION_PATTERN = /^(?:maintain|keep)\s+(?:eye contact|my gaze|gaze)\b/i;
-const SUGGESTION_FIRST_PERSON_SELF_INSTRUCTION_PATTERN = /^\*?I\s+(?:maintain|keep)\s+(?:eye contact|my gaze|gaze)\b/i;
+const SUGGESTION_SELF_INSTRUCTION_PATTERN = /^(?:maintain|keep)\s+(?:eye contact|my gaze|gaze|my\s+eyes?)\b/i;
+const SUGGESTION_FIRST_PERSON_SELF_INSTRUCTION_PATTERN = /^\*?I\s+(?:maintain|keep)\s+(?:eye contact|my gaze|gaze|my\s+eyes?)\b/i;
 const SUGGESTION_META_DIRECTIVE_LEAD_PATTERN = /^(?:ask|asking|compliment|complimenting|praise|praising|reassure|reassuring|explain|explaining|describe|describing|suggest|suggesting|propose|proposing)\b/i;
 const SUGGESTION_LABEL_PATTERN = /^(?:stay|safe|progress|bold|option\s*\d+|action\s*\d+|current beat|stay in scene|move forward|bolder(?: or more forward)?|fresh angle|unexpected(?: angle)?)\s*[:\-]\s*/i;
 const SUGGESTION_BAD_LEAD_PATTERN = /^(?:i|you|he|she|they|we|it|this|that|these|those|there|here|please|option|action|pace|scene|same|stay|progress|bolder|fresh)\b/i;
 const SUGGESTION_DIALOGUE_PATTERN = /["“”]/;
 const SUGGESTION_OVEREXPLAIN_PATTERN = /\b(?:because|while|so that|which makes|letting|making|feeling|as you|as she|as he)\b/i;
-const SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN = /\b(?:say|saying|said|murmur|murmuring|whisper|whispering|tell|telling|ask|asking)\b/i;
+const SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN = /\b(?:say|saying|said|murmur|murmuring|whisper|whispering|tell|telling|ask|asking|reply|replying|respond|responding)\b/i;
 const SUGGESTION_PROGRESSIVE_TAIL_PATTERN = /\s+and\s+(?:begin|starting|start|continue|continuing|keep|keeping|list|listing|tell|telling|explain|explaining|show|showing|reveal|revealing)\b/i;
 const SUGGESTION_FUTURE_PLAN_PATTERN = /\b(?:in future|in the future|from now on|next time|later tonight|tomorrow|going forward)\b/i;
 const SUGGESTION_AUTHORITY_TONE_PATTERN = /\b(?:i command|i order|i insist|you will|you must)\b/i;
@@ -53,7 +53,7 @@ const WRITE_FOR_ME_GENERIC_PATTERN = /\b(?:electricity between us|cannot deny|th
 const INCOMPLETE_SUGGESTION_ENDING_PATTERN = /\b(?:a|an|the|this|that|these|those|another|some|any|more|every|expensive|impressive|your|my|her|his|their|our)\s*$/i;
 const INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN = /\b(?:whispering|smirking|watching|waiting|looking|leaning|reaching|moving|commenting)\s*$/i;
 const INCOMPLETE_SUGGESTION_ADJECTIVE_ENDING_PATTERN = /\b(?:quick|warm|small|gentle|soft|slow|long|brief)\s*$/i;
-const INCOMPLETE_SUGGESTION_VERB_ENDING_PATTERN = /\b(?:have|enjoy|appreciate|like|love|let|consider|discuss|explore|adjust|test)\s*$/i;
+const INCOMPLETE_SUGGESTION_VERB_ENDING_PATTERN = /\b(?:have|enjoy|appreciate|like|love|let|consider|discuss|explore|adjust|test|want|say|tell|ask|whisper|murmur|reply|answer|start|begin|continue)\s*$/i;
 const INCOMPLETE_SUGGESTION_PHRASE_ENDING_PATTERN = /\b(?:how much(?: you)?|on how|how|it's okay to|okay to|by\s+(?:commenting|saying|asking|mentioning|telling)|in the future|related to your\s+[a-z'-]+|to\s+(?:test|consider|discuss|explore|adjust)|behind closed|beyond|not)\s*$/i;
 const BOT_PHYSICAL_SUGGESTION_PATTERN = /\b(?:kiss|waist|thigh|lap|neck|body|breath|touch|lick|ride|grind)\b/i;
 const USER_ANATOMY_ASSUMPTION_PATTERN = /\b(?:cock|dick|shaft|breasts?|boobs?|tits?|nipples?|pussy|clit|balls?|curves?)\b/i;
@@ -61,6 +61,9 @@ const SUGGESTION_SUSPICIOUS_SELF_TARGET_PATTERN = /\b(?:caress|cup|kiss|trace|br
 const SUGGESTION_GENERIC_ACTION_PATTERN = /^(?:change the subject|keep talking|say something nice|say more)$/i;
 const SUGGESTION_REFLECTIVE_META_LEAD_PATTERN = /^(?:I\s+(?:can't help but|find myself|appreciate|understand|must admit|suppose)|Well\b|Thank you\b)/i;
 const SUGGESTION_MALFORMED_META_LEAD_PATTERN = /^\*?\s*I\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/;
+const SUGGESTION_DANGLING_SPEECH_VERB_PATTERN = /\b(?:say|ask|tell|whisper|murmur|reply|answer)\.?$/i;
+const SUGGESTION_TRUNCATED_QUOTE_PATTERN = /\b(?:say|ask|tell|whisper|murmur|reply|answer)\s+["“'][^"”']*$/i;
+const SUGGESTION_DETACHED_IMPERATIVE_LEAD_PATTERN = /^(?:lean|meet|wrap|spread|press|pull|stand|sit|stay|come|go|take|grab|look|tell|show|move|keep|hold|point|scoot|lay|lie|trust|cut|circle|give|scan|review|describe|elaborate)\b/i;
 
 function detectSuggestionRole(text = '') {
   const lowered = String(text || '').toLowerCase();
@@ -382,6 +385,10 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
     return '';
   }
 
+  if (SUGGESTION_DANGLING_SPEECH_VERB_PATTERN.test(finalized) || SUGGESTION_TRUNCATED_QUOTE_PATTERN.test(String(rawCandidate || '')) || SUGGESTION_TRUNCATED_QUOTE_PATTERN.test(finalized)) {
+    return '';
+  }
+
   if (finalized.includes('*')) {
     return '';
   }
@@ -434,6 +441,7 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
       const spokenWordCount = finalized.split(/\s+/).filter(Boolean).length;
       if (assistMode !== 'bot_conversation' && spokenWordCount < 2) return '';
       if (assistMode === 'bot_conversation' && spokenWordCount < 4 && !/[.!?]$/.test(finalized)) return '';
+      if (assistMode !== 'bot_conversation' && spokenWordCount > 3 && SUGGESTION_DETACHED_IMPERATIVE_LEAD_PATTERN.test(finalized) && !/\b(?:you|your|me|my|us|our)\b/i.test(finalized)) return '';
       if (!/[.!?]$/.test(finalized)) {
         finalized = `${finalized}.`;
       }
@@ -499,6 +507,7 @@ function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null, ass
   if (SUGGESTION_DIALOGUE_PATTERN.test(rawCandidate) && !text.startsWith('*')) score -= 16;
   if (SUGGESTION_OVEREXPLAIN_PATTERN.test(text)) score -= 14;
   if (SUGGESTION_REFLECTIVE_META_LEAD_PATTERN.test(text)) score -= 22;
+  if (SUGGESTION_DANGLING_SPEECH_VERB_PATTERN.test(text)) score -= 40;
   if (/[,:;]/.test(text) && !text.startsWith('*')) score -= 8;
   if (/\b(?:master|mistress|sir)\b/i.test(lower)) score -= 10;
   if (SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN.test(text) && SUGGESTION_DIALOGUE_PATTERN.test(rawCandidate)) score -= 12;
@@ -527,7 +536,7 @@ function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null, ass
     if (/\b(?:kiss|waist|thigh|lap|neck|body|breath|touch)\b/i.test(text)) score -= 60;
     if (/\b(?:ask|answer|confirm|offer|clarify|review|check|tell|show|schedule|explain)\b/i.test(text)) score += 10;
   } else if (assistMode === 'sfw_only') {
-    if (/\b(?:kiss|waist|thigh|lap|neck|body|make me|take me)\b/i.test(text)) score -= 22;
+    if (/\b(?:kiss|waist|thigh|lap|neck|body|hips?|lips?|make me|take me)\b/i.test(text) || /\b(?:wrap your arms around me|press against me|pull me closer|feel your muscles)\b/i.test(lower)) score -= 22;
     if (/\b(?:smile|stay|tell|answer|offer|admit|reach|sit|look|hold|take|guide|touch)\b/i.test(text)) score += 4;
   } else if (assistMode === 'mixed_transition') {
     if (/\b(?:hardcore|fuck|cock|pussy|cum)\b/i.test(text)) score -= 30;
@@ -585,8 +594,8 @@ function buildSuggestionSafetyFallback(history = [], runtimeState = null, lastUs
 
   const templates = isBot
     ? (/\b(?:risk|safe|safest|danger|threat|signal|contact|scan|sensor|anomaly)\b/i.test(lastAssistantLower)
-        ? ['Give me the short version.', 'What do you recommend right now?', 'Draft the first line for me.']
-        : ['Summarize that for me.', 'What do you recommend next?', 'Draft the first line for me.'])
+        ? ['Give me the short version.', 'What do you recommend right now?', 'What is the immediate next step?']
+        : ['Summarize that for me.', 'What should I do next?', 'What do you recommend?'])
     : assistMode === 'nsfw_only'
       ? ['Don\'t stop.', 'Come closer.', 'Show me what you want.']
       : assistMode === 'mixed_transition'
@@ -1013,7 +1022,7 @@ export async function generateSuggestionsBackground(history, character, userName
         console.warn(`[API] Suggestion generation failed for ${spec.role}:`, err?.message);
       }
 
-      if (!candidate && selected.length === 0) {
+      if (!candidate && (effectiveSuggestionAssistMode === 'bot_conversation' || selected.length === 0)) {
         candidate = pickRoleFallbackSuggestion(spec.role, history, roleRuntimeState, lastUserMsg, selected);
       }
 
@@ -1024,7 +1033,12 @@ export async function generateSuggestionsBackground(history, character, userName
     }
 
     if (currentRequestId !== suggestionRequestId) return;
-    callback(selected.length >= MIN_USABLE_SUGGESTIONS ? selected : null);
+    if (selected.length < MIN_USABLE_SUGGESTIONS) {
+      const fallbackBatch = buildSuggestionSafetyFallback(history, baseRuntimeState, lastUserMsg);
+      callback(fallbackBatch.length >= MIN_USABLE_SUGGESTIONS ? fallbackBatch : null);
+      return;
+    }
+    callback(selected);
   } catch (err) {
     if (err?.name === 'AbortError' || err?.message === 'aborted') return;
     console.warn('[API] Suggestion generation failed:', err?.message);

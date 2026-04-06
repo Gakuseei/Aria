@@ -207,8 +207,8 @@ function buildSuggestionLateSteering(runtimeState) {
       ? 'Answer only the latest message. No advice, commentary, or planner wording.'
       : 'Prefer the shortest sendable move that fits this exact beat. Use first-person *I ...* action only when action is clearly the most natural move. If dialogue is more natural, use dialogue instead.',
     'Anchor the line to the exact latest beat, not to the broad setup, trope, lore, or default premise.',
+    'Respect the granularity of the latest turn. If the latest turn is broad, stay broad. If it is concrete, stay concrete unless the exchange itself narrows it.',
     'If a concrete shared activity, object, or subtask is already in progress, stay on that same focus instead of switching to a nearby room detail or different task.',
-    'If the user only selected a room, stage, or broad activity, do not invent a narrower object or subtask unless the latest exchange already introduced it.',
     'Use a concrete detail, action, request, or emotional cue from the latest exchange when natural so the line clearly belongs to this moment.',
     'Do not pull in background lore, job framing, relationship labels, worldbuilding, or premise details unless the latest exchange clearly invokes them.',
     'Reply to the character\'s latest line or action, not to your own earlier turn.',
@@ -233,6 +233,32 @@ function buildSuggestionLateSteering(runtimeState) {
     avoidList.length > 0 ? `Do not repeat or paraphrase: ${avoidList.join(' | ')}` : '',
     'No commentary or extra keys.'
   ].filter(Boolean).join('\n');
+}
+
+function buildSuggestionScopeInstruction(runtimeState) {
+  const scope = runtimeState.sceneState?.turn_scope;
+  const userScope = runtimeState.sceneState?.user_turn_scope;
+  const rules = [];
+
+  if (scope?.level === 'response_cue') {
+    rules.push('The latest exchange ends on a direct response cue. Answer or acknowledge that cue before opening any different focus.');
+  }
+
+  if (userScope?.level === 'broad_area_selection') {
+    rules.push('The latest user turn only selects the next area or stage. Stay at that same scope. Confirm, proceed, or choose where to begin there without inventing a narrower object, chore, tool, or micro-task.');
+  } else if (userScope?.level === 'generic_task') {
+    rules.push('The latest user turn asks for a generic inspection or review. Keep it generic unless the exchange itself names the object. Do not choose the inspection target for the user.');
+  } else if (userScope?.level === 'concrete_task') {
+    rules.push('The latest user turn already names the task or object. Stay on that exact task instead of drifting to a nearby one.');
+  } else if (userScope?.level === 'question') {
+    rules.push('The latest user turn is a question. Answer the whole question directly before opening a different thread.');
+  }
+
+  if (rules.length === 0) {
+    rules.push('Stay on the full latest beat instead of narrowing or widening it on your own.');
+  }
+
+  return rules.join(' ');
 }
 
 function buildSuggestionWriterRole(runtimeState) {
@@ -456,22 +482,50 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     const compactScene = renderActiveScene(runtimeState.activeScene, { compact: true });
     const voiceExamples = buildRecentUserVoiceExamples(runtimeState);
     const currentTask = latestUserBeat ? latestUserBeat : '';
+    const userTurnScope = runtimeState.sceneState?.user_turn_scope || null;
+    const turnScope = runtimeState.sceneState?.turn_scope || null;
     const preferAssistantCue = runtimeState.sceneState?.last_turn_role === 'assistant' && Boolean(runtimeState.activeScene.open_thread);
+    const preserveUserScope = preferAssistantCue && ['broad_area_selection', 'generic_task'].includes(userTurnScope?.level || '');
+    const scopeSensitiveCharacterBeat = preserveUserScope ? '' : latestCharacterBeat;
     const suggestionExampleSeed = runtimeState.compiledRuntimeCard.exampleSeed && runtimeState.compiledRuntimeCard.runtimeDefaults.type !== 'bot'
       ? clipToTokenTarget(runtimeState.compiledRuntimeCard.exampleSeed, targets.exampleSeed || 90)
       : '';
+    const suggestionScopeInstruction = buildSuggestionScopeInstruction(runtimeState);
+    const suggestionScopeBlock = [
+      userTurnScope?.anchor || userTurnScope?.guidance
+        ? buildPlainTextBlock('User Turn Scope', clipStructuredSceneText([
+          userTurnScope?.level ? `Level: ${userTurnScope.level}` : '',
+          userTurnScope?.anchor ? `Anchor: ${userTurnScope.anchor}` : '',
+          userTurnScope?.guidance ? `Guidance: ${userTurnScope.guidance}` : ''
+        ].filter(Boolean).join('\n'), 42, 110))
+        : '',
+      turnScope?.anchor || turnScope?.guidance
+        ? buildPlainTextBlock('Exchange Scope', clipStructuredSceneText([
+          turnScope?.level ? `Level: ${turnScope.level}` : '',
+          turnScope?.anchor ? `Anchor: ${turnScope.anchor}` : '',
+          turnScope?.guidance ? `Guidance: ${turnScope.guidance}` : ''
+        ].filter(Boolean).join('\n'), 42, 110))
+        : ''
+    ].filter(Boolean).join('\n\n');
     const personaAnchor = runtimeState.compiledRuntimeCard.personaAnchor
       ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, 36))
       : buildPlainTextBlock('Character Reference', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, 34));
     const systemPrompt = [
       buildPlainTextBlock('Suggestion Writer Role', clipToTokenTarget(buildSuggestionWriterRole(runtimeState), targets.writerRole || 64)),
       buildPlainTextBlock('Active Scene', clipStructuredSceneText(compactScene, targets.activeScene, 110)),
+      suggestionScopeBlock,
       suggestionExampleSeed ? buildPlainTextBlock('Voice Seed', suggestionExampleSeed) : '',
-      buildPlainTextBlock('Late Steering', clipToTokenTarget(buildSuggestionLateSteering(runtimeState), targets.lateSteering)),
+      buildPlainTextBlock('Late Steering', clipToTokenTarget([
+        buildSuggestionLateSteering(runtimeState),
+        suggestionScopeInstruction
+      ].filter(Boolean).join('\n'), targets.lateSteering)),
       personaAnchor
     ].filter(Boolean).join('\n\n');
 
     debug.includedBlocks.push('Suggestion Writer Role', 'Active Scene', 'Late Steering');
+    if (suggestionScopeBlock) {
+      debug.includedBlocks.push('Turn Scope');
+    }
     if (suggestionExampleSeed) {
       debug.includedBlocks.push('Voice Seed');
     } else {
@@ -491,10 +545,16 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       systemPrompt,
       userPrompt: [
         `Latest exchange anchor:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}`,
-        runtimeState.activeScene.open_thread ? `Response cue:\n${runtimeState.activeScene.open_thread}` : '',
         currentTask ? `Current task:\n${currentTask}` : '',
-        latestCharacterBeat ? `Latest character beat:\n${latestCharacterBeat}` : '',
-        latestUserBeat && !preferAssistantCue ? `Previous user beat:\n${latestUserBeat}` : `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}`,
+        userTurnScope?.level ? `User turn scope:\n${userTurnScope.level}` : '',
+        runtimeState.activeScene.open_thread ? `Response cue:\n${runtimeState.activeScene.open_thread}` : '',
+        userTurnScope?.anchor ? `User scope anchor:\n${userTurnScope.anchor}` : '',
+        userTurnScope?.guidance ? `User scope guidance:\n${userTurnScope.guidance}` : '',
+        turnScope?.level ? `Exchange scope:\n${turnScope.level}` : '',
+        turnScope?.anchor ? `Exchange scope anchor:\n${turnScope.anchor}` : '',
+        turnScope?.guidance ? `Exchange scope guidance:\n${turnScope.guidance}` : '',
+        scopeSensitiveCharacterBeat ? `Latest character beat:\n${scopeSensitiveCharacterBeat}` : '',
+        latestUserBeat && !preferAssistantCue ? `Previous user beat:\n${latestUserBeat}` : `Current beat:\n${[scopeSensitiveCharacterBeat, latestUserBeat].filter(Boolean).join('\n') || trimPromptSnippet(compactScene, 120)}`,
         voiceExamples ? `Recent ${runtimeState.userName} voice examples:\n${voiceExamples}` : '',
         isBot
           ? `Write one ${runtimeState.runtimeSteering.suggestionRole || 'stay'} sendable reply for ${runtimeState.userName} in the same exchange. Return JSON with {"suggestion":"..."}.`

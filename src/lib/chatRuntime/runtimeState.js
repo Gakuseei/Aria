@@ -686,6 +686,82 @@ function derivePersistentOpenThread(latestUserTurn, latestAssistantTurn) {
   return '';
 }
 
+function deriveScopeFromText(sourceText, sourceRole = 'user') {
+  const normalized = normalizeWhitespace(String(sourceText || '').trim());
+  if (!normalized) {
+    return {
+      level: 'same_beat',
+      source_role: sourceRole,
+      anchor: '',
+      guidance: ''
+    };
+  }
+
+  const broadDirection = /\b(?:let'?s|we(?:'ll)?|start|begin|go|head|move|lead|take|bring|there|here|inside|outside|upstairs|downstairs|first)\b/i.test(normalized);
+  const broadArea = /\b(?:drawing room|living room|room|hall|parlou?r|study|library|kitchen|bedroom|bathroom|office|garden|balcony|hallway|stairs?|wing|floor|area|section|deck)\b/i.test(normalized);
+  const specificObject = /\b(?:window|door|chair|table|desk|bed|mirror|curtain|piano|mantelpiece|sofa|cloth|pane|frame|shelf|shelves|counter|register|patio|deck seven|deck 7|diagnostic|diagnostics|life-support|life support|layout|scan|schematic)\b/i.test(normalized);
+  const taskVerb = /\b(?:show|demonstrate|explain|walk me through|inspect|check|look at|clean|wipe|fold|polish|buff|wash|arrange|dust|review|scan|summarize|answer|decide|choose|pull up)\b/i.test(normalized);
+  const genericTaskOnly = /\b(?:inspect|check|review|look over|look around|assess|evaluate)\b/i.test(normalized) && !specificObject;
+
+  if (broadDirection && broadArea && !specificObject && !taskVerb) {
+    return {
+      level: 'broad_area_selection',
+      source_role: sourceRole,
+      anchor: trimPromptSnippet(normalized, 120),
+      guidance: 'Stay at the same area-selection level. Confirm, proceed, or choose where to begin there without inventing a narrower object or micro-task.'
+    };
+  }
+
+  if (genericTaskOnly) {
+    return {
+      level: 'generic_task',
+      source_role: sourceRole,
+      anchor: trimPromptSnippet(normalized, 120),
+      guidance: 'Keep the task generic. Do not invent what is being inspected, checked, or reviewed unless the exchange already named it.'
+    };
+  }
+
+  if (taskVerb || specificObject) {
+    return {
+      level: 'concrete_task',
+      source_role: sourceRole,
+      anchor: trimPromptSnippet(normalized, 120),
+      guidance: 'Stay on the named task, object, or step and carry that forward directly.'
+    };
+  }
+
+  if (/\?$/.test(normalized)) {
+    return {
+      level: 'question',
+      source_role: sourceRole,
+      anchor: trimPromptSnippet(normalized, 120),
+      guidance: 'Answer the whole question directly before opening a different thread.'
+    };
+  }
+
+  return {
+    level: 'same_beat',
+    source_role: sourceRole,
+    anchor: trimPromptSnippet(normalized, 120),
+    guidance: 'Stay on the full latest beat instead of narrowing or widening it on your own.'
+  };
+}
+
+function deriveTurnScope(latestUserTurn, latestAssistantTurn, lastTurnRole = '') {
+  const latestUser = normalizeWhitespace(String(latestUserTurn || '').trim());
+  const assistantCue = normalizeWhitespace(extractAssistantOpenThread(latestAssistantTurn));
+  if (lastTurnRole === 'assistant' && assistantCue) {
+    return {
+      level: 'response_cue',
+      source_role: 'assistant',
+      anchor: trimPromptSnippet(assistantCue, 120),
+      guidance: 'Answer or acknowledge this exact cue before switching focus.'
+    };
+  }
+
+  return deriveScopeFromText(latestUser, 'user');
+}
+
 function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sceneMemory = null }) {
   const latestUserTurn = findLatestTurn(history, 'user');
   const latestAssistantTurn = findLatestTurn(history, 'assistant');
@@ -700,6 +776,8 @@ function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sc
     ? continuityFacts
     : trimSceneMemoryFacts(sceneMemory?.continuity_facts || []);
   const openThread = deriveOpenThread(latestUserTurn, latestAssistantTurn, latestRole);
+  const turnScope = deriveTurnScope(latestUserTurn, latestAssistantTurn, latestRole);
+  const userTurnScope = deriveScopeFromText(latestUserTurn, 'user');
 
   return {
     setting_anchor: settingAnchor.value,
@@ -709,6 +787,8 @@ function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sc
       latest_character_action_or_reaction: trimPromptSnippet(latestAssistantTurn, 170),
       latest_user_action_or_request: trimPromptSnippet(latestUserTurn, 160)
     },
+    user_turn_scope: userTurnScope,
+    turn_scope: turnScope,
     last_turn_role: latestRole,
     open_thread: openThread || sanitizeSceneMemoryLine(sceneMemory?.open_thread, 96) || '',
     debug: {
@@ -747,6 +827,12 @@ function buildActiveScene(sceneState) {
     continuity: trimPromptSnippet(distinctContinuity, 170),
     latest_character_action_or_reaction: sceneState.current_exchange.latest_character_action_or_reaction,
     latest_user_action_or_request: sceneState.current_exchange.latest_user_action_or_request,
+    user_turn_scope_level: sceneState.user_turn_scope?.level || 'same_beat',
+    user_turn_scope_anchor: sceneState.user_turn_scope?.anchor || '',
+    user_turn_scope_guidance: sceneState.user_turn_scope?.guidance || '',
+    turn_scope_level: sceneState.turn_scope?.level || 'same_beat',
+    turn_scope_anchor: sceneState.turn_scope?.anchor || '',
+    turn_scope_guidance: sceneState.turn_scope?.guidance || '',
     open_thread: sceneState.open_thread
   };
 }

@@ -207,6 +207,8 @@ function buildSuggestionLateSteering(runtimeState) {
       ? 'Answer only the latest message. No advice, commentary, or planner wording.'
       : 'Prefer the shortest sendable move that fits this exact beat. Use first-person *I ...* action only when action is clearly the most natural move. If dialogue is more natural, use dialogue instead.',
     'Anchor the line to the exact latest beat, not to the broad setup, trope, lore, or default premise.',
+    'If a concrete shared activity, object, or subtask is already in progress, stay on that same focus instead of switching to a nearby room detail or different task.',
+    'If the user only selected a room, stage, or broad activity, do not invent a narrower object or subtask unless the latest exchange already introduced it.',
     'Use a concrete detail, action, request, or emotional cue from the latest exchange when natural so the line clearly belongs to this moment.',
     'Do not pull in background lore, job framing, relationship labels, worldbuilding, or premise details unless the latest exchange clearly invokes them.',
     'Reply to the character\'s latest line or action, not to your own earlier turn.',
@@ -453,6 +455,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     const currentBeat = [latestCharacterBeat, latestUserBeat].filter(Boolean).join('\n');
     const compactScene = renderActiveScene(runtimeState.activeScene, { compact: true });
     const voiceExamples = buildRecentUserVoiceExamples(runtimeState);
+    const currentTask = latestUserBeat ? latestUserBeat : '';
     const preferAssistantCue = runtimeState.sceneState?.last_turn_role === 'assistant' && Boolean(runtimeState.activeScene.open_thread);
     const suggestionExampleSeed = runtimeState.compiledRuntimeCard.exampleSeed && runtimeState.compiledRuntimeCard.runtimeDefaults.type !== 'bot'
       ? clipToTokenTarget(runtimeState.compiledRuntimeCard.exampleSeed, targets.exampleSeed || 90)
@@ -489,6 +492,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       userPrompt: [
         `Latest exchange anchor:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}`,
         runtimeState.activeScene.open_thread ? `Response cue:\n${runtimeState.activeScene.open_thread}` : '',
+        currentTask ? `Current task:\n${currentTask}` : '',
         latestCharacterBeat ? `Latest character beat:\n${latestCharacterBeat}` : '',
         latestUserBeat && !preferAssistantCue ? `Previous user beat:\n${latestUserBeat}` : `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}`,
         voiceExamples ? `Recent ${runtimeState.userName} voice examples:\n${voiceExamples}` : '',

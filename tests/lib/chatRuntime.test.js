@@ -486,6 +486,7 @@ describe('assembleRuntimeContext', () => {
     expect(suggestionContext.systemPrompt).toContain('Return only valid JSON with exactly one string key: suggestion.');
     expect(suggestionContext.userPrompt).toContain('Write one stay sendable next turn for Erik');
     expect(suggestionContext.userPrompt).toContain('Response cue:');
+    expect(suggestionContext.userPrompt).toContain('Current task:');
     expect(suggestionContext.userPrompt).toContain('Are you always this bossy?');
     expect(impersonateContext.systemPrompt).toContain('Character Reference:');
     expect(impersonateContext.systemPrompt).toContain('FIRST PERSON (I/me/my)');

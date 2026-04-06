@@ -64,6 +64,7 @@ const SUGGESTION_MALFORMED_META_LEAD_PATTERN = /^\*?\s*I\s+[A-Z][a-z]+(?:\s+[A-Z
 const SUGGESTION_DANGLING_SPEECH_VERB_PATTERN = /\b(?:say|ask|tell|whisper|murmur|reply|answer)\.?$/i;
 const SUGGESTION_TRUNCATED_QUOTE_PATTERN = /\b(?:say|ask|tell|whisper|murmur|reply|answer)\s+["“'][^"”']*$/i;
 const SUGGESTION_DETACHED_IMPERATIVE_LEAD_PATTERN = /^(?:lean|meet|wrap|spread|press|pull|stand|sit|stay|come|go|take|grab|look|tell|show|move|keep|hold|point|scoot|lay|lie|trust|cut|circle|give|scan|review|describe|elaborate)\b/i;
+const SUGGESTION_SENDABLE_IMPERATIVE_PATTERN = /^(?:go on(?: then)?|keep going|continue|proceed|show me|demonstrate|walk me through|take me through|let me see|come closer|lead the way)\b/i;
 
 function detectSuggestionRole(text = '') {
   const lowered = String(text || '').toLowerCase();
@@ -441,7 +442,7 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
       const spokenWordCount = finalized.split(/\s+/).filter(Boolean).length;
       if (assistMode !== 'bot_conversation' && spokenWordCount < 2) return '';
       if (assistMode === 'bot_conversation' && spokenWordCount < 4 && !/[.!?]$/.test(finalized)) return '';
-      if (assistMode !== 'bot_conversation' && spokenWordCount > 3 && SUGGESTION_DETACHED_IMPERATIVE_LEAD_PATTERN.test(finalized) && !/\b(?:you|your|me|my|us|our)\b/i.test(finalized)) return '';
+      if (assistMode !== 'bot_conversation' && spokenWordCount > 3 && SUGGESTION_DETACHED_IMPERATIVE_LEAD_PATTERN.test(finalized) && !SUGGESTION_SENDABLE_IMPERATIVE_PATTERN.test(finalized) && !/\b(?:you|your|me|my|us|our)\b/i.test(finalized)) return '';
       if (!/[.!?]$/.test(finalized)) {
         finalized = `${finalized}.`;
       }
@@ -587,6 +588,9 @@ function buildSuggestionSafetyFallback(history = [], runtimeState = null, lastUs
   const assistantMessages = [...(history || [])].filter((message) => message?.role === 'assistant');
   const lastAssistant = String(assistantMessages.at(-1)?.content || '').trim();
   const lastAssistantLower = lastAssistant.toLowerCase();
+  const responseCue = String(runtimeState?.activeScene?.open_thread || '').trim();
+  const currentTask = String(runtimeState?.activeScene?.latest_user_action_or_request || lastUserMsg || '').trim();
+  const cueText = `${responseCue}\n${currentTask}\n${lastAssistant}`.toLowerCase();
   const assistMode = runtimeState?.compiledRuntimeCard?.runtimeDefaults?.type === 'bot'
     ? 'bot_conversation'
     : (runtimeState?.assistMode || 'sfw_only');
@@ -596,13 +600,17 @@ function buildSuggestionSafetyFallback(history = [], runtimeState = null, lastUs
     ? (/\b(?:risk|safe|safest|danger|threat|signal|contact|scan|sensor|anomaly)\b/i.test(lastAssistantLower)
         ? ['Give me the short version.', 'What do you recommend right now?', 'What is the immediate next step?']
         : ['Summarize that for me.', 'What should I do next?', 'What do you recommend?'])
-    : assistMode === 'nsfw_only'
-      ? ['Don\'t stop.', 'Come closer.', 'Show me what you want.']
-      : assistMode === 'mixed_transition'
-        ? ['Keep going.', 'Come a little closer.', 'Show me what you mean.']
-        : (/\b(?:nervous|safe|relax|worried|thinking|comfort|eat|meal)\b/i.test(lastAssistantLower)
-            ? ['Tell me more.', 'You can relax around me.', 'Come sit with me.']
-            : ['Tell me more.', 'Come a little closer.', 'Show me what you mean.']);
+    : /\b(?:show|demonstrate|demonstration|explain|walk me through|step|cleaned|cleaning|polish|buff|inspect|inspection)\b/i.test(cueText)
+      ? ['Go on.', 'Come closer and show me.', 'Show me the next step.']
+      : /\b(?:approval|acknowledg(?:e|ment)|performed her task correctly|did well|well done|properly)\b/i.test(cueText)
+        ? ['You did well.', 'Come here a moment.', 'Show me the next step.']
+        : assistMode === 'nsfw_only'
+          ? ['Don\'t stop.', 'Come closer.', 'Show me what you want.']
+          : assistMode === 'mixed_transition'
+            ? ['Keep going.', 'Come a little closer.', 'Show me what you mean.']
+            : (/\b(?:nervous|safe|relax|worried|thinking|comfort|eat|meal)\b/i.test(lastAssistantLower)
+                ? ['Tell me more.', 'You can relax around me.', 'Come sit with me.']
+                : ['Tell me more.', 'Come a little closer.', 'Show me what you mean.']);
 
   const normalized = templates
     .map((candidate) => normalizeSuggestionDisplayValue(candidate))
@@ -1022,7 +1030,7 @@ export async function generateSuggestionsBackground(history, character, userName
         console.warn(`[API] Suggestion generation failed for ${spec.role}:`, err?.message);
       }
 
-      if (!candidate && (effectiveSuggestionAssistMode === 'bot_conversation' || selected.length === 0)) {
+      if (!candidate && (effectiveSuggestionAssistMode === 'bot_conversation' || selected.length === 0 || (spec.role === 'progress' && selected.length >= 2))) {
         candidate = pickRoleFallbackSuggestion(spec.role, history, roleRuntimeState, lastUserMsg, selected);
       }
 

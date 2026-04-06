@@ -631,6 +631,63 @@ describe('suggestions stabilization', () => {
       '*I lean closer across the bar.*'
     ]);
   });
+
+  it('uses a current-task fallback for a missing progress pill instead of dropping pill 3 entirely', async () => {
+    const fetchMock = vi.fn(async (url) => {
+      if (String(url).endsWith('/api/show')) {
+        return createJsonResponse({
+          details: { parameter_size: '12B' },
+          model_info: { 'general.context_length': 4096 }
+        });
+      }
+
+      if (String(url).endsWith('/api/chat')) {
+        const callIndex = fetchMock.mock.calls.filter(([calledUrl]) => String(calledUrl).endsWith('/api/chat')).length;
+        if (callIndex === 1) {
+          return createJsonResponse({ message: { content: '{"suggestion":"Keep going."}' } });
+        }
+        if (callIndex === 2) {
+          return createJsonResponse({ message: { content: '{"suggestion":"Come closer and show me."}' } });
+        }
+        return createJsonResponse({ message: { content: '{"suggestion":"Go on, demonstrate the next step."}' } });
+      }
+
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    global.fetch = fetchMock;
+
+    const suggestions = await new Promise(async (resolve) => {
+      await generateSuggestionsBackground(
+        [
+          { role: 'user', content: 'Please, show me how you cleaned the windows.' },
+          { role: 'assistant', content: '*She beams up at you proudly, awaiting acknowledgement that she has performed her task correctly.*' }
+        ],
+        {
+          name: 'Alice',
+          category: 'nsfw',
+          systemPrompt: 'Alice is shy, dutiful, and eager to please.',
+          instructions: 'Stay in the active beat.',
+          scenario: 'Private drawing room.'
+        },
+        'Master',
+        {
+          ollamaUrl: 'http://127.0.0.1:11434',
+          ollamaModel: 'test-model',
+          contextSize: 'medium'
+        },
+        resolve,
+        [],
+        5
+      );
+    });
+
+    expect(suggestions).toEqual([
+      '*I keep going.*',
+      'Come closer.',
+      'Go on, demonstrate the next step.'
+    ]);
+  });
 });
 
 describe('finalizeImpersonateDraft', () => {

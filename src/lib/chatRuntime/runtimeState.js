@@ -369,6 +369,10 @@ function findLatestTurn(history, role) {
   return [...history].reverse().find((message) => message.role === role)?.content || '';
 }
 
+function findLatestRole(history) {
+  return history[history.length - 1]?.role || '';
+}
+
 function pickRecentSentenceByKeywords(history, keywords, maxLength = 150) {
   const loweredKeywords = keywords.map((keyword) => keyword.toLowerCase());
 
@@ -605,9 +609,46 @@ function collectContinuityFacts(history, excludedTurns = []) {
   return facts;
 }
 
-function deriveOpenThread(latestUserTurn, latestAssistantTurn) {
-  const latestUser = String(latestUserTurn || '').trim();
+function extractAssistantOpenThread(latestAssistantTurn) {
   const latestAssistant = String(latestAssistantTurn || '').trim();
+  if (!latestAssistant) return '';
+
+  const assistantQuestion = latestAssistant.match(/[^.?!]*\?/g);
+  if (assistantQuestion?.length > 0) {
+    return trimPromptSnippet(assistantQuestion[assistantQuestion.length - 1], 160);
+  }
+
+  const expectationPattern = /\b(?:await(?:ing)?|wait(?:ing)?|approval|acknowledg(?:e|ment)|guidance|instruction|response|answer|permission|decision|choice|expect(?:ing|ant|antly)?|be gentle|keep going|don'?t stop)\b/i;
+  const trailingAction = latestAssistant.match(/\*([^*]+)\*\s*$/);
+  if (trailingAction?.[1] && expectationPattern.test(trailingAction[1])) {
+    return trimPromptSnippet(cleanSceneMemoryLine(trailingAction[1], 160), 160);
+  }
+
+  const tailSnippet = latestAssistant.slice(-220).replace(/\s+/g, ' ').trim();
+  const tailSentences = splitSentences(tailSnippet);
+  for (let index = tailSentences.length - 1; index >= 0; index -= 1) {
+    if (expectationPattern.test(tailSentences[index])) {
+      return trimPromptSnippet(cleanSceneMemoryLine(tailSentences[index], 160), 160);
+    }
+  }
+
+  const sentences = splitSentences(latestAssistant);
+  for (let index = sentences.length - 1; index >= 0; index -= 1) {
+    if (expectationPattern.test(sentences[index])) {
+      return trimPromptSnippet(cleanSceneMemoryLine(sentences[index], 160), 160);
+    }
+  }
+
+  return '';
+}
+
+function deriveOpenThread(latestUserTurn, latestAssistantTurn, lastTurnRole = '') {
+  const latestUser = String(latestUserTurn || '').trim();
+  const assistantCue = extractAssistantOpenThread(latestAssistantTurn);
+
+  if (lastTurnRole === 'assistant' && assistantCue) {
+    return assistantCue;
+  }
 
   if (/\?$/.test(latestUser)) {
     return trimPromptSnippet(latestUser, 160);
@@ -618,17 +659,20 @@ function deriveOpenThread(latestUserTurn, latestAssistantTurn) {
     return trimPromptSnippet(explicitRequest[0], 160);
   }
 
-  const assistantQuestion = latestAssistant.match(/[^.?!]*\?/g);
-  if (assistantQuestion && assistantQuestion.length > 0) {
-    return trimPromptSnippet(assistantQuestion[assistantQuestion.length - 1], 160);
+  if (assistantCue) {
+    return assistantCue;
   }
 
-  return 'Continue the current beat without resetting the scene.';
+  return '';
 }
 
 function derivePersistentOpenThread(latestUserTurn, latestAssistantTurn) {
   const latestUser = String(latestUserTurn || '').trim();
-  const latestAssistant = String(latestAssistantTurn || '').trim();
+  const assistantCue = extractAssistantOpenThread(latestAssistantTurn);
+
+  if (assistantCue) {
+    return sanitizeSceneMemoryLine(assistantCue, 96);
+  }
 
   if (/\?$/.test(latestUser)) {
     return sanitizeSceneMemoryLine(latestUser, 96);
@@ -639,17 +683,13 @@ function derivePersistentOpenThread(latestUserTurn, latestAssistantTurn) {
     return sanitizeSceneMemoryLine(explicitRequest[0], 96);
   }
 
-  const assistantQuestion = latestAssistant.match(/[^.?!]*\?/g);
-  if (assistantQuestion?.length > 0) {
-    return sanitizeSceneMemoryLine(assistantQuestion[assistantQuestion.length - 1], 96);
-  }
-
   return '';
 }
 
 function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sceneMemory = null }) {
   const latestUserTurn = findLatestTurn(history, 'user');
   const latestAssistantTurn = findLatestTurn(history, 'assistant');
+  const latestRole = findLatestRole(history);
   const settingAnchor = deriveSettingAnchor(history, compiledRuntimeCard.sceneSeed || '', sceneMemory);
   const relationshipAnchor = deriveRelationshipAnchor(history, compiledRuntimeCard, sceneMemory);
   const continuityFacts = collectContinuityFacts(
@@ -659,7 +699,7 @@ function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sc
   const continuityFromMemory = continuityFacts.length > 0
     ? continuityFacts
     : trimSceneMemoryFacts(sceneMemory?.continuity_facts || []);
-  const openThread = deriveOpenThread(latestUserTurn, latestAssistantTurn);
+  const openThread = deriveOpenThread(latestUserTurn, latestAssistantTurn, latestRole);
 
   return {
     setting_anchor: settingAnchor.value,
@@ -669,6 +709,7 @@ function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sc
       latest_character_action_or_reaction: trimPromptSnippet(latestAssistantTurn, 170),
       latest_user_action_or_request: trimPromptSnippet(latestUserTurn, 160)
     },
+    last_turn_role: latestRole,
     open_thread: openThread || sanitizeSceneMemoryLine(sceneMemory?.open_thread, 96) || '',
     debug: {
       settingSource: settingAnchor.source,
@@ -686,9 +727,17 @@ function buildActiveScene(sceneState) {
     ? continuity
     : '';
   const immediateSituation = distinctContinuity
-    || sceneState.current_exchange.latest_user_action_or_request
-    || sceneState.current_exchange.latest_character_action_or_reaction
-    || sceneState.open_thread
+    || (sceneState.last_turn_role === 'assistant'
+      ? (
+        sceneState.open_thread
+        || sceneState.current_exchange.latest_character_action_or_reaction
+        || sceneState.current_exchange.latest_user_action_or_request
+      )
+      : (
+        sceneState.current_exchange.latest_user_action_or_request
+        || sceneState.open_thread
+        || sceneState.current_exchange.latest_character_action_or_reaction
+      ))
     || sceneState.setting_anchor;
 
   return {

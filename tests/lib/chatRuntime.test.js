@@ -70,6 +70,31 @@ describe('buildRuntimeState', () => {
     expect(runtimeState.activeScene.open_thread).toContain('Come inside');
   });
 
+  it('prioritizes the latest assistant response cue over the older user instruction after an assistant turn', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Alice',
+        systemPrompt: 'Alice is shy, dutiful, and eager to please.',
+        instructions: 'Obey quickly and react physically before over-explaining.',
+        scenario: 'A private estate drawing room.'
+      },
+      history: [
+        { role: 'user', content: 'Please, show me how you cleaned the windows.' },
+        { role: 'assistant', content: '*she beams up at you proudly, awaiting acknowledgement that she\'s performed her task correctly*' }
+      ],
+      userName: 'Master',
+      runtimeSteering: {
+        profile: 'suggestions',
+        availableContextTokens: 900,
+        responseMode: 'normal'
+      }
+    });
+
+    expect(runtimeState.activeScene.open_thread).toContain('awaiting acknowledgement');
+    expect(runtimeState.activeScene.open_thread).not.toContain('show me how you cleaned the windows');
+    expect(runtimeState.activeScene.immediate_situation).toContain('awaiting acknowledgement');
+  });
+
   it('protects the current beat under budget pressure', () => {
     const longTurn = 'Long continuity. '.repeat(80);
     const runtimeState = buildRuntimeState({
@@ -457,11 +482,11 @@ describe('assembleRuntimeContext', () => {
     expect(replyContext.systemPrompt).toContain('Active Scene:\nSetting:');
     expect(suggestionContext.systemPrompt).not.toContain('Global Core:');
     expect(suggestionContext.systemPrompt).toContain('same scene with Mei');
-    expect(suggestionContext.systemPrompt).toContain('literal next user turn');
-    expect(suggestionContext.systemPrompt).toContain('Keep the order fixed but unlabeled');
-    expect(suggestionContext.systemPrompt).toContain('option 1 safest, option 2 warmer or bolder, option 3 most forward');
-    expect(suggestionContext.userPrompt).toContain('3 sendable next turns for Erik');
-    expect(suggestionContext.userPrompt).toContain('Current beat:');
+    expect(suggestionContext.systemPrompt).toContain('premium, clickable quick replies');
+    expect(suggestionContext.systemPrompt).toContain('Return only valid JSON with exactly one string key: suggestion.');
+    expect(suggestionContext.userPrompt).toContain('Write one stay sendable next turn for Erik');
+    expect(suggestionContext.userPrompt).toContain('Response cue:');
+    expect(suggestionContext.userPrompt).toContain('Are you always this bossy?');
     expect(impersonateContext.systemPrompt).toContain('Character Reference:');
     expect(impersonateContext.systemPrompt).toContain('FIRST PERSON (I/me/my)');
     expect(impersonateContext.systemPrompt).toContain('NEVER narrate Erik from outside in second or third person.');
@@ -533,6 +558,6 @@ describe('assembleRuntimeContext', () => {
     expect(replyContext.systemPrompt).not.toContain('Keep actions in third person inside *asterisks*');
     expect(replyContext.systemPrompt).not.toContain('Continue the active scene with DeskBot');
     expect(suggestionContext.systemPrompt).toContain('same exchange with DeskBot');
-    expect(suggestionContext.userPrompt).toContain('3 sendable replies for Erik in the same exchange');
+    expect(suggestionContext.userPrompt).toContain('Write one stay sendable reply for Erik in the same exchange');
   });
 });

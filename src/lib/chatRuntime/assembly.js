@@ -198,6 +198,7 @@ function buildSuggestionLateSteering(runtimeState) {
       ? `Write ${runtimeState.userName}'s next sendable reply in the same exchange with ${runtimeState.characterName}.`
       : `Write ${runtimeState.userName}'s next sendable turn in the same scene with ${runtimeState.characterName}.`,
     'Return only valid JSON with exactly one string key: suggestion.',
+    runtimeState.activeScene.open_thread ? 'Resolve the current response cue before inventing a different object, room, or subtask.' : '',
     roleInstruction,
     isBot
       ? `Write only ${runtimeState.userName}'s side of the exchange. Keep it short, direct, and plain chat text.`
@@ -452,6 +453,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     const currentBeat = [latestCharacterBeat, latestUserBeat].filter(Boolean).join('\n');
     const compactScene = renderActiveScene(runtimeState.activeScene, { compact: true });
     const voiceExamples = buildRecentUserVoiceExamples(runtimeState);
+    const preferAssistantCue = runtimeState.sceneState?.last_turn_role === 'assistant' && Boolean(runtimeState.activeScene.open_thread);
     const suggestionExampleSeed = runtimeState.compiledRuntimeCard.exampleSeed && runtimeState.compiledRuntimeCard.runtimeDefaults.type !== 'bot'
       ? clipToTokenTarget(runtimeState.compiledRuntimeCard.exampleSeed, targets.exampleSeed || 90)
       : '';
@@ -486,8 +488,9 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       systemPrompt,
       userPrompt: [
         `Latest exchange anchor:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}`,
+        runtimeState.activeScene.open_thread ? `Response cue:\n${runtimeState.activeScene.open_thread}` : '',
         latestCharacterBeat ? `Latest character beat:\n${latestCharacterBeat}` : '',
-        latestUserBeat ? `Previous user beat:\n${latestUserBeat}` : `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}`,
+        latestUserBeat && !preferAssistantCue ? `Previous user beat:\n${latestUserBeat}` : `Current beat:\n${currentBeat || trimPromptSnippet(compactScene, 120)}`,
         voiceExamples ? `Recent ${runtimeState.userName} voice examples:\n${voiceExamples}` : '',
         isBot
           ? `Write one ${runtimeState.runtimeSteering.suggestionRole || 'stay'} sendable reply for ${runtimeState.userName} in the same exchange. Return JSON with {"suggestion":"..."}.`

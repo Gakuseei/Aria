@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
+import remend from 'remend';
 import toast from 'react-hot-toast';
 import { autoDetectAndSetModel } from '../lib/ollama';
 import { saveSession, generateSessionId, deleteSession } from '../lib/storage/sessions';
@@ -29,6 +30,67 @@ import CustomDropdown from './CustomDropdown';
 // ============================================================================
 // TEXT FORMATTING - BLOCK 4 FIX: Apostroph-Bug behoben
 // ============================================================================
+
+function closeUnterminatedDialogueQuote(text = '') {
+  let quoteCount = 0;
+  let lastQuoteIndex = -1;
+
+  for (let index = 0; index < text.length; index += 1) {
+    if (text[index] === '"' && text[index - 1] !== '\\') {
+      quoteCount += 1;
+      lastQuoteIndex = index;
+    }
+  }
+
+  if (quoteCount % 2 === 0 || lastQuoteIndex === -1) {
+    return text;
+  }
+
+  const trailingDialogue = text.slice(lastQuoteIndex + 1);
+  if (!/\S/.test(trailingDialogue)) {
+    return text;
+  }
+
+  return `${text}"`;
+}
+
+function repairAssistantDisplayText(text = '', isGoldMode = false) {
+  if (!text || typeof text !== 'string') return '';
+
+  try {
+    return remend(text, {
+      links: false,
+      images: false,
+      bold: isGoldMode,
+      italic: true,
+      boldItalic: isGoldMode,
+      inlineCode: false,
+      strikethrough: false,
+      katex: false,
+      setextHeadings: false,
+      comparisonOperators: false,
+      htmlTags: false,
+      handlers: [
+        {
+          name: 'dialogueQuotes',
+          priority: 100,
+          handle: closeUnterminatedDialogueQuote
+        }
+      ]
+    });
+  } catch (error) {
+    console.warn('[ChatInterface] Failed to repair assistant display text:', error);
+    return closeUnterminatedDialogueQuote(text);
+  }
+}
+
+function getDisplayMessageText(text, isUser = false, isGoldMode = false) {
+  if (isUser || typeof text !== 'string') {
+    return typeof text === 'string' ? text : '';
+  }
+
+  return repairAssistantDisplayText(text, isGoldMode);
+}
 
 export function formatMessageText(text, isGoldMode = false) {
   if (!text || typeof text !== 'string') return [];
@@ -161,7 +223,7 @@ function createStreamAbortHandle() {
 
 const MessageBubble = memo(function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false, t = {} }) {
   const formattedParts = useMemo(
-    () => formatMessageText(message.content || '', isGoldMode && !isUser),
+    () => formatMessageText(getDisplayMessageText(message.content || '', isUser, isGoldMode && !isUser), isGoldMode && !isUser),
     [message.content, isGoldMode, isUser]
   );
 
@@ -1906,12 +1968,14 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                     <div className="theme-message-meta theme-message-label mb-1.5 flex items-center gap-1.5 text-xs font-medium"><span>{character.name}</span></div>
                     <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
                       {(() => {
-                        const formattedParts = formatMessageText(streamingContent || '', false);
+                        const formattedParts = formatMessageText(getDisplayMessageText(streamingContent || '', false, isGoldMode), isGoldMode);
                         return formattedParts.map((part, i) => {
                           if (part.type === 'action') {
                             return <span key={i} className="theme-message-meta italic">{part.text}</span>;
                           } else if (part.type === 'dialogue') {
                             return <span key={i} className="text-[color:var(--color-text)] font-normal">{part.text}</span>;
+                          } else if (part.type === 'bold' && isGoldMode) {
+                            return <span key={i} className="text-amber-400 font-bold drop-shadow-sm">{part.text}</span>;
                           } else {
                             return <span key={i} className="theme-message-body">{part.text}</span>;
                           }

@@ -2,6 +2,10 @@
 // Deep Immersion with Passion Manager, Image Generation & Voice/TTS
 // AGGRESSIVE CSP: Only 'self', '127.0.0.1', 'localhost'
 
+if (process.platform === 'linux' && !process.env.GTK_USE_PORTAL) {
+  process.env.GTK_USE_PORTAL = '0';
+}
+
 const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');

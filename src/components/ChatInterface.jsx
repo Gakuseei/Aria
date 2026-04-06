@@ -4,7 +4,6 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
-import remend from 'remend';
 import toast from 'react-hot-toast';
 import { autoDetectAndSetModel } from '../lib/ollama';
 import { saveSession, generateSessionId, deleteSession } from '../lib/storage/sessions';
@@ -31,57 +30,54 @@ import CustomDropdown from './CustomDropdown';
 // TEXT FORMATTING - BLOCK 4 FIX: Apostroph-Bug behoben
 // ============================================================================
 
-function closeUnterminatedDialogueQuote(text = '') {
-  let quoteCount = 0;
-  let lastQuoteIndex = -1;
+function findUnescapedTokenPositions(text = '', token = '') {
+  if (!token) return [];
+
+  const positions = [];
+  for (let index = 0; index <= text.length - token.length; index += 1) {
+    if (text[index - 1] === '\\') continue;
+    if (text.slice(index, index + token.length) !== token) continue;
+    positions.push(index);
+    index += token.length - 1;
+  }
+  return positions;
+}
+
+function findUnescapedSingleStarPositions(text = '') {
+  const positions = [];
 
   for (let index = 0; index < text.length; index += 1) {
-    if (text[index] === '"' && text[index - 1] !== '\\') {
-      quoteCount += 1;
-      lastQuoteIndex = index;
-    }
+    if (text[index] !== '*' || text[index - 1] === '\\') continue;
+    if (text[index - 1] === '*' || text[index + 1] === '*') continue;
+    positions.push(index);
   }
 
-  if (quoteCount % 2 === 0 || lastQuoteIndex === -1) {
-    return text;
-  }
+  return positions;
+}
 
-  const trailingDialogue = text.slice(lastQuoteIndex + 1);
-  if (!/\S/.test(trailingDialogue)) {
-    return text;
-  }
+function closeUnterminatedToken(text = '', token = '', positions = []) {
+  if (!text || positions.length % 2 === 0) return text;
 
-  return `${text}"`;
+  const lastIndex = positions[positions.length - 1];
+  const trailingText = text.slice(lastIndex + token.length);
+  if (!/\S/.test(trailingText)) return text;
+
+  return `${text}${token}`;
 }
 
 function repairAssistantDisplayText(text = '', isGoldMode = false) {
   if (!text || typeof text !== 'string') return '';
 
-  try {
-    return remend(text, {
-      links: false,
-      images: false,
-      bold: isGoldMode,
-      italic: true,
-      boldItalic: isGoldMode,
-      inlineCode: false,
-      strikethrough: false,
-      katex: false,
-      setextHeadings: false,
-      comparisonOperators: false,
-      htmlTags: false,
-      handlers: [
-        {
-          name: 'dialogueQuotes',
-          priority: 100,
-          handle: closeUnterminatedDialogueQuote
-        }
-      ]
-    });
-  } catch (error) {
-    console.warn('[ChatInterface] Failed to repair assistant display text:', error);
-    return closeUnterminatedDialogueQuote(text);
+  let repaired = text;
+
+  if (isGoldMode) {
+    repaired = closeUnterminatedToken(repaired, '**', findUnescapedTokenPositions(repaired, '**'));
   }
+
+  repaired = closeUnterminatedToken(repaired, '*', findUnescapedSingleStarPositions(repaired));
+  repaired = closeUnterminatedToken(repaired, '"', findUnescapedTokenPositions(repaired, '"'));
+
+  return repaired;
 }
 
 function getDisplayMessageText(text, isUser = false, isGoldMode = false) {

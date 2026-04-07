@@ -619,6 +619,7 @@ function extractAssistantOpenThread(latestAssistantTurn) {
   }
 
   const expectationPattern = /\b(?:await(?:ing)?|wait(?:ing)?|approval|acknowledg(?:e|ment)|guidance|instruction|response|answer|permission|decision|choice|expect(?:ing|ant|antly)?|be gentle|keep going|don'?t stop)\b/i;
+  const directivePattern = /^(?:sit|stand|come|stay|close|open|take|give|show|tell|look|listen|wait|follow|go|keep|hold|bring|move|step|speak|answer|focus|read|watch|leave|stop|start|continue|join|meet|let'?s)\b/i;
   const trailingAction = latestAssistant.match(/\*([^*]+)\*\s*$/);
   if (trailingAction?.[1] && expectationPattern.test(trailingAction[1])) {
     return trimPromptSnippet(cleanSceneMemoryLine(trailingAction[1], 160), 160);
@@ -627,15 +628,39 @@ function extractAssistantOpenThread(latestAssistantTurn) {
   const tailSnippet = latestAssistant.slice(-220).replace(/\s+/g, ' ').trim();
   const tailSentences = splitSentences(tailSnippet);
   for (let index = tailSentences.length - 1; index >= 0; index -= 1) {
-    if (expectationPattern.test(tailSentences[index])) {
-      return trimPromptSnippet(cleanSceneMemoryLine(tailSentences[index], 160), 160);
+    const sentence = cleanSceneMemoryLine(tailSentences[index], 160);
+    if (expectationPattern.test(sentence)) {
+      return trimPromptSnippet(sentence, 160);
+    }
+    if (directivePattern.test(sentence)) {
+      const previousSentence = index > 0 ? cleanSceneMemoryLine(tailSentences[index - 1], 160) : '';
+      if (previousSentence && directivePattern.test(previousSentence)) {
+        return trimPromptSnippet(`${previousSentence} ${sentence}`, 160);
+      }
+      return trimPromptSnippet(sentence, 160);
+    }
+    const previousSentence = index > 0 ? cleanSceneMemoryLine(tailSentences[index - 1], 160) : '';
+    if (previousSentence && directivePattern.test(previousSentence) && sentence.length <= 80) {
+      return trimPromptSnippet(`${previousSentence} ${sentence}`, 160);
     }
   }
 
   const sentences = splitSentences(latestAssistant);
   for (let index = sentences.length - 1; index >= 0; index -= 1) {
-    if (expectationPattern.test(sentences[index])) {
-      return trimPromptSnippet(cleanSceneMemoryLine(sentences[index], 160), 160);
+    const sentence = cleanSceneMemoryLine(sentences[index], 160);
+    if (expectationPattern.test(sentence)) {
+      return trimPromptSnippet(sentence, 160);
+    }
+    if (directivePattern.test(sentence)) {
+      const previousSentence = index > 0 ? cleanSceneMemoryLine(sentences[index - 1], 160) : '';
+      if (previousSentence && directivePattern.test(previousSentence)) {
+        return trimPromptSnippet(`${previousSentence} ${sentence}`, 160);
+      }
+      return trimPromptSnippet(sentence, 160);
+    }
+    const previousSentence = index > 0 ? cleanSceneMemoryLine(sentences[index - 1], 160) : '';
+    if (previousSentence && directivePattern.test(previousSentence) && sentence.length <= 80) {
+      return trimPromptSnippet(`${previousSentence} ${sentence}`, 160);
     }
   }
 

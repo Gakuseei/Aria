@@ -18,8 +18,8 @@ const BATCH_SUGGESTION_JSON_SCHEMA = {
   properties: {
     replies: {
       type: 'array',
-      minItems: 4,
-      maxItems: 6,
+      minItems: 3,
+      maxItems: 4,
       items: {
         type: 'object',
         additionalProperties: false,
@@ -34,7 +34,7 @@ const BATCH_SUGGESTION_JSON_SCHEMA = {
   required: ['replies']
 };
 
-const SUGGESTION_CANDIDATE_COUNT = 6;
+const SUGGESTION_CANDIDATE_COUNT = 4;
 const SUGGESTION_RETRY_NOTE = 'Retry note: the previous answer drifted, got too generic, duplicated itself, or broke formatting. Return a cleaner batch that answers the latest full message, especially its ending, and gives genuinely different sendable replies right now.';
 
 const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|note|options?|suggestions?|you could say|you might say|try saying)\b/i;
@@ -488,6 +488,10 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
   }
 
   if (SUGGESTION_FIRST_PERSON_SELF_INSTRUCTION_PATTERN.test(finalized) || hasSuspiciousFirstPersonOwnershipDrift(finalized) || hasSuspiciousTrailingFragment(finalized)) {
+    return '';
+  }
+
+  if (assistMode !== 'bot_conversation' && /^\*I\b/i.test(finalized) && !looksLikeFirstPersonActionText(finalized)) {
     return '';
   }
 
@@ -1008,7 +1012,7 @@ export async function generateSuggestionsBackground(history, character, userName
     ? 'bot_conversation'
     : baseRuntimeState.assistMode;
   const runtimeContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState: baseRuntimeState });
-  const suggestionMaxTokens = Math.max(180, Math.min(240, budgetConfig.suggestionMaxTokens + 96));
+  const suggestionMaxTokens = Math.max(120, Math.min(144, budgetConfig.suggestionMaxTokens + 12));
   const baseChatParams = {
     messages: [{ role: 'user', content: runtimeContext.userPrompt }],
     systemPrompt: runtimeContext.systemPrompt,

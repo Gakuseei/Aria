@@ -1,6 +1,6 @@
 import { getDepthInstruction } from '../chat/passion/index.js';
 import { getResponseModeConfig, normalizeResponseMode } from '../responseModes.js';
-import { buildPlainTextBlock, clipToTokenTarget, estimateTokens, trimPromptSnippet } from './text.js';
+import { buildPlainTextBlock, clipToTokenTarget, estimateTokens, splitSentences, trimPromptSnippet } from './text.js';
 import { renderActiveScene } from './runtimeState.js';
 
 const PROFILE_BUDGET_TARGETS = {
@@ -102,6 +102,14 @@ function trimHistoryForBudget(history, budgetTokens) {
   return kept;
 }
 
+function extractLatestMessageEnding(text, sentenceCount = 2, maxLength = 220) {
+  const sentences = splitSentences(text || '');
+  if (sentences.length === 0) return trimPromptSnippet(text, maxLength);
+  const ending = sentences.slice(-sentenceCount).join(' ').trim();
+  if (ending.length <= maxLength) return ending;
+  return ending.slice(-maxLength).trim();
+}
+
 function clipStructuredSceneText(text, tokenTarget, maxLineLength = 150) {
   const lines = String(text || '')
     .split('\n')
@@ -191,18 +199,23 @@ function buildSuggestionLateSteering(runtimeState) {
       'Return only valid JSON with exactly one key: replies.',
       'replies must be an array of objects with exactly two string keys: text and intent.',
       'intent must be one of: reply, forward, different.',
+      'Use intent=reply for the most natural direct answer to the latest beat, especially the final cue at the end of the message.',
+      'Use intent=forward for a move that opens the next beat without ignoring the current one.',
+      'Use intent=different for a different but still fitting angle, not a random tangent.',
       runtimeState.activeScene.open_thread ? 'Resolve the current response cue before inventing a different object, room, or subtask.' : '',
       isBot
         ? `Write only ${runtimeState.userName}'s side of the exchange. Keep it short, direct, and plain chat text.`
         : `Write only ${runtimeState.userName}'s side of the scene. NEVER write as ${runtimeState.characterName}.`,
       'Read the whole latest full message before writing. Questions, invitations, instructions, and actions near the end matter most.',
+      'If the latest full message contains multiple cues, questions, or directives, prioritize the final one before earlier ones when they compete.',
+      'At least one option should answer the final cue directly when one is present.',
       isBot
         ? 'Across the set, include at least one most natural direct reply, one reply that moves the exchange forward, and one reply that takes a different but still fitting angle.'
         : 'Across the set, include the most natural immediate reply, one option that moves the scene forward, and one different but still fitting angle. A mix of dialogue and first-person *I ...* action is good when it fits the beat.',
       'Make the options genuinely different from each other. Do not paraphrase the same move three times.',
       isBot
         ? 'Answer only the latest message. No advice, commentary, or planner wording.'
-        : 'Use the most natural sendable form for this exact beat. A mix of dialogue and first-person *I ...* action is good. If the recent user voice already uses first-person action, keep some of that embodied style available instead of flattening every option into pure speech. When the scene already has physical or task momentum, action or action-plus-dialogue is often more helpful than another bare verbal nudge.',
+        : 'Use the most natural sendable form for this exact beat. A mix of dialogue and first-person *I ...* action is good. If the recent user voice already uses first-person action, keep some of that embodied style available instead of flattening every option into pure speech. If the final cue is a concrete instruction or task, a direct reply or direct first-person action that answers it is often best. When the scene already has physical or task momentum, action or action-plus-dialogue is often more helpful than another bare verbal nudge.',
       'Anchor every reply to the exact latest beat, not to the broad setup, trope, lore, or default premise.',
       'Respect the granularity of the latest turn. If the latest turn is broad, stay broad. If it is concrete, stay concrete unless the exchange itself narrows it.',
       'If a concrete shared activity, object, or subtask is already in progress, stay on that same focus instead of switching to a nearby room detail or different task.',
@@ -250,9 +263,11 @@ function buildSuggestionLateSteering(runtimeState) {
     isBot
       ? `Write only ${runtimeState.userName}'s side of the exchange. Keep it short, direct, and plain chat text.`
       : `Write only ${runtimeState.userName}'s side of the scene. NEVER write as ${runtimeState.characterName}.`,
+    'If the latest full message contains multiple cues, questions, or directives, prioritize the final one before earlier ones when they compete.',
+    'Answer the final cue directly when one is present.',
     isBot
       ? 'Answer only the latest message. No advice, commentary, or planner wording.'
-      : 'Use the most natural sendable form for this exact beat. A mix of dialogue and first-person *I ...* action is good. If the recent user voice already uses first-person action, keep some of that embodied style available instead of flattening every option into pure speech. When the scene already has physical or task momentum, action or action-plus-dialogue is often more helpful than another bare verbal nudge.',
+      : 'Use the most natural sendable form for this exact beat. A mix of dialogue and first-person *I ...* action is good. If the recent user voice already uses first-person action, keep some of that embodied style available instead of flattening every option into pure speech. If the final cue is a concrete instruction or task, a direct reply or direct first-person action that answers it is often best. When the scene already has physical or task momentum, action or action-plus-dialogue is often more helpful than another bare verbal nudge.',
     'Anchor the line to the exact latest beat, not to the broad setup, trope, lore, or default premise.',
     'Respect the granularity of the latest turn. If the latest turn is broad, stay broad. If it is concrete, stay concrete unless the exchange itself narrows it.',
     'If a concrete shared activity, object, or subtask is already in progress, stay on that same focus instead of switching to a nearby room detail or different task.',
@@ -519,10 +534,12 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
   if (profile === 'suggestions') {
     const isBot = runtimeState.compiledRuntimeCard.runtimeDefaults.type === 'bot';
     const suggestionMode = runtimeState.runtimeSteering.suggestionMode || 'single';
-    const candidateCount = Math.max(4, Math.min(6, Number(runtimeState.runtimeSteering.suggestionCandidateCount) || 6));
+    const candidateCount = Math.max(3, Math.min(4, Number(runtimeState.runtimeSteering.suggestionCandidateCount) || 4));
     const recentTail = runtimeState.selectedRecentHistory.messages.slice(suggestionMode === 'batch' ? -4 : -2);
     const latestAssistantFull = [...runtimeState.selectedRecentHistory.messages].reverse().find((message) => message.role === 'assistant')?.content || '';
     const latestUserFull = [...runtimeState.selectedRecentHistory.messages].reverse().find((message) => message.role === 'user')?.content || '';
+    const latestAssistantEnding = latestAssistantFull ? extractLatestMessageEnding(latestAssistantFull, 2, 220) : '';
+    const latestUserEnding = latestUserFull ? extractLatestMessageEnding(latestUserFull, 2, 180) : '';
     const latestCharacterBeat = runtimeState.activeScene.latest_character_action_or_reaction
       ? `${runtimeState.characterName}: ${runtimeState.activeScene.latest_character_action_or_reaction}`
       : '';
@@ -531,6 +548,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       : '';
     const currentBeat = [latestCharacterBeat, latestUserBeat].filter(Boolean).join('\n');
     const compactScene = renderActiveScene(runtimeState.activeScene, { compact: true });
+    const exchangeAnchorHistory = suggestionMode === 'batch' && latestAssistantFull ? recentTail.slice(0, -1) : recentTail;
     const voiceExamples = buildRecentUserVoiceExamples(runtimeState);
     const currentTask = latestUserBeat ? latestUserBeat : '';
     const userTurnScope = runtimeState.sceneState?.user_turn_scope || null;
@@ -601,8 +619,14 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
         suggestionMode === 'batch' && latestUserFull
           ? `Previous full ${runtimeState.userName} message:\n${latestUserFull}`
           : '',
-        `Latest exchange anchor:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}`,
-        suggestionMode === 'batch' ? 'Read the whole latest full message above. Its ending matters.' : '',
+        suggestionMode === 'batch' && latestAssistantEnding
+          ? `Final cue from latest ${runtimeState.characterName} message:\n${latestAssistantEnding}`
+          : '',
+        suggestionMode === 'batch' && latestUserEnding
+          ? `Ending of previous ${runtimeState.userName} message:\n${latestUserEnding}`
+          : '',
+        `Latest exchange anchor:\n${formatHistory(exchangeAnchorHistory, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}`,
+        suggestionMode === 'batch' ? 'Read the whole latest full message above. Answer its final cue first when one is present. If earlier and later cues compete, follow the ending. The last 1-2 sentences matter most.' : '',
         currentTask ? `Current task:\n${currentTask}` : '',
         userTurnScope?.level ? `User turn scope:\n${userTurnScope.level}` : '',
         runtimeState.activeScene.open_thread ? `Response cue:\n${runtimeState.activeScene.open_thread}` : '',

@@ -11,24 +11,31 @@ const MIN_USABLE_SUGGESTIONS = 1;
 const SUGGESTION_TARGET_COUNT = 3;
 const SUGGESTION_MAX_WORDS = 12;
 const SUGGESTION_MAX_CHARS = 84;
-const SUGGESTION_ROLE_ORDER = ['stay', 'bold', 'progress'];
 
-const SINGLE_SUGGESTION_JSON_SCHEMA = {
+const BATCH_SUGGESTION_JSON_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   properties: {
-    suggestion: { type: 'string', maxLength: 120 }
+    replies: {
+      type: 'array',
+      minItems: 4,
+      maxItems: 6,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          text: { type: 'string', maxLength: 120 },
+          intent: { type: 'string', enum: ['reply', 'forward', 'different'] }
+        },
+        required: ['text', 'intent']
+      }
+    }
   },
-  required: ['suggestion']
+  required: ['replies']
 };
 
-const SUGGESTION_REQUEST_SPECS = [
-  { role: 'stay', temperature: 0.36, maxTokens: 48 },
-  { role: 'bold', temperature: 0.46, maxTokens: 56 },
-  { role: 'progress', temperature: 0.42, maxTokens: 60 }
-];
-
-const SUGGESTION_RETRY_NOTE = 'Retry note: the previous answer drifted, got too generic, or broke formatting. Return one cleaner suggestion that is tightly anchored to the latest exchange, uses a concrete detail when natural, and stays sendable right now.';
+const SUGGESTION_CANDIDATE_COUNT = 6;
+const SUGGESTION_RETRY_NOTE = 'Retry note: the previous answer drifted, got too generic, duplicated itself, or broke formatting. Return a cleaner batch that answers the latest full message, especially its ending, and gives genuinely different sendable replies right now.';
 
 const SUGGESTION_META_PATTERN = /^(?:here(?:'s| are)?|these(?: are)?|sure|okay|note|options?|suggestions?|you could say|you might say|try saying)\b/i;
 const SUGGESTION_NON_ACTION_PATTERN = /^(?:explain|describe|clarify|suggest|propose)\b/i;
@@ -48,13 +55,16 @@ const SUGGESTION_PASSIVE_PATTERN = /\b(?:smile|nod|look|glance|watch|wait|pause|
 const SUGGESTION_PROGRESS_PATTERN = /\b(?:invite|pull|guide|lead|bring|take|sit|move|close|touch|kiss|confess|admit|answer|ask|offer|decide|tell|reveal|reach)\b/i;
 const SUGGESTION_BOLD_PATTERN = /\b(?:touch|kiss|pull|guide|lean|closer|waist|thigh|lap|admit|confess|breath|neck)\b/i;
 const SUGGESTION_ACTION_OBJECT_PATTERN = /\b(?:her|him|them|their|his|face|hair|hand|hands|waist|chin|ear|ears|neck|arm|arms|shoulder|shoulders|cheek|cheeks|lips|mouth|fingers|throat|back|hip|hips|collarbone|knuckles|wrist|wrists)\b/i;
-const SUGGESTION_IMPERATIVE_ACTION_VERB_PATTERN = /\b(?:touch|take|guide|pull|hold|brush|stroke|tilt|rest|trail|trace|squeeze|cup|kiss|lean|step|move|reach|press|draw|bring|offer|wrap|tuck|lift|caress|slide|thread|graze|nudge|catch|keep|pat|cup)\b/i;
+const SUGGESTION_IMPERATIVE_ACTION_VERB_PATTERN = /\b(?:touch|take|guide|pull|hold|brush|stroke|tilt|rest|trail|trace|squeeze|cup|kiss|lean|step|move|reach|press|draw|bring|offer|wrap|tuck|lift|caress|slide|thread|graze|nudge|catch|keep|pat|push|open)\b/i;
 const WRITE_FOR_ME_GENERIC_PATTERN = /\b(?:electricity between us|cannot deny|there'?s no denying|lingering for a heartbeat longer than necessary|beneath those long lashes|warm smile spreads|vision bathed in|presence has come to mean|hint of color in her cheeks|warmth between us|something unspoken)\b/i;
 const INCOMPLETE_SUGGESTION_ENDING_PATTERN = /\b(?:a|an|the|this|that|these|those|another|some|any|more|every|expensive|impressive|your|my|her|his|their|our)\s*$/i;
 const INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN = /\b(?:whispering|smirking|watching|waiting|looking|leaning|reaching|moving|commenting)\s*$/i;
 const INCOMPLETE_SUGGESTION_ADJECTIVE_ENDING_PATTERN = /\b(?:quick|warm|small|gentle|soft|slow|long|brief)\s*$/i;
 const INCOMPLETE_SUGGESTION_VERB_ENDING_PATTERN = /\b(?:have|enjoy|appreciate|like|love|let|consider|discuss|explore|adjust|test|want|say|tell|ask|whisper|murmur|reply|answer|start|begin|continue)\s*$/i;
-const INCOMPLETE_SUGGESTION_PHRASE_ENDING_PATTERN = /\b(?:how much(?: you)?|on how|how|it's okay to|okay to|by\s+(?:commenting|saying|asking|mentioning|telling)|in the future|related to your\s+[a-z'-]+|to\s+(?:test|consider|discuss|explore|adjust)|behind closed|beyond|not)\s*$/i;
+const INCOMPLETE_SUGGESTION_PHRASE_ENDING_PATTERN = /\b(?:how much(?: you)?|on how|how|it's okay to|okay to|by\s+(?:commenting|saying|asking|mentioning|telling)|in the future|related to your\s+[a-z'-]+|to\s+(?:test|consider|discuss|explore|adjust)|behind closed|beyond|not|think\s+about|thinking\s+about|talk\s+about|talking\s+about|speak\s+about|speaking\s+about|while\s+you(?:\s+(?:think|talk|speak|look|wonder))?|as\s+you(?:\s+(?:think|talk|speak|look|wonder))?)\s*$/i;
+const INCOMPLETE_SUGGESTION_TRAILING_PREPOSITION_PATTERN = /\b(?:about|around|through|over|under|against|between|toward|towards|without)\s*$/i;
+const INCOMPLETE_SUGGESTION_VERB_PARTICLE_PATTERN = /\b(?:think|thinking|talk|talking|speak|speaking|wonder|wondering|ask|asking|tell|telling|show|showing|go|going|come|coming|look|looking)\s+(?:about|of|to|with|for|around|through|over|into|on|at|from)\s*$/i;
+const SUGGESTION_STRUCTURED_JSON_PATTERN = /"(?:replies|text|intent|suggestion)"\s*:/i;
 const BOT_PHYSICAL_SUGGESTION_PATTERN = /\b(?:kiss|waist|thigh|lap|neck|body|breath|touch|lick|ride|grind)\b/i;
 const USER_ANATOMY_ASSUMPTION_PATTERN = /\b(?:cock|dick|shaft|breasts?|boobs?|tits?|nipples?|pussy|clit|balls?|curves?)\b/i;
 const SUGGESTION_SUSPICIOUS_SELF_TARGET_PATTERN = /\b(?:caress|cup|kiss|trace|brush|stroke|press|trail|slide|touch|bring|draw|rest|place|reach|lean|tilt|guide|pull|hold)\b[^.!?]{0,80}\b(?:my\s+(?:chin|cheek|cheeks|face|jawline|cheekbone|cheekbones|ear|ears|neck|throat|lips?|mouth|waist|hip|hips|back|chest|collarbone|shoulder|shoulders|skin)|small\s+of\s+my\s+back)\b/i;
@@ -124,7 +134,7 @@ function trimSuggestionCandidate(candidate) {
     compact = compact.slice(0, dialogueCut).trim();
   }
 
-  const sentenceCut = compact.search(/[.!?](?:\s|$)/);
+  const sentenceCut = compact.search(/(?:[!?]|(?<!\.)\.)(?=\s|$)/);
   if (sentenceCut > 0) {
     compact = compact.slice(0, sentenceCut).trim();
   }
@@ -148,7 +158,7 @@ function trimSuggestionCandidate(candidate) {
   }
 
   compact = compact
-    .replace(/\b(?:and|or|to|with|in|into|onto|from|for|of|on|at|by|up|down|the|a|an|that|this|there|before|after)$/i, '')
+    .replace(/\b(?:and|or|to|with|in|into|onto|from|for|of|on|at|by|up|down|the|a|an|that|this|there|before|after|about|around|through|over|under|against|between|toward|towards|without|while|as)$/i, '')
     .replace(/['"“”`*:,|.\-\s]+$/, '')
     .trim();
 
@@ -158,6 +168,8 @@ function trimSuggestionCandidate(candidate) {
     || INCOMPLETE_SUGGESTION_ADJECTIVE_ENDING_PATTERN.test(compact)
     || INCOMPLETE_SUGGESTION_VERB_ENDING_PATTERN.test(compact)
     || INCOMPLETE_SUGGESTION_PHRASE_ENDING_PATTERN.test(compact)
+    || INCOMPLETE_SUGGESTION_TRAILING_PREPOSITION_PATTERN.test(compact)
+    || INCOMPLETE_SUGGESTION_VERB_PARTICLE_PATTERN.test(compact)
   ) {
     const words = compact.split(/\s+/).filter(Boolean);
     if (words.length <= 2) return '';
@@ -166,7 +178,7 @@ function trimSuggestionCandidate(candidate) {
   }
 
   compact = compact
-    .replace(/\b(?:and|or|to|with|in|into|onto|from|for|of|on|at|by|up|down|the|a|an|that|this|there|before|after)$/i, '')
+    .replace(/\b(?:and|or|to|with|in|into|onto|from|for|of|on|at|by|up|down|the|a|an|that|this|there|before|after|about|around|through|over|under|against|between|toward|towards|without|while|as)$/i, '')
     .replace(/['"“”`*:,|.\-\s]+$/, '')
     .trim();
 
@@ -176,6 +188,8 @@ function trimSuggestionCandidate(candidate) {
     || INCOMPLETE_SUGGESTION_ADJECTIVE_ENDING_PATTERN.test(compact)
     || INCOMPLETE_SUGGESTION_VERB_ENDING_PATTERN.test(compact)
     || INCOMPLETE_SUGGESTION_PHRASE_ENDING_PATTERN.test(compact)
+    || INCOMPLETE_SUGGESTION_TRAILING_PREPOSITION_PATTERN.test(compact)
+    || INCOMPLETE_SUGGESTION_VERB_PARTICLE_PATTERN.test(compact)
   ) {
     const words = compact.split(/\s+/).filter(Boolean);
     if (words.length <= 2) return '';
@@ -224,8 +238,8 @@ function shouldRewriteSuggestionAsAction(candidate, assistMode = 'sfw_only', raw
   return (SUGGESTION_DIALOGUE_PATTERN.test(raw) && /^[\p{Ll}]/u.test(trimmed))
     || SUGGESTION_ACTION_OBJECT_PATTERN.test(trimmed)
     || (/^(?:gently|softly|slowly|carefully|lightly|quietly|briefly|firmly)\b/i.test(trimmed) && SUGGESTION_IMPERATIVE_ACTION_VERB_PATTERN.test(trimmed))
-    || (/^(?:touch|take|guide|pull|hold|brush|stroke|tilt|rest|trail|trace|squeeze|cup|kiss|lean|step|move|reach|press|draw|bring|offer|wrap|tuck|lift|caress|slide|thread|graze|nudge|catch|pat)\b/i.test(trimmed) && !/\b(?:me|us)\b/i.test(trimmed))
-    || (/^(?:smile|smiles|nod|nods|glance|glances|look|looks|wait|waits|pause|pauses|lean|leans|reach|reaches|take|takes|give|gives|maintain|maintains|keep|keeps|step|steps|move|moves|bring|brings|touch|touches|guide|guides|pull|pulls|hold|holds|cup|cups|brush|brushes|trace|traces|stroke|strokes|offer|offers|place|places)\b/i.test(trimmed) && !/\b(?:me|us)\b/i.test(trimmed));
+    || (/^(?:touch|take|guide|pull|hold|brush|stroke|tilt|rest|trail|trace|squeeze|cup|kiss|lean|step|move|reach|press|draw|bring|offer|wrap|tuck|lift|caress|slide|thread|graze|nudge|catch|pat|push|open)\b/i.test(trimmed) && !/\b(?:me|us)\b/i.test(trimmed))
+    || (/^(?:smile|smiles|nod|nods|glance|glances|look|looks|wait|waits|pause|pauses|lean|leans|reach|reaches|take|takes|give|gives|maintain|maintains|keep|keeps|step|steps|move|moves|bring|brings|touch|touches|guide|guides|pull|pulls|hold|holds|cup|cups|brush|brushes|trace|traces|stroke|strokes|offer|offers|place|places|push|pushes|open|opens)\b/i.test(trimmed) && !/\b(?:me|us)\b/i.test(trimmed));
 }
 
 function splitSuggestionDialogue(candidate) {
@@ -297,6 +311,11 @@ function hasSuspiciousFirstPersonOwnershipDrift(candidate) {
   if (/^I\s+my\b/i.test(inner)) return true;
   if (/\b(?:into|toward|towards)\s+my\s+eyes\b/i.test(inner)) return true;
   return SUGGESTION_SUSPICIOUS_SELF_TARGET_PATTERN.test(inner);
+}
+
+function looksLikeFirstPersonActionText(text = '') {
+  const normalized = String(text || '').trim().replace(/^\*|\*$/g, '');
+  return /^I\s+(?:hold|reach|guide|pull|bring|move|step|touch|brush|kiss|lean|nod|look|glance|gesture|beckon|sit|stand|turn|show|take|rest|draw|press|trace|meet|offer|wait|watch|smile|smirk|wrap|tuck|lead|place|keep|go|come)\b/i.test(normalized);
 }
 
 function rewriteSuggestionAsFirstPersonAction(candidate) {
@@ -408,6 +427,10 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
   if (shouldRewriteSuggestionAsAction(finalized, assistMode, effectiveRawCandidate)) {
     const rewriteSource = SUGGESTION_DIALOGUE_PATTERN.test(effectiveRawCandidate) ? effectiveRawCandidate : finalized;
     finalized = rewriteSuggestionAsFirstPersonAction(rewriteSource);
+    const visibleWordCount = finalized.replace(/["“”*]/g, ' ').split(/\s+/).filter(Boolean).length;
+    if ((finalized.length > SUGGESTION_MAX_CHARS || visibleWordCount > SUGGESTION_MAX_WORDS) && /^\*[^*]+\*/.test(finalized)) {
+      finalized = finalized.match(/^\*[^*]+\*/)?.[0] || finalized;
+    }
     if (
       /^\*I\b[^*]*\bme\b/i.test(finalized)
       || hasSuspiciousFirstPersonSubjectSwitch(finalized)
@@ -430,6 +453,7 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
       && !hadQuotedDialogue
       && /^I\b/i.test(finalized)
       && !SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN.test(finalized)
+      && looksLikeFirstPersonActionText(finalized)
     ) {
       finalized = normalizeSuggestionDisplayValue(`*${finalized.replace(/^[*\s]+|[*\s]+$/g, '')}*`);
     }
@@ -493,58 +517,13 @@ function dedupeSuggestionAgainstHistory(candidate, lastUserMsg, previousSuggesti
   });
 }
 
-function scoreSuggestionCandidate(candidate, rawCandidate = '', role = null, assistMode = 'sfw_only') {
-  const text = String(candidate || '').trim();
-  if (!text) return -Infinity;
-
-  const words = text.split(/\s+/).filter(Boolean);
-  const lower = text.toLowerCase();
-  let score = 100;
-
-  if (words.length < 2) score -= 40;
-  if (words.length > 8) score -= (words.length - 8) * 7;
-  if (text.length > 72) score -= Math.ceil((text.length - 72) / 6) * 5;
-  if (SUGGESTION_BAD_LEAD_PATTERN.test(text) && !/^\*?I\b/.test(text)) score -= 18;
-  if (SUGGESTION_DIALOGUE_PATTERN.test(rawCandidate) && !text.startsWith('*')) score -= 16;
-  if (SUGGESTION_OVEREXPLAIN_PATTERN.test(text)) score -= 14;
-  if (SUGGESTION_REFLECTIVE_META_LEAD_PATTERN.test(text)) score -= 22;
-  if (SUGGESTION_DANGLING_SPEECH_VERB_PATTERN.test(text)) score -= 40;
-  if (/[,:;]/.test(text) && !text.startsWith('*')) score -= 8;
-  if (/\b(?:master|mistress|sir)\b/i.test(lower)) score -= 10;
-  if (SUGGESTION_DIRECT_DIALOGUE_VERB_PATTERN.test(text) && SUGGESTION_DIALOGUE_PATTERN.test(rawCandidate)) score -= 12;
-  if (!/^[A-Za-z*]/.test(text)) score -= 10;
-  if (SUGGESTION_PROGRESS_PATTERN.test(text)) score += 12;
-  if (SUGGESTION_BOLD_PATTERN.test(text)) score += 6;
-  if (text.startsWith('*I ')) score += 10;
-  if (/^[A-Z][^*]+[.!?]$/.test(text) && !SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(text)) score += 6;
-  if (SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(text)) score -= 30;
-  if (SUGGESTION_FUTURE_PLAN_PATTERN.test(text)) score -= 24;
-  if (SUGGESTION_AUTHORITY_TONE_PATTERN.test(text)) score -= 20;
-  if (SUGGESTION_PASSIVE_PATTERN.test(text) && !SUGGESTION_PROGRESS_PATTERN.test(text)) score -= 8;
-
-  if (role === 'stay') {
-    if (SUGGESTION_PASSIVE_PATTERN.test(text)) score += 4;
-    if (SUGGESTION_BOLD_PATTERN.test(text)) score -= 4;
-  } else if (role === 'bold') {
-    if (SUGGESTION_BOLD_PATTERN.test(text)) score += 10;
-    if (/\b(?:wait|pause|watch quietly)\b/i.test(text)) score -= 8;
-  } else if (role === 'progress') {
-    if (SUGGESTION_PROGRESS_PATTERN.test(text)) score += 14;
-    if (SUGGESTION_PASSIVE_PATTERN.test(text) && !SUGGESTION_PROGRESS_PATTERN.test(text)) score -= 16;
-  }
-
-  if (assistMode === 'bot_conversation') {
-    if (/\b(?:kiss|waist|thigh|lap|neck|body|breath|touch)\b/i.test(text)) score -= 60;
-    if (/\b(?:ask|answer|confirm|offer|clarify|review|check|tell|show|schedule|explain)\b/i.test(text)) score += 10;
-  } else if (assistMode === 'sfw_only') {
-    if (/\b(?:kiss|waist|thigh|lap|neck|body|hips?|lips?|make me|take me)\b/i.test(text) || /\b(?:wrap your arms around me|press against me|pull me closer|feel your muscles)\b/i.test(lower)) score -= 22;
-    if (/\b(?:smile|stay|tell|answer|offer|admit|reach|sit|look|hold|take|guide|touch)\b/i.test(text)) score += 4;
-  } else if (assistMode === 'mixed_transition') {
-    if (/\b(?:hardcore|fuck|cock|pussy|cum)\b/i.test(text)) score -= 30;
-    if (/\b(?:closer|touch|kiss|admit|invite|pull|hold|lean)\b/i.test(text)) score += 8;
-  }
-
-  return score;
+function normalizeSuggestionIntent(intent = '') {
+  const normalized = String(intent || '').trim().toLowerCase();
+  if (!normalized) return null;
+  if (['reply', 'direct', 'natural', 'stay', 'safe'].includes(normalized)) return 'reply';
+  if (['forward', 'progress', 'move', 'advance', 'next'].includes(normalized)) return 'forward';
+  if (['different', 'angle', 'clarify', 'question', 'variant', 'alternate'].includes(normalized)) return 'different';
+  return null;
 }
 
 function isMalformedSuggestionCandidate(candidate) {
@@ -561,13 +540,12 @@ function isMalformedSuggestionCandidate(candidate) {
   return false;
 }
 
-function pickBetterSuggestionBatch(primary, fallback, assistMode = 'sfw_only') {
+function pickBetterSuggestionBatch(primary, fallback) {
   const primaryBatch = Array.isArray(primary) ? primary : [];
   const fallbackBatch = Array.isArray(fallback) ? fallback : [];
   const summarize = (batch) => ({
     batch,
-    malformedCount: batch.filter(isMalformedSuggestionCandidate).length,
-    scoreSum: batch.reduce((sum, candidate) => sum + scoreSuggestionCandidate(candidate, candidate, null, assistMode), 0)
+    malformedCount: batch.filter(isMalformedSuggestionCandidate).length
   });
 
   const left = summarize(primaryBatch);
@@ -581,7 +559,81 @@ function pickBetterSuggestionBatch(primary, fallback, assistMode = 'sfw_only') {
     return right.batch.length > left.batch.length ? right.batch : left.batch;
   }
 
-  return right.scoreSum > left.scoreSum ? right.batch : left.batch;
+  return left.batch;
+}
+
+function pickBestSuggestions(entries = []) {
+  const normalizedEntries = (Array.isArray(entries) ? entries : [])
+    .map((entry, index) => ({
+      text: String(entry?.text || '').trim(),
+      intent: normalizeSuggestionIntent(entry?.intent),
+      index
+    }))
+    .filter((entry) => entry.text);
+
+  if (normalizedEntries.length === 0) return [];
+
+  const hasStructuredIntents = normalizedEntries.some((entry) => entry.intent);
+  if (!hasStructuredIntents) {
+    return normalizedEntries
+      .sort((left, right) => left.index - right.index)
+      .map((entry) => entry.text)
+      .slice(0, SUGGESTION_TARGET_COUNT);
+  }
+
+  const selected = [];
+  const buckets = ['reply', 'forward', 'different'];
+  for (const bucket of buckets) {
+    const match = normalizedEntries
+      .filter((entry) => entry.intent === bucket)
+      .find((entry) => !isTooSimilarToSelected(entry.text, selected));
+    if (match) selected.push(match.text);
+  }
+
+  normalizedEntries
+    .sort((left, right) => left.index - right.index)
+    .forEach((entry) => {
+      if (selected.length >= SUGGESTION_TARGET_COUNT) return;
+      if (selected.includes(entry.text)) return;
+      if (isTooSimilarToSelected(entry.text, selected)) return;
+      selected.push(entry.text);
+    });
+
+  return selected.slice(0, SUGGESTION_TARGET_COUNT);
+}
+
+function decodeStructuredSuggestionString(value = '') {
+  return String(value || '')
+    .replace(/\\n/g, ' ')
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, '\\')
+    .trim();
+}
+
+function salvageStructuredRepliesFromPartialJson(raw = '') {
+  const source = String(raw || '');
+  if (!SUGGESTION_STRUCTURED_JSON_PATTERN.test(source)) return [];
+
+  const partialReplies = [];
+  const textPattern = /"text"\s*:\s*"((?:\\.|[^"\\])*)"/g;
+  let match;
+
+  while ((match = textPattern.exec(source)) !== null) {
+    const text = decodeStructuredSuggestionString(match[1]);
+    if (!text) continue;
+
+    const segmentStart = textPattern.lastIndex;
+    const nextTextMatch = source.slice(segmentStart).match(/"text"\s*:/);
+    const segmentEnd = nextTextMatch ? segmentStart + nextTextMatch.index : source.length;
+    const segment = source.slice(segmentStart, segmentEnd);
+    const intentMatch = segment.match(/"intent"\s*:\s*"((?:\\.|[^"\\])*)"/);
+    partialReplies.push({
+      text,
+      intent: intentMatch ? decodeStructuredSuggestionString(intentMatch[1]) : null
+    });
+  }
+
+  return partialReplies;
 }
 
 function buildSuggestionSafetyFallback(history = [], runtimeState = null, lastUserMsg = '') {
@@ -619,21 +671,6 @@ function buildSuggestionSafetyFallback(history = [], runtimeState = null, lastUs
     .filter((candidate) => dedupeSuggestionAgainstHistory(candidate, lastUserMsg, []));
 
   return Array.from(new Set(normalized)).slice(0, SUGGESTION_TARGET_COUNT);
-}
-
-function pickRoleFallbackSuggestion(role, history = [], runtimeState = null, lastUserMsg = '', previousSuggestions = []) {
-  const roleIndex = SUGGESTION_ROLE_ORDER.indexOf(role);
-  const candidates = buildSuggestionSafetyFallback(history, runtimeState, lastUserMsg);
-  const preferred = roleIndex >= 0 ? candidates[roleIndex] : '';
-  const options = [preferred, ...candidates].filter(Boolean);
-
-  for (const option of options) {
-    if (!dedupeSuggestionAgainstHistory(option, lastUserMsg, previousSuggestions)) continue;
-    if (isTooSimilarToSelected(option, previousSuggestions)) continue;
-    return option;
-  }
-
-  return '';
 }
 
 export function normalizeSuggestionDisplayValue(suggestion) {
@@ -707,49 +744,83 @@ function isTooSimilarToSelected(candidate, selected) {
 export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestions = [], options = {}) {
   const assistMode = options.assistMode || 'sfw_only';
   const original = String(raw || '').trim();
-  const parseJsonObjectParts = (obj) => {
-    const objectParts = ['stay', 'progress', 'bold']
-      .map((role) => ({ role, value: typeof obj?.[role] === 'string' ? obj[role] : '' }))
-      .filter((entry) => entry.value.trim());
-    if (objectParts.length === 0) return null;
-    const selected = [];
-    const roleBuckets = { stay: null, progress: null, bold: null };
-    objectParts.forEach(({ role, value }) => {
-      const rawValue = String(value || '').trim();
-      const finalized = finalizeSuggestionCandidate(cleanSuggestionCandidate(rawValue), assistMode, rawValue);
-      if (!finalized) return;
-      if (assistMode === 'bot_conversation' && BOT_PHYSICAL_SUGGESTION_PATTERN.test(finalized)) return;
-      if (USER_ANATOMY_ASSUMPTION_PATTERN.test(finalized) && !USER_ANATOMY_ASSUMPTION_PATTERN.test(lastUserMsg || '')) return;
-      const wordCount = finalized.replace(/["“”*]/g, '').split(/\s+/).filter(Boolean).length;
-      if (finalized.length < 2 || finalized.length > SUGGESTION_MAX_CHARS || wordCount < 2 || wordCount > SUGGESTION_MAX_WORDS) return;
-      if (SUGGESTION_META_PATTERN.test(finalized) || SUGGESTION_NON_ACTION_PATTERN.test(finalized) || (assistMode !== 'bot_conversation' && SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(finalized))) return;
-      if (!dedupeSuggestionAgainstHistory(finalized, lastUserMsg, previousSuggestions)) return;
-      if (isTooSimilarToSelected(finalized, selected)) return;
-      if (scoreSuggestionCandidate(finalized, value, role, assistMode) < 52) return;
-      roleBuckets[role] = finalized;
-      selected.push(finalized);
+  if (!original) return [];
+
+  const parsedEntries = [];
+  const addCandidate = (value, intent = null, rawValue = value) => {
+    const cleanedValue = cleanSuggestionCandidate(value);
+    const finalized = finalizeSuggestionCandidate(cleanedValue, assistMode, rawValue);
+    if (!finalized) return;
+    if (assistMode === 'bot_conversation' && BOT_PHYSICAL_SUGGESTION_PATTERN.test(finalized)) return;
+    if (USER_ANATOMY_ASSUMPTION_PATTERN.test(finalized) && !USER_ANATOMY_ASSUMPTION_PATTERN.test(lastUserMsg || '')) return;
+
+    const wordCount = finalized.replace(/["“”*]/g, '').split(/\s+/).filter(Boolean).length;
+    if (finalized.length < 2 || finalized.length > SUGGESTION_MAX_CHARS || wordCount < 2 || wordCount > SUGGESTION_MAX_WORDS) return;
+    if (SUGGESTION_META_PATTERN.test(finalized) || SUGGESTION_NON_ACTION_PATTERN.test(finalized) || (assistMode !== 'bot_conversation' && SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(finalized))) return;
+    if (!dedupeSuggestionAgainstHistory(finalized, lastUserMsg, previousSuggestions)) return;
+    if (isTooSimilarToSelected(finalized, parsedEntries.map((entry) => entry.text))) return;
+
+    const normalizedIntent = normalizeSuggestionIntent(intent);
+    parsedEntries.push({ text: finalized, intent: normalizedIntent, raw: rawValue });
+  };
+
+  const parseStructuredObject = (obj) => {
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return [];
+
+    if (typeof obj?.suggestion === 'string') {
+      addCandidate(obj.suggestion, 'reply', obj.suggestion);
+      return pickBestSuggestions(parsedEntries, assistMode);
+    }
+
+    if (Array.isArray(obj.replies)) {
+      obj.replies.forEach((entry) => {
+        if (typeof entry === 'string') {
+          addCandidate(entry, null, entry);
+          return;
+        }
+        if (entry && typeof entry === 'object') {
+          addCandidate(entry.text, entry.intent, entry.text);
+        }
+      });
+      return pickBestSuggestions(parsedEntries, assistMode);
+    }
+
+    ['stay', 'progress', 'bold'].forEach((role) => {
+      if (typeof obj?.[role] === 'string') {
+        const mappedIntent = role === 'stay' ? 'reply' : (role === 'progress' ? 'forward' : 'different');
+        addCandidate(obj[role], mappedIntent, obj[role]);
+      }
     });
-    return SUGGESTION_ROLE_ORDER.map((role) => roleBuckets[role]).filter(Boolean).slice(0, SUGGESTION_TARGET_COUNT);
+
+    return pickBestSuggestions(parsedEntries, assistMode);
   };
 
   try {
     const parsed = JSON.parse(original);
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      const parsedObjectParts = parseJsonObjectParts(parsed);
-      if (parsedObjectParts) return parsedObjectParts;
-    }
+    const structuredSuggestions = parseStructuredObject(parsed);
+    if (structuredSuggestions.length > 0) return structuredSuggestions;
   } catch {
-    const partial = {};
+    const partialReplySuggestions = parseStructuredObject({ replies: salvageStructuredRepliesFromPartialJson(original) });
+    if (partialReplySuggestions.length > 0) return partialReplySuggestions;
+
+    const partialSuggestionMatch = original.match(/"suggestion"\s*:\s*"((?:\\.|[^"\\])*)"/);
+    if (partialSuggestionMatch?.[1]) {
+      const singleSuggestion = parseStructuredObject({ suggestion: decodeStructuredSuggestionString(partialSuggestionMatch[1]) });
+      if (singleSuggestion.length > 0) return singleSuggestion;
+    }
+
+    const legacyPartial = {};
     const fieldPattern = /"(stay|progress|bold)"\s*:\s*"((?:\\.|[^"\\])*)"/g;
     let match;
     while ((match = fieldPattern.exec(original)) !== null) {
-      partial[match[1]] = match[2]
-        .replace(/\\n/g, ' ')
-        .replace(/\\"/g, '"')
-        .replace(/\\\\/g, '\\');
+      legacyPartial[match[1]] = decodeStructuredSuggestionString(match[2]);
     }
-    const partialObjectParts = parseJsonObjectParts(partial);
-    if (partialObjectParts) return partialObjectParts;
+    const partialSuggestions = parseStructuredObject(legacyPartial);
+    if (partialSuggestions.length > 0) return partialSuggestions;
+
+    if (SUGGESTION_STRUCTURED_JSON_PATTERN.test(original)) {
+      return [];
+    }
   }
 
   const cleaned = original
@@ -778,79 +849,15 @@ export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestio
       .filter((part) => part.raw || part.cleaned);
   }
 
-  const selected = [];
-  const roleBuckets = { stay: null, progress: null, bold: null };
-
   parts.forEach(({ raw: rawPart, cleaned: cleanedPart }) => {
-    const role = detectSuggestionRole(rawPart);
-    const finalized = finalizeSuggestionCandidate(cleanedPart, assistMode, rawPart);
-    if (!finalized) return;
-    if (assistMode === 'bot_conversation' && BOT_PHYSICAL_SUGGESTION_PATTERN.test(finalized)) return;
-    const wordCount = finalized.replace(/["“”*]/g, '').split(/\s+/).filter(Boolean).length;
-    if (finalized.length < 2 || finalized.length > SUGGESTION_MAX_CHARS || wordCount < 2 || wordCount > SUGGESTION_MAX_WORDS) return;
-    if (SUGGESTION_META_PATTERN.test(finalized) || SUGGESTION_NON_ACTION_PATTERN.test(finalized) || (assistMode !== 'bot_conversation' && SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(finalized))) return;
-    if (!dedupeSuggestionAgainstHistory(finalized, lastUserMsg, previousSuggestions)) return;
-    if (isTooSimilarToSelected(finalized, selected)) return;
-    if (scoreSuggestionCandidate(finalized, rawPart, role, assistMode) < 44) return;
-    if (role && !roleBuckets[role]) {
-      roleBuckets[role] = finalized;
-      selected.push(finalized);
-      return;
-    }
-    selected.push(finalized);
+    const detectedRole = detectSuggestionRole(rawPart);
+    const mappedIntent = detectedRole === 'stay'
+      ? 'reply'
+      : (detectedRole === 'progress' ? 'forward' : (detectedRole === 'bold' ? 'different' : null));
+    addCandidate(cleanedPart, mappedIntent, rawPart);
   });
 
-  const ordered = SUGGESTION_ROLE_ORDER
-    .map((role) => roleBuckets[role])
-    .filter(Boolean);
-
-  selected.forEach((candidate) => {
-    if (ordered.length >= SUGGESTION_TARGET_COUNT) return;
-    if (ordered.includes(candidate)) return;
-    ordered.push(candidate);
-  });
-
-  return ordered.slice(0, SUGGESTION_TARGET_COUNT);
-}
-
-function parseSingleSuggestionResponse(raw, role, lastUserMsg = '', previousSuggestions = [], options = {}) {
-  const assistMode = options.assistMode || 'sfw_only';
-  const original = String(raw || '').trim();
-  if (!original) return '';
-
-  let rawValue = original;
-  try {
-    const parsed = JSON.parse(original);
-    if (typeof parsed?.suggestion === 'string') {
-      rawValue = parsed.suggestion;
-    } else if (typeof parsed?.[role] === 'string') {
-      rawValue = parsed[role];
-    }
-  } catch {
-    const match = original.match(/"(?:suggestion|stay|bold|progress)"\s*:\s*"((?:\\.|[^"\\])*)"/);
-    if (match?.[1]) {
-      rawValue = match[1]
-        .replace(/\\n/g, ' ')
-        .replace(/\\"/g, '"')
-        .replace(/\\\\/g, '\\');
-    }
-  }
-
-  const finalized = finalizeSuggestionCandidate(cleanSuggestionCandidate(rawValue), assistMode, rawValue);
-  if (!finalized) return '';
-  if (assistMode === 'bot_conversation' && BOT_PHYSICAL_SUGGESTION_PATTERN.test(finalized)) return '';
-  if (USER_ANATOMY_ASSUMPTION_PATTERN.test(finalized) && !USER_ANATOMY_ASSUMPTION_PATTERN.test(lastUserMsg || '')) return '';
-
-  const wordCount = finalized.replace(/["“”*]/g, '').split(/\s+/).filter(Boolean).length;
-  if (finalized.length < 2 || finalized.length > SUGGESTION_MAX_CHARS || wordCount < 2 || wordCount > SUGGESTION_MAX_WORDS) return '';
-  if (SUGGESTION_META_PATTERN.test(finalized) || SUGGESTION_NON_ACTION_PATTERN.test(finalized) || (assistMode !== 'bot_conversation' && SUGGESTION_META_DIRECTIVE_LEAD_PATTERN.test(finalized))) return '';
-  if (!dedupeSuggestionAgainstHistory(finalized, lastUserMsg, previousSuggestions)) return '';
-  if (isTooSimilarToSelected(finalized, previousSuggestions)) return '';
-
-  const minScore = role === 'stay' ? 40 : 44;
-  if (scoreSuggestionCandidate(finalized, rawValue, role, assistMode) < minScore) return '';
-
-  return finalized;
+  return pickBestSuggestions(parsedEntries, assistMode);
 }
 
 async function requestSuggestionContent(chatParams, currentRequestId) {
@@ -949,6 +956,8 @@ export async function generateSuggestionsBackground(history, character, userName
     userName,
     runtimeSteering: {
       profile: 'suggestions',
+      suggestionMode: 'batch',
+      suggestionCandidateCount: SUGGESTION_CANDIDATE_COUNT,
       availableContextTokens: Math.max(256, suggestionNumCtx - budgetConfig.suggestionContextReserve),
       passionLevel,
       unchainedMode,
@@ -960,96 +969,81 @@ export async function generateSuggestionsBackground(history, character, userName
   const effectiveSuggestionAssistMode = baseRuntimeState.compiledRuntimeCard?.runtimeDefaults?.type === 'bot'
     ? 'bot_conversation'
     : baseRuntimeState.assistMode;
-  const selected = [];
+  const runtimeContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState: baseRuntimeState });
+  const suggestionMaxTokens = Math.max(180, Math.min(240, budgetConfig.suggestionMaxTokens + 96));
+  const baseChatParams = {
+    messages: [{ role: 'user', content: runtimeContext.userPrompt }],
+    systemPrompt: runtimeContext.systemPrompt,
+    model,
+    isOllama: true,
+    ollamaUrl,
+    temperature: 0.42,
+    maxTokens: suggestionMaxTokens,
+    num_ctx: suggestionNumCtx,
+    top_k: settings.topK ?? profile.topK,
+    top_p: settings.topP ?? profile.topP,
+    min_p: settings.minP ?? profile.minP,
+    repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty,
+    repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
+    penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline,
+    format: BATCH_SUGGESTION_JSON_SCHEMA
+  };
 
   try {
-    for (const spec of SUGGESTION_REQUEST_SPECS) {
+    console.log('[API] Suggestions runtime (batch):', runtimeContext.debug);
+
+    let selected = [];
+    try {
+      const raw = await requestSuggestionContent(baseChatParams, currentRequestId);
       if (currentRequestId !== suggestionRequestId) return;
-
-      const roleRuntimeState = buildRuntimeState({
-        character,
-        history,
-        userName,
-        runtimeSteering: {
-          profile: 'suggestions',
-          suggestionRole: spec.role,
-          availableContextTokens: Math.max(256, suggestionNumCtx - budgetConfig.suggestionContextReserve),
-          passionLevel,
-          unchainedMode,
-          assistBudgetTier,
-          avoidSuggestions: [...previousSuggestions, ...selected, lastUserMsg ? lastUserMsg.slice(0, 80) : ''].filter(Boolean),
-          persistedSceneMemory: sceneMemory
-        }
+      selected = parseSuggestionResponse(raw || '', lastUserMsg, previousSuggestions, {
+        assistMode: effectiveSuggestionAssistMode
       });
-      const runtimeContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState: roleRuntimeState });
-      const rolePreviousSuggestions = [...previousSuggestions, ...selected];
-      const chatParams = {
-        messages: [{ role: 'user', content: runtimeContext.userPrompt }],
-        systemPrompt: runtimeContext.systemPrompt,
-        model,
-        isOllama: true,
-        ollamaUrl,
-        temperature: spec.temperature,
-        maxTokens: Math.min(budgetConfig.suggestionMaxTokens, spec.maxTokens),
-        num_ctx: suggestionNumCtx,
-        top_k: settings.topK ?? profile.topK,
-        top_p: settings.topP ?? profile.topP,
-        min_p: settings.minP ?? profile.minP,
-        repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty,
-        repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
-        penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline,
-        format: SINGLE_SUGGESTION_JSON_SCHEMA
-      };
+      console.log(`[API] Suggestions batch: ${selected.length} from "${String(raw || '').trim().slice(0, 200)}"`);
 
-      console.log(`[API] Suggestions runtime (${spec.role}):`, runtimeContext.debug);
-
-      let candidate = '';
-      try {
-        const raw = await requestSuggestionContent(chatParams, currentRequestId);
+      if (selected.length < MIN_USABLE_SUGGESTIONS || selected.length < 2) {
+        const retryRaw = await requestSuggestionContent({
+          ...baseChatParams,
+          temperature: 0.36,
+          messages: [{ role: 'user', content: `${runtimeContext.userPrompt}\n\n${SUGGESTION_RETRY_NOTE}` }]
+        }, currentRequestId);
         if (currentRequestId !== suggestionRequestId) return;
-        candidate = parseSingleSuggestionResponse(raw || '', spec.role, lastUserMsg, rolePreviousSuggestions, {
+        const retrySelected = parseSuggestionResponse(retryRaw || '', lastUserMsg, previousSuggestions, {
           assistMode: effectiveSuggestionAssistMode
         });
-        console.log(`[API] Suggestions ${spec.role}: ${candidate ? 'ok' : 'miss'} from "${String(raw || '').trim().slice(0, 160)}"`);
-
-        if (!candidate) {
-          const retryParams = {
-            ...chatParams,
-            temperature: Math.max(0.2, spec.temperature - 0.06),
-            messages: [{ role: 'user', content: `${runtimeContext.userPrompt}\n\n${SUGGESTION_RETRY_NOTE}` }]
-          };
-          const retryRaw = await requestSuggestionContent(retryParams, currentRequestId);
-          if (currentRequestId !== suggestionRequestId) return;
-          candidate = parseSingleSuggestionResponse(retryRaw || '', spec.role, lastUserMsg, rolePreviousSuggestions, {
-            assistMode: effectiveSuggestionAssistMode
-          });
-          console.log(`[API] Suggestions ${spec.role} retry: ${candidate ? 'ok' : 'miss'} from "${String(retryRaw || '').trim().slice(0, 160)}"`);
-        }
-      } catch (err) {
-        if (err?.name === 'AbortError' || err?.message === 'aborted') return;
-        console.warn(`[API] Suggestion generation failed for ${spec.role}:`, err?.message);
+        console.log(`[API] Suggestions batch retry: ${retrySelected.length} from "${String(retryRaw || '').trim().slice(0, 200)}"`);
+        const mergedSelected = [...selected];
+        retrySelected.forEach((candidate) => {
+          if (mergedSelected.length >= SUGGESTION_TARGET_COUNT) return;
+          if (!dedupeSuggestionAgainstHistory(candidate, lastUserMsg, [...previousSuggestions, ...mergedSelected])) return;
+          if (isTooSimilarToSelected(candidate, mergedSelected)) return;
+          mergedSelected.push(candidate);
+        });
+        selected = pickBetterSuggestionBatch(mergedSelected, selected, effectiveSuggestionAssistMode);
       }
-
-      if (!candidate && (effectiveSuggestionAssistMode === 'bot_conversation' || selected.length === 0 || (spec.role === 'progress' && selected.length >= 2))) {
-        candidate = pickRoleFallbackSuggestion(spec.role, history, roleRuntimeState, lastUserMsg, selected);
-      }
-
-      if (!candidate) continue;
-      if (!dedupeSuggestionAgainstHistory(candidate, lastUserMsg, rolePreviousSuggestions)) continue;
-      if (isTooSimilarToSelected(candidate, selected)) continue;
-      selected.push(candidate);
+    } catch (err) {
+      if (err?.name === 'AbortError' || err?.message === 'aborted') return;
+      console.warn('[API] Suggestion batch generation failed:', err?.message);
     }
 
     if (currentRequestId !== suggestionRequestId) return;
-    if (selected.length < MIN_USABLE_SUGGESTIONS) {
-      const fallbackBatch = buildSuggestionSafetyFallback(history, baseRuntimeState, lastUserMsg);
-      callback(fallbackBatch.length >= MIN_USABLE_SUGGESTIONS ? fallbackBatch : null);
-      return;
+
+    const fallbackBatch = buildSuggestionSafetyFallback(history, baseRuntimeState, lastUserMsg);
+    const finalBatch = [...selected];
+    if (finalBatch.length < 2) {
+      fallbackBatch.forEach((candidate) => {
+        if (finalBatch.length >= SUGGESTION_TARGET_COUNT) return;
+        if (!dedupeSuggestionAgainstHistory(candidate, lastUserMsg, [...previousSuggestions, ...finalBatch])) return;
+        if (isTooSimilarToSelected(candidate, finalBatch)) return;
+        finalBatch.push(candidate);
+      });
     }
-    callback(selected);
+
+    callback(finalBatch.length >= MIN_USABLE_SUGGESTIONS ? finalBatch.slice(0, SUGGESTION_TARGET_COUNT) : null);
   } catch (err) {
     if (err?.name === 'AbortError' || err?.message === 'aborted') return;
     console.warn('[API] Suggestion generation failed:', err?.message);
-    callback(selected.length >= MIN_USABLE_SUGGESTIONS ? selected : null);
+    const fallbackBatch = buildSuggestionSafetyFallback(history, baseRuntimeState, lastUserMsg);
+    callback(fallbackBatch.length >= MIN_USABLE_SUGGESTIONS ? fallbackBatch : null);
   }
 }

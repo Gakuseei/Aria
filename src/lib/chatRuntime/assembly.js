@@ -176,10 +176,55 @@ function buildReplyLateSteering(runtimeState) {
 function buildSuggestionLateSteering(runtimeState) {
   const isBot = runtimeState.compiledRuntimeCard.runtimeDefaults.type === 'bot';
   const avoidList = (runtimeState.runtimeSteering.avoidSuggestions || []).filter(Boolean);
+  const suggestionMode = runtimeState.runtimeSteering.suggestionMode || 'single';
   const suggestionRole = runtimeState.runtimeSteering.suggestionRole || 'stay';
+  const candidateCount = Math.max(4, Math.min(6, Number(runtimeState.runtimeSteering.suggestionCandidateCount) || 6));
   const intensityLine = runtimeState.runtimeSteering.passionLevel > 15
     ? `Match the current scene intensity at ${runtimeState.runtimeSteering.passionLevel}/100 without softening it.`
     : '';
+
+  if (suggestionMode === 'batch') {
+    return [
+      isBot
+        ? `Write ${candidateCount} short, sendable replies for ${runtimeState.userName} in the same exchange with ${runtimeState.characterName}.`
+        : `Write ${candidateCount} short, sendable next turns for ${runtimeState.userName} in the same scene with ${runtimeState.characterName}.`,
+      'Return only valid JSON with exactly one key: replies.',
+      'replies must be an array of objects with exactly two string keys: text and intent.',
+      'intent must be one of: reply, forward, different.',
+      runtimeState.activeScene.open_thread ? 'Resolve the current response cue before inventing a different object, room, or subtask.' : '',
+      isBot
+        ? `Write only ${runtimeState.userName}'s side of the exchange. Keep it short, direct, and plain chat text.`
+        : `Write only ${runtimeState.userName}'s side of the scene. NEVER write as ${runtimeState.characterName}.`,
+      'Read the whole latest full message before writing. Questions, invitations, instructions, and actions near the end matter most.',
+      'Across the set, include at least one most natural direct reply, one reply that moves the exchange forward, and one reply that takes a different but still fitting angle.',
+      'Make the options genuinely different from each other. Do not paraphrase the same move three times.',
+      isBot
+        ? 'Answer only the latest message. No advice, commentary, or planner wording.'
+        : 'Prefer the shortest sendable move that fits this exact beat. If the latest beat is physical, positional, or object/task-focused, action-led first-person *I ...* moves are often the most natural. If dialogue is more natural, use dialogue instead.',
+      'Anchor every reply to the exact latest beat, not to the broad setup, trope, lore, or default premise.',
+      'Respect the granularity of the latest turn. If the latest turn is broad, stay broad. If it is concrete, stay concrete unless the exchange itself narrows it.',
+      'If a concrete shared activity, object, or subtask is already in progress, stay on that same focus instead of switching to a nearby room detail or different task.',
+      'Use a concrete detail, action, request, or emotional cue from the latest exchange when natural so the line clearly belongs to this moment.',
+      'Do not pull in background lore, job framing, relationship labels, worldbuilding, or premise details unless the latest exchange clearly invokes them.',
+      'Reply to the character\'s latest line or action, not to your own earlier turn.',
+      'If the latest character move is a question, invitation, challenge, or instruction, prefer replies that answer it directly or advance that exact exchange.',
+      'Stay in the same moment. Do not reset the scene or drift generic.',
+      'If a reply could work in many unrelated scenes, it is too generic.',
+      'Skip setup clauses and reflective filler. Avoid openings like I appreciate..., I understand..., I can\'t help but..., I find myself..., I must admit..., Well....',
+      isBot
+        ? ''
+        : `Do not describe ${runtimeState.characterName}'s feelings or actions as if they belong to ${runtimeState.userName}.`,
+      'Usually 2 to 9 words, never more than 12 words.',
+      runtimeState.compiledRuntimeCard.personaAnchor
+        ? `Keep it grounded in ${runtimeState.characterName}'s persona and the current chemistry.`
+        : '',
+      ...getAssistModeRules(runtimeState, 'suggestions'),
+      'Match the conversation language and local tone of the latest exchange.',
+      intensityLine,
+      avoidList.length > 0 ? `Do not repeat or paraphrase: ${avoidList.join(' | ')}` : '',
+      'No commentary or extra keys.'
+    ].filter(Boolean).join('\n');
+  }
 
   const roleInstruction = isBot
     ? {
@@ -263,15 +308,19 @@ function buildSuggestionScopeInstruction(runtimeState) {
 
 function buildSuggestionWriterRole(runtimeState) {
   const isBot = runtimeState.compiledRuntimeCard.runtimeDefaults.type === 'bot';
+  const suggestionMode = runtimeState.runtimeSteering.suggestionMode || 'single';
 
   return [
     isBot
       ? `You are the quick-reply ghostwriter for ${runtimeState.userName} in an ongoing chat with ${runtimeState.characterName}.`
       : `You are the next-turn ghostwriter for ${runtimeState.userName} inside an ongoing scene with ${runtimeState.characterName}.`,
-    'Your job is to produce premium, clickable quick replies that the user can actually send right now.',
+    suggestionMode === 'batch'
+      ? 'Your job is to produce a small set of premium, clickable quick replies that the user can actually send right now.'
+      : 'Your job is to produce one premium, clickable quick reply that the user can actually send right now.',
     isBot
       ? `Write only ${runtimeState.userName}'s side of the exchange. Never write ${runtimeState.characterName}'s side.`
       : `Write only ${runtimeState.userName}'s side of the scene. Never write ${runtimeState.characterName}'s side.`,
+    `Do not let ${runtimeState.characterName}'s catchphrases, honorifics, role labels, or speech habits leak onto ${runtimeState.userName}'s side unless the recent user voice already used them.`,
     'Think like a human ghostwriter, not a planner, not an evaluator, not a safety note, and not a narrator explaining the move.',
     'Prefer the most sendable, scene-true wording over clever wording.',
     'Keep the user voice grounded in the current chemistry, power dynamic, and immediate beat.'
@@ -471,7 +520,11 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
 
   if (profile === 'suggestions') {
     const isBot = runtimeState.compiledRuntimeCard.runtimeDefaults.type === 'bot';
-    const recentTail = runtimeState.selectedRecentHistory.messages.slice(-2);
+    const suggestionMode = runtimeState.runtimeSteering.suggestionMode || 'single';
+    const candidateCount = Math.max(4, Math.min(6, Number(runtimeState.runtimeSteering.suggestionCandidateCount) || 6));
+    const recentTail = runtimeState.selectedRecentHistory.messages.slice(suggestionMode === 'batch' ? -4 : -2);
+    const latestAssistantFull = [...runtimeState.selectedRecentHistory.messages].reverse().find((message) => message.role === 'assistant')?.content || '';
+    const latestUserFull = [...runtimeState.selectedRecentHistory.messages].reverse().find((message) => message.role === 'user')?.content || '';
     const latestCharacterBeat = runtimeState.activeScene.latest_character_action_or_reaction
       ? `${runtimeState.characterName}: ${runtimeState.activeScene.latest_character_action_or_reaction}`
       : '';
@@ -544,7 +597,14 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       profile,
       systemPrompt,
       userPrompt: [
+        suggestionMode === 'batch' && latestAssistantFull
+          ? `Latest full ${runtimeState.characterName} message:\n${latestAssistantFull}`
+          : '',
+        suggestionMode === 'batch' && latestUserFull
+          ? `Previous full ${runtimeState.userName} message:\n${latestUserFull}`
+          : '',
         `Latest exchange anchor:\n${formatHistory(recentTail, runtimeState.characterName, runtimeState.userName) || trimPromptSnippet(compactScene, 160)}`,
+        suggestionMode === 'batch' ? 'Read the whole latest full message above. Its ending matters.' : '',
         currentTask ? `Current task:\n${currentTask}` : '',
         userTurnScope?.level ? `User turn scope:\n${userTurnScope.level}` : '',
         runtimeState.activeScene.open_thread ? `Response cue:\n${runtimeState.activeScene.open_thread}` : '',
@@ -556,9 +616,13 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
         scopeSensitiveCharacterBeat ? `Latest character beat:\n${scopeSensitiveCharacterBeat}` : '',
         latestUserBeat && !preferAssistantCue ? `Previous user beat:\n${latestUserBeat}` : `Current beat:\n${[scopeSensitiveCharacterBeat, latestUserBeat].filter(Boolean).join('\n') || trimPromptSnippet(compactScene, 120)}`,
         voiceExamples ? `Recent ${runtimeState.userName} voice examples:\n${voiceExamples}` : '',
-        isBot
-          ? `Write one ${runtimeState.runtimeSteering.suggestionRole || 'stay'} sendable reply for ${runtimeState.userName} in the same exchange. Return JSON with {"suggestion":"..."}.`
-          : `Write one ${runtimeState.runtimeSteering.suggestionRole || 'stay'} sendable next turn for ${runtimeState.userName} in the same scene. Make it a short sendable move, not a full explanatory sentence. Let the style come from the latest exchange, not from generic character setup. Return JSON with {"suggestion":"..."}.`
+        suggestionMode === 'batch'
+          ? (isBot
+              ? `Generate ${candidateCount} sendable replies for ${runtimeState.userName} in the same exchange. Return JSON with {"replies":[{"text":"...","intent":"reply"}]}.`
+              : `Generate ${candidateCount} sendable next turns for ${runtimeState.userName} in the same scene. Make them short sendable moves, not explanatory sentences. Let the style come from the latest exchange, not from generic character setup. Return JSON with {"replies":[{"text":"...","intent":"reply"}]}.`)
+          : (isBot
+              ? `Write one ${runtimeState.runtimeSteering.suggestionRole || 'stay'} sendable reply for ${runtimeState.userName} in the same exchange. Return JSON with {"suggestion":"..."}.`
+              : `Write one ${runtimeState.runtimeSteering.suggestionRole || 'stay'} sendable next turn for ${runtimeState.userName} in the same scene. Make it a short sendable move, not a full explanatory sentence. Let the style come from the latest exchange, not from generic character setup. Return JSON with {"suggestion":"..."}.`)
       ].filter(Boolean).join('\n\n'),
       debug: {
         ...debug,

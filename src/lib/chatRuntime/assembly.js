@@ -13,7 +13,7 @@ const PROFILE_BUDGET_TARGETS = {
     lateSteering: 145
   },
   suggestions: {
-    writerRole: 64,
+    writerRole: 80,
     characterCore: 145,
     activeScene: 84,
     exampleSeed: 90,
@@ -202,7 +202,7 @@ function buildSuggestionLateSteering(runtimeState) {
       'Make the options genuinely different from each other. Do not paraphrase the same move three times.',
       isBot
         ? 'Answer only the latest message. No advice, commentary, or planner wording.'
-        : 'Use the most natural sendable form for this exact beat. A mix of dialogue and first-person *I ...* action is good. When the scene already has physical or task momentum, actions often move it better than another verbal nudge.',
+        : 'Use the most natural sendable form for this exact beat. A mix of dialogue and first-person *I ...* action is good. If the recent user voice already uses first-person action, keep some of that embodied style available instead of flattening every option into pure speech. When the scene already has physical or task momentum, action or action-plus-dialogue is often more helpful than another bare verbal nudge.',
       'Anchor every reply to the exact latest beat, not to the broad setup, trope, lore, or default premise.',
       'Respect the granularity of the latest turn. If the latest turn is broad, stay broad. If it is concrete, stay concrete unless the exchange itself narrows it.',
       'If a concrete shared activity, object, or subtask is already in progress, stay on that same focus instead of switching to a nearby room detail or different task.',
@@ -252,7 +252,7 @@ function buildSuggestionLateSteering(runtimeState) {
       : `Write only ${runtimeState.userName}'s side of the scene. NEVER write as ${runtimeState.characterName}.`,
     isBot
       ? 'Answer only the latest message. No advice, commentary, or planner wording.'
-      : 'Use the most natural sendable form for this exact beat. A mix of dialogue and first-person *I ...* action is good. When the scene already has physical or task momentum, actions often move it better than another verbal nudge.',
+      : 'Use the most natural sendable form for this exact beat. A mix of dialogue and first-person *I ...* action is good. If the recent user voice already uses first-person action, keep some of that embodied style available instead of flattening every option into pure speech. When the scene already has physical or task momentum, action or action-plus-dialogue is often more helpful than another bare verbal nudge.',
     'Anchor the line to the exact latest beat, not to the broad setup, trope, lore, or default premise.',
     'Respect the granularity of the latest turn. If the latest turn is broad, stay broad. If it is concrete, stay concrete unless the exchange itself narrows it.',
     'If a concrete shared activity, object, or subtask is already in progress, stay on that same focus instead of switching to a nearby room detail or different task.',
@@ -314,21 +314,15 @@ function buildSuggestionWriterRole(runtimeState) {
 
   return [
     isBot
-      ? `You are the quick-reply ghostwriter for ${runtimeState.userName} in an ongoing chat with ${runtimeState.characterName}.`
-      : `You are the next-turn ghostwriter for ${runtimeState.userName} inside an ongoing scene with ${runtimeState.characterName}.`,
+      ? `Quick-reply ghostwriter for ${runtimeState.userName} in a chat with ${runtimeState.characterName}.`
+      : `Next-turn ghostwriter for ${runtimeState.userName} in a scene with ${runtimeState.characterName}.`,
     suggestionMode === 'batch'
-      ? 'Your job is to produce a small set of premium, clickable quick replies that the user can actually send right now.'
-      : 'Your job is to produce one premium, clickable quick reply that the user can actually send right now.',
+      ? 'Write a small set of sendable replies the user can click now.'
+      : 'Write one sendable reply the user can click now.',
     isBot
-      ? `Write only ${runtimeState.userName}'s side of the exchange. Never write ${runtimeState.characterName}'s side.`
-      : `Write only ${runtimeState.userName}'s side of the scene. Never write ${runtimeState.characterName}'s side.`,
-    `Do not let ${runtimeState.characterName}'s catchphrases, honorifics, role labels, or speech habits leak onto ${runtimeState.userName}'s side unless the recent user voice already used them.`,
-    isBot
-      ? 'Think like a human ghostwriter, not a planner, not an evaluator, not a safety note, and not a narrator explaining the move.'
-      : 'Think like a human ghostwriter, not a planner, not an evaluator, not a safety note, and not a narrator explaining the move. When action fits, write the user\'s move directly instead of issuing distant commands to the character.',
-    'Prefer the most sendable, scene-true wording over clever wording.',
-    'Keep the user voice grounded in the current chemistry, power dynamic, and immediate beat.'
-  ].filter(Boolean).join('\n');
+      ? `Write only ${runtimeState.userName}'s side. No planning, commentary, or narrator voice. Keep useful variety instead of flattening everything into one tone.`
+      : `Write only ${runtimeState.userName}'s side. No planning, commentary, or narrator voice. When action fits, write ${runtimeState.userName}'s move directly; action plus dialogue can beat a bare request. Keep useful variety instead of forcing one tone or one dialogue/action balance.`
+  ].filter(Boolean).join(' ');
 }
 
 function buildImpersonateLateSteering(runtimeState) {
@@ -623,10 +617,10 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
         suggestionMode === 'batch'
           ? (isBot
               ? `Generate ${candidateCount} sendable replies for ${runtimeState.userName} in the same exchange. Return JSON with {"replies":[{"text":"...","intent":"reply"}]}.`
-              : `Generate ${candidateCount} sendable next turns for ${runtimeState.userName} in the same scene. Make them short sendable moves, not explanatory sentences. Let the style come from the latest exchange, not from generic character setup. Return JSON with {"replies":[{"text":"...","intent":"reply"}]}.`)
+              : `Generate ${candidateCount} sendable next turns for ${runtimeState.userName} in the same scene. Make them short, vivid moves, not explanatory sentences. Dialogue, action, or action-plus-dialogue are all fine when they fit. If the recent user voice uses first-person action, keep some of that embodied style. Let the style come from the latest exchange, not generic character setup. Return JSON with {"replies":[{"text":"...","intent":"reply"}]}.`)
           : (isBot
               ? `Write one ${runtimeState.runtimeSteering.suggestionRole || 'stay'} sendable reply for ${runtimeState.userName} in the same exchange. Return JSON with {"suggestion":"..."}.`
-              : `Write one ${runtimeState.runtimeSteering.suggestionRole || 'stay'} sendable next turn for ${runtimeState.userName} in the same scene. Make it a short sendable move, not a full explanatory sentence. Let the style come from the latest exchange, not from generic character setup. Return JSON with {"suggestion":"..."}.`)
+              : `Write one ${runtimeState.runtimeSteering.suggestionRole || 'stay'} sendable next turn for ${runtimeState.userName} in the same scene. Make it a short, vivid move, not a full explanatory sentence. Dialogue, action, or action-plus-dialogue are all fine when they fit. If the recent user voice uses first-person action, keep some of that embodied style. Let the style come from the latest exchange, not generic character setup. Return JSON with {"suggestion":"..."}.`)
       ].filter(Boolean).join('\n\n'),
       debug: {
         ...debug,

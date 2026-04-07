@@ -67,7 +67,7 @@ const INCOMPLETE_SUGGESTION_VERB_PARTICLE_PATTERN = /\b(?:think|thinking|talk|ta
 const SUGGESTION_STRUCTURED_JSON_PATTERN = /"(?:replies|text|intent|suggestion)"\s*:/i;
 const BOT_PHYSICAL_SUGGESTION_PATTERN = /\b(?:kiss|waist|thigh|lap|neck|body|breath|touch|lick|ride|grind)\b/i;
 const USER_ANATOMY_ASSUMPTION_PATTERN = /\b(?:cock|dick|shaft|breasts?|boobs?|tits?|nipples?|pussy|clit|balls?|curves?)\b/i;
-const SUGGESTION_SUSPICIOUS_SELF_TARGET_PATTERN = /\b(?:caress|cup|kiss|trace|brush|stroke|press|trail|slide|touch|bring|draw|rest|place|reach|lean|tilt|guide|pull|hold)\b[^.!?]{0,80}\b(?:my\s+(?:chin|cheek|cheeks|face|jawline|cheekbone|cheekbones|ear|ears|neck|throat|lips?|mouth|waist|hip|hips|back|chest|collarbone|shoulder|shoulders|skin)|small\s+of\s+my\s+back)\b/i;
+const SUGGESTION_SUSPICIOUS_SELF_TARGET_PATTERN = /\b(?:caress|cup|kiss|trace|brush|stroke|press|trail|slide|touch|bring|draw|rest|place|reach|lean|tilt|guide|pull|hold)\b[^.!?]{0,80}\b(?:my\s+(?:chin|cheek|cheeks|face|jawline|cheekbone|cheekbones|ear|ears|neck|throat|lips?|mouth|waist|hip|hips|back|side|chest|collarbone|shoulder|shoulders|arm|arms|protective\s+arm|skin)|small\s+of\s+my\s+back)\b/i;
 const SUGGESTION_GENERIC_ACTION_PATTERN = /^(?:change the subject|keep talking|say something nice|say more)$/i;
 const SUGGESTION_REFLECTIVE_META_LEAD_PATTERN = /^(?:I\s+(?:can't help but|find myself|appreciate|understand|must admit|suppose)|Well\b|Thank you\b)/i;
 const SUGGESTION_MALFORMED_META_LEAD_PATTERN = /^\*?\s*I\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/;
@@ -318,6 +318,16 @@ function looksLikeFirstPersonActionText(text = '') {
   return /^I\s+(?:hold|reach|guide|pull|bring|move|step|touch|brush|kiss|lean|nod|look|glance|gesture|beckon|sit|stand|turn|show|take|rest|draw|press|trace|meet|offer|wait|watch|smile|smirk|wrap|tuck|lead|place|keep|go|come)\b/i.test(normalized);
 }
 
+function hasEmbodiedUserActionStyle(text = '') {
+  const source = String(text || '').trim();
+  return /\*[^*]*\bI\b[^*]*\*/i.test(source) || looksLikeFirstPersonActionText(source);
+}
+
+function isEmbodiedSuggestionText(text = '') {
+  const source = String(text || '').trim();
+  return /^\*I\b/i.test(source) || looksLikeFirstPersonActionText(source);
+}
+
 function rewriteSuggestionAsFirstPersonAction(candidate) {
   const trimmed = String(candidate || '').trim();
   if (!trimmed) return '';
@@ -562,7 +572,7 @@ function pickBetterSuggestionBatch(primary, fallback) {
   return left.batch;
 }
 
-function pickBestSuggestions(entries = []) {
+function pickBestSuggestions(entries = [], options = {}) {
   const normalizedEntries = (Array.isArray(entries) ? entries : [])
     .map((entry, index) => ({
       text: String(entry?.text || '').trim(),
@@ -573,12 +583,38 @@ function pickBestSuggestions(entries = []) {
 
   if (normalizedEntries.length === 0) return [];
 
+  const preferEmbodiedAction = options.assistMode !== 'bot_conversation' && hasEmbodiedUserActionStyle(options.lastUserMsg || '');
+  const ensureEmbodiedOption = (selected) => {
+    if (!preferEmbodiedAction || selected.some((text) => isEmbodiedSuggestionText(text))) {
+      return selected;
+    }
+
+    const actionMatch = normalizedEntries.find((entry) => (
+      isEmbodiedSuggestionText(entry.text)
+      && !selected.includes(entry.text)
+      && !isTooSimilarToSelected(entry.text, selected)
+    ));
+
+    if (!actionMatch) return selected;
+    if (selected.length < SUGGESTION_TARGET_COUNT) {
+      selected.push(actionMatch.text);
+      return selected;
+    }
+
+    const replaceIndex = selected.findIndex((text) => !isEmbodiedSuggestionText(text));
+    if (replaceIndex !== -1) {
+      selected.splice(replaceIndex, 1, actionMatch.text);
+    }
+    return selected;
+  };
+
   const hasStructuredIntents = normalizedEntries.some((entry) => entry.intent);
   if (!hasStructuredIntents) {
-    return normalizedEntries
+    const ordered = normalizedEntries
       .sort((left, right) => left.index - right.index)
       .map((entry) => entry.text)
       .slice(0, SUGGESTION_TARGET_COUNT);
+    return ensureEmbodiedOption(ordered).slice(0, SUGGESTION_TARGET_COUNT);
   }
 
   const selected = [];
@@ -589,6 +625,8 @@ function pickBestSuggestions(entries = []) {
       .find((entry) => !isTooSimilarToSelected(entry.text, selected));
     if (match) selected.push(match.text);
   }
+
+  ensureEmbodiedOption(selected);
 
   normalizedEntries
     .sort((left, right) => left.index - right.index)
@@ -769,7 +807,7 @@ export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestio
 
     if (typeof obj?.suggestion === 'string') {
       addCandidate(obj.suggestion, 'reply', obj.suggestion);
-      return pickBestSuggestions(parsedEntries, assistMode);
+      return pickBestSuggestions(parsedEntries, { assistMode, lastUserMsg });
     }
 
     if (Array.isArray(obj.replies)) {
@@ -782,7 +820,7 @@ export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestio
           addCandidate(entry.text, entry.intent, entry.text);
         }
       });
-      return pickBestSuggestions(parsedEntries, assistMode);
+      return pickBestSuggestions(parsedEntries, { assistMode, lastUserMsg });
     }
 
     ['stay', 'progress', 'bold'].forEach((role) => {
@@ -792,7 +830,7 @@ export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestio
       }
     });
 
-    return pickBestSuggestions(parsedEntries, assistMode);
+    return pickBestSuggestions(parsedEntries, { assistMode, lastUserMsg });
   };
 
   try {
@@ -857,7 +895,7 @@ export function parseSuggestionResponse(raw, lastUserMsg = '', previousSuggestio
     addCandidate(cleanedPart, mappedIntent, rawPart);
   });
 
-  return pickBestSuggestions(parsedEntries, assistMode);
+  return pickBestSuggestions(parsedEntries, { assistMode, lastUserMsg });
 }
 
 async function requestSuggestionContent(chatParams, currentRequestId) {

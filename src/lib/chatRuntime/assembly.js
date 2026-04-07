@@ -196,11 +196,13 @@ function buildSuggestionLateSteering(runtimeState) {
         ? `Write only ${runtimeState.userName}'s side of the exchange. Keep it short, direct, and plain chat text.`
         : `Write only ${runtimeState.userName}'s side of the scene. NEVER write as ${runtimeState.characterName}.`,
       'Read the whole latest full message before writing. Questions, invitations, instructions, and actions near the end matter most.',
-      'Across the set, include at least one most natural direct reply, one reply that moves the exchange forward, and one reply that takes a different but still fitting angle.',
+      isBot
+        ? 'Across the set, include at least one most natural direct reply, one reply that moves the exchange forward, and one reply that takes a different but still fitting angle.'
+        : 'Across the set, include the most natural immediate reply, one option that moves the scene forward, and one different but still fitting angle. A mix of dialogue and first-person *I ...* action is good when it fits the beat.',
       'Make the options genuinely different from each other. Do not paraphrase the same move three times.',
       isBot
         ? 'Answer only the latest message. No advice, commentary, or planner wording.'
-        : 'Prefer the shortest sendable move that fits this exact beat. If the latest beat is physical, positional, or object/task-focused, action-led first-person *I ...* moves are often the most natural. If dialogue is more natural, use dialogue instead.',
+        : 'Use the most natural sendable form for this exact beat. A mix of dialogue and first-person *I ...* action is good. When the scene already has physical or task momentum, actions often move it better than another verbal nudge.',
       'Anchor every reply to the exact latest beat, not to the broad setup, trope, lore, or default premise.',
       'Respect the granularity of the latest turn. If the latest turn is broad, stay broad. If it is concrete, stay concrete unless the exchange itself narrows it.',
       'If a concrete shared activity, object, or subtask is already in progress, stay on that same focus instead of switching to a nearby room detail or different task.',
@@ -234,8 +236,8 @@ function buildSuggestionLateSteering(runtimeState) {
       }[suggestionRole]
     : {
         stay: 'This single turn should be the most natural immediate reaction to the latest beat.',
-        bold: 'This single turn should be a slightly more forward version of the natural reaction. Depending on the scene, forward can mean warmer, firmer, flirtier, more vulnerable, more decisive, or more intense. Do not force sexual escalation.',
-        progress: 'This single turn should open the next beat and move the scene forward. It is not just a more intense version of the natural reaction.'
+        bold: 'This single turn should be a slightly more forward version of the natural reaction. Depending on the scene, forward can mean warmer, firmer, flirtier, more vulnerable, more decisive, or more intense.',
+        progress: 'This single turn should open the next beat and move the scene forward. It can be dialogue, action, or a natural mix. It is not just a more intense version of the natural reaction.'
       }[suggestionRole];
 
   return [
@@ -250,7 +252,7 @@ function buildSuggestionLateSteering(runtimeState) {
       : `Write only ${runtimeState.userName}'s side of the scene. NEVER write as ${runtimeState.characterName}.`,
     isBot
       ? 'Answer only the latest message. No advice, commentary, or planner wording.'
-      : 'Prefer the shortest sendable move that fits this exact beat. Use first-person *I ...* action only when action is clearly the most natural move. If dialogue is more natural, use dialogue instead.',
+      : 'Use the most natural sendable form for this exact beat. A mix of dialogue and first-person *I ...* action is good. When the scene already has physical or task momentum, actions often move it better than another verbal nudge.',
     'Anchor the line to the exact latest beat, not to the broad setup, trope, lore, or default premise.',
     'Respect the granularity of the latest turn. If the latest turn is broad, stay broad. If it is concrete, stay concrete unless the exchange itself narrows it.',
     'If a concrete shared activity, object, or subtask is already in progress, stay on that same focus instead of switching to a nearby room detail or different task.',
@@ -321,7 +323,9 @@ function buildSuggestionWriterRole(runtimeState) {
       ? `Write only ${runtimeState.userName}'s side of the exchange. Never write ${runtimeState.characterName}'s side.`
       : `Write only ${runtimeState.userName}'s side of the scene. Never write ${runtimeState.characterName}'s side.`,
     `Do not let ${runtimeState.characterName}'s catchphrases, honorifics, role labels, or speech habits leak onto ${runtimeState.userName}'s side unless the recent user voice already used them.`,
-    'Think like a human ghostwriter, not a planner, not an evaluator, not a safety note, and not a narrator explaining the move.',
+    isBot
+      ? 'Think like a human ghostwriter, not a planner, not an evaluator, not a safety note, and not a narrator explaining the move.'
+      : 'Think like a human ghostwriter, not a planner, not an evaluator, not a safety note, and not a narrator explaining the move. When action fits, write the user\'s move directly instead of issuing distant commands to the character.',
     'Prefer the most sendable, scene-true wording over clever wording.',
     'Keep the user voice grounded in the current chemistry, power dynamic, and immediate beat.'
   ].filter(Boolean).join('\n');

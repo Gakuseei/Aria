@@ -1,9 +1,18 @@
-// ARIA v1.0 RELEASE - Language Context
-
-import { createContext, useContext, useState, useEffect } from 'react';
-import { getTranslations } from '../lib/translations';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { FALLBACK_LANGUAGE, getTranslations, loadTranslations } from '../lib/translations';
 
 const LanguageContext = createContext();
+
+function getInitialLanguage() {
+  if (typeof window === 'undefined') {
+    return FALLBACK_LANGUAGE;
+  }
+
+  const savedLanguage = window.localStorage.getItem('language');
+  return typeof savedLanguage === 'string' && savedLanguage.trim()
+    ? savedLanguage.trim().toLowerCase()
+    : FALLBACK_LANGUAGE;
+}
 
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
@@ -14,27 +23,58 @@ export const useLanguage = () => {
 };
 
 export const LanguageProvider = ({ children }) => {
-  const [language, setLanguageState] = useState('en'); // Default: English
-  const [t, setT] = useState(getTranslations('en'));
+  const [language, setLanguageState] = useState(getInitialLanguage);
+  const [t, setT] = useState(() => getTranslations(getInitialLanguage()));
+  const loadRequestRef = useRef(0);
 
-  // Load language from localStorage on mount
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('language') || 'en';
-    setLanguageState(savedLanguage);
-    setT(getTranslations(savedLanguage));
-  }, []);
+    let active = true;
+    const requestId = loadRequestRef.current + 1;
+    loadRequestRef.current = requestId;
+
+    loadTranslations(language)
+      .then((nextTranslations) => {
+        if (!active || requestId !== loadRequestRef.current) {
+          return;
+        }
+        setT(nextTranslations);
+      })
+      .catch((error) => {
+        console.error('[LanguageContext] Failed to load translations:', error);
+        if (active && requestId === loadRequestRef.current) {
+          setT(getTranslations(FALLBACK_LANGUAGE));
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [language]);
 
   const setLanguage = (lang) => {
-    setLanguageState(lang);
-    setT(getTranslations(lang));
-    localStorage.setItem('language', lang);
+    const nextLanguage = typeof lang === 'string' && lang.trim()
+      ? lang.trim().toLowerCase()
+      : FALLBACK_LANGUAGE;
+
+    setLanguageState(nextLanguage);
+    setT(getTranslations(nextLanguage));
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem('language', nextLanguage);
 
     let settings = {};
-    try { settings = JSON.parse(localStorage.getItem('settings') || '{}'); } catch { /* corrupted */ }
-    if (settings.preferredLanguage !== lang) {
-      settings.preferredLanguage = lang;
-      localStorage.setItem('settings', JSON.stringify(settings));
-      console.log('[v1.0 LanguageContext] Synced preferredLanguage:', lang);
+    try {
+      settings = JSON.parse(window.localStorage.getItem('settings') || '{}');
+    } catch {
+      settings = {};
+    }
+
+    if (settings.preferredLanguage !== nextLanguage) {
+      settings.preferredLanguage = nextLanguage;
+      window.localStorage.setItem('settings', JSON.stringify(settings));
     }
   };
 

@@ -1,24 +1,27 @@
-import { useState, useEffect, useRef } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import TitleBar from './components/TitleBar';
 import MainMenu from './components/MainMenu';
 import ModeSelection from './components/ModeSelection';
-import CharacterSelect from './components/CharacterSelect';
-import ChatInterface from './components/ChatInterface';
-import CreativeWriting from './components/CreativeWriting';
-import LoadGame from './components/LoadGame';
-import Settings from './components/Settings';
-import CharacterCreator from './components/CharacterCreator';
-import AICharacterBuilder from './components/AICharacterBuilder';
-import DebugConsole from './components/DebugConsole';
 import OledToggleButton from './components/OledToggleButton';
-import { testOllamaConnection, autoDetectAndSetModel, normalizeContextSize } from './lib/ollama';
-import { loadSettings } from './lib/storage/settings';
-import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from './lib/defaults';
 import { useLanguage } from './context/LanguageContext';
-import OllamaSetup from './components/tutorials/OllamaSetup';
-import { normalizeResponseMode } from './lib/responseModes';
+import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from './lib/defaults';
 import { DEBUG_CONSOLE_EVENT_LIMIT } from './lib/debugConsole';
-import { applyThemeMode, bootstrapThemeMode, normalizeThemeMode, withResolvedThemeSettings } from './lib/theme';
+import { GAME_MODES } from './lib/gameModes';
+import { testOllamaConnection, autoDetectAndSetModel, normalizeContextSize } from './lib/ollama';
+import { applyPerformanceProfile, getPerformanceProfile } from './lib/performance';
+import { normalizeResponseMode } from './lib/responseModes';
+import { loadSettings } from './lib/storage/settings';
+import { applyThemeMode, bootstrapThemeMode, withResolvedThemeSettings } from './lib/theme';
+
+const CharacterSelect = lazy(() => import('./components/CharacterSelect'));
+const ChatInterface = lazy(() => import('./components/ChatInterface'));
+const CreativeWriting = lazy(() => import('./components/CreativeWriting'));
+const LoadGame = lazy(() => import('./components/LoadGame'));
+const Settings = lazy(() => import('./components/Settings'));
+const CharacterCreator = lazy(() => import('./components/CharacterCreator'));
+const AICharacterBuilder = lazy(() => import('./components/AICharacterBuilder'));
+const DebugConsole = lazy(() => import('./components/DebugConsole'));
+const OllamaSetup = lazy(() => import('./components/tutorials/OllamaSetup'));
 
 // App views
 const VIEWS = {
@@ -33,12 +36,6 @@ const VIEWS = {
   SETTINGS: 'settings',
 };
 
-// Game modes
-export const GAME_MODES = {
-  CREATIVE_WRITING: 'creative_writing',
-  CHARACTER_CHAT: 'character_chat',
-};
-
 // v0.2.5: Onboarding Modal removed - Replaced by OllamaSetup.jsx
 
 /** RTL languages that require dir="rtl" on the root element */
@@ -48,6 +45,7 @@ const INITIAL_THEME_MODE = bootstrapThemeMode();
 function App() {
   const { language } = useLanguage();
   const startupTimersRef = useRef(new Set());
+  const performanceProfileRef = useRef(getPerformanceProfile());
   const [currentView, setCurrentView] = useState(VIEWS.MAIN_MENU);
   const [settingsReturnView, setSettingsReturnView] = useState(VIEWS.MAIN_MENU);
   const [, setSelectedMode] = useState(null);
@@ -62,7 +60,7 @@ function App() {
   const [oledModeActive, setOledModeActive] = useState(INITIAL_THEME_MODE === 'oled');
 
   // v0.2.5: Animations state
-  const [animationsActive, setAnimationsActive] = useState(true);
+  const [animationsActive, setAnimationsActive] = useState(!performanceProfileRef.current.prefersReducedMotion);
 
   // v0.2.5: Debug Console state
   const [showDebugConsole, setShowDebugConsole] = useState(false);
@@ -95,7 +93,7 @@ function App() {
     fontSize: 'medium',
     autoSave: true,
     smartSuggestionsEnabled: true,
-    animationsEnabled: true,
+    animationsEnabled: !performanceProfileRef.current.prefersReducedMotion,
     themeMode: INITIAL_THEME_MODE,
     oledMode: INITIAL_THEME_MODE === 'oled',
     preferredLanguage: 'en'
@@ -149,7 +147,7 @@ function App() {
             fontSize: loadedSettings.fontSize || 'medium',
             autoSave: loadedSettings.autoSave ?? true,
             smartSuggestionsEnabled: loadedSettings.smartSuggestionsEnabled ?? true,
-            animationsEnabled: loadedSettings.animationsEnabled ?? true,
+            animationsEnabled: loadedSettings.animationsEnabled ?? !performanceProfileRef.current.prefersReducedMotion,
             themeMode: loadedSettings.themeMode,
             oledMode: loadedSettings.oledMode ?? false,
             preferredLanguage: loadedSettings.preferredLanguage || 'en'
@@ -163,6 +161,7 @@ function App() {
           applyThemeMode(mergedSettings.themeMode);
           setAnimationsActive(mergedSettings.animationsEnabled);
           applyAnimations(mergedSettings.animationsEnabled);
+          applyVisualPerformanceMode(mergedSettings.animationsEnabled);
 
           if (mergedSettings.preferredLanguage) {
             const langContext = localStorage.getItem('language');
@@ -295,6 +294,7 @@ function App() {
     if (settingKey === 'animationsEnabled') {
       setAnimationsActive(settingValue);
       applyAnimations(settingValue);
+      applyVisualPerformanceMode(settingValue);
     }
   };
 
@@ -320,6 +320,8 @@ function App() {
 
   // v0.2.5: Apply/remove animations globally
   const applyAnimations = (enabled) => {
+    if (!document?.body) return;
+
     if (!enabled) {
       document.body.classList.add('no-animations');
     } else {
@@ -327,6 +329,17 @@ function App() {
     }
   };
 
+  const applyVisualPerformanceMode = (animationsEnabled) => {
+    applyPerformanceProfile({
+      ...performanceProfileRef.current,
+      reduceEffects: !animationsEnabled || performanceProfileRef.current.reduceEffects,
+    });
+  };
+
+  useEffect(() => {
+    applyAnimations(animationsActive);
+    applyVisualPerformanceMode(animationsActive);
+  }, [animationsActive]);
 
   // v0.2.5: Retry Ollama connection
   const handleRetryOllama = async () => {
@@ -568,10 +581,12 @@ function App() {
     <div dir={RTL_LANGUAGES.has(language) ? 'rtl' : 'ltr'} className="app-container app-theme-shell h-screen w-screen overflow-hidden">
       {/* v0.2.5: Onboarding Modal - Replaced by Premium OllamaSetup */}
       {showOnboarding && (
-         <OllamaSetup 
+        <Suspense fallback={null}>
+          <OllamaSetup
             isOnboarding={true}
             onComplete={handleRetryOllama}
-         />
+          />
+        </Suspense>
       )}
 
       {/* Custom Title Bar */}
@@ -589,7 +604,9 @@ function App() {
           </div>
 
           <div className="relative z-10 h-full w-full">
-            {renderView()}
+            <Suspense fallback={null}>
+              {renderView()}
+            </Suspense>
           </div>
         </main>
       )}
@@ -601,21 +618,25 @@ function App() {
       />
 
       {/* v0.2.5: Debug Console PRO (Ctrl+D) - Enhanced API Monitor */}
-      <DebugConsole
-        isVisible={showDebugConsole}
-        onClose={() => setShowDebugConsole(false)}
-        scaleFactor={settings.fontSize || 'medium'}
-        oledMode={oledModeActive}
-        animationsEnabled={animationsActive}
-        currentView={currentView}
-        lastApiResponseTime={lastApiResponseTime}
-        lastResponseWords={lastResponseWords}
-        lastResponseTokens={lastResponseTokens}
-        lastApiModel={lastApiModel}
-        lastApiWPS={lastApiWPS}
-        eventLog={eventLog}
-        settings={settings}
-      />
+      {showDebugConsole && (
+        <Suspense fallback={null}>
+          <DebugConsole
+            isVisible={showDebugConsole}
+            onClose={() => setShowDebugConsole(false)}
+            scaleFactor={settings.fontSize || 'medium'}
+            oledMode={oledModeActive}
+            animationsEnabled={animationsActive}
+            currentView={currentView}
+            lastApiResponseTime={lastApiResponseTime}
+            lastResponseWords={lastResponseWords}
+            lastResponseTokens={lastResponseTokens}
+            lastApiModel={lastApiModel}
+            lastApiWPS={lastApiWPS}
+            eventLog={eventLog}
+            settings={settings}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

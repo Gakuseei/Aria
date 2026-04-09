@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { generateStory, continueStory, cleanStoryOutput } from '../lib/StoryEngine';
 import { autoDetectAndSetModel, fetchOllamaModels, getModelCtx } from '../lib/ollama';
 import { saveSession, generateSessionId } from '../lib/storage/sessions';
-import { GAME_MODES } from '../App';
+import { GAME_MODES } from '../lib/gameModes';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';

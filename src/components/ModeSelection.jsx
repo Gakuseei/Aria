@@ -1,4 +1,4 @@
-import { GAME_MODES } from '../App';
+import { GAME_MODES } from '../lib/gameModes';
 import { useLanguage } from '../context/LanguageContext';
 
 function ModeSelection({ onSelect, onBack }) {

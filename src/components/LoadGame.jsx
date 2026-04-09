@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { listSessions, deleteSession } from '../lib/storage/sessions';
-import { GAME_MODES } from '../App';
+import { GAME_MODES } from '../lib/gameModes';
 import { useLanguage } from '../context/LanguageContext';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
 import CustomDropdown from './CustomDropdown';

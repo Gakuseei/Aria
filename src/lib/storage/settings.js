@@ -2,6 +2,10 @@ import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DE
 import { normalizeContextSize } from '../ollama/index.js';
 import { isElectron } from '../chat/platform.js';
 
+const DEFAULT_ANIMATIONS_ENABLED = !Boolean(
+  globalThis?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches,
+);
+
 const DEFAULT_SETTINGS = {
   dataVersion: DATA_VERSION,
   ollamaUrl: OLLAMA_DEFAULT_URL,
@@ -17,7 +21,7 @@ const DEFAULT_SETTINGS = {
   fontSize: 'medium',
   autoSave: true,
   soundEnabled: true,
-  animationsEnabled: true,
+  animationsEnabled: DEFAULT_ANIMATIONS_ENABLED,
   themeMode: 'dark',
   oledMode: false,
   preferredLanguage: 'en',

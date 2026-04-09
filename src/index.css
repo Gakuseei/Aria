@@ -277,6 +277,32 @@ body {
   background: var(--app-glow-center);
 }
 
+body.reduced-effects .theme-app-glow {
+  display: none;
+}
+
+body.reduced-effects .theme-app-grid,
+body.reduced-effects .cyber-grid {
+  opacity: 0.32;
+  background-size: 72px 72px;
+}
+
+body.reduced-effects .glass,
+body.reduced-effects .glass-light,
+body.reduced-effects .glass-header,
+body.reduced-effects .glass-panel,
+body.reduced-effects .theme-chat-shell,
+body.reduced-effects .theme-chat-flyout,
+body.reduced-effects .theme-chat-toast,
+body.reduced-effects .theme-modal-backdrop,
+body.reduced-effects .theme-modal-shell,
+body.reduced-effects .theme-titlebar,
+body.reduced-effects .theme-suggestion-pill,
+body.reduced-effects .theme-card-subtle {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 .theme-elevated-panel {
   background: var(--color-surface-elevated);
   border: 1px solid var(--color-border-strong);
@@ -1370,6 +1396,8 @@ body.oled-mode ::-webkit-scrollbar-thumb:hover {
 
 .message-slide-in {
   animation: messageSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 140px;
 }
 
 /* Suggestion pill entrance animation */
@@ -1706,6 +1734,12 @@ body.no-animations *::before,
 body.no-animations *::after {
   animation: none !important;
   transition: none !important;
+}
+
+body.no-animations .theme-app-glow,
+body.no-animations .theme-app-grid,
+body.no-animations .cyber-grid {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

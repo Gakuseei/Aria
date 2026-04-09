@@ -14,16 +14,6 @@ function cacheModelCaps(key, caps) {
 }
 
 /**
- * Invalidate cached model capabilities.
- * Call when ollamaUrl or model changes to prevent stale context lengths.
- */
-export function invalidateModelCapsCache() {
-  for (const key of Object.keys(MODEL_CAPS_CACHE)) {
-    delete MODEL_CAPS_CACHE[key];
-  }
-}
-
-/**
  * Context size presets (tokens). Users pick a tier in Settings.
  * Ollama offloads to CPU if VRAM is exceeded — safe to overshoot.
  */

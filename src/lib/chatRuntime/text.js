@@ -94,7 +94,3 @@ export function pickSentenceByKeywords(text, keywords = [], maxLength = 180) {
   const match = sentences.find((sentence) => loweredKeywords.some((keyword) => sentence.toLowerCase().includes(keyword)));
   return trimPromptSnippet(match || sentences[0] || '', maxLength);
 }
-
-export function compactHistoryText(text, maxLength = 220) {
-  return truncateMiddle(text, maxLength, 90, 110);
-}

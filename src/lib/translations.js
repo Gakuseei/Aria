@@ -79,7 +79,3 @@ export async function loadTranslations(lang = FALLBACK_LANGUAGE) {
   translationCache.set(normalizedLanguage, merged);
   return merged;
 }
-
-export function getFallbackTranslations() {
-  return en;
-}

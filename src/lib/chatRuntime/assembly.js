@@ -546,7 +546,6 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     const latestUserBeat = runtimeState.activeScene.latest_user_action_or_request
       ? `${runtimeState.userName}: ${runtimeState.activeScene.latest_user_action_or_request}`
       : '';
-    const currentBeat = [latestCharacterBeat, latestUserBeat].filter(Boolean).join('\n');
     const compactScene = renderActiveScene(runtimeState.activeScene, { compact: true });
     const exchangeAnchorHistory = suggestionMode === 'batch' && latestAssistantFull ? recentTail.slice(0, -1) : recentTail;
     const voiceExamples = buildRecentUserVoiceExamples(runtimeState);

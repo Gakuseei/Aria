@@ -40,32 +40,6 @@ export const saveSession = async (sessionId, sessionData) => {
   }
 };
 
-export const loadSession = async (sessionId) => {
-  try {
-    if (!sessionId) throw new Error('Session ID required');
-
-    if (isElectron()) {
-      const result = await window.electronAPI.loadSession(sessionId);
-
-      if (result && result.success && (result.session || result.data)) {
-        return { success: true, session: result.session || result.data };
-      } else {
-        throw new Error(result?.error || 'Session not found');
-      }
-    } else {
-      const sessions = JSON.parse(localStorage.getItem('sessions') || '{}');
-      const session = sessions[sessionId];
-
-      if (!session) throw new Error('Session not found');
-
-      return { success: true, session: session };
-    }
-  } catch (error) {
-    console.error('[v8.1 Session] ❌ Load error:', error);
-    return { success: false, error: error.message };
-  }
-};
-
 export const deleteSession = async (sessionId) => {
   try {
     if (!sessionId) throw new Error('Session ID required');

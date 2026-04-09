@@ -31,7 +31,18 @@ export default defineConfig({
     },
   },
   server: {
+    host: 'localhost',
     port: 3000,
     strictPort: true,
+    cors: false,
+    fs: {
+      strict: true,
+      allow: [path.resolve(__dirname)],
+    },
+  },
+  preview: {
+    host: 'localhost',
+    strictPort: true,
+    cors: false,
   },
 });

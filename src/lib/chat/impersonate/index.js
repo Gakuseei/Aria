@@ -5,14 +5,15 @@ import { ASSIST_BUDGET_CONFIG, deriveAssistBudgetTier, getModelCtx, getModelCapa
 import { cleanTranscriptArtifacts } from '../common.js';
 import { isElectron } from '../platform.js';
 import {
-  deconjugateSimplePresent,
   escapeRegex,
-  isAdverbishToken,
   repairLeadingActionBlock,
   repairLeadingNarrationSegment
 } from '../language.js';
 
 let impersonateAbortController = null;
+const WRITE_FOR_ME_GENERIC_PATTERN = /\b(?:electricity between us|cannot deny|there'?s no denying|lingering for a heartbeat longer than necessary|beneath those long lashes|warm smile spreads|vision bathed in|presence has come to mean|hint of color in her cheeks|warmth between us|something unspoken)\b/i;
+const WRITE_FOR_ME_META_LEAD_PATTERN = /^(?:here(?:'s| is)?|sure|okay|alright|i can|i'll|let me|try this|you could say|maybe)\b/i;
+const WRITE_FOR_ME_MALFORMED_LEAD_PATTERN = /^\*?\s*I\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/;
 
 export function abortImpersonateCall() {
   if (impersonateAbortController) {
@@ -246,7 +247,6 @@ export async function impersonateUser(history, character, userName, passionLevel
     };
 
     if (isElectron()) {
-      const requestId = `impersonate-${Date.now()}-${numPredict}`;
       impersonateAbortController = {
         abort: () => window.electronAPI.abortAiChat?.('impersonate')
       };

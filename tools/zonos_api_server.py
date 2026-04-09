@@ -36,7 +36,6 @@ def setup_espeak_environment():
 setup_espeak_environment()
 
 from flask import Flask, request, jsonify, send_file
-from flask_cors import CORS
 import torch
 import torchaudio
 import io
@@ -54,7 +53,8 @@ except ImportError as e:
     sys.exit(1)
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+SERVER_HOST = os.environ.get("ARIA_ZONOS_HOST", "127.0.0.1")
+SERVER_PORT = int(os.environ.get("ARIA_ZONOS_PORT", "7860"))
 
 # Global model instance
 MODEL = None
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print("  Zonos API Server for Aria")
     print("=" * 60)
-    print("[INFO] Starting server on http://0.0.0.0:7860")
+    print(f"[INFO] Starting server on http://{SERVER_HOST}:{SERVER_PORT}")
     print("[INFO] Endpoints:")
     print("       POST /api/tts - Generate speech")
     print("       GET  /api/health - Health check")
@@ -196,4 +196,4 @@ if __name__ == "__main__":
         print("[INFO] Model will be loaded on first request")
 
     # Run the Flask app
-    app.run(host="0.0.0.0", port=7860, threaded=True)
+    app.run(host=SERVER_HOST, port=SERVER_PORT, threaded=True)

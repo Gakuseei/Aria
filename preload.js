@@ -29,7 +29,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   aiChat: (params) => ipcRenderer.invoke('ai-chat', params),
   abortAiChat: (tag) => ipcRenderer.invoke('abort-ai-chat', { tag }),
   aiGenerateCharacter: (params) => ipcRenderer.invoke('ai-generate-character', params),
-  aiCreativeWrite: (params) => ipcRenderer.invoke('ai-creative-write', params),
 
   // Ollama IPC (streaming, model management)
   ollamaChatStream: (params) => ipcRenderer.invoke('ollama-chat-stream', params),
@@ -44,11 +43,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadSession: (sessionId) => ipcRenderer.invoke('load-session', { sessionId }),
   listSessions: () => ipcRenderer.invoke('list-sessions'),
   deleteSession: (sessionId) => ipcRenderer.invoke('delete-session', { sessionId }),
-
-  // Character Session Memory
-  saveCharacterMemory: (characterId, sessionId, data) => ipcRenderer.invoke('save-character-memory', { characterId, sessionId, data }),
-  loadCharacterMemory: (characterId, sessionId) => ipcRenderer.invoke('load-character-memory', { characterId, sessionId }),
-  deleteCharacterMemory: (characterId, sessionId) => ipcRenderer.invoke('delete-character-memory', { characterId, sessionId }),
 
   // Settings
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
@@ -69,10 +63,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // File dialog
   selectFile: (filters) => ipcRenderer.invoke('open-file-dialog', filters),
-  
-  // File check
-  checkFileExists: (filePath) => ipcRenderer.invoke('check-file-exists', filePath),
-  
+
   // Voice model download
   downloadVoiceModel: (params) => ipcRenderer.invoke('download-voice-model', params),
   
@@ -83,7 +74,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   zonosAutoInstall: () => ipcRenderer.invoke('zonos-auto-install'),
   zonosCheckStatus: () => ipcRenderer.invoke('zonos-check-status'),
   zonosIsInstalled: () => ipcRenderer.invoke('zonos-is-installed'),
-  zonosGetError: () => ipcRenderer.invoke('zonos-get-error'),
   zonosCancelInstall: () => ipcRenderer.invoke('zonos-cancel-install'),
   zonosGetProgress: () => ipcRenderer.invoke('zonos-get-progress'),
 });

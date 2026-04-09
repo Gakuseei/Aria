@@ -531,6 +531,12 @@ body.reduced-effects .theme-card-subtle {
   box-shadow: 0 28px 52px -38px rgba(0, 0, 0, 0.76), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
+.theme-chat-scroll-region {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
+}
+
 .theme-chat-user-bubble .theme-message-meta {
   color: color-mix(in srgb, var(--color-text-muted) 72%, rgba(223, 192, 167, 0.92));
 }

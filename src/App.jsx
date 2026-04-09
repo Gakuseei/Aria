@@ -4,6 +4,7 @@ import MainMenu from './components/MainMenu';
 import ModeSelection from './components/ModeSelection';
 import OledToggleButton from './components/OledToggleButton';
 import { useLanguage } from './context/LanguageContext';
+import { buildManualCharacterSelectionState, buildManualModeSelectionState } from './lib/chatViewState';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from './lib/defaults';
 import { DEBUG_CONSOLE_EVENT_LIMIT } from './lib/debugConsole';
 import { GAME_MODES } from './lib/gameModes';
@@ -366,8 +367,10 @@ function App() {
 
   // Handle mode selection
   const handleModeSelect = (mode) => {
-    setSelectedMode(mode);
-    
+    const nextState = buildManualModeSelectionState(mode);
+    setSelectedMode(nextState.selectedMode);
+    setLoadedSession(nextState.loadedSession);
+
     if (mode === GAME_MODES.CREATIVE_WRITING) {
       navigate(VIEWS.CREATIVE_WRITING);
     } else {
@@ -377,7 +380,9 @@ function App() {
 
   // Handle character selection
   const handleCharacterSelect = (character) => {
-    setSelectedCharacter(character);
+    const nextState = buildManualCharacterSelectionState(character);
+    setSelectedCharacter(nextState.selectedCharacter);
+    setLoadedSession(nextState.loadedSession);
     navigate(VIEWS.CHAT_INTERFACE);
   };
 
@@ -464,9 +469,11 @@ function App() {
         navigate(VIEWS.CHARACTER_SELECT);
         break;
       case VIEWS.CHAT_INTERFACE:
+        setLoadedSession(null);
         navigate(VIEWS.CHARACTER_SELECT);
         break;
       case VIEWS.CREATIVE_WRITING:
+        setLoadedSession(null);
         navigate(VIEWS.MODE_SELECT);
         break;
       case VIEWS.LOAD_GAME:

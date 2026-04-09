@@ -22,6 +22,7 @@ import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
 import downloadBlob from '../utils/downloadBlob';
+import { getChatAutoScrollBehavior, getScrollBottomTarget, isNearScrollBottom } from '../lib/chatViewState';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from '../lib/defaults';
 import { resolveSessionSceneMemory } from '../lib/chatRuntime';
 import CustomDropdown from './CustomDropdown';
@@ -416,6 +417,9 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const userScrolledUpRef = useRef(false);
+  const previousMessageCountRef = useRef(0);
+  const scrollRafRef = useRef(null);
+  const scrollStateRafRef = useRef(null);
   const inputRef = useRef(null);
   const importFileRef = useRef(null);
   const audioRef = useRef(null);
@@ -470,6 +474,14 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
+      if (scrollRafRef.current) {
+        cancelAnimationFrame(scrollRafRef.current);
+        scrollRafRef.current = null;
+      }
+      if (scrollStateRafRef.current) {
+        cancelAnimationFrame(scrollStateRafRef.current);
+        scrollStateRafRef.current = null;
+      }
       if (passionTimerRef.current) {
         clearTimeout(passionTimerRef.current);
         passionTimerRef.current = null;
@@ -492,6 +504,14 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+    }
+    if (scrollRafRef.current) {
+      cancelAnimationFrame(scrollRafRef.current);
+      scrollRafRef.current = null;
+    }
+    if (scrollStateRafRef.current) {
+      cancelAnimationFrame(scrollStateRafRef.current);
+      scrollStateRafRef.current = null;
     }
     if (passionTimerRef.current) {
       clearTimeout(passionTimerRef.current);
@@ -848,37 +868,68 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   // SCROLLING - AUTO-SCROLL TO BOTTOM
   // ============================================================================
 
-  useEffect(() => {
-    // Scroll immediately when messages change (new message sent = reset scroll lock)
-    userScrolledUpRef.current = false;
-    scrollToBottom();
+  const scheduleScrollToBottom = useCallback(({ force = false, preferSmooth = false } = {}) => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    if (!force && userScrolledUpRef.current) return;
 
-    // Additional delayed scroll to ensure DOM has fully rendered
-    const timer = setTimeout(() => {
-      scrollToBottom();
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [messages]);
-
-  useEffect(() => {
-    if (isStreaming && !userScrolledUpRef.current) scrollToBottom();
-  }, [streamingContent, isStreaming]);
-
-  const scrollToBottom = () => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    if (scrollRafRef.current) {
+      cancelAnimationFrame(scrollRafRef.current);
     }
-  };
 
-  const handleMessagesScroll = () => {
-    const el = messagesContainerRef.current;
-    if (!el) return;
-    // Consider "at bottom" if within 150px of the end
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
-    userScrolledUpRef.current = !atBottom;
-  };
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      const nextContainer = messagesContainerRef.current;
+      if (!nextContainer) return;
 
+      const top = getScrollBottomTarget({
+        scrollHeight: nextContainer.scrollHeight,
+        clientHeight: nextContainer.clientHeight,
+      });
+      const behavior = getChatAutoScrollBehavior({
+        animationsEnabled: settings.animationsEnabled !== false,
+        isStreaming,
+        preferSmooth,
+      });
+
+      if (typeof nextContainer.scrollTo === 'function') {
+        nextContainer.scrollTo({ top, behavior });
+      } else {
+        nextContainer.scrollTop = top;
+      }
+      userScrolledUpRef.current = false;
+    });
+  }, [isStreaming, settings.animationsEnabled]);
+
+  useEffect(() => {
+    const previousCount = previousMessageCountRef.current;
+    const appendedCount = Math.max(0, messages.length - previousCount);
+    const preferSmooth = previousCount > 0 && appendedCount > 0 && appendedCount <= 2;
+
+    scheduleScrollToBottom({ preferSmooth });
+    previousMessageCountRef.current = messages.length;
+  }, [messages, scheduleScrollToBottom]);
+
+  useEffect(() => {
+    if (!isStreaming || userScrolledUpRef.current) return;
+    scheduleScrollToBottom();
+  }, [streamingContent, isStreaming, scheduleScrollToBottom]);
+
+  const handleMessagesScroll = useCallback(() => {
+    if (scrollStateRafRef.current) return;
+
+    scrollStateRafRef.current = requestAnimationFrame(() => {
+      scrollStateRafRef.current = null;
+      const container = messagesContainerRef.current;
+      if (!container) return;
+
+      userScrolledUpRef.current = !isNearScrollBottom({
+        scrollHeight: container.scrollHeight,
+        scrollTop: container.scrollTop,
+        clientHeight: container.clientHeight,
+      });
+    });
+  }, []);
 
   const handleSuggestionClick = (suggestion) => {
     setSmartSuggestions([]);
@@ -998,6 +1049,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     if (isCommand(safeMessageText)) {
       const result = executeCommand(safeMessageText, { messages, t, settings, character, passionLevel });
       if (result.handled && result.message) {
+        userScrolledUpRef.current = false;
         setMessages(prev => [...prev, result.message]);
       }
       setInput('');
@@ -1020,6 +1072,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     };
     const newMessages = [...messages, userMessage];
     const runtimeSceneMemory = buildSceneMemory(newMessages);
+    userScrolledUpRef.current = false;
     setMessages(newMessages);
     setInput('');
     setIsLoading(true);
@@ -1146,7 +1199,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   // VOICE/TTS PLAYBACK - RENDERER PROCESS (Windows Volume Mixer Support)
   // ============================================================================
 
-  const playAudio = async (audioData) => {
+  const playAudio = useCallback(async (audioData) => {
     try {
       // Stop current audio if playing
       if (audioRef.current) {
@@ -1161,7 +1214,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     } catch (err) {
       console.error("Audio Playback Error:", err);
     }
-  };
+  }, [settings.voiceVolume]);
 
   // Live volume update
   useEffect(() => {
@@ -1185,7 +1238,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     };
   }, []);
 
-  const handleSpeak = async (text) => {
+  const handleSpeak = useCallback(async (text) => {
     if (!settings.piperPath || !settings.modelPath) return;
 
     try {
@@ -1202,7 +1255,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     } catch (err) {
       console.error("Audio Generation Error:", err);
     }
-  };
+  }, [playAudio, settings.modelPath, settings.piperPath, settings.voiceTier]);
 
   // ============================================================================
   // CHAT ACTIONS WITH HARD RESET
@@ -1292,6 +1345,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       }
 
       // Import the chat
+      userScrolledUpRef.current = false;
       setMessages(importData.messages);
       setSceneMemory(buildSceneMemory(importData.messages, importData.sceneMemory || null));
       setSmartSuggestions(getRestoredSuggestions(importData.messages));
@@ -1457,17 +1511,17 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     }
   };
 
-  const copyMessageToClipboard = (content) => {
+  const copyMessageToClipboard = useCallback((content) => {
     const safeContent = (content || '').trim();
     if (!safeContent) return;
-    
+
     navigator.clipboard.writeText(safeContent)
       .then(() => toast.success(t.chat?.copied || 'Copied'))
       .catch(err => {
         console.error('Failed to copy:', err);
         toast.error(t.chat?.copyFailed || 'Copy failed');
       });
-  };
+  }, [t.chat]);
 
 
   // Voice Settings Toggle Handler
@@ -1904,7 +1958,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       <div
         ref={messagesContainerRef}
         onScroll={handleMessagesScroll}
-        className={`flex-1 min-h-0 overflow-y-auto px-4 py-5 pb-64 ${
+        className={`theme-chat-scroll-region flex-1 min-h-0 overflow-y-auto px-4 py-5 pb-64 ${
           isGoldMode ? 'scrollbar-gold' : ''
         }`}
       >

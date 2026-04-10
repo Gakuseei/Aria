@@ -19,6 +19,43 @@ describe('platform', () => {
     });
   });
 
+  describe('isWaylandSession', () => {
+    it('detects Wayland markers only on Linux', () => {
+      const env = {
+        XDG_SESSION_TYPE: 'wayland',
+        WAYLAND_DISPLAY: 'wayland-0',
+      };
+      expect(platform.isWaylandSession(env)).toBe(process.platform === 'linux');
+    });
+
+    it('detects Electron ozone Wayland hints only on Linux', () => {
+      const env = {
+        OZONE_PLATFORM: 'wayland',
+        ELECTRON_OZONE_PLATFORM_HINT: 'wayland',
+      };
+      expect(platform.isWaylandSession(env)).toBe(process.platform === 'linux');
+    });
+
+    it('lets an explicit X11 ozone override win over Wayland session markers', () => {
+      const env = {
+        XDG_SESSION_TYPE: 'wayland',
+        WAYLAND_DISPLAY: 'wayland-0',
+        OZONE_PLATFORM: 'x11',
+      };
+      expect(platform.isWaylandSession(env)).toBe(false);
+    });
+
+    it('rejects non-Wayland markers', () => {
+      const env = {
+        XDG_SESSION_TYPE: 'x11',
+        WAYLAND_DISPLAY: '',
+        OZONE_PLATFORM: 'x11',
+        ELECTRON_OZONE_PLATFORM_HINT: 'auto',
+      };
+      expect(platform.isWaylandSession(env)).toBe(false);
+    });
+  });
+
   describe('getPythonCommand', () => {
     it('returns python or python3', () => {
       const cmd = platform.getPythonCommand();

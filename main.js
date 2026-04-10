@@ -609,12 +609,13 @@ function downloadWithRedirects(url, destPath, maxRedirects = 5) {
 async function createWindow() {
   // FIX 1: Set app name before creating window (Windows Volume Mixer)
   app.setName('Aria');
+  const useSystemTitleBar = platform.isWaylandSession();
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 1000,
     minHeight: 700,
-    frame: false,
+    frame: useSystemTitleBar,
     show: false,
     backgroundColor: '#09090b',
     webPreferences: {

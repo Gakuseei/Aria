@@ -1,4 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
+const platform = require('./lib/platform');
+
+const useSystemTitleBar = platform.isWaylandSession();
 
 function createIpcListener(channel) {
   return (callback) => {
@@ -11,6 +14,10 @@ function createIpcListener(channel) {
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
+  windowChrome: {
+    useSystemTitleBar,
+  },
+
   // Window controls
   minimize: () => ipcRenderer.send('window-minimize'),
   maximize: () => ipcRenderer.send('window-maximize'),

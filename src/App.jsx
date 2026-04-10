@@ -40,8 +40,13 @@ const VIEWS = {
 const RTL_LANGUAGES = new Set(['ar']);
 const INITIAL_THEME_MODE = bootstrapThemeMode();
 
+function shouldUseSystemTitleBar() {
+  return typeof window !== 'undefined' && Boolean(window.electronAPI?.windowChrome?.useSystemTitleBar);
+}
+
 function App() {
   const { language } = useLanguage();
+  const useSystemTitleBar = shouldUseSystemTitleBar();
   const startupTimersRef = useRef(new Set());
   const performanceProfileRef = useRef(getPerformanceProfile());
   const [currentView, setCurrentView] = useState(VIEWS.MAIN_MENU);
@@ -563,10 +568,10 @@ function App() {
         </Suspense>
       )}
 
-      <TitleBar />
+      {!useSystemTitleBar && <TitleBar />}
       
       {ollamaReady && (
-        <main className="h-[calc(100vh-32px)] w-full overflow-hidden">
+        <main className={`${useSystemTitleBar ? 'h-screen' : 'h-[calc(100vh-32px)]'} w-full overflow-hidden`}>
           <div className="fixed inset-0 pointer-events-none overflow-hidden">
             <div className="theme-app-backdrop absolute inset-0" />
             <div className="cyber-grid absolute inset-0 theme-app-grid" />

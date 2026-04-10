@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
+function buildLookupInvocation(output) {
+  const script = `process.stdout.write(${JSON.stringify(output)});`;
+  return [process.execPath, ['-e', script]];
+}
+
 describe('platform', () => {
   let platform;
 
@@ -40,6 +45,44 @@ describe('platform', () => {
       } else {
         expect(name).toBe('piper');
       }
+    });
+  });
+
+  describe('getFirstExecutablePath', () => {
+    it('returns the first path from Windows CRLF output', () => {
+      const output = 'C:\\Program Files\\Ollama\\ollama.exe\r\nC:\\Users\\test\\AppData\\Local\\Microsoft\\WindowsApps\\ollama.exe\r\n';
+      expect(platform.getFirstExecutablePath(output)).toBe('C:\\Program Files\\Ollama\\ollama.exe');
+    });
+
+    it('returns the first path from POSIX LF output', () => {
+      const output = '/usr/local/bin/ollama\n/usr/bin/ollama\n';
+      expect(platform.getFirstExecutablePath(output)).toBe('/usr/local/bin/ollama');
+    });
+
+    it('returns null for blank or whitespace-only output', () => {
+      expect(platform.getFirstExecutablePath('  \r\n\t  ')).toBeNull();
+    });
+  });
+
+  describe('getExecutablePathFromCommand', () => {
+    it('returns the first path from CRLF command output', async () => {
+      const output = 'C:\\Program Files\\Ollama\\ollama.exe\r\nC:\\Users\\test\\AppData\\Local\\Microsoft\\WindowsApps\\ollama.exe\r\n';
+      const [command, args] = buildLookupInvocation(output);
+      await expect(platform.getExecutablePathFromCommand(command, args))
+        .resolves.toBe('C:\\Program Files\\Ollama\\ollama.exe');
+    });
+
+    it('returns the first path from LF command output', async () => {
+      const output = '/usr/local/bin/ollama\n/usr/bin/ollama\n';
+      const [command, args] = buildLookupInvocation(output);
+      await expect(platform.getExecutablePathFromCommand(command, args))
+        .resolves.toBe('/usr/local/bin/ollama');
+    });
+
+    it('returns null for blank command output', async () => {
+      const output = '  \r\n\t  ';
+      const [command, args] = buildLookupInvocation(output);
+      await expect(platform.getExecutablePathFromCommand(command, args)).resolves.toBeNull();
     });
   });
 

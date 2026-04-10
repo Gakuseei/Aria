@@ -27,7 +27,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const [availableVoiceModels, setAvailableVoiceModels] = useState([]);
 
   useEffect(() => {
-    console.log('[v1.0 Settings Hard Sync] Writing ALL settings to localStorage:', settings);
     localStorage.setItem('settings', JSON.stringify(settings));
   }, [settings]);
 
@@ -54,7 +53,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
     return () => { if (typeof cleanup === 'function') cleanup(); };
   }, []);
 
-
   useEffect(() => {
     const loadVoiceModels = async () => {
       try {
@@ -73,14 +71,12 @@ export default function Settings({ settings, onSettingChange, onClose }) {
     handleLoadModels();
   }, []);
 
-
   const handleLoadModels = async () => {
     setLoadingModels(true);
     try {
       const models = await fetchOllamaModels(settings.ollamaUrl);
       if (models && models.length > 0) {
         setAvailableModels(models);
-        console.log('[v9.5 Settings] ✅ Found', models.length, 'models');
 
         
         const currentModelIsValid = settings.ollamaModel && models.includes(settings.ollamaModel);
@@ -88,16 +84,12 @@ export default function Settings({ settings, onSettingChange, onClose }) {
 
         if (shouldAutoSelect) {
           const hermes3Model = models.find(m => m.includes('hermes3') || m.includes('hermes-3'));
-          
+
           if (hermes3Model) {
             onSettingChange('ollamaModel', hermes3Model);
-            console.log('[v9.5 Settings] 🎯 Auto-selected Hermes 3:', hermes3Model);
           } else {
             onSettingChange('ollamaModel', models[0]);
-            console.log('[v9.5 Settings] 🎯 Auto-selected first available:', models[0]);
           }
-        } else {
-          console.log('[v9.5 Settings] 🔒 Keeping saved model:', settings.ollamaModel);
         }
       } else {
         setAvailableModels([]);
@@ -110,7 +102,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
       setLoadingModels(false);
     }
   };
-
 
   const handleTestConnection = async () => {
     setTestingConnection(true);
@@ -126,16 +117,13 @@ export default function Settings({ settings, onSettingChange, onClose }) {
     }
   };
 
-
   const handleClose = () => {
-    console.log('[v8.1 Settings] 🚪 Closing settings...');
     if (onClose && typeof onClose === 'function') {
       onClose();
     } else {
       console.error('[v8.1 Settings] ❌ onClose prop not provided or not a function');
     }
   };
-
 
   return (
     <div
@@ -482,7 +470,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                 <span>{t.settings.openSetupTutorial}</span>
               </button>
 
-
               {settings.imageGenEnabled && (
                 <div>
                   <label className="block text-sm font-medium theme-text-muted mb-2">
@@ -755,7 +742,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   const newLang = e.target.value;
                   setLanguage(newLang);
                   onSettingChange('preferredLanguage', newLang);
-                  console.log('[v1.0 Settings] Language synced:', newLang);
                 }}
                 options={[
                   { value: 'en', label: 'English 🇺🇸' },

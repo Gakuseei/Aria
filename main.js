@@ -1189,6 +1189,7 @@ ipcMain.handle('generate-speech', async (event, params) => {
 
         const trustedAudioUrl = validateTrustedLocalServiceUrl('zonos', audioUrl, {
           allowPath: true,
+          allowedPathPrefixes: ['/file=', '/gradio_api/file='],
           extraUrls: [baseUrl],
         });
         if (!trustedAudioUrl) {

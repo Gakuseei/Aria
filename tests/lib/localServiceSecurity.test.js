@@ -97,6 +97,54 @@ describe('localServiceSecurity', () => {
       const settings = { imageGenUrl: 'http://127.0.0.1:7860' };
       expect(security.validateLocalServiceUrl('imageGen', 'http://127.0.0.1:7860/sdapi/v1/options', settings)).toBeNull();
     });
+
+    it('restricts path-bearing local service urls to explicit allowed prefixes', () => {
+      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=tmp/audio.wav', {}, allowed)?.pathname).toBe('/file=tmp/audio.wav');
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/gradio_api/file=tmp/audio.wav', {}, allowed)?.pathname).toBe('/gradio_api/file=tmp/audio.wav');
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/internal/admin/export', {}, allowed)).toBeNull();
+    });
+
+    it('rejects traversal payloads even under allowed download prefixes', () => {
+      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=../../secret.wav', {}, allowed)).toBeNull();
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/gradio_api/file=%2E%2E/%2E%2E/secret.wav', {}, allowed)).toBeNull();
+    });
+
+    it('rejects drive-relative traversal payloads under allowed download prefixes', () => {
+      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=C:../secret.wav', {}, allowed)).toBeNull();
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=C:..\\secret.wav', {}, allowed)).toBeNull();
+    });
+
+    it('allows absolute gradio file payloads under allowed download prefixes', () => {
+      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/gradio_api/file=/tmp/gradio/audio.wav', {}, allowed)?.pathname).toBe('/gradio_api/file=/tmp/gradio/audio.wav');
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=C:/Users/Alice/AppData/Local/Temp/gradio/audio.wav', {}, allowed)?.pathname).toBe('/file=C:/Users/Alice/AppData/Local/Temp/gradio/audio.wav');
+    });
+
+    it('rejects non-gradio absolute file payloads under allowed download prefixes', () => {
+      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=/etc/passwd', {}, allowed)).toBeNull();
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=C:/Windows/System32/drivers/etc/hosts', {}, allowed)).toBeNull();
+    });
+
+    it('allows percent-encoded literal percent characters in gradio file payloads', () => {
+      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=/tmp/gradio/100%25real.wav', {}, allowed)?.pathname).toBe('/file=/tmp/gradio/100%25real.wav');
+    });
+
+    it('rejects UNC and network-share payloads under allowed download prefixes', () => {
+      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=//server/share/audio.wav', {}, allowed)).toBeNull();
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=%2F%2Fserver/share/audio.wav', {}, allowed)).toBeNull();
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=%5C%5Cserver%5Cshare%5Caudio.wav', {}, allowed)).toBeNull();
+    });
+
+    it('rejects over-encoded traversal payloads under allowed download prefixes', () => {
+      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
+      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=%2525252E%2525252E/secret.wav', {}, allowed)).toBeNull();
+    });
   });
 
   describe('getTrustedLoopbackOriginsForService', () => {
@@ -188,6 +236,10 @@ describe('localServiceSecurity', () => {
     it('accepts zonos audio downloads from alias-equivalent trusted loopback origins', () => {
       expect(mainSource).toContain("validateTrustedLocalServiceUrl('zonos', audioUrl, {");
       expect(mainSource).toContain('extraUrls: [baseUrl]');
+    });
+
+    it('restricts zonos audio downloads to explicit file path prefixes', () => {
+      expect(mainSource).toContain("allowedPathPrefixes: ['/file=', '/gradio_api/file=']");
     });
 
     it('uses bounded timeouts for zonos loopback requests', () => {

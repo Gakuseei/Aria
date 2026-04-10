@@ -482,7 +482,7 @@ describe('assembleRuntimeContext', () => {
     expect(replyContext.systemPrompt).toContain('Active Scene:\nSetting:');
     expect(suggestionContext.systemPrompt).not.toContain('Global Core:');
     expect(suggestionContext.systemPrompt).toContain('same scene with Mei');
-    expect(suggestionContext.systemPrompt).toContain('premium, clickable quick replies');
+    expect(suggestionContext.systemPrompt).toContain('Write one sendable reply the user can click now.');
     expect(suggestionContext.systemPrompt).toContain('Return only valid JSON with exactly one string key: suggestion.');
     expect(suggestionContext.userPrompt).toContain('Write one stay sendable next turn for Erik');
     expect(suggestionContext.userPrompt).toContain('Response cue:');

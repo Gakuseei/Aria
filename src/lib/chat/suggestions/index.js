@@ -156,15 +156,18 @@ function trimSuggestionCandidate(candidate) {
     .replace(/['"“”`*:,|.\-\s]+$/, '')
     .trim();
 
-  while (
-    INCOMPLETE_SUGGESTION_ENDING_PATTERN.test(compact)
-    || INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN.test(compact)
-    || INCOMPLETE_SUGGESTION_ADJECTIVE_ENDING_PATTERN.test(compact)
-    || INCOMPLETE_SUGGESTION_VERB_ENDING_PATTERN.test(compact)
-    || INCOMPLETE_SUGGESTION_PHRASE_ENDING_PATTERN.test(compact)
-    || INCOMPLETE_SUGGESTION_TRAILING_PREPOSITION_PATTERN.test(compact)
-    || INCOMPLETE_SUGGESTION_VERB_PARTICLE_PATTERN.test(compact)
-  ) {
+  const endsWithValidObjectTarget = (value) => /\b(?:for|with|to|toward|towards)\s+(?:her|him|them|me|us)\b$/i.test(value);
+  const hasIncompleteEnding = (value) => (
+    (!endsWithValidObjectTarget(value) && INCOMPLETE_SUGGESTION_ENDING_PATTERN.test(value))
+    || INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN.test(value)
+    || INCOMPLETE_SUGGESTION_ADJECTIVE_ENDING_PATTERN.test(value)
+    || INCOMPLETE_SUGGESTION_VERB_ENDING_PATTERN.test(value)
+    || INCOMPLETE_SUGGESTION_PHRASE_ENDING_PATTERN.test(value)
+    || INCOMPLETE_SUGGESTION_TRAILING_PREPOSITION_PATTERN.test(value)
+    || INCOMPLETE_SUGGESTION_VERB_PARTICLE_PATTERN.test(value)
+  );
+
+  while (hasIncompleteEnding(compact)) {
     const words = compact.split(/\s+/).filter(Boolean);
     if (words.length <= 2) return '';
     words.pop();
@@ -176,15 +179,7 @@ function trimSuggestionCandidate(candidate) {
     .replace(/['"“”`*:,|.\-\s]+$/, '')
     .trim();
 
-  while (
-    INCOMPLETE_SUGGESTION_ENDING_PATTERN.test(compact)
-    || INCOMPLETE_SUGGESTION_PROGRESSIVE_ENDING_PATTERN.test(compact)
-    || INCOMPLETE_SUGGESTION_ADJECTIVE_ENDING_PATTERN.test(compact)
-    || INCOMPLETE_SUGGESTION_VERB_ENDING_PATTERN.test(compact)
-    || INCOMPLETE_SUGGESTION_PHRASE_ENDING_PATTERN.test(compact)
-    || INCOMPLETE_SUGGESTION_TRAILING_PREPOSITION_PATTERN.test(compact)
-    || INCOMPLETE_SUGGESTION_VERB_PARTICLE_PATTERN.test(compact)
-  ) {
+  while (hasIncompleteEnding(compact)) {
     const words = compact.split(/\s+/).filter(Boolean);
     if (words.length <= 2) return '';
     words.pop();
@@ -304,12 +299,13 @@ function hasSuspiciousFirstPersonOwnershipDrift(candidate) {
   if (!/^I\b/i.test(inner)) return false;
   if (/^I\s+my\b/i.test(inner)) return true;
   if (/\b(?:into|toward|towards)\s+my\s+eyes\b/i.test(inner)) return true;
+  if (/\b(?:pull|press|draw|bring|guide|lead|move|hold|keep|push|tilt|kiss|touch|brush|trace|stroke|caress|cup|pat|reach|wrap|tuck|place|rest)(?:\s+[A-Za-z']+ly){0,2}\s+me\b/i.test(inner)) return true;
   return SUGGESTION_SUSPICIOUS_SELF_TARGET_PATTERN.test(inner);
 }
 
 function looksLikeFirstPersonActionText(text = '') {
   const normalized = String(text || '').trim().replace(/^\*|\*$/g, '');
-  return /^I\s+(?:hold|reach|guide|pull|bring|move|step|touch|brush|kiss|lean|nod|look|glance|gesture|beckon|sit|stand|turn|show|take|rest|draw|press|trace|meet|offer|wait|watch|smile|smirk|wrap|tuck|lead|place|keep|go|come)\b/i.test(normalized);
+  return /^I\s+(?:(?:[A-Za-z']+ly|closer)\s+)*(?:hold|reach|guide|pull|bring|move|step|touch|brush|kiss|lean|nod|look|glance|gaze|gesture|beckon|sit|stand|turn|show|take|rest|draw|press|trace|meet|offer|wait|watch|smile|smirk|wrap|tuck|lead|place|keep|go|come|continue|run|adjust|push|open|pat|cup|stroke|caress|graze|nudge|tilt|slide|thread|catch|lift|murmur|whisper)\b/i.test(normalized);
 }
 
 function hasEmbodiedUserActionStyle(text = '') {
@@ -436,8 +432,7 @@ function finalizeSuggestionCandidate(candidate, assistMode = 'sfw_only', rawCand
       finalized = finalized.match(/^\*[^*]+\*/)?.[0] || finalized;
     }
     if (
-      /^\*I\b[^*]*\bme\b/i.test(finalized)
-      || hasSuspiciousFirstPersonSubjectSwitch(finalized)
+      hasSuspiciousFirstPersonSubjectSwitch(finalized)
       || hasSuspiciousFirstPersonOwnershipDrift(finalized)
       || SUGGESTION_FIRST_PERSON_SELF_INSTRUCTION_PATTERN.test(finalized)
       || hasSuspiciousTrailingFragment(finalized)
@@ -689,7 +684,7 @@ function buildSuggestionSafetyFallback(history = [], runtimeState = null, lastUs
         ? ['Give me the short version.', 'What do you recommend right now?', 'What is the immediate next step?']
         : ['Summarize that for me.', 'What should I do next?', 'What do you recommend?'])
     : /\b(?:show|demonstrate|demonstration|explain|walk me through|step|cleaned|cleaning|polish|buff|inspect|inspection)\b/i.test(cueText)
-      ? ['Go on.', 'Come closer and show me.', 'Show me the next step.']
+      ? ['Go on, demonstrate the next step.', 'Come closer and show me.', 'Show me the next step.']
       : /\b(?:approval|acknowledg(?:e|ment)|performed her task correctly|did well|well done|properly)\b/i.test(cueText)
         ? ['You did well.', 'Come here a moment.', 'Show me the next step.']
         : assistMode === 'nsfw_only'
@@ -1029,12 +1024,16 @@ export async function generateSuggestionsBackground(history, character, userName
     console.log('[API] Suggestions runtime (batch):', runtimeContext.debug);
 
     let selected = [];
+    let primarySelectedCount = 0;
+    let retrySelectedCount = 0;
+    let shouldTopUpWithFallback = false;
     try {
       const raw = await requestSuggestionContent(baseChatParams, currentRequestId);
       if (currentRequestId !== suggestionRequestId) return;
       selected = parseSuggestionResponse(raw || '', lastUserMsg, previousSuggestions, {
         assistMode: effectiveSuggestionAssistMode
       });
+      primarySelectedCount = selected.length;
       console.log(`[API] Suggestions batch: ${selected.length} from "${String(raw || '').trim().slice(0, 200)}"`);
 
       if (selected.length < MIN_USABLE_SUGGESTIONS || selected.length < 2) {
@@ -1047,6 +1046,7 @@ export async function generateSuggestionsBackground(history, character, userName
         const retrySelected = parseSuggestionResponse(retryRaw || '', lastUserMsg, previousSuggestions, {
           assistMode: effectiveSuggestionAssistMode
         });
+        retrySelectedCount = retrySelected.length;
         console.log(`[API] Suggestions batch retry: ${retrySelected.length} from "${String(retryRaw || '').trim().slice(0, 200)}"`);
         const mergedSelected = [...selected];
         retrySelected.forEach((candidate) => {
@@ -1055,6 +1055,7 @@ export async function generateSuggestionsBackground(history, character, userName
           if (isTooSimilarToSelected(candidate, mergedSelected)) return;
           mergedSelected.push(candidate);
         });
+        shouldTopUpWithFallback = primarySelectedCount <= 1 && retrySelectedCount <= 1;
         selected = pickBetterSuggestionBatch(mergedSelected, selected, effectiveSuggestionAssistMode);
       }
     } catch (err) {
@@ -1066,7 +1067,7 @@ export async function generateSuggestionsBackground(history, character, userName
 
     const fallbackBatch = buildSuggestionSafetyFallback(history, baseRuntimeState, lastUserMsg);
     const finalBatch = [...selected];
-    if (finalBatch.length < 2) {
+    if (finalBatch.length < 2 || (shouldTopUpWithFallback && finalBatch.length < SUGGESTION_TARGET_COUNT)) {
       fallbackBatch.forEach((candidate) => {
         if (finalBatch.length >= SUGGESTION_TARGET_COUNT) return;
         if (!dedupeSuggestionAgainstHistory(candidate, lastUserMsg, [...previousSuggestions, ...finalBatch])) return;

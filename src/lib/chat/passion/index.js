@@ -13,6 +13,16 @@ const PASSION_STORAGE_KEY = 'aria_passion_data';
 const PASSION_MEMORY_KEY = 'aria_passion_memory';
 const HISTORY_LIMIT = 50;
 
+function getPassionStorage() {
+  try {
+    return typeof globalThis !== 'undefined' && globalThis.localStorage
+      ? globalThis.localStorage
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Unified passion tier definitions (6-tier v3.0) */
 export const PASSION_TIERS = {
   surface:      { min: 0,  max: 15,  label: 'Surface' },
@@ -119,8 +129,11 @@ class PassionManager {
    * @returns {Object}
    */
   loadPassionData() {
+    const storage = getPassionStorage();
+    if (!storage) return {};
+
     try {
-      const stored = localStorage.getItem(PASSION_STORAGE_KEY);
+      const stored = storage.getItem(PASSION_STORAGE_KEY);
       if (!stored) return {};
       const data = JSON.parse(stored);
       for (const key of Object.keys(data)) {
@@ -139,8 +152,11 @@ class PassionManager {
    * Persist passion data to localStorage
    */
   savePassionData() {
+    const storage = getPassionStorage();
+    if (!storage) return;
+
     try {
-      localStorage.setItem(PASSION_STORAGE_KEY, JSON.stringify(this.passionData));
+      storage.setItem(PASSION_STORAGE_KEY, JSON.stringify(this.passionData));
     } catch (error) {
       console.error('[PassionManager] Error saving:', error);
     }
@@ -313,15 +329,18 @@ class PassionManager {
    * @param {number[]} [history=[]] - Recent passion history to store (last 10 entries kept)
    */
   saveCharacterMemory(characterId, level, history = []) {
+    const storage = getPassionStorage();
+    if (!storage) return;
+
     try {
-      const stored = localStorage.getItem(PASSION_MEMORY_KEY);
+      const stored = storage.getItem(PASSION_MEMORY_KEY);
       const memory = stored ? JSON.parse(stored) : {};
       memory[characterId] = {
         lastLevel: Math.round(Math.max(0, Math.min(100, level))),
         lastHistory: Array.isArray(history) ? history.slice(-25) : [],
         timestamp: new Date().toISOString()
       };
-      localStorage.setItem(PASSION_MEMORY_KEY, JSON.stringify(memory));
+      storage.setItem(PASSION_MEMORY_KEY, JSON.stringify(memory));
     } catch (error) {
       console.error('[PassionManager] Error saving character memory:', error);
     }
@@ -332,12 +351,15 @@ class PassionManager {
    * @param {string} characterId - Character identifier
    */
   clearCharacterMemory(characterId) {
+    const storage = getPassionStorage();
+    if (!storage) return;
+
     try {
-      const stored = localStorage.getItem(PASSION_MEMORY_KEY);
+      const stored = storage.getItem(PASSION_MEMORY_KEY);
       if (!stored) return;
       const memory = JSON.parse(stored);
       delete memory[characterId];
-      localStorage.setItem(PASSION_MEMORY_KEY, JSON.stringify(memory));
+      storage.setItem(PASSION_MEMORY_KEY, JSON.stringify(memory));
     } catch (error) {
       console.error('[PassionManager] Error clearing character memory:', error);
     }

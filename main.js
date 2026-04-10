@@ -13,6 +13,15 @@ const { fileURLToPath } = require('url');
 const dotenv = require('dotenv');
 const platform = require('./lib/platform');
 const piperTool = require('./lib/tools/piper');
+const {
+  CONTROL_CHAR_REGEX,
+  getTrustedLoopbackConnectSrcOriginsForService,
+  getTrustedLoopbackHttpOriginsForService,
+  isLoopbackHostname,
+  parseLoopbackUrl,
+  parseSafeHttpUrl,
+  validateLocalServiceUrl,
+} = require('./lib/localServiceSecurity');
 const { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, DATA_VERSION, KNOWN_OLD_DEFAULT_MODELS, CHARACTER_BUILDER_TIMEOUT_MS, CHARACTER_BUILDER_TEMPERATURE, CHARACTER_BUILDER_MAX_TOKENS, CHARACTER_BUILDER_CTX, BOT_BUILDER_TOKEN_MULTIPLIER, BOT_BUILDER_CTX_MULTIPLIER } = require('./lib/defaults');
 
 function ensureDir(dirPath) {
@@ -43,11 +52,10 @@ function loadSettingsSync() {
 dotenv.config();
 
 let mainWindow;
+let activeDevServerOrigin = null;
 
 const DEV_SERVER_PORT = 3000;
 const MAX_VOICE_MODEL_DOWNLOAD_BYTES = 1024 * 1024 * 1024;
-const LOOPBACK_HOSTNAMES = new Set(['127.0.0.1', 'localhost', '::1']);
-const CONTROL_CHAR_REGEX = /[\u0000-\u001F\u007F]/;
 const ALLOWED_PIPER_BASENAMES = new Set(['piper', 'piper.exe']);
 const FILE_DIALOG_KIND = Object.freeze({
   PIPER_BINARY: 'piper-binary',
@@ -117,29 +125,9 @@ function isPathInside(basePath, targetPath) {
   return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
-function parseSafeHttpUrl(rawUrl, { protocols = ['http:', 'https:'] } = {}) {
-  if (typeof rawUrl !== 'string') return null;
-  const trimmed = stripOuterQuotes(rawUrl);
-  if (!trimmed || CONTROL_CHAR_REGEX.test(trimmed)) return null;
-
-  try {
-    const parsed = new URL(trimmed);
-    if (!protocols.includes(parsed.protocol)) return null;
-    if (parsed.username || parsed.password) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
 function normalizeHostname(hostname) {
   if (typeof hostname !== 'string') return '';
   return hostname.toLowerCase().replace(/^\[/, '').replace(/\]$/, '');
-}
-
-function isLoopbackHostname(hostname) {
-  const normalized = normalizeHostname(hostname);
-  return Boolean(normalized) && LOOPBACK_HOSTNAMES.has(normalized);
 }
 
 function isPrivateIpAddress(hostname) {
@@ -179,23 +167,6 @@ function isPrivateIpAddress(hostname) {
   return false;
 }
 
-function parseLoopbackUrl(rawUrl, { protocols = ['http:', 'https:'], allowPath = false } = {}) {
-  const parsed = parseSafeHttpUrl(rawUrl, { protocols });
-  if (!parsed || !isLoopbackHostname(parsed.hostname)) {
-    return null;
-  }
-
-  if (!allowPath && parsed.pathname && parsed.pathname !== '/') {
-    return null;
-  }
-
-  if (parsed.search || parsed.hash) {
-    return null;
-  }
-
-  return parsed;
-}
-
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isValidSessionId(id) {
   return typeof id === 'string' && (UUID_REGEX.test(id) || /^session_\d{1,15}_[a-z0-9]{1,32}$/i.test(id));
@@ -206,6 +177,10 @@ function isValidSessionId(id) {
  */
 function validateLocalUrl(url) {
   return Boolean(parseLoopbackUrl(url));
+}
+
+function validateTrustedLocalServiceUrl(service, rawUrl, options = {}) {
+  return validateLocalServiceUrl(service, rawUrl, loadSettingsSync(), options);
 }
 
 async function validateRemoteDownloadUrl(url) {
@@ -242,10 +217,7 @@ function isAppNavigationUrl(url) {
       return false;
     }
 
-    const port = Number.parseInt(parsed.port || '', 10) || (parsed.protocol === 'https:' ? 443 : 80);
-    return (parsed.protocol === 'http:' || parsed.protocol === 'https:')
-      && isLoopbackHostname(parsed.hostname)
-      && port === DEV_SERVER_PORT;
+    return parsed.origin === activeDevServerOrigin;
   } catch {
     return false;
   }
@@ -418,6 +390,20 @@ function getDevServerOrigins() {
   return [...new Set(candidates.filter(candidate => validateLocalUrl(candidate)))];
 }
 
+function getExactDevServerConnectSrcOrigins() {
+  if (!activeDevServerOrigin) {
+    return [];
+  }
+
+  const parsed = parseLoopbackUrl(activeDevServerOrigin);
+  if (!parsed || parsed.hostname === '::1') {
+    return [];
+  }
+
+  const protocols = parsed.protocol === 'https:' ? ['https:', 'wss:'] : ['http:', 'ws:'];
+  return protocols.map((protocol) => `${protocol}//${parsed.host}`);
+}
+
 async function resolveDevServerUrl() {
   const candidates = getDevServerOrigins();
   for (const candidate of candidates) {
@@ -445,21 +431,21 @@ async function resolveDevServerUrl() {
 }
 
 // v0.2.5: AGGRESSIVE Content Security Policy
-// CRITICAL: Only allow localhost/127.0.0.1 for Ollama + local services
+// CRITICAL: Only allow trusted loopback service ports for renderer connections
+const LOCAL_CONNECT_SRC_SERVICES = Object.freeze(['ollama', 'imageGen']);
 const CSP_DIRECTIVES = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' http://localhost:* http://127.0.0.1:* http://[::1]:* ws://localhost:* ws://127.0.0.1:* ws://[::1]:*",
   "media-src 'self' data: blob:",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
   "frame-src 'none'"
-].join('; ');
+];
 
 const DEV_CSP_DIRECTIVES = [
   "default-src 'self'",
@@ -467,14 +453,36 @@ const DEV_CSP_DIRECTIVES = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' http://localhost:* http://127.0.0.1:* http://[::1]:* ws://localhost:* ws://127.0.0.1:* ws://[::1]:*",
   "media-src 'self' data: blob:",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
   "frame-src 'none'"
-].join('; ');
+];
+
+function buildConnectSrcDirective(settings = {}, { includeDevServer = false } = {}) {
+  const sources = new Set(["'self'"]);
+
+  LOCAL_CONNECT_SRC_SERVICES.forEach((service) => {
+    getTrustedLoopbackConnectSrcOriginsForService(service, settings).forEach((origin) => {
+      sources.add(origin);
+    });
+  });
+
+  if (includeDevServer) {
+    getExactDevServerConnectSrcOrigins().forEach((origin) => {
+      sources.add(origin);
+    });
+  }
+
+  return `connect-src ${[...sources].join(' ')}`;
+}
+
+function buildContentSecurityPolicy(settings = {}, { includeDevServer = false } = {}) {
+  const directives = includeDevServer ? DEV_CSP_DIRECTIVES : CSP_DIRECTIVES;
+  return [...directives, buildConnectSrcDirective(settings, { includeDevServer })].join('; ');
+}
 
 /**
  * Download file with HTTP redirect support
@@ -641,7 +649,9 @@ async function createWindow() {
         });
 
         // Relax only the dev server enough for Vite's inline React refresh preamble.
-        const activeCsp = process.env.NODE_ENV === 'development' ? DEV_CSP_DIRECTIVES : CSP_DIRECTIVES;
+        const activeCsp = buildContentSecurityPolicy(loadSettingsSync(), {
+          includeDevServer: process.env.NODE_ENV === 'development',
+        });
         responseHeaders['Content-Security-Policy'] = [activeCsp];
         responseHeaders['Permissions-Policy'] = [PERMISSIONS_POLICY];
         responseHeaders['Cross-Origin-Opener-Policy'] = ['same-origin'];
@@ -686,12 +696,14 @@ async function createWindow() {
   // Load the app
   if (process.env.NODE_ENV === 'development') {
     const devServerUrl = await resolveDevServerUrl();
+    activeDevServerOrigin = new URL(devServerUrl).origin;
     console.log('[Aria] Using dev server:', devServerUrl);
     await mainWindow.loadURL(devServerUrl);
     if (process.env.ARIA_OPEN_DEVTOOLS === '1') {
       mainWindow.webContents.openDevTools();
     }
   } else {
+    activeDevServerOrigin = null;
     mainWindow.loadFile(path.join(__dirname, 'dist/index.html'));
   }
 
@@ -776,10 +788,11 @@ ipcMain.handle('test-image-gen', async (event, url) => {
   }
 
   try {
-    if (!validateLocalUrl(url)) {
-      return { success: false, error: 'Only localhost URLs are allowed' };
+    const trustedUrl = validateTrustedLocalServiceUrl('imageGen', url);
+    if (!trustedUrl) {
+      return { success: false, error: 'Image generation URL must match the configured local service endpoint' };
     }
-    const testUrl = `${url}/sdapi/v1/options`;
+    const testUrl = `${trustedUrl.origin}/sdapi/v1/options`;
     
     const response = await fetch(testUrl, {
       method: 'GET',
@@ -831,10 +844,11 @@ ipcMain.handle('image-gen-models', async (event, params = {}) => {
 
   const { url = 'http://127.0.0.1:7860' } = params;
   try {
-    if (!validateLocalUrl(url)) {
-      return { success: false, error: 'Only localhost URLs are allowed' };
+    const trustedUrl = validateTrustedLocalServiceUrl('imageGen', url);
+    if (!trustedUrl) {
+      return { success: false, error: 'Image generation URL must match the configured local service endpoint' };
     }
-    const response = await fetch(`${url}/sdapi/v1/sd-models`, {
+    const response = await fetch(`${trustedUrl.origin}/sdapi/v1/sd-models`, {
       signal: AbortSignal.timeout(5000)
     });
     if (!response.ok) return { success: false, error: `Status ${response.status}` };
@@ -950,11 +964,12 @@ ipcMain.handle('generate-image', async (event, params) => {
   const { prompt, url, width, height, steps, imageGenTier } = params;
 
   try {
-    if (!validateLocalUrl(url)) {
-      return { success: false, error: 'Only localhost URLs are allowed' };
+    const trustedUrl = validateTrustedLocalServiceUrl('imageGen', url);
+    if (!trustedUrl) {
+      return { success: false, error: 'Image generation URL must match the configured local service endpoint' };
     }
     const isPremium = imageGenTier === 'premium';
-    const apiUrl = `${url}/sdapi/v1/txt2img`;
+    const apiUrl = `${trustedUrl.origin}/sdapi/v1/txt2img`;
     
     // FLUX-specific settings for premium mode
     const requestBody = {
@@ -1021,79 +1036,98 @@ ipcMain.handle('generate-speech', async (event, params) => {
   // PREMIUM MODE: Use Zonos API (Gradio via /gradio_api/)
   if (voiceTier === 'premium') {
     try {
-      const baseUrl = 'http://127.0.0.1:7860';
-      
-      // Found via debug tool: /gradio_api/info exists, and api_name: generate_audio exists
-      // Try direct call first (stateless)
-      const callUrl = `${baseUrl}/gradio_api/call/generate_audio`;
-      
-      const response = await fetch(callUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          data: [
-            "Zyphra/Zonos-v0.1-transformer",  // model_choice
-            text,                              // text
-            "en-us",                           // language
-            null,                              // speaker_audio
-            null,                              // prefix_audio
-            1.0, 0.05, 0.05, 0.05,            // emotions 1-4
-            0.05, 0.05, 0.1, 0.2,             // emotions 5-8
-            0.78,                              // vq_single
-            24000,                             // fmax
-            45.0,                              // pitch_std
-            15.0,                              // speaking_rate
-            4.0,                               // dnsmos_ovrl
-            false,                             // speaker_noised
-            2.0,                               // cfg_scale
-            0,                                 // top_p
-            0,                                 // top_k
-            0,                                 // min_p
-            0.5,                               // linear
-            0.4,                               // confidence
-            0.0,                               // quadratic
-            420,                               // seed
-            true,                              // randomize_seed
-            ["emotion"]                        // unconditional_keys
-          ]
-        })
-      });
-      
-      if (!response.ok) {
-        // Fallback: Try without /gradio_api prefix just in case (e.g. /call/generate_audio)
-        const responseFallback = await fetch(`${baseUrl}/call/generate_audio`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            data: [
-              "Zyphra/Zonos-v0.1-transformer",
-              text,
-              "en-us",
-              null, null,
-              1.0, 0.05, 0.05, 0.05,
-              0.05, 0.05, 0.1, 0.2,
-              0.78, 24000, 45.0, 15.0, 4.0,
-              false, 2.0, 0, 0, 0,
-              0.5, 0.4, 0.0, 420, true,
-              ["emotion"]
-            ]
-          })
-        });
-        
-        if (!responseFallback.ok) {
-           const errorText = await responseFallback.text();
-           console.error('[Voice] Zonos API error:', errorText);
-           return { success: false, error: `Zonos API failed (${responseFallback.status}): ${errorText}` };
-        }
-        
-        // Handle fallback success same as main
-        const result = await responseFallback.json();
-        return await processGradioResult(baseUrl, result);
+      const zonosOrigins = getTrustedLoopbackHttpOriginsForService('zonos', loadSettingsSync());
+      if (zonosOrigins.length === 0) {
+        return { success: false, error: 'Zonos local service endpoint is not configured' };
       }
-      
-      const result = await response.json();
-      return await processGradioResult(baseUrl, result);
 
+      let lastError = null;
+
+      for (const baseUrl of zonosOrigins) {
+        try {
+          // Found via debug tool: /gradio_api/info exists, and api_name: generate_audio exists
+          // Try direct call first (stateless)
+          const callUrl = `${baseUrl}/gradio_api/call/generate_audio`;
+
+          const response = await fetch(callUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: AbortSignal.timeout(10000),
+            body: JSON.stringify({
+              data: [
+                "Zyphra/Zonos-v0.1-transformer",  // model_choice
+                text,                              // text
+                "en-us",                           // language
+                null,                              // speaker_audio
+                null,                              // prefix_audio
+                1.0, 0.05, 0.05, 0.05,            // emotions 1-4
+                0.05, 0.05, 0.1, 0.2,             // emotions 5-8
+                0.78,                              // vq_single
+                24000,                             // fmax
+                45.0,                              // pitch_std
+                15.0,                              // speaking_rate
+                4.0,                               // dnsmos_ovrl
+                false,                             // speaker_noised
+                2.0,                               // cfg_scale
+                0,                                 // top_p
+                0,                                 // top_k
+                0,                                 // min_p
+                0.5,                               // linear
+                0.4,                               // confidence
+                0.0,                               // quadratic
+                420,                               // seed
+                true,                              // randomize_seed
+                ["emotion"]                        // unconditional_keys
+              ]
+            })
+          });
+
+          if (!response.ok) {
+            // Fallback: Try without /gradio_api prefix just in case (e.g. /call/generate_audio)
+            const responseFallback = await fetch(`${baseUrl}/call/generate_audio`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              signal: AbortSignal.timeout(10000),
+              body: JSON.stringify({
+                data: [
+                  "Zyphra/Zonos-v0.1-transformer",
+                  text,
+                  "en-us",
+                  null, null,
+                  1.0, 0.05, 0.05, 0.05,
+                  0.05, 0.05, 0.1, 0.2,
+                  0.78, 24000, 45.0, 15.0, 4.0,
+                  false, 2.0, 0, 0, 0,
+                  0.5, 0.4, 0.0, 420, true,
+                  ["emotion"]
+                ]
+              })
+            });
+
+            if (!responseFallback.ok) {
+              const errorText = await responseFallback.text();
+              console.warn(`[Voice] Zonos API error at ${baseUrl}:`, errorText);
+              lastError = new Error(`Zonos API failed (${responseFallback.status}): ${errorText}`);
+              continue;
+            }
+
+            // Handle fallback success same as main
+            const result = await responseFallback.json();
+            return await processGradioResult(baseUrl, result);
+          }
+
+          const result = await response.json();
+          return await processGradioResult(baseUrl, result);
+        } catch (originError) {
+          console.warn(`[Voice] Zonos origin failed: ${baseUrl}`, originError);
+          lastError = originError;
+        }
+      }
+
+      return {
+        success: false,
+        error: `Zonos connection failed: ${lastError?.message || 'Is Zonos running on port 7860?'}`,
+      };
     } catch (zonosError) {
       console.error('[Voice] Zonos error:', zonosError);
       return { success: false, error: `Zonos connection failed: ${zonosError.message}. Is Zonos running on port 7860?` };
@@ -1110,7 +1144,9 @@ ipcMain.handle('generate-speech', async (event, params) => {
         // Poll for up to 30 seconds
         for(let i=0; i<60; i++) {
             await new Promise(r => setTimeout(r, 500));
-            const pollResponse = await fetch(pollUrl);
+            const pollResponse = await fetch(pollUrl, {
+              signal: AbortSignal.timeout(5000),
+            });
             
             if (!pollResponse.ok) continue; // Not ready?
             
@@ -1150,13 +1186,17 @@ ipcMain.handle('generate-speech', async (event, params) => {
            audioUrl = `${baseUrl}/file=${audioInfo.path}`; // Safety fallback
         }
 
-        const parsedAudioUrl = parseLoopbackUrl(audioUrl, { allowPath: true });
-        const expectedOrigin = new URL(baseUrl).origin;
-        if (!parsedAudioUrl || parsedAudioUrl.origin !== expectedOrigin) {
+        const trustedAudioUrl = validateTrustedLocalServiceUrl('zonos', audioUrl, {
+          allowPath: true,
+          extraUrls: [baseUrl],
+        });
+        if (!trustedAudioUrl) {
           return { success: false, error: 'Invalid audio download URL' };
         }
 
-        const audioResponse = await fetch(parsedAudioUrl.toString());
+        const audioResponse = await fetch(trustedAudioUrl.toString(), {
+          signal: AbortSignal.timeout(10000),
+        });
         if (!audioResponse.ok) {
           return { success: false, error: `Failed to fetch generated audio (${audioResponse.status})` };
         }
@@ -1513,8 +1553,9 @@ ipcMain.handle('ai-chat', async (event, params) => {
 
   try {
     const url = ollamaUrl || OLLAMA_DEFAULT_URL;
-    if (!validateLocalUrl(url)) {
-      return { success: false, error: 'Only localhost URLs are allowed' };
+    const trustedUrl = validateTrustedLocalServiceUrl('ollama', url);
+    if (!trustedUrl) {
+      return { success: false, error: 'Ollama URL must match the configured local service endpoint' };
     }
 
     // Build messages array with system prompt
@@ -1537,7 +1578,7 @@ ipcMain.handle('ai-chat', async (event, params) => {
 
     const timeoutId = setTimeout(() => abortController.abort(), 120000);
 
-    const response = await fetch(`${url}/api/chat`, {
+    const response = await fetch(`${trustedUrl.origin}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1604,8 +1645,9 @@ ipcMain.handle('ai-generate-character', async (event, params) => {
 
   try {
     const url = ollamaUrl || OLLAMA_DEFAULT_URL;
-    if (!validateLocalUrl(url)) {
-      return { success: false, error: 'Only localhost URLs are allowed' };
+    const trustedUrl = validateTrustedLocalServiceUrl('ollama', url);
+    if (!trustedUrl) {
+      return { success: false, error: 'Ollama URL must match the configured local service endpoint' };
     }
 
     let systemPrompt;
@@ -1683,7 +1725,7 @@ Rules:
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const timeoutId = setTimeout(() => abortController.abort(), CHARACTER_BUILDER_TIMEOUT_MS);
 
-      const response = await fetch(`${url}/api/chat`, {
+      const response = await fetch(`${trustedUrl.origin}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1779,8 +1821,9 @@ ipcMain.handle('ollama-chat-stream', async (event, params) => {
   if (!requestId || !model || !messages) {
     return { success: false, error: 'Missing required params: requestId, model, messages' };
   }
-  if (!validateLocalUrl(ollamaUrl)) {
-    return { success: false, error: 'Only localhost URLs are allowed' };
+  const trustedUrl = validateTrustedLocalServiceUrl('ollama', ollamaUrl);
+  if (!trustedUrl) {
+    return { success: false, error: 'Ollama URL must match the configured local service endpoint' };
   }
 
   const controller = new AbortController();
@@ -1790,7 +1833,7 @@ ipcMain.handle('ollama-chat-stream', async (event, params) => {
   let finalChunk = null;
 
   try {
-    const response = await fetch(`${ollamaUrl}/api/chat`, {
+    const response = await fetch(`${trustedUrl.origin}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
@@ -1906,17 +1949,18 @@ ipcMain.handle('ollama-stream-abort', async (event, { requestId, reason = 'user'
  * Unload model from VRAM (keep_alive: 0).
  * Params: { ollamaUrl, model }
  */
-ipcMain.handle('ollama-unload', async (event, params) => {
+ipcMain.handle('ollama-unload', async (event, params = {}) => {
   if (!isTrustedIpcSender(event)) {
     return blockUntrustedIpc(event, 'ollama-unload');
   }
 
   const { ollamaUrl = OLLAMA_DEFAULT_URL, model } = params;
   if (!model) return { success: false, error: 'Missing model name' };
-  if (!validateLocalUrl(ollamaUrl)) return { success: false, error: 'Only localhost URLs are allowed' };
+  const trustedUrl = validateTrustedLocalServiceUrl('ollama', ollamaUrl);
+  if (!trustedUrl) return { success: false, error: 'Ollama URL must match the configured local service endpoint' };
 
   try {
-    await fetch(`${ollamaUrl}/api/chat`, {
+    await fetch(`${trustedUrl.origin}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model, messages: [], keep_alive: 0 }),
@@ -1940,10 +1984,11 @@ ipcMain.handle('ollama-models', async (event, params = {}) => {
   }
 
   const { ollamaUrl = OLLAMA_DEFAULT_URL } = params;
-  if (!validateLocalUrl(ollamaUrl)) return { success: false, error: 'Only localhost URLs are allowed' };
+  const trustedUrl = validateTrustedLocalServiceUrl('ollama', ollamaUrl);
+  if (!trustedUrl) return { success: false, error: 'Ollama URL must match the configured local service endpoint' };
 
   try {
-    const response = await fetch(`${ollamaUrl}/api/tags`, {
+    const response = await fetch(`${trustedUrl.origin}/api/tags`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(5000)
@@ -1978,19 +2023,20 @@ ipcMain.handle('ollama-models', async (event, params = {}) => {
  * Get model capabilities via /api/show (context length, parameter size).
  * Params: { ollamaUrl, model }
  */
-ipcMain.handle('ollama-model-info', async (event, params) => {
+ipcMain.handle('ollama-model-info', async (event, params = {}) => {
   if (!isTrustedIpcSender(event)) {
     return blockUntrustedIpc(event, 'ollama-model-info');
   }
 
   const { ollamaUrl = OLLAMA_DEFAULT_URL, model } = params;
   if (!model) return { success: false, error: 'Missing model name' };
-  if (!validateLocalUrl(ollamaUrl)) return { success: false, error: 'Only localhost URLs are allowed' };
+  const trustedUrl = validateTrustedLocalServiceUrl('ollama', ollamaUrl);
+  if (!trustedUrl) return { success: false, error: 'Ollama URL must match the configured local service endpoint' };
 
   const defaults = { contextLength: 4096, parameterSize: '7B' };
 
   try {
-    const response = await fetch(`${ollamaUrl}/api/show`, {
+    const response = await fetch(`${trustedUrl.origin}/api/show`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: model }),

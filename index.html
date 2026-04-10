@@ -7,7 +7,7 @@
     <!-- Production CSP must stay local-only for packaged file:// builds too -->
     <meta 
       http-equiv="Content-Security-Policy" 
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://localhost:* http://127.0.0.1:* http://[::1]:* ws://localhost:* ws://127.0.0.1:* ws://[::1]:*; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; frame-src 'none';"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://localhost:11434 http://127.0.0.1:11434 ws://localhost:11434 ws://127.0.0.1:11434 http://localhost:7860 http://127.0.0.1:7860 ws://localhost:7860 ws://127.0.0.1:7860; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; frame-src 'none';"
     />
     <script src="/theme-bootstrap.js"></script>
     

@@ -20,8 +20,6 @@ export default function TutorialLayout({
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-zinc-950 border border-white/10 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden glass relative flex flex-col">
-        
-        {/* Header */}
         <div className={`p-6 border-b border-white/5 bg-gradient-to-r ${headerGradient}`}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
@@ -33,10 +31,7 @@ export default function TutorialLayout({
                 <p className="text-sm text-zinc-400 font-medium">{subtitle}</p>
               </div>
             </div>
-
-            {/* Status & Options */}
             <div className="flex items-center gap-3">
-              {/* Traffic Light Status */}
               {connectionStatus && (
                 <div className={`px-4 py-2 rounded-xl border backdrop-blur-md flex items-center gap-2 transition-all duration-300 ${
                   connectionStatus === 'connected'
@@ -56,8 +51,6 @@ export default function TutorialLayout({
               )}
             </div>
           </div>
-
-          {/* Progress Bar */}
           {steps && currentStep && (
             <div className="mt-6">
               <div className="flex items-center justify-between mb-2 px-1">
@@ -73,13 +66,9 @@ export default function TutorialLayout({
             </div>
           )}
         </div>
-
-        {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
           {children}
         </div>
-
-        {/* Footer */}
         <div className="p-6 border-t border-white/5 bg-zinc-900/30 backdrop-blur-md flex items-center justify-end gap-3 z-10">
           {footerContent}
           {onClose && (

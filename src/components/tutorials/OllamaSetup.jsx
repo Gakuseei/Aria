@@ -97,7 +97,6 @@ export default function OllamaSetup({ onClose, isOnboarding = false, onComplete 
       footerContent={
         isOnboarding ? (
             <div className="flex w-full justify-between items-center">
-                 {/* Language Selector for Onboarding */}
                  <div className="flex items-center gap-2">
                     <span className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Language:</span>
                     <CustomDropdown
@@ -146,7 +145,6 @@ export default function OllamaSetup({ onClose, isOnboarding = false, onComplete 
         ) : null
       }
     >
-      {/* Step 1: Install & Run - MERGED */}
       <div className={`transition-all duration-500 ${currentStep === 1 ? 'opacity-100' : 'opacity-40 grayscale delay-0'}`}>
         <div className={`rocket-card glass p-1 border rounded-2xl overflow-hidden ${currentStep === 1 ? 'border-rose-500/50 shadow-[0_0_20px_-5px_rgba(244,63,94,0.3)]' : 'border-white/5'}`}>
            <div className="bg-zinc-900/50 p-5 rounded-xl">
@@ -183,8 +181,6 @@ export default function OllamaSetup({ onClose, isOnboarding = false, onComplete 
            </div>
         </div>
       </div>
-
-      {/* Step 2: Model Selection (Renumbered from 3) */}
       <div className={`transition-all duration-500 ${currentStep === 2 ? 'opacity-100' : currentStep > 2 ? 'opacity-40 grayscale' : 'opacity-40'}`}>
          <div className={`rocket-card glass p-1 border rounded-2xl overflow-hidden ${currentStep === 2 ? 'border-rose-500/50 shadow-[0_0_20px_-5px_rgba(244,63,94,0.3)]' : 'border-white/5'}`}>
             <div className="bg-zinc-900/50 p-5 rounded-xl">
@@ -199,8 +195,6 @@ export default function OllamaSetup({ onClose, isOnboarding = false, onComplete 
                      <p className="text-sm text-zinc-300 mb-6">
                         {t.tutorials.ollama.models?.chooseModelDesc || "Select the best AI Brain for your PC power."}
                      </p>
-
-                     {/* Model Grid */}
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
                         {modelTiers.map((tier) => {
                            const model = t.tutorials.ollama.models?.[tier];
@@ -233,8 +227,6 @@ export default function OllamaSetup({ onClose, isOnboarding = false, onComplete 
                            );
                         })}
                      </div>
-
-                     {/* Command Box */}
                      <div className="bg-black/40 border border-white/10 rounded-xl p-4 flex items-center justify-between gap-4 group hover:border-rose-500/30 transition-colors">
                         <div className="flex-1 min-w-0">
                            <div className="flex items-center gap-2 mb-1">
@@ -261,8 +253,6 @@ export default function OllamaSetup({ onClose, isOnboarding = false, onComplete 
             </div>
          </div>
       </div>
-
-      {/* Step 3: Verification (Renumbered from 4) */}
       <div className={`transition-all duration-500 ${currentStep === 3 ? 'opacity-100' : 'opacity-40'}`}>
          <div className={`rocket-card glass p-1 border rounded-2xl overflow-hidden ${currentStep === 3 ? 'border-rose-500/50 shadow-[0_0_20px_-5px_rgba(244,63,94,0.3)]' : 'border-white/5'}`}>
             <div className="bg-zinc-900/50 p-5 rounded-xl">
@@ -305,8 +295,6 @@ export default function OllamaSetup({ onClose, isOnboarding = false, onComplete 
                               </>
                            )}
                         </button>
-
-                        {/* Help Text for Errors */}
                         {connectionStatus === 'error' && (
                            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-200 text-sm flex items-center gap-2">
                               <span>⚠️ Connection failed. Make sure Ollama is running in the background tray!</span>

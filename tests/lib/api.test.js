@@ -501,7 +501,7 @@ describe('suggestions stabilization', () => {
       '',
       []
     )).toEqual([
-      "Smile warmly at Alice's attentiveness.",
+      "*I smile warmly at Alice's attentiveness.*",
       '*I gently pat the seat next to me.*'
     ]);
   });

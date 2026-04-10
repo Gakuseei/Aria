@@ -248,8 +248,6 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
             <span>{character.name}</span>
           </div>
         )}
-
-        {/* BLOCK 8.1: Image support */}
         {message.image && (
           <img
             src={message.image}
@@ -277,10 +275,7 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
             {formatTimestamp(message.timestamp)}
           </div>
         )}
-
-        {/* Action buttons - hover reveal */}
         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-          {/* Volume2 Icon Button (AI messages only) */}
           {!isUser && voiceEnabled === true && onSpeak && (
             <button
               onClick={() => onSpeak(message.content || '')}
@@ -290,7 +285,6 @@ className="theme-message-action theme-message-action-info rounded-lg p-1.5 trans
               <Volume2 size={14} strokeWidth={1.5} />
             </button>
           )}
-          {/* Copy button */}
           <button
             onClick={() => onCopy(message.content || '')}
 className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
@@ -1701,8 +1695,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             )}
           </div>
         </div>
-
-        {/* Right Side - Icon Buttons with Rose Accents - BLOCK 6.9: Enhanced Clickability */}
         <div className="theme-chat-toolbar relative z-50 flex items-center gap-1.5 pointer-events-auto">
           <button
             onClick={() => setShowImageModal(true)}
@@ -1714,8 +1706,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           >
             <ImageIcon size={22} strokeWidth={1.5} />
           </button>
-
-          {/* Voice Settings Button with Popover */}
           <div className="relative z-[100] pointer-events-auto voice-settings-container">
             <button
               onClick={handleVoiceSettingsClick}
@@ -1727,12 +1717,9 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             >
               <Volume2 size={22} strokeWidth={1.5} />
             </button>
-
-            {/* Voice Settings Popover */}
             {showVoiceSettings && (
               <div className="theme-chat-flyout absolute top-12 right-0 z-[200] flex w-64 flex-col rounded-lg p-4">
                 <div className="space-y-4">
-                  {/* Master Toggle: Enable Voice */}
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <span className="theme-popover-heading text-sm font-medium">{t.chat.voiceSettings.enableVoice}</span>
@@ -1759,8 +1746,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                       {voiceEnabled === true ? 'ON' : 'OFF'}
                     </button>
                   </div>
-
-                  {/* Auto-Read Toggle */}
                   {voiceEnabled === true && (
                     <div className="flex items-center justify-between gap-4">
                       <div>
@@ -1777,8 +1762,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                       </button>
                     </div>
                   )}
-
-                  {/* Voice Model Selection - FIX 3 */}
                   {voiceEnabled === true && (
                     <div>
                       <label className="theme-label mb-1 block text-xs">{t.chat.voiceSettings.voiceModel}</label>
@@ -1809,8 +1792,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                       />
                     </div>
                   )}
-
-                  {/* Volume Slider */}
                   {voiceEnabled === true && (
                     <div>
                       <div className="mb-2 flex items-center justify-between">
@@ -1867,8 +1848,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           >
             <RotateCcw size={22} strokeWidth={1.5} />
           </button>
-
-          {/* Chat Options Button - BLOCK 6.9.2: Opens local menu, not global Settings */}
           <div className="relative z-[100] pointer-events-auto chat-options-container">
             <button
               onClick={() => setShowChatOptions(!showChatOptions)}
@@ -1880,11 +1859,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             >
               <SettingsIcon size={22} strokeWidth={1.5} />
             </button>
-
-            {/* BLOCK 6.9.2: Chat Options Popover */}
             {showChatOptions && (
               <div className="theme-chat-flyout absolute top-12 right-0 z-[200] flex w-56 flex-col rounded-lg p-1">
-                {/* Text Zoom */}
                 <div className="theme-popover-divider border-b px-3 py-2">
                   <span className="theme-popover-label text-xs font-medium uppercase tracking-wider">{t.chat.textSize}</span>
                   <div className="flex gap-1 mt-1">
@@ -1906,8 +1882,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                     </button>
                   </div>
                 </div>
-
-                {/* Import/Export */}
                 <button
                   onClick={() => { handleExportChat(); setShowChatOptions(false); }}
                   className="theme-button-secondary flex items-center gap-2 rounded-lg p-2.5 text-left text-sm transition-colors"
@@ -1922,8 +1896,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                   <Upload size={16} />
                   {t.chat.import}
                 </button>
-
-                {/* Danger Zone */}
                 <div className="theme-popover-divider mt-1 border-t pt-1">
                   <button
                     onClick={() => { handleNewGame(); setShowChatOptions(false); }}
@@ -1962,8 +1934,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           </div>
         </div>
       )}
-
-      {/* MESSAGES - BLOCK 6.7: Increased bottom padding for floating input */}
       <div
         ref={messagesContainerRef}
         onScroll={handleMessagesScroll}
@@ -2050,8 +2020,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <div ref={messagesEndRef} />
         </div>
       </div>
-
-      {/* v1.0 ROSE NOIR: Floating Input "Cockpit" - BLOCK 6.7: Detached, premium styling */}
       <div className="theme-composer-dock fixed bottom-8 left-1/2 z-50 w-[92%] max-w-[70rem] -translate-x-1/2">
         <div className={`theme-composer-dock-shell rounded-[2rem] px-3 py-2.5 transition-all duration-200 ${
           isGoldMode ? 'border-amber-500/30' : ''
@@ -2237,8 +2205,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           </div>
         </div>
       )}
-
-      {/* v1.0: TUTORIAL MODAL */}
       {showTutorial && (
         <TutorialModal
           type={showTutorial}

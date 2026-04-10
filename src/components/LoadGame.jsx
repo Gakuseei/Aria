@@ -157,7 +157,6 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
     <div className={`theme-screen-shell flex h-full w-full flex-col p-8 transition-all duration-300 ${
       isVisible ? 'opacity-100' : 'opacity-0'
     }`}>
-      {/* v1.0 ROSE NOIR: Premium Glass Header */}
       <div className="glass-header flex items-center justify-between px-6 py-5 mb-8 rounded-2xl">
         <div className="flex items-center gap-5">
           <button
@@ -174,8 +173,6 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
             <p className="text-zinc-500 text-sm">{t.loadGame.subtitle}</p>
           </div>
         </div>
-
-        {/* Filter Tabs - v1.0 ROSE NOIR */}
         <div className="flex gap-2">
           {[
             { id: 'all', label: t.loadGame.filterAll },
@@ -221,10 +218,7 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
           </button>
         )}
       </div>
-
-      {/* Content */}
       <div className="flex-1 flex gap-6 overflow-hidden">
-        {/* Sessions List */}
         <div className="flex-1 overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
@@ -250,7 +244,6 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
                   }`}
                 >
                   <div className="flex items-start gap-4">
-                    {/* Icon - v1.0 ROSE NOIR */}
                     <div className={`p-3 rounded-xl ${
                       session.mode === GAME_MODES.CREATIVE_WRITING
                         ? 'bg-purple-500/20 text-purple-400 border border-purple-500/20'
@@ -258,8 +251,6 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
                     }`}>
                       {getSessionIcon(session.mode)}
                     </div>
-
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="font-medium text-white truncate">
@@ -281,8 +272,6 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
                           : `${session.history?.length || 0} ${t.loadGame.generations}`
                         }
                       </p>
-
-                      {/* Preview */}
                       <div className="text-xs text-zinc-600 line-clamp-2">
                         {session.mode === GAME_MODES.CHARACTER_CHAT
                           ? (session.conversationHistory || session.messages)?.[(session.conversationHistory || session.messages)?.length - 1]?.content?.substring(0, 100)
@@ -291,8 +280,6 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
                         ...
                       </div>
                     </div>
-
-                    {/* Delete Button - v1.0 ROSE NOIR */}
                     <button
                       onClick={(e) => handleDelete(session.id, e)}
                       className="p-2 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 transition-all z-10"
@@ -331,15 +318,11 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
             </div>
           )}
         </div>
-
-        {/* Preview Panel - v1.0 ROSE NOIR */}
         <div className="w-80 flex-shrink-0 glass rounded-2xl p-6 flex flex-col">
           {selectedSession ? (
             <>
               <div className="flex-1">
                 <div className="text-sm text-zinc-500 mb-2">{t.loadGame.selectedSave}</div>
-                
-                {/* Session Info */}
                 <div className="mb-6">
                   <h3 className="text-lg font-bold text-white mb-1">
                     {selectedSession.mode === GAME_MODES.CHARACTER_CHAT
@@ -351,8 +334,6 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
                     {t.loadGame.saved} {formatDate(selectedSession.lastUpdated || selectedSession.savedAt)}
                   </p>
                 </div>
-
-                {/* Stats */}
                 <div className="space-y-4">
                   {selectedSession.mode === GAME_MODES.CHARACTER_CHAT ? (
                     <>
@@ -379,8 +360,6 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
                   )}
                 </div>
               </div>
-
-              {/* Load Button - v1.0 ROSE NOIR */}
               <button
                 onClick={handleLoad}
                 className="w-full py-4 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-semibold transition-all flex items-center justify-center gap-2 shadow-lg shadow-rose-500/30"

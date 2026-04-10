@@ -250,10 +250,8 @@ export default function VoiceSetup({ onClose, onVerified }) {
         </div>
       }
     >
-       {/* STANDARD MODE STEPS */}
        {tierMode === 'standard' && (
           <div className="space-y-6">
-             {/* Step 1: Install */}
              <div className={`rocket-card glass p-1 border rounded-2xl ${currentStep===1 ? 'border-cyan-500/50' : 'border-white/5 opacity-50'}`}>
                  <div className="bg-zinc-900/50 p-5 rounded-xl flex gap-4">
                      <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center font-bold text-cyan-300">1</div>
@@ -272,8 +270,6 @@ export default function VoiceSetup({ onClose, onVerified }) {
                      </div>
                  </div>
              </div>
-
-             {/* Step 2: Download Voices */}
              <div className={`rocket-card glass p-1 border rounded-2xl ${currentStep===2 ? 'border-cyan-500/50' : 'border-white/5 opacity-50'}`}>
                  <div className="bg-zinc-900/50 p-5 rounded-xl">
                      <div className="flex items-center gap-4 mb-4">
@@ -311,8 +307,6 @@ export default function VoiceSetup({ onClose, onVerified }) {
                      {currentStep === 2 && <button onClick={()=>setCurrentStep(3)} className="mt-4 w-full py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm text-zinc-300">Finished Downloading? Next →</button>}
                  </div>
              </div>
-             
-             {/* Step 3: Configure */}
              {currentStep >= 3 && (
                  <div className="rocket-card glass p-5 border border-cyan-500/50 rounded-2xl">
                      <h3 className="font-bold text-white mb-4">Step 3: Configuration & Path</h3>
@@ -360,8 +354,6 @@ export default function VoiceSetup({ onClose, onVerified }) {
              )}
           </div>
        )}
-
-       {/* PREMIUM MODE - TRUE ONE-CLICK INSTALLER */}
        {tierMode === 'premium' && (
           <div className="space-y-6">
              <div className="bg-gradient-to-br from-amber-500/10 to-transparent p-4 rounded-xl border border-amber-500/20 mb-6">
@@ -375,8 +367,6 @@ export default function VoiceSetup({ onClose, onVerified }) {
                    </div>
                 </div>
              </div>
-             
-             {/* One-Click Zonos Setup */}
              <div className={`p-6 bg-zinc-900/50 rounded-xl border ${
                 zonosStatus === 'connected' 
                   ? 'border-green-500/30 bg-green-500/5' 
@@ -436,8 +426,6 @@ export default function VoiceSetup({ onClose, onVerified }) {
                       </button>
                    )}
                 </div>
-
-                {/* Progress bar for installation */}
                 {zonosInstallStatus === 'installing' && installProgress && (
                    <div className="mb-4">
                       <div className="flex justify-between text-xs text-zinc-400 mb-2">
@@ -462,8 +450,6 @@ export default function VoiceSetup({ onClose, onVerified }) {
                             {showLog ? 'Hide Log' : 'Show Log'}
                          </button>
                       </div>
-                      
-                      {/* Log display */}
                       {showLog && (
                          <div className="mt-3 p-3 bg-black/50 rounded-lg border border-white/5">
                             <pre className="text-xs text-zinc-400 font-mono max-h-32 overflow-y-auto custom-scrollbar">
@@ -473,8 +459,6 @@ export default function VoiceSetup({ onClose, onVerified }) {
                       )}
                    </div>
                 )}
-
-                {/* Error display */}
                 {zonosError && (
                    <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
                       <div className="flex items-start gap-3">
@@ -494,8 +478,6 @@ export default function VoiceSetup({ onClose, onVerified }) {
                       </div>
                    </div>
                 )}
-
-                {/* Action buttons */}
                 <div className="flex gap-3">
                    {zonosStatus === 'connected' ? (
                       <button 
@@ -538,8 +520,6 @@ export default function VoiceSetup({ onClose, onVerified }) {
                       <RefreshCw size={18} />
                    </button>
                 </div>
-
-                {/* Success state extras */}
                 {zonosStatus === 'connected' && (
                    <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
                       <p className="text-sm text-green-300">
@@ -551,8 +531,6 @@ export default function VoiceSetup({ onClose, onVerified }) {
                    </div>
                 )}
              </div>
-
-             {/* Manual fallback */}
              {zonosInstallStatus === 'error' && !zonosError?.needsRestart && (
                 <div className="text-center">
                    <button 

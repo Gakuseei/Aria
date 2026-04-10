@@ -29,7 +29,6 @@ function CharacterCreator({ onSave, onBack }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Handle input change
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -61,7 +60,6 @@ function CharacterCreator({ onSave, onBack }) {
     }));
   };
 
-  // Handle image upload
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -88,7 +86,6 @@ function CharacterCreator({ onSave, onBack }) {
     }
   };
 
-  // Validate form
   const validate = () => {
     const newErrors = {};
 
@@ -108,11 +105,9 @@ function CharacterCreator({ onSave, onBack }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  // v0.2.5 BULLETPROOF: Fixed duplicate prevention
   const handleSave = () => {
     if (!validate()) return;
 
-    // Create character with UNIQUE timestamp-based ID
     const trimmedStartingMessage = formData.startingMessage.trim();
     const character = {
       id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -134,20 +129,15 @@ function CharacterCreator({ onSave, onBack }) {
       isCustom: true,
     };
 
-    console.log('[V4.3 CharacterCreator] Saving character with ID:', character.id);
-
-    // V4.3: Use bulletproof saveCustomCharacter from api.js
     const saved = saveCustomCharacter(character);
-    
+
     if (saved) {
-      console.log('[V4.3 CharacterCreator] ✓ Character saved successfully');
-      onSave(character); // This navigates back to character select
+      onSave(character);
     } else {
       window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: t.characterCreator.failedToSave, type: 'error' } }));
     }
   };
 
-  // Preset templates for quick start
   const templates = [
     {
       name: t.characterCreator.blankTemplate,
@@ -195,7 +185,6 @@ function CharacterCreator({ onSave, onBack }) {
 
   return (
     <div className="theme-screen-shell h-full w-full flex flex-col p-8">
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <button
@@ -213,7 +202,6 @@ function CharacterCreator({ onSave, onBack }) {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex gap-3">
           <button
             onClick={() => setShowPreview(!showPreview)}
@@ -233,12 +221,9 @@ function CharacterCreator({ onSave, onBack }) {
         </div>
       </div>
 
-      {/* Content */}
       <div className="flex-1 flex gap-6 overflow-hidden">
-        {/* Form */}
         <div className="flex-1 overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
           <div className="max-w-2xl space-y-6">
-            {/* Templates */}
             <div className="theme-soft-panel rounded-xl p-5">
               <h3 className="text-sm font-medium text-zinc-400 mb-3">{t.characterCreator.quickStartTemplates}</h3>
               <div className="flex gap-3">
@@ -254,7 +239,7 @@ function CharacterCreator({ onSave, onBack }) {
               </div>
             </div>
 
-<div className="theme-soft-panel rounded-xl p-5">
+            <div className="theme-soft-panel rounded-xl p-5">
               <h3 className="text-sm font-medium text-zinc-400 mb-3">{t.characterCreator?.characterType || 'Type'}</h3>
               <div className="flex gap-3">
                 {['character', 'bot'].map(type => (
@@ -285,7 +270,6 @@ function CharacterCreator({ onSave, onBack }) {
               </p>
             </div>
 
-            {/* Basic Info */}
             <div className="theme-soft-panel space-y-5 rounded-xl p-5">
               <h3 className="text-lg font-semibold text-white mb-4">{t.characterCreator.basicInformation}</h3>
 
@@ -402,7 +386,6 @@ function CharacterCreator({ onSave, onBack }) {
               </div>
             </div>
 
-            {/* AI Behavior */}
             <div className="theme-soft-panel space-y-5 rounded-xl p-5">
               <div>
                 <h3 className="text-lg font-semibold text-white mb-1">{t.characterCreator.aiBehavior}</h3>
@@ -615,7 +598,6 @@ function CharacterCreator({ onSave, onBack }) {
               )}
             </div>
 
-            {/* Tips */}
             <div className="bg-amber-900/20 border border-amber-700/30 rounded-xl p-5">
               <div className="flex items-start gap-3">
                 <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -637,14 +619,11 @@ function CharacterCreator({ onSave, onBack }) {
           </div>
         </div>
 
-        {/* Preview Panel */}
         {showPreview && (
           <div className="theme-soft-panel scrollbar-thin w-96 flex-shrink-0 overflow-y-auto rounded-xl p-6">
             <h3 className="text-lg font-semibold text-white mb-4">{t.characterCreator.preview}</h3>
             
-            {/* Character Card Preview */}
             <div className="relative aspect-[3/4] bg-zinc-900/80 backdrop-blur-xl rounded-2xl overflow-hidden mb-4">
-              {/* Character Image */}
               <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
                 {formData.avatarBase64 ? (
                   <img 
@@ -664,14 +643,12 @@ function CharacterCreator({ onSave, onBack }) {
                   </div>
                 )}
                 
-                {/* Decorative Elements */}
                 <div 
                   className="absolute top-4 right-4 w-20 h-20 rounded-full blur-2xl opacity-30"
                   style={{ backgroundColor: formData.themeColor }}
                 />
               </div>
 
-              {/* Info Overlay */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-zinc-950 via-zinc-950/90 to-transparent p-6 pt-16">
                 <h3 className="text-lg font-bold text-white mb-1">
                   {formData.name || t.characterCreator.characterNamePreview}
@@ -687,11 +664,9 @@ function CharacterCreator({ onSave, onBack }) {
                 </p>
               </div>
 
-              {/* Border */}
               <div className="absolute inset-0 rounded-2xl border border-zinc-700/50" />
             </div>
 
-            {/* Details */}
             <div className="space-y-3">
               <div>
                 <p className="text-xs text-zinc-500 mb-1">{t.characterCreator.themeColorPreview}</p>

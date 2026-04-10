@@ -79,7 +79,7 @@ describe('debugConsole helpers', () => {
     expect(appended.at(-1).message).toBe('Error 73');
   });
 
-  it('collects a redacted, sorted storage snapshot', () => {
+  it('collects lightweight redacted storage snapshots in key order', () => {
     const storage = {
       values: new Map([
         ['zeta', 'last'],
@@ -101,6 +101,39 @@ describe('debugConsole helpers', () => {
 
     expect(snapshot.map((entry) => entry.key)).toEqual(['alpha', 'zeta']);
     expect(snapshot[0].preview).toContain('"enabled": true');
+    expect(snapshot[0]).toMatchObject({
+      kind: 'object',
+      truncated: false,
+      bytes: JSON.stringify({ enabled: true }).length,
+    });
+    expect(snapshot[0]).not.toHaveProperty('value');
+  });
+
+  it('truncates oversized storage previews without keeping the raw parsed value', () => {
+    const largeText = 'A'.repeat(180);
+    const storage = {
+      values: new Map([
+        ['sessions', JSON.stringify({ transcript: largeText })],
+      ]),
+      get length() {
+        return this.values.size;
+      },
+      key(index) {
+        return Array.from(this.values.keys())[index] ?? null;
+      },
+      getItem(key) {
+        return this.values.get(key) ?? null;
+      },
+    };
+
+    const [entry] = collectStorageSnapshot(storage, { previewLimit: 80 });
+
+    expect(entry.kind).toBe('object');
+    expect(entry.bytes).toBe(JSON.stringify({ transcript: largeText }).length);
+    expect(entry.truncated).toBe(true);
+    expect(entry.preview.length).toBeLessThanOrEqual(80);
+    expect(entry.preview).toContain('…');
+    expect(entry).not.toHaveProperty('value');
   });
 
   it('summarizes health from errors and API timing', () => {
@@ -132,7 +165,7 @@ describe('debugConsole helpers', () => {
     expect(summary.overallStatus).toBe('warning');
   });
 
-  it('builds structured export payloads without view-layer ids', () => {
+  it('builds structured export payloads without view-layer ids or raw storage previews', () => {
     const payload = buildErrorExportPayload({
       appVersion: '0.2.5',
       currentView: 'settings',
@@ -141,11 +174,16 @@ describe('debugConsole helpers', () => {
       errors: [createCapturedError({ id: 12, message: 'boom', source: 'App.jsx:11', timestamp: 100 })],
       eventLog: [{ type: 'api', message: 'ok' }],
       settings: { preferredLanguage: 'en' },
+      storageSnapshot: [{ key: 'sessions', kind: 'object', preview: '{"messages":2}', truncated: true, bytes: 128 }],
     });
 
     expect(payload.appVersion).toBe('0.2.5');
     expect(payload.errors[0].id).toBeUndefined();
     expect(payload.currentView).toBe('settings');
     expect(payload.eventLog).toHaveLength(1);
+    expect(payload.storageSnapshot).toEqual([
+      { key: 'sessions', kind: 'object', truncated: true, bytes: 128 },
+    ]);
+    expect(payload.storageSnapshot[0].preview).toBeUndefined();
   });
 });

@@ -115,6 +115,7 @@ function createDiagnosticsPayload({
   eventLog,
   healthSummary,
   settings,
+  storageEntries,
 }) {
   return buildErrorExportPayload({
     appVersion,
@@ -124,6 +125,7 @@ function createDiagnosticsPayload({
     healthSummary,
     platform: getPlatformInfo(),
     settings,
+    storageSnapshot: storageEntries,
   });
 }
 
@@ -331,6 +333,7 @@ export default function DebugConsole({
     eventLog,
     healthSummary,
     settings,
+    storageEntries,
   });
 
   const copyText = async (payload) => {
@@ -354,6 +357,7 @@ export default function DebugConsole({
       eventLog,
       healthSummary,
       settings,
+      storageEntries,
     });
 
     await copyText(JSON.stringify(payload, null, 2));

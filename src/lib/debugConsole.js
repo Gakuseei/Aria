@@ -9,6 +9,7 @@ const HIDDEN_STORAGE_KEYS = new Set([
 
 export const DEBUG_CONSOLE_ERROR_LIMIT = 75;
 export const DEBUG_CONSOLE_EVENT_LIMIT = 50;
+export const DEBUG_STORAGE_PREVIEW_LIMIT = 320;
 
 function createJsonReplacer() {
   const seen = new WeakSet();
@@ -154,7 +155,24 @@ export function appendCapturedError(existingErrors, nextError, options = {}) {
   return [incoming, ...existingErrors].slice(0, limit);
 }
 
-export function collectStorageSnapshot(storageLike) {
+function createPreviewSummary(value, previewLimit = DEBUG_STORAGE_PREVIEW_LIMIT) {
+  const serialized = typeof value === 'string' ? value : safeSerialize(value, 2);
+  if (serialized.length <= previewLimit) {
+    return {
+      preview: serialized,
+      truncated: false,
+    };
+  }
+
+  return {
+    preview: `${serialized.slice(0, Math.max(0, previewLimit - 1))}…`,
+    truncated: true,
+  };
+}
+
+export function collectStorageSnapshot(storageLike, options = {}) {
+  const { previewLimit = DEBUG_STORAGE_PREVIEW_LIMIT } = options;
+
   if (!storageLike || typeof storageLike.length !== 'number' || typeof storageLike.key !== 'function') {
     return [];
   }
@@ -168,8 +186,9 @@ export function collectStorageSnapshot(storageLike) {
     }
 
     let value;
+    let rawValue = '';
     try {
-      const rawValue = storageLike.getItem(key);
+      rawValue = storageLike.getItem(key) ?? '';
       try {
         value = JSON.parse(rawValue);
       } catch {
@@ -179,11 +198,14 @@ export function collectStorageSnapshot(storageLike) {
       value = '<error reading>';
     }
 
+    const { preview, truncated } = createPreviewSummary(value, previewLimit);
+
     entries.push({
       key,
-      value,
-      preview: typeof value === 'string' ? value : safeSerialize(value, 2),
+      preview,
       kind: Array.isArray(value) ? 'array' : typeof value,
+      bytes: rawValue.length,
+      truncated,
     });
   }
 
@@ -227,6 +249,15 @@ export function summarizeDebugHealth({
   };
 }
 
+function sanitizeStorageSnapshotForExport(storageSnapshot) {
+  return storageSnapshot.map(({ key, kind, bytes, truncated }) => ({
+    key,
+    kind,
+    bytes,
+    truncated,
+  }));
+}
+
 export function buildErrorExportPayload({
   appVersion,
   errors,
@@ -235,6 +266,7 @@ export function buildErrorExportPayload({
   currentView,
   healthSummary,
   platform,
+  storageSnapshot = [],
   exportedAt = new Date().toISOString(),
 }) {
   return {
@@ -246,5 +278,6 @@ export function buildErrorExportPayload({
     errors: errors.map(({ id, ...entry }) => entry),
     eventLog,
     settingsSnapshot: settings,
+    storageSnapshot: sanitizeStorageSnapshotForExport(storageSnapshot),
   };
 }

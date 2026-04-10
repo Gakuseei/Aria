@@ -33,7 +33,6 @@ function ModeSelection({ onSelect, onBack }) {
 
   return (
     <div className="h-full w-full flex flex-col p-8 bg-gradient-to-br from-zinc-900 via-zinc-900 to-black">
-      {/* v1.0 ROSE NOIR: Premium Glass Header */}
       <div className="glass-header flex items-center gap-5 px-6 py-5 mb-8 rounded-2xl">
         <button
           onClick={onBack}
@@ -50,7 +49,6 @@ function ModeSelection({ onSelect, onBack }) {
         </div>
       </div>
 
-      {/* Mode Cards */}
       <div className="flex-1 flex items-center justify-center">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
           {modes.map((mode) => (
@@ -60,33 +58,25 @@ function ModeSelection({ onSelect, onBack }) {
               className="group relative text-left p-8 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
               aria-label={mode.title}
             >
-              {/* v1.0 ROSE NOIR: Glass Background */}
               <div className="absolute inset-0 glass" />
 
-              {/* Border Glow on Hover */}
               <div className="absolute inset-0 rounded-2xl border border-white/10 group-hover:border-rose-500/50 transition-colors duration-300" />
               
-              {/* Accent Glow */}
               <div className={`absolute top-0 right-0 w-40 h-40 bg-gradient-to-br ${mode.accentColor} opacity-0 group-hover:opacity-10 blur-3xl transition-opacity duration-500`} />
               
-              {/* Content */}
               <div className="relative z-10">
-                {/* Icon */}
                 <div className={`inline-flex p-4 rounded-xl bg-gradient-to-br ${mode.accentColor} bg-opacity-20 text-white mb-6`}>
                   {mode.icon}
                 </div>
 
-                {/* Title - v1.0 ROSE NOIR */}
                 <h3 className="text-xl font-bold text-white mb-3 group-hover:text-rose-400 transition-colors">
                   {mode.title}
                 </h3>
 
-                {/* Description */}
                 <p className="text-zinc-400 text-sm leading-relaxed mb-6">
                   {mode.description}
                 </p>
 
-                {/* Features */}
                 <div className="space-y-2">
                   {mode.features.map((feature, idx) => (
                     <div key={idx} className="flex items-center gap-2 text-xs text-zinc-500">
@@ -96,7 +86,6 @@ function ModeSelection({ onSelect, onBack }) {
                   ))}
                 </div>
 
-                {/* Arrow - v1.0 ROSE NOIR */}
                 <div className="absolute bottom-8 right-8 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all">
                   <svg className="w-6 h-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />

@@ -15,7 +15,7 @@ import { impersonateUser, abortImpersonateCall } from '../lib/chat/impersonate';
 import { passionManager, getTierKey, PASSION_TIERS } from '../lib/chat/passion';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { getModelProfile } from '../lib/modelProfiles';
-import { generateImage, extractConversationContext } from '../lib/imageGen';
+import { loadImageGenModule } from '../lib/loadImageGenModule';
 import TutorialModal from './tutorials/TutorialModal';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
@@ -980,11 +980,9 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
     setGeneratingImage(true);
     try {
-
-      // Generate image using AUTOMATIC1111 API
+      const { generateImage } = await loadImageGenModule();
       const base64Image = await generateImage(imagePrompt, settings.imageGenUrl, settings.imageGenTier || 'standard');
 
-      // Add image to chat history
       const imageMessage = {
         role: 'assistant',
         content: '[Image Generated]',
@@ -1001,6 +999,17 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       toast.error((t.chat.imageGenFailed || '').replace('{error}', error.message));
     } finally {
       setGeneratingImage(false);
+    }
+  };
+
+  const handleUseConversationContext = async () => {
+    try {
+      const { extractConversationContext } = await loadImageGenModule();
+      const cleanedContext = extractConversationContext(messages, character);
+      setImagePrompt(cleanedContext);
+    } catch (error) {
+      console.error('[BLOCK 8.1 Image Gen] ❌ Error:', error);
+      toast.error((t.chat.imageGenFailed || '').replace('{error}', error.message));
     }
   };
 
@@ -2208,10 +2217,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                   </button>
 
                   <button
-                    onClick={() => {
-                      const cleanedContext = extractConversationContext(messages, character);
-                      setImagePrompt(cleanedContext);
-                    }}
+                    onClick={handleUseConversationContext}
                     className="theme-button-secondary w-full rounded-lg px-4 py-2 text-sm transition-all"
                   >
                     {t.chat.useConversationContext}

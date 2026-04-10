@@ -24,7 +24,6 @@ const AICharacterBuilder = lazy(() => import('./components/AICharacterBuilder'))
 const DebugConsole = lazy(() => import('./components/DebugConsole'));
 const OllamaSetup = lazy(() => import('./components/tutorials/OllamaSetup'));
 
-// App views
 const VIEWS = {
   MAIN_MENU: 'main_menu',
   MODE_SELECT: 'mode_select',
@@ -36,8 +35,6 @@ const VIEWS = {
   LOAD_GAME: 'load_game',
   SETTINGS: 'settings',
 };
-
-// v0.2.5: Onboarding Modal removed - Replaced by OllamaSetup.jsx
 
 /** RTL languages that require dir="rtl" on the root element */
 const RTL_LANGUAGES = new Set(['ar']);
@@ -53,30 +50,24 @@ function App() {
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [loadedSession, setLoadedSession] = useState(null);
 
-  // v0.2.5: Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [ollamaReady, setOllamaReady] = useState(false);
 
   const [themeModeActive, setThemeModeActive] = useState(INITIAL_THEME_MODE);
   const [oledModeActive, setOledModeActive] = useState(INITIAL_THEME_MODE === 'oled');
 
-  // v0.2.5: Animations state
   const [animationsActive, setAnimationsActive] = useState(!performanceProfileRef.current.prefersReducedMotion);
 
-  // v0.2.5: Debug Console state
   const [showDebugConsole, setShowDebugConsole] = useState(false);
 
-  // v0.2.5: Event Log & API Monitor state
   const [eventLog, setEventLog] = useState([]);
   const [lastApiResponseTime, setLastApiResponseTime] = useState(null);
 
-  // v0.2.5: AUFGABE 4 - Enhanced API Monitor state
   const [lastResponseWords, setLastResponseWords] = useState(null);
   const [lastResponseTokens, setLastResponseTokens] = useState(null);
   const [lastApiModel, setLastApiModel] = useState(null);
   const [lastApiWPS, setLastApiWPS] = useState(null);
 
-  // v0.2.5: CRITICAL FIX - Lifted Settings State (AUFGABE 1)
   const [settings, setSettings] = useState({
     ollamaUrl: OLLAMA_DEFAULT_URL,
     ollamaModel: DEFAULT_MODEL_NAME,
@@ -85,10 +76,10 @@ function App() {
     userGender: 'male',
     imageGenEnabled: false,
     imageGenUrl: IMAGE_GEN_DEFAULT_URL,
-    imageGenTier: 'standard', // 'standard' (SDXL) or 'premium' (FLUX)
+    imageGenTier: 'standard',
     voiceEnabled: false,
     voiceUrl: VOICE_DEFAULT_URL,
-    voiceTier: 'standard', // 'standard' (Piper) or 'premium' (Zonos)
+    voiceTier: 'standard',
     contextSize: 4096,
     maxResponseTokens: 256,
     fontSize: 'medium',
@@ -121,7 +112,6 @@ function App() {
     setEventLog(prev => [newEvent, ...prev].slice(0, DEBUG_CONSOLE_EVENT_LIMIT));
   };
 
-  // v0.2.5: CRITICAL FIX - Load settings from localStorage on startup
   useEffect(() => {
     async function initializeApp() {
       startDebugTimer('[Startup] Total init');
@@ -176,7 +166,6 @@ function App() {
       }
       endDebugTimer('[Startup] Settings load');
 
-      // v0.2.5: Check Ollama connection (NO API KEY!)
       startDebugTimer('[Startup] Ollama check');
       try {
         const ollamaTest = await testOllamaConnection();
@@ -185,7 +174,6 @@ function App() {
           setOllamaReady(true);
           setShowOnboarding(false);
 
-          // v0.2.5: AUTO-DETECT AND SET MODEL
           const autoDetectResult = await autoDetectAndSetModel();
 
           if (autoDetectResult.success) {
@@ -211,10 +199,8 @@ function App() {
     initializeApp();
   }, []);
 
-  // v0.2.5: Keyboard shortcut for Debug Console (Ctrl+D)
   useEffect(() => {
     const handleKeyPress = (e) => {
-      // Ctrl+D (or Cmd+D on Mac)
       if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
         e.preventDefault();
         setShowDebugConsole(prev => !prev);
@@ -228,7 +214,6 @@ function App() {
     };
   }, []);
 
-  // v0.2.5: API MONITOR - Listen for API stats from ChatInterface
   useEffect(() => {
     const handleApiStats = (event) => {
       const stats = event.detail;
@@ -299,27 +284,23 @@ function App() {
     }
   };
 
-  // v0.2.5: Apply GLOBAL UI SCALING via REM-based font-size
   const applyUIScale = (scale) => {
     const root = document.documentElement;
 
-    // Map scale names to font-size values (REM-based)
     const scaleMap = {
-      'small': '14px',   // 87.5% of default 16px
-      'medium': '16px',  // 100% default
-      'large': '20px'    // 125% of default 16px
+      'small': '14px',
+      'medium': '16px',
+      'large': '20px'
     };
 
     const fontSize = scaleMap[scale] || '16px';
     root.style.fontSize = fontSize;
 
-    // Also keep --app-scale for Debug Console display
     const percentageMap = { 'small': '87.5%', 'medium': '100%', 'large': '125%' };
     root.style.setProperty('--app-scale', percentageMap[scale] || '100%');
 
   };
 
-  // v0.2.5: Apply/remove animations globally
   const applyAnimations = (enabled) => {
     if (!document?.body) return;
 
@@ -342,7 +323,6 @@ function App() {
     applyVisualPerformanceMode(animationsActive);
   }, [animationsActive]);
 
-  // v0.2.5: Retry Ollama connection
   const handleRetryOllama = async () => {
     const ollamaTest = await testOllamaConnection();
 
@@ -352,12 +332,10 @@ function App() {
     }
   };
 
-  // Handle navigation
   const navigate = (view) => {
     setCurrentView(view);
   };
 
-  // Start new game flow
   const handleNewGame = () => {
     setSelectedMode(null);
     setSelectedCharacter(null);
@@ -365,7 +343,6 @@ function App() {
     navigate(VIEWS.MODE_SELECT);
   };
 
-  // Handle mode selection
   const handleModeSelect = (mode) => {
     const nextState = buildManualModeSelectionState(mode);
     setSelectedMode(nextState.selectedMode);
@@ -378,7 +355,6 @@ function App() {
     }
   };
 
-  // Handle character selection
   const handleCharacterSelect = (character) => {
     const nextState = buildManualCharacterSelectionState(character);
     setSelectedCharacter(nextState.selectedCharacter);
@@ -386,7 +362,6 @@ function App() {
     navigate(VIEWS.CHAT_INTERFACE);
   };
 
-  // Handle character creator
   const handleCreateCharacter = () => {
     navigate(VIEWS.CHARACTER_CREATOR);
   };
@@ -395,7 +370,6 @@ function App() {
     navigate(VIEWS.AI_CHARACTER_BUILDER);
   };
 
-  // Handle saving new character
   const handleSaveCharacter = (character) => {
     try {
       const normalizedCharacter = {
@@ -418,19 +392,16 @@ function App() {
       localStorage.setItem('custom_characters', JSON.stringify(updated));
       localStorage.removeItem('customCharacters');
       
-      // Navigate back to character select
       navigate(VIEWS.CHARACTER_SELECT);
     } catch (error) {
       console.error('Error saving character:', error);
     }
   };
 
-  // Handle load game
   const handleLoadGame = () => {
     navigate(VIEWS.LOAD_GAME);
   };
 
-  // Handle loading a session
   const handleSessionLoad = (session) => {
     setLoadedSession(session);
     setSelectedMode(session.mode);
@@ -443,7 +414,6 @@ function App() {
     }
   };
 
-  // Handle settings
   const openSettings = (returnView = VIEWS.MAIN_MENU) => {
     setSettingsReturnView(returnView);
     navigate(VIEWS.SETTINGS);
@@ -453,7 +423,6 @@ function App() {
     openSettings(VIEWS.MAIN_MENU);
   };
 
-  // Handle back navigation
   const handleBack = () => {
     switch (currentView) {
       case VIEWS.MODE_SELECT:
@@ -487,7 +456,6 @@ function App() {
     }
   };
 
-  // Render current view
   const renderView = () => {
     switch (currentView) {
       case VIEWS.MAIN_MENU:
@@ -586,7 +554,6 @@ function App() {
 
   return (
     <div dir={RTL_LANGUAGES.has(language) ? 'rtl' : 'ltr'} className="app-container app-theme-shell h-screen w-screen overflow-hidden">
-      {/* v0.2.5: Onboarding Modal - Replaced by Premium OllamaSetup */}
       {showOnboarding && (
         <Suspense fallback={null}>
           <OllamaSetup
@@ -596,10 +563,8 @@ function App() {
         </Suspense>
       )}
 
-      {/* Custom Title Bar */}
       <TitleBar />
       
-      {/* Main Content Area - Only render if Ollama is ready */}
       {ollamaReady && (
         <main className="h-[calc(100vh-32px)] w-full overflow-hidden">
           <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -624,7 +589,6 @@ function App() {
         currentView={currentView}
       />
 
-      {/* v0.2.5: Debug Console PRO (Ctrl+D) - Enhanced API Monitor */}
       {showDebugConsole && (
         <Suspense fallback={null}>
           <DebugConsole

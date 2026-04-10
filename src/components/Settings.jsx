@@ -1,5 +1,3 @@
-// ARIA v1.0 RELEASE - Settings (Rose Noir Theme)
-
 import { useState, useEffect, useRef } from 'react';
 import { CONTEXT_SIZE_OPTIONS, fetchOllamaModels, getRecommendedContextSizeForModel, normalizeContextSize, testOllamaConnection } from '../lib/ollama';
 import { Globe, Zap, Moon, RefreshCw, Check, X, User, Image, Volume2, HelpCircle, FolderOpen } from 'lucide-react';
@@ -16,14 +14,11 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const recommendedContextSize = getRecommendedContextSizeForModel(settings.ollamaModel);
   const contextIndex = Math.max(0, CONTEXT_SIZE_OPTIONS.indexOf(normalizedContextSize));
 
-  // v0.2.5: All settings now come from props, no local state
-  // Refs to avoid re-registering IPC listeners when props change
   const settingsRef = useRef(settings);
   const onSettingChangeRef = useRef(onSettingChange);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
   useEffect(() => { onSettingChangeRef.current = onSettingChange; }, [onSettingChange]);
 
-  // UI State
   const [availableModels, setAvailableModels] = useState([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
@@ -31,13 +26,11 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const [showTutorial, setShowTutorial] = useState(null);
   const [availableVoiceModels, setAvailableVoiceModels] = useState([]);
 
-  // v0.2.5: HARD SYNC FIX - Force localStorage update on EVERY setting change
   useEffect(() => {
     console.log('[v1.0 Settings Hard Sync] Writing ALL settings to localStorage:', settings);
     localStorage.setItem('settings', JSON.stringify(settings));
   }, [settings]);
 
-  // FIX 3: IPC-based voice status listener
   useEffect(() => {
     const cleanup = window.electronAPI?.onVoiceStatusChanged?.((newValue) => {
       if (settingsRef.current.voiceEnabled !== newValue) {
@@ -49,7 +42,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
     return () => { if (typeof cleanup === 'function') cleanup(); };
   }, []);
 
-  // FIX 2: Settings updated listener (sync from backend)
   useEffect(() => {
     const cleanup = window.electronAPI?.onSettingsUpdated?.((newSettings) => {
       Object.keys(newSettings).forEach(key => {
@@ -63,7 +55,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   }, []);
 
 
-  // FIX 2: Load local voice models on mount
   useEffect(() => {
     const loadVoiceModels = async () => {
       try {
@@ -78,14 +69,10 @@ export default function Settings({ settings, onSettingChange, onClose }) {
     loadVoiceModels();
   }, []);
 
-  // v0.2.5: Auto-detect Ollama models on mount
   useEffect(() => {
     handleLoadModels();
   }, []);
 
-  // ============================================================================
-  // LOAD OLLAMA MODELS (v8.1 FIX: Called on mount)
-  // ============================================================================
 
   const handleLoadModels = async () => {
     setLoadingModels(true);
@@ -95,17 +82,11 @@ export default function Settings({ settings, onSettingChange, onClose }) {
         setAvailableModels(models);
         console.log('[v9.5 Settings] ✅ Found', models.length, 'models');
 
-        // v0.2.5 FIX: Respect PREVIOUSLY SAVED model if it exists in the list
-        // Only auto-select if:
-        // 1. No model currently selected
-        // 2. Currently selected model is NOT in the available list
-        // 3. Current model is 'llama3' placeholder
         
         const currentModelIsValid = settings.ollamaModel && models.includes(settings.ollamaModel);
         const shouldAutoSelect = !settings.ollamaModel || settings.ollamaModel === 'llama3' || !currentModelIsValid;
 
         if (shouldAutoSelect) {
-          // Priority: Hermes 3 -> First available
           const hermes3Model = models.find(m => m.includes('hermes3') || m.includes('hermes-3'));
           
           if (hermes3Model) {
@@ -130,9 +111,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
     }
   };
 
-  // ============================================================================
-  // TEST CONNECTION
-  // ============================================================================
 
   const handleTestConnection = async () => {
     setTestingConnection(true);
@@ -148,9 +126,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
     }
   };
 
-  // ============================================================================
-  // v0.2.5 FIX: CLOSE BUTTON HANDLER
-  // ============================================================================
 
   const handleClose = () => {
     console.log('[v8.1 Settings] 🚪 Closing settings...');
@@ -161,9 +136,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
     }
   };
 
-  // ============================================================================
-  // RENDER
-  // ============================================================================
 
   return (
     <div
@@ -171,7 +143,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
       style={{ overflowY: 'auto' }}
     >
       <div className="max-w-4xl mx-auto">
-        {/* v1.0 ROSE NOIR: Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-lg shadow-rose-500/30">
@@ -189,7 +160,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
           </div>
 
-          {/* Close button with Rose accent */}
           <button
             onClick={handleClose}
             className="px-5 py-2.5 glass hover:bg-rose-500/10 hover:border-rose-500/30 border border-white/10 rounded-xl transition-all duration-200 text-zinc-300 hover:text-rose-300 font-medium flex items-center gap-2"
@@ -199,9 +169,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
           </button>
         </div>
 
-        {/* Settings Sections */}
         <div className="space-y-6">
-          {/* v1.0 ROSE NOIR: USER SETTINGS */}
           <section className="glass rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
@@ -213,7 +181,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
 
             <div className="space-y-4">
-              {/* User Name */}
               <div>
                 <label className="block text-sm font-medium theme-text-muted mb-2">{t.settings.userName}</label>
                 <input
@@ -230,7 +197,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                 </p>
               </div>
 
-              {/* User Gender & Anatomy - BLOCK 7.2: No z-index needed with Portal */}
               <div>
                 <label className="block text-sm font-medium theme-text-muted mb-2">{t.settings.userGender}</label>
                 <CustomDropdown
@@ -250,7 +216,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
           </section>
 
-          {/* v1.0 ROSE NOIR: OLLAMA SETTINGS */}
           <section className="glass rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
@@ -404,7 +369,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                 </p>
               </div>
 
-              {/* Test Connection */}
               <div className="pt-4 border-t border-white/5">
                 <button
                   onClick={handleTestConnection}
@@ -444,7 +408,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
           </section>
 
-          {/* v1.0 ROSE NOIR: IMAGE GENERATION SETTINGS */}
           <section className="glass rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
@@ -456,7 +419,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
 
             <div className="space-y-4">
-              {/* v1.0 UX FIX: Click OFF → Opens Tutorial directly */}
               <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                 <div>
                   <span className="text-sm text-zinc-300">{t.settings.enableImageGen}</span>
@@ -479,7 +441,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                 </button>
               </div>
 
-              {/* Tier Selection: Standard (SDXL) vs Premium (FLUX) */}
               {settings.imageGenEnabled && (
                 <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                   <div>
@@ -513,7 +474,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                 </div>
               )}
 
-              {/* Tutorial Link - Always visible */}
               <button
                 onClick={() => setShowTutorial('imageGen')}
                 className="w-full px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-lg text-sm text-purple-300 transition-all flex items-center justify-center gap-2"
@@ -543,7 +503,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
           </section>
 
-          {/* v1.0 ROSE NOIR: VOICE/TTS SETTINGS */}
           <section className="glass rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
@@ -555,7 +514,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
 
             <div className="space-y-4">
-              {/* v1.0 UX FIX: Click OFF → Opens Tutorial directly */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                   <div>
@@ -567,11 +525,9 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   <button
                     onClick={async () => {
                       const newValue = !settings.voiceEnabled;
-                      // FIX 3: Save via IPC (broadcasts automatically)
                       const updatedSettings = { ...settings, voiceEnabled: newValue };
                       localStorage.setItem('settings', JSON.stringify(updatedSettings));
                       await window.electronAPI?.saveSettings?.(updatedSettings);
-                      // Optimistic update
                       onSettingChange('voiceEnabled', newValue);
                     }}
                     className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
@@ -584,7 +540,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   </button>
                 </div>
 
-                {/* Tutorial Link - Always visible */}
                 <button
                   onClick={() => setShowTutorial('voice')}
                   className="w-full px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 rounded-lg text-sm text-cyan-300 transition-all flex items-center justify-center gap-2"
@@ -593,7 +548,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   <span>{t.settings.openSetupTutorial}</span>
                 </button>
 
-                {/* Tier Selection: Standard (Piper) vs Premium (Zonos) */}
                 {settings.voiceEnabled && (
                   <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                     <div>
@@ -640,7 +594,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                         value={settings.piperPath || ''}
                         onChange={(e) => {
                           onSettingChange('piperPath', e.target.value);
-                          // Save immediately to preserve path
                           const updatedSettings = { ...settings, piperPath: e.target.value };
                           window.electronAPI.saveSettings(updatedSettings);
                         }}
@@ -654,7 +607,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                           ]);
                           if (path) {
                             onSettingChange('piperPath', path);
-                            // Immediate disk save
                             const updatedSettings = { ...settings, piperPath: path };
                             await window.electronAPI.saveSettings(updatedSettings);
                           }
@@ -725,7 +677,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                         });
 
                         if (result?.success && result?.audioData) {
-                          // Play audio in renderer process
                           const audio = new Audio(result.audioData);
                           audio.volume = settings.voiceVolume ?? 1.0;
                           await audio.play();
@@ -783,7 +734,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
           </section>
 
-          {/* BLOCK 8.0: LANGUAGE SETTINGS - Global i18n */}
           <section className="glass rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
@@ -829,7 +779,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
           </section>
 
-          {/* v1.0 ROSE NOIR: APPEARANCE */}
           <section className="glass rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
@@ -841,7 +790,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
 
             <div className="space-y-4">
-              {/* v1.0 ROSE NOIR: Global UI Scale */}
               <div>
                 <label className="block text-sm font-medium theme-text-muted mb-2">{t.settings.globalUIScale}</label>
                 <div className="grid grid-cols-3 gap-3">
@@ -867,7 +815,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                 </div>
               </div>
 
-              {/* Toggle Settings */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                   <span className="text-sm text-zinc-300">{t.settings.autoSave}</span>
@@ -883,7 +830,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   </button>
                 </div>
 
-                {/* v0.2.5: AUFGABE 2 - Replaced "Sound Effects" with "Smart Suggestions" */}
                 <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                   <div className="flex flex-col">
                     <span className="text-sm text-zinc-300">{t.settings.smartSuggestions}</span>
@@ -949,7 +895,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
           </section>
 
-          {/* v1.0 ROSE NOIR: Auto-save notice */}
           <div className="glass rounded-2xl p-4 border border-emerald-500/20">
             <div className="flex items-center gap-3 text-emerald-300">
               <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
@@ -962,7 +907,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
           </div>
         </div>
 
-        {/* BLOCK 7.0: New Tutorial Components */}
         {showTutorial === 'imageGen' && (
           <ImageGenSetup
             onClose={() => setShowTutorial(null)}

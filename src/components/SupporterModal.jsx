@@ -1,4 +1,3 @@
-// ARIA v1.0 RELEASE - SupporterModal (Final Polish - Pay What You Want Slider)
 import { useState, useEffect } from 'react';
 import { Heart, X, Sparkles, Crown } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
@@ -19,7 +18,6 @@ export default function SupporterModal({ onClose }) {
   const [showGoldTheme, setShowGoldTheme] = useState(false);
   const [validationMessage, setValidationMessage] = useState(null);
 
-  // Close on Escape key
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') onClose();
@@ -28,7 +26,6 @@ export default function SupporterModal({ onClose }) {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
-  // Load Premium status and Gold Theme preference on mount
   useEffect(() => {
     const saved = localStorage.getItem('isSupporter');
     if (saved === 'true') {
@@ -57,7 +54,6 @@ export default function SupporterModal({ onClose }) {
   const handleGoldThemeToggle = (enabled) => {
     setShowGoldTheme(enabled);
     localStorage.setItem('goldThemeEnabled', enabled.toString());
-    // Dispatch event to notify other components
     window.dispatchEvent(new Event('gold-theme-changed'));
   };
 
@@ -68,7 +64,6 @@ export default function SupporterModal({ onClose }) {
     }
   };
 
-  // Dynamic gradient calculation based on donation amount
   const getGradientClasses = () => {
     if (donationAmount >= 5 && donationAmount <= 15) {
       return {
@@ -103,7 +98,6 @@ export default function SupporterModal({ onClose }) {
   const gradient = getGradientClasses();
   const sliderPercentage = ((donationAmount - 5) / (50 - 5)) * 100;
 
-  // Generate Minimalist Rose Particles (8 particles)
   const particles = Array.from({ length: 8 }, (_, i) => ({
     id: i,
     left: `${Math.random() * 100}%`,
@@ -111,10 +105,8 @@ export default function SupporterModal({ onClose }) {
     duration: `${15 + Math.random() * 10}s`
   }));
 
-  // Theme based on Gold Mode toggle
   const useGoldTheme = showGoldTheme && isPremium;
 
-  // Base perks
   const basePerks = [
     { icon: '⭐', text: t.supporter.unlocksGoldMode },
     { icon: '✨', text: t.supporter.premiumCharacters },
@@ -122,18 +114,15 @@ export default function SupporterModal({ onClose }) {
     { icon: '🚀', text: t.supporter.betaFeatures }
   ];
 
-  // Conditional perk for 30€+
   const perks = donationAmount >= 30
     ? [...basePerks, { icon: '🏆', text: t.supporter.eternalGratitude }]
     : basePerks;
 
-  // Tick marks positions (5, 10, 15, 20, 25, 30, 40, 50)
   const tickMarks = [5, 10, 15, 20, 25, 30, 40, 50];
   const getTickPosition = (value) => ((value - 5) / 45) * 100;
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center overflow-hidden bg-zinc-950">
-      {/* Minimalist Rose Particles Background - Backdrop Click to Close */}
       <div 
         className="absolute inset-0 overflow-hidden cursor-pointer"
         onClick={onClose}
@@ -151,16 +140,13 @@ export default function SupporterModal({ onClose }) {
         ))}
       </div>
 
-      {/* Modal Container */}
       <div className="relative bg-zinc-950 border border-rose-500/20 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden backdrop-blur-md">
-        {/* Velvet Noise Texture */}
         <div 
           className="absolute inset-0 pointer-events-none opacity-5"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.5'/%3E%3C/svg%3E")`
           }}
         />
-        {/* Header */}
         <div className={`p-8 border-b ${useGoldTheme ? 'border-amber-400/20' : 'border-rose-500/20'} bg-zinc-900/50 backdrop-blur-md`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -173,7 +159,6 @@ export default function SupporterModal({ onClose }) {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {/* Gold Theme Toggle (if Premium) */}
               {isPremium && (
                 <div className="flex items-center gap-2">
                   <Crown size={18} className={useGoldTheme ? 'text-amber-400' : 'text-rose-400'} />
@@ -201,11 +186,8 @@ export default function SupporterModal({ onClose }) {
           </div>
         </div>
 
-        {/* Content */}
         <div className="p-8 overflow-y-auto max-h-[calc(90vh-200px)]">
-          {/* Slider Section (Centerpiece) */}
           <div className="mb-8">
-            {/* Amount Display */}
             <div className="text-center mb-8">
               <div className={`text-7xl font-bold mb-2 ${gradient.textColor}`}>
                 €{donationAmount}
@@ -213,7 +195,6 @@ export default function SupporterModal({ onClose }) {
               <p className="text-sm text-zinc-400">{t.supporter.payWhatYouWant}</p>
             </div>
 
-            {/* Custom Range Slider with Tick Marks */}
             <div className="mb-8 relative">
               <div className="relative w-full">
                 <input
@@ -233,7 +214,6 @@ export default function SupporterModal({ onClose }) {
                   }}
                 />
                 
-                {/* Tick Marks - Precise alignment */}
                 <div className="absolute top-3 left-0 w-full h-2 pointer-events-none">
                   {tickMarks.map((tick) => (
                     <div
@@ -245,14 +225,12 @@ export default function SupporterModal({ onClose }) {
                 </div>
               </div>
               
-              {/* Slider Labels */}
               <div className="flex justify-between mt-4 text-xs text-zinc-500">
                 <span>€5</span>
                 <span>€50</span>
               </div>
             </div>
 
-            {/* What You Get Box */}
             <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-6 border border-zinc-800 mb-8">
               <h3 className="text-lg font-bold text-white mb-5">{t.supporter.whatYouGet}</h3>
               <ul className="space-y-3">
@@ -266,7 +244,6 @@ export default function SupporterModal({ onClose }) {
             </div>
           </div>
 
-          {/* Main Action Button */}
           <button
             onClick={openKoFi}
             className={`w-full py-4 bg-gradient-to-r ${gradient.from} ${gradient.to} hover:opacity-90 rounded-xl text-white font-bold text-lg transition-all shadow-lg ${gradient.shadowColor} hover:shadow-xl mb-8`}
@@ -274,7 +251,6 @@ export default function SupporterModal({ onClose }) {
             {t.supporter.ignitePassion.replace('{amount}', donationAmount)}
           </button>
 
-          {/* Activation Section */}
           <div className="rounded-xl p-6 border border-zinc-800 bg-zinc-900/30 backdrop-blur-md">
             <div className="flex items-center gap-3 mb-4">
               <Sparkles size={22} className={useGoldTheme ? 'text-amber-400' : 'text-rose-400'} />
@@ -314,7 +290,6 @@ export default function SupporterModal({ onClose }) {
             )}
           </div>
 
-          {/* Footer Note */}
           <div className="mt-8 text-center">
             <p className="text-sm text-zinc-500 leading-relaxed">
               {t.supporter.ariaStaysFree.split('{free}')[0]}
@@ -325,7 +300,6 @@ export default function SupporterModal({ onClose }) {
         </div>
       </div>
 
-      {/* CSS Animations & Custom Slider Styles */}
       <style>{`
         @keyframes floatUp {
           0% {

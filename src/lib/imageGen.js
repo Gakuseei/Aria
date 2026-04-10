@@ -958,7 +958,7 @@ function cleanContextForImageWithPriority(recentText, olderText, character = '')
     { pattern: /\b(robe|bath[^,.]*robe)\b/i, tag: 'bathrobe, loosely tied, casual' },
     { pattern: /\b(towel|just[^,.]*towel)\b/i, tag: 'wrapped in towel, post-shower' },
     { pattern: /\b(oversized[^,.]*shirt|boyfriend[^,.]*shirt)\b/i, tag: 'oversized shirt, boyfriend shirt, casual' },
-    { parameter: /\b(sweater|cozy|warm)\b/i, tag: 'cozy sweater, warm, casual' },
+    { pattern: /\b(sweater|cozy|warm)\b/i, tag: 'cozy sweater, warm, casual' },
     { pattern: /\b(tank[^,.]*top|sleeveless)\b/i, tag: 'tank top, sleeveless, casual' },
     { pattern: /\b(tube[^,.]*top|strapless)\b/i, tag: 'tube top, strapless, showing shoulders' },
     

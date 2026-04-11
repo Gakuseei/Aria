@@ -125,6 +125,23 @@ function isUsableWriteForMeDraft(finalized, history = [], options = {}) {
   return score >= 18;
 }
 
+function normalizeWriteForMeDraft(draft) {
+  if (!draft) {
+    return {
+      text: '',
+      repaired: false,
+      valid: false
+    };
+  }
+
+  const shortenedText = shortenWriteForMeDraft(draft.text);
+  return {
+    ...draft,
+    text: shortenedText,
+    valid: Boolean(draft.valid && shortenedText)
+  };
+}
+
 export function finalizeImpersonateDraft(rawText, { charName = '', userName = 'User' } = {}) {
   let cleaned = String(rawText || '').trim();
   if (!cleaned) {
@@ -273,7 +290,7 @@ export async function impersonateUser(history, character, userName, passionLevel
         if (!result.success) {
           throw new Error(result.error || 'Chat failed');
         }
-        return finalizeImpersonateDraft(result.content || '', { charName, userName });
+        return normalizeWriteForMeDraft(finalizeImpersonateDraft(result.content || '', { charName, userName }));
       } finally {
         impersonateAbortController = null;
       }
@@ -293,7 +310,7 @@ export async function impersonateUser(history, character, userName, passionLevel
 
       try {
         const data = await res.json();
-        return finalizeImpersonateDraft(data.message?.content || '', { charName, userName });
+        return normalizeWriteForMeDraft(finalizeImpersonateDraft(data.message?.content || '', { charName, userName }));
       } finally {
         impersonateAbortController = null;
       }
@@ -335,7 +352,6 @@ export async function impersonateUser(history, character, userName, passionLevel
     throw new Error('Failed to generate a usable draft');
   }
 
-  const shortened = shortenWriteForMeDraft(finalized.text);
-  onToken(null, shortened);
-  return shortened;
+  onToken(null, finalized.text);
+  return finalized.text;
 }

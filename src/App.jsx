@@ -12,7 +12,7 @@ import { testOllamaConnection, autoDetectAndSetModel, normalizeContextSize } fro
 import { applyPerformanceProfile, getPerformanceProfile } from './lib/performance';
 import { normalizeResponseMode } from './lib/responseModes';
 import { loadSettings } from './lib/storage/settings';
-import { applyThemeMode, bootstrapThemeMode, withResolvedThemeSettings } from './lib/theme';
+import { applyThemeMode, bootstrapThemeMode, normalizeThemeMode, withResolvedThemeSettings } from './lib/theme';
 
 const CharacterSelect = lazy(() => import('./components/CharacterSelect'));
 const ChatInterface = lazy(() => import('./components/ChatInterface'));

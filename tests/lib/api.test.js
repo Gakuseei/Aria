@@ -7,6 +7,7 @@ import {
   deriveAssistBudgetTier,
   finalizeImpersonateDraft,
   generateSuggestionsBackground,
+  impersonateUser,
   isUnderfilledShortReply,
   normalizeSuggestionDisplayValue,
   parseSuggestionResponse,
@@ -740,6 +741,64 @@ describe('finalizeImpersonateDraft', () => {
     );
 
     expect(finalized.valid).toBe(false);
+  });
+});
+
+describe('impersonateUser', () => {
+  it('accepts a long draft once shortening makes it sendable', async () => {
+    const longDraft = `"Ah, good morning Alice," I say warmly, smiling at her polite demeanor. "Your work is exemplary as always - the room looks spotless. I have one more small task for you, if you're willing."
+
+I pause briefly before continuing, wanting to gauge her eagerness to please. "Could you possibly prepare some tea and light refreshments? I find that helps me start my day on the right foot." I give her an encouraging nod, knowing she'll jump at the chance to`;
+    const displayed = [];
+    const fetchMock = vi.fn(async (url) => {
+      if (String(url).endsWith('/api/show')) {
+        return createJsonResponse({
+          details: { parameter_size: '12B' },
+          model_info: { 'general.context_length': 8192 }
+        });
+      }
+
+      if (String(url).endsWith('/api/chat')) {
+        return {
+          ...createJsonResponse({ message: { content: longDraft } }),
+          body: {}
+        };
+      }
+
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    global.fetch = fetchMock;
+
+    const result = await impersonateUser(
+      [{ role: 'assistant', content: '*She smooths her apron.* "Good morning, Master."' }],
+      {
+        name: 'Alice',
+        category: 'nsfw',
+        systemPrompt: 'Alice is shy, dutiful, and eager to please.',
+        instructions: 'Stay grounded in the current beat.',
+        scenario: 'A quiet private estate hallway.'
+      },
+      'Master',
+      0,
+      {
+        ollamaUrl: 'http://127.0.0.1:11434',
+        ollamaModel: 'ghostwrite-long-test-model:1',
+        contextSize: 4096,
+        maxResponseTokens: 256,
+        temperature: 0.8
+      },
+      (_token, display) => displayed.push(display),
+      null,
+      false
+    );
+
+    expect(result).toBe(displayed.at(-1));
+    expect(result).toContain('good morning Alice');
+    expect(result).toContain('room looks spotless');
+    expect(result).not.toContain('Could you possibly prepare some tea');
+    expect(result.length).toBeLessThanOrEqual(220);
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/api/chat'))).toHaveLength(1);
   });
 });
 

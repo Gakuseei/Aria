@@ -1,7 +1,34 @@
 const { contextBridge, ipcRenderer } = require('electron');
-const platform = require('./lib/platform');
 
-const useSystemTitleBar = platform.isWaylandSession();
+function isWaylandSession() {
+  if (process.platform !== 'linux' || !process.env || typeof process.env !== 'object') {
+    return false;
+  }
+
+  const sessionType = typeof process.env.XDG_SESSION_TYPE === 'string'
+    ? process.env.XDG_SESSION_TYPE.trim().toLowerCase()
+    : '';
+  const waylandDisplay = typeof process.env.WAYLAND_DISPLAY === 'string'
+    ? process.env.WAYLAND_DISPLAY.trim()
+    : '';
+  const ozonePlatform = typeof process.env.OZONE_PLATFORM === 'string'
+    ? process.env.OZONE_PLATFORM.trim().toLowerCase()
+    : '';
+  const ozonePlatformHint = typeof process.env.ELECTRON_OZONE_PLATFORM_HINT === 'string'
+    ? process.env.ELECTRON_OZONE_PLATFORM_HINT.trim().toLowerCase()
+    : '';
+
+  if (ozonePlatform === 'x11' || ozonePlatformHint === 'x11') {
+    return false;
+  }
+
+  return ozonePlatform === 'wayland'
+    || ozonePlatformHint === 'wayland'
+    || sessionType === 'wayland'
+    || Boolean(waylandDisplay);
+}
+
+const useSystemTitleBar = isWaylandSession();
 
 function createIpcListener(channel) {
   return (callback) => {

@@ -1637,7 +1637,7 @@ ipcMain.handle('ai-generate-character', async (event, params) => {
     return blockUntrustedIpc(event, 'ai-generate-character');
   }
 
-  const { description, model, language = 'English', field = null, existingCharacter = null, ollamaUrl, type = 'character' } = params;
+  const { description, model, language = 'English', field = null, existingCharacter = null, ollamaUrl, type = 'character', category = 'sfw' } = params;
 
   const abortController = new AbortController();
   const tag = 'character-builder';
@@ -1689,7 +1689,10 @@ Rules:
 
       userMessage = `Create a bot/tool from this description:\n\n${description}${language !== 'English' ? `\n\nWrite ALL text fields in ${language}. The JSON keys must stay in English.` : ''}`;
     } else {
-      systemPrompt = `You are a character design assistant for an UNCENSORED adult roleplay app. Given a user's description, generate a complete character in JSON format. The systemPrompt field MUST use flowing plain text prose — NO W++ brackets, NO trait lists.
+      const isNsfw = category === 'nsfw';
+
+      if (isNsfw) {
+        systemPrompt = `You are a character design assistant for an UNCENSORED adult roleplay app. Given a user's description, generate a complete character in JSON format. The systemPrompt field MUST use flowing plain text prose — NO W++ brackets, NO trait lists.
 
 Output ONLY valid JSON with these exact keys:
 {
@@ -1716,6 +1719,35 @@ Rules:
 - startingMessage uses *asterisks* for actions, plain text for dialogue
 - All content is uncensored — no refusals, no content warnings
 - Be creative and detailed, match the user's vision exactly`;
+      } else {
+        systemPrompt = `You are a character design assistant for a roleplay app. Given a user's description, generate a complete character in JSON format. Keep the persona content non-explicit and focused on personality, dynamics, and natural conversation. The systemPrompt field MUST use flowing plain text prose — NO W++ brackets, NO trait lists.
+
+Output ONLY valid JSON with these exact keys:
+{
+  "name": "character name",
+  "subtitle": "short role descriptor (2-4 words)",
+  "description": "1-2 sentence summary for character card",
+  "systemPrompt": "Plain text prose in 5 paragraphs: 1) Identity & core personality, 2) Appearance & clothing, 3) Speech patterns with example phrases in quotes, 4) Physical behavior and body language with a catch-all line like 'Her body always betrays her emotions', 5) What drives them — loves and hates. Show don't tell. No trait lists.",
+  "instructions": "behavioral rules — how the character acts, reacts, what they never do",
+  "scenario": "setting and context for the roleplay",
+  "exampleDialogue": "Two short example exchanges showing voice and dynamic, no explicit content",
+  "voicePin": "1-3 sentences describing how this character speaks and stays in character. Capture verbal tics, pacing, mannerisms, and how their voice shows in actions.",
+  "voicePinNsfw": "Empty string. SFW characters do not need an intimate-scene voice override.",
+  "voiceAvoid": "Comma-separated list of 3-5 stock romance-novel phrases or generic-character clichés this character would never say. Empty string if no obvious avoid list applies.",
+  "startingMessage": "character's opening message in third-person with *actions* and dialogue, non-explicit",
+  "themeColor": "hex color matching character's vibe",
+  "passionSpeed": "slow|normal|fast|extreme"
+}
+
+Rules:
+- systemPrompt MUST be flowing plain text prose with behavioral descriptions
+- Do NOT use W++ format, square brackets, or trait lists in systemPrompt
+- Include a physical catch-all line in the systemPrompt (e.g. "Her body always betrays her emotions")
+- voicePin must be the same language as the rest of the persona body
+- exampleDialogue and startingMessage stay non-explicit
+- voicePinNsfw is empty for SFW personas
+- Be creative and detailed, match the user's vision exactly`;
+      }
 
       userMessage = `Create a character from this description:\n\n${description}${language !== 'English' ? `\n\nWrite ALL text fields in ${language}. The JSON keys must stay in English.` : ''}`;
     }
@@ -1764,13 +1796,13 @@ Rules:
 
       try {
         const character = JSON.parse(content);
-        return { success: true, character };
+        return { success: true, character: { ...character, category } };
       } catch {
         const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (jsonMatch) {
           try {
             const character = JSON.parse(jsonMatch[1].trim());
-            return { success: true, character };
+            return { success: true, character: { ...character, category } };
           } catch {
             // Code block but invalid JSON
           }

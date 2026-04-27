@@ -655,3 +655,47 @@ describe('buildRuntimeState voice pin resolution', () => {
     expect(runtimeState.voicePinResolution.pin).toContain('established voice');
   });
 });
+
+describe('assembleRuntimeContext voice pin injection (reply profile)', () => {
+  it('appends a synthetic system message at the end of historyMessages', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Alice',
+        category: 'nsfw',
+        systemPrompt: 'Alice is shy.',
+        voicePin: 'Stutters when nervous.',
+        voiceAvoid: 'porcelain'
+      },
+      history: [
+        { role: 'user', content: 'good morning' },
+        { role: 'assistant', content: '*curtsies* "Good morning, Master."' }
+      ],
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1200 }
+    });
+
+    const ctx = assembleRuntimeContext({ profile: 'reply', runtimeState });
+    const messages = ctx.historyMessages;
+    const lastMessage = messages[messages.length - 1];
+
+    expect(lastMessage.role).toBe('system');
+    expect(lastMessage.content).toContain('Voice anchor:');
+    expect(lastMessage.content).toContain('Stutters when nervous');
+    expect(lastMessage.content).toContain('Avoid:');
+  });
+
+  it('does not append a voice pin message for non-reply profiles', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Alice',
+        category: 'nsfw',
+        systemPrompt: 'Alice is shy.',
+        voicePin: 'Stutters when nervous.'
+      },
+      history: [{ role: 'user', content: 'hi' }],
+      runtimeSteering: { profile: 'suggestions', availableContextTokens: 1200 }
+    });
+
+    const ctx = assembleRuntimeContext({ profile: 'suggestions', runtimeState });
+    expect(ctx.historyMessages).toBeUndefined();
+  });
+});

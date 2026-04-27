@@ -1,6 +1,6 @@
 import { getDepthInstruction } from '../chat/passion/index.js';
 import { getResponseModeConfig, normalizeResponseMode } from '../responseModes.js';
-import { buildPlainTextBlock, clipToTokenTarget, estimateTokens, splitSentences, trimPromptSnippet } from './text.js';
+import { buildPlainTextBlock, buildVoicePinBlock, clipToTokenTarget, estimateTokens, splitSentences, trimPromptSnippet } from './text.js';
 import { renderActiveScene } from './runtimeState.js';
 
 const PROFILE_BUDGET_TARGETS = {
@@ -523,10 +523,24 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
 
     debug.historyCountKept = historyMessages.length;
 
+    const finalHistoryMessages = historyMessages.map((message) => ({ role: message.role, content: message.content }));
+
+    const voicePinBlock = buildVoicePinBlock({
+      pin: runtimeState.voicePinResolution?.pin,
+      avoid: runtimeState.voicePinResolution?.avoid
+    });
+    if (voicePinBlock) {
+      finalHistoryMessages.push({ role: 'system', content: voicePinBlock });
+      debug.voicePinInjected = true;
+      debug.voicePinSource = runtimeState.voicePinResolution?.source || 'unknown';
+    } else {
+      debug.voicePinInjected = false;
+    }
+
     return {
       profile,
       systemPrompt,
-      historyMessages: historyMessages.map((message) => ({ role: message.role, content: message.content })),
+      historyMessages: finalHistoryMessages,
       debug
     };
   }

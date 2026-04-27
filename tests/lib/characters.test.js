@@ -112,3 +112,22 @@ describe('characters', () => {
     expect(cats.sfw).toBe(5);
   });
 });
+
+describe('built-in characters voice pins', () => {
+  it('has voicePin defined for Alice, Sarah, Adrian, and Lily', () => {
+    const targetIds = ['alice_maid', 'sarah_bartender', 'adrian_dark', 'lily_student'];
+    const targets = targetIds.map(id => characters.find(c => c.id === id));
+    for (const character of targets) {
+      expect(character).toBeDefined();
+      expect(character.voicePin).toBeTruthy();
+      expect(character.voicePin.length).toBeGreaterThan(40);
+    }
+  });
+
+  it('has voicePinNsfw set for Alice and Sarah where intimate-scene voice differs', () => {
+    const alice = characters.find(c => c.id === 'alice_maid');
+    const sarah = characters.find(c => c.id === 'sarah_bartender');
+    expect(alice.voicePinNsfw).toBeTruthy();
+    expect(sarah.voicePinNsfw).toBeTruthy();
+  });
+});

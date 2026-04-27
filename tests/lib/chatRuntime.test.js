@@ -759,6 +759,21 @@ Ihr Körper verrät sie immer. Sie wischt das gleiche Glas zweimal wenn sie nerv
     expect(runtimeCard.characterCore).toContain('Kurze Eröffnung');
     expect(runtimeCard.characterCore).toContain('Kurzer dritter Absatz');
   });
+
+  it('frequency scoring boosts paragraphs that repeat distinctive card tokens', () => {
+    const firstPara = 'Mira watches each new guest with patient gray eyes, leaning against the oak counter quietly during long afternoons spent organizing dusty volumes alphabetically.';
+    const lowFrequencyPara = 'She speaks softly to strangers and laughs aloud over coffee in a tiny harbor town painted pale yellow. She paints watercolor portraits of sleeping cats, humming gentle melodies while flipping pages of glossy magazines she bought yesterday morning at sunrise behind salty docks.';
+    const highFrequencyPara = 'Mira keeps her library spotless. Mira polishes brass railings each dawn. Mira values silence above all else, refusing distraction from chattering newcomers. Mira shelves rare manuscripts at midnight. Mira inspects each corner. Mira double-checks every catalog entry.';
+
+    const runtimeCard = compileCharacterRuntimeCard({
+      name: 'Mira',
+      systemPrompt: `${firstPara}\n\n${lowFrequencyPara}\n\n${highFrequencyPara}`,
+      instructions: 'Mira responds calmly. Mira observes carefully.'
+    });
+
+    expect(runtimeCard.characterCore).toContain('Mira keeps her library spotless');
+    expect(runtimeCard.characterCore).not.toContain('She speaks softly to strangers');
+  });
 });
 
 describe('assembleRuntimeContext late steering (trimmed)', () => {

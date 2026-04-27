@@ -55,8 +55,6 @@ function scoreCharacterParagraph(entry, frequencyMap) {
   let score = entry.source === 'systemPrompt' ? 20 : 14;
 
   if (entry.source === 'systemPrompt' && entry.index === 0) score += 14;
-  if (entry.source === 'instructions' && entry.index === 0) score += 6;
-  if (entry.source === 'instructions') score += 3;
 
   const length = entry.text.length;
   if (length >= 80 && length <= 280) score += 6;

@@ -555,8 +555,8 @@ describe('assembleRuntimeContext', () => {
     const suggestionState = { ...botState, runtimeSteering: { ...botState.runtimeSteering, profile: 'suggestions', avoidSuggestions: [] } };
     const suggestionContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState: suggestionState });
 
-    expect(replyContext.systemPrompt).toContain('Respond as the configured bot or scenario without roleplay framing.');
-    expect(replyContext.systemPrompt).not.toContain('Keep actions in third person inside *asterisks*');
+    expect(replyContext.systemPrompt).toContain('Respond as the configured bot.');
+    expect(replyContext.systemPrompt).not.toContain('Actions go in *asterisks*');
     expect(replyContext.systemPrompt).not.toContain('Continue the active scene with DeskBot');
     expect(suggestionContext.systemPrompt).toContain('same exchange with DeskBot');
     expect(suggestionContext.userPrompt).toContain('Write one stay sendable reply for Erik in the same exchange');
@@ -716,5 +716,20 @@ describe('assembleRuntimeContext (Persona Anchor removed)', () => {
 
     const ctx = assembleRuntimeContext({ profile: 'reply', runtimeState });
     expect(ctx.systemPrompt).not.toContain('Persona Anchor');
+  });
+});
+
+describe('compileCharacterRuntimeCard globalCore (trimmed)', () => {
+  it('produces a short minimal globalCore for reply profile', () => {
+    const runtimeCard = compileCharacterRuntimeCard({
+      name: 'Alice',
+      systemPrompt: 'Alice is shy.',
+      category: 'nsfw'
+    });
+    expect(runtimeCard.globalCore.length).toBeLessThan(280);
+    expect(runtimeCard.globalCore).toContain("You are {{char}}");
+    expect(runtimeCard.globalCore).toContain('asterisks');
+    expect(runtimeCard.globalCore).not.toContain('Preserve location, pacing, physical continuity');
+    expect(runtimeCard.globalCore).not.toContain('Never reveal');
   });
 });

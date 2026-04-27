@@ -381,7 +381,6 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('Active Scene:');
     expect(prompt).toContain('Example Seed:');
     expect(prompt).toContain('Late Steering:');
-    expect(prompt).toContain('Keep the interaction non-explicit.');
     expect(prompt).toContain('Erik: How was your day?');
     expect(prompt).toContain('Mei: *She wipes the counter.* "Busy."');
     expect(prompt).toContain("Lead with the reply itself.");
@@ -405,7 +404,6 @@ describe('buildSystemPrompt', () => {
     });
 
     expect(prompt).not.toContain('[Instructions:');
-    expect(prompt).toContain('Explicit intimacy is allowed when the scene leads there.');
     expect((prompt.match(/immediate in-character physical compliance/g) || [])).toHaveLength(1);
   });
 
@@ -422,8 +420,8 @@ describe('buildSystemPrompt', () => {
       responseMode: 'normal'
     });
 
-    expect(prompt).toContain('Respond as the configured bot or scenario without roleplay framing.');
-    expect(prompt).not.toContain('Keep actions in third person inside *asterisks* and dialogue in plain text.');
+    expect(prompt).toContain('Respond as the configured bot.');
+    expect(prompt).not.toContain('Actions go in *asterisks*.');
     expect(prompt).not.toContain('Continue the active scene with DeskBot instead of summarizing or resetting it.');
   });
 });

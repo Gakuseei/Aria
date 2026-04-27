@@ -5,7 +5,7 @@ import { renderActiveScene } from './runtimeState.js';
 
 const PROFILE_BUDGET_TARGETS = {
   reply: {
-    globalCore: 80,
+    globalCore: 60,
     characterCore: 290,
     activeScene: 140,
     exampleSeed: 180,

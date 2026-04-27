@@ -886,6 +886,28 @@ function calculateHistoryBudget(totalBudget, profile) {
   return Math.max(180, Math.min(sharedBudget, reservedBudget));
 }
 
+const VOICE_PIN_FALLBACK = "Stay in {{char}}'s established voice and mannerisms across all scene types, including intimate moments. Reuse the speech patterns and physical reactions visible in earlier turns rather than shifting into generic intimate-scene prose.";
+
+function resolveVoicePin({ character, charName, assistMode }) {
+  const defaultPin = String(character?.voicePin || '').trim();
+  const nsfwPin = String(character?.voicePinNsfw || '').trim();
+  const avoid = String(character?.voiceAvoid || '').trim();
+
+  if (assistMode === 'nsfw_only' && nsfwPin) {
+    return { pin: nsfwPin, avoid, source: 'voicePinNsfw' };
+  }
+
+  if (defaultPin) {
+    return { pin: defaultPin, avoid, source: 'voicePin' };
+  }
+
+  return {
+    pin: VOICE_PIN_FALLBACK.replace(/\{\{char\}\}/g, charName || 'the character'),
+    avoid: '',
+    source: 'fallback'
+  };
+}
+
 export function buildRuntimeState({ character, history, userName = 'User', runtimeSteering = {} }) {
   const charName = String(character?.name || 'Character').trim() || 'Character';
   const totalBudget = Math.max(320, runtimeSteering.availableContextTokens || 2048);
@@ -916,6 +938,12 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
     persistedSceneMemory: validatedSceneMemory
   });
 
+  const voicePinResolution = resolveVoicePin({
+    character,
+    charName,
+    assistMode: assistMode.value
+  });
+
   return {
     compiledRuntimeCard,
     sceneState,
@@ -931,7 +959,8 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
       history: normalizedHistory,
       compiledRuntimeCard,
       profile
-    })
+    }),
+    voicePinResolution
   };
 }
 

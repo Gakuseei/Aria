@@ -597,3 +597,61 @@ describe('buildVoicePinBlock', () => {
     expect(block).toContain("Stay in {{char}}'s established voice.");
   });
 });
+
+describe('buildRuntimeState voice pin resolution', () => {
+  it('exposes voicePinResolution with the default pin when present', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Alice',
+        category: 'nsfw',
+        systemPrompt: 'Alice is shy.',
+        voicePin: 'Stutters when nervous.',
+        voiceAvoid: 'porcelain'
+      },
+      history: [{ role: 'user', content: 'hi' }],
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1200 }
+    });
+
+    expect(runtimeState.voicePinResolution.pin).toContain('Stutters when nervous');
+    expect(runtimeState.voicePinResolution.avoid).toContain('porcelain');
+    expect(runtimeState.voicePinResolution.source).toBe('voicePin');
+  });
+
+  it('uses voicePinNsfw when assistMode is nsfw_only and the field is present', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Alice',
+        category: 'nsfw',
+        systemPrompt: 'Alice is shy.',
+        voicePin: 'Default voice.',
+        voicePinNsfw: 'Naive intimate voice.',
+        voiceAvoid: 'porcelain'
+      },
+      history: [
+        { role: 'user', content: 'kiss me' },
+        { role: 'assistant', content: '*kisses you*' },
+        { role: 'user', content: 'fuck me' }
+      ],
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1200, passionLevel: 60 }
+    });
+
+    expect(runtimeState.voicePinResolution.source).toBe('voicePinNsfw');
+    expect(runtimeState.voicePinResolution.pin).toContain('Naive intimate voice');
+  });
+
+  it('falls back to a universal wording when no pin is defined', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Lily',
+        category: 'sfw',
+        systemPrompt: 'Lily is helpful.'
+      },
+      history: [{ role: 'user', content: 'hi' }],
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1200 }
+    });
+
+    expect(runtimeState.voicePinResolution.source).toBe('fallback');
+    expect(runtimeState.voicePinResolution.pin).toContain('Lily');
+    expect(runtimeState.voicePinResolution.pin).toContain('established voice');
+  });
+});

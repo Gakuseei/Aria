@@ -67,6 +67,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
   const [avatarBase64, setAvatarBase64] = useState('');
   const [passionEnabled, setPassionEnabled] = useState(true);
   const [selectedType, setSelectedType] = useState('character');
+  const [category, setCategory] = useState('sfw');
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
   const electronApi = typeof window !== 'undefined' ? window.electronAPI : null;
@@ -135,6 +136,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       model: selectedModel,
       language: selectedLanguage,
       type: selectedType,
+      category,
       ollamaUrl: settings.ollamaUrl,
     });
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -154,6 +156,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
             model: selectedModel,
             language: selectedLanguage,
             type: selectedType,
+            category,
             field: fieldName,
             existingCharacter: character,
             ollamaUrl: settings.ollamaUrl,
@@ -166,6 +169,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
 
       setGeneratedCharacter({
         ...character,
+        category: character.category || category,
         responseMode: normalizeResponseMode(character.responseMode ?? character.responseStyle, 'normal')
       });
       setCurrentStep(3);
@@ -202,6 +206,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       model: selectedModel,
       language: selectedLanguage,
       type: selectedType,
+      category: generatedCharacter?.category || category,
       field: fieldName,
       existingCharacter: generatedCharacter,
       ollamaUrl: settings.ollamaUrl,
@@ -269,6 +274,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       startingMessage: trimmedStartingMessage,
       greeting: trimmedStartingMessage,
       type: selectedType,
+      category: generatedCharacter.category || 'sfw',
       responseMode: normalizeResponseMode(generatedCharacter.responseMode, 'normal'),
       passionEnabled: selectedType === 'bot' ? false : passionEnabled,
       passionSpeed: generatedCharacter.passionSpeed || 'normal',
@@ -409,6 +415,32 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
                   ? (t.aiCharacterBuilder?.typeCharacterDesc || 'Roleplay persona with personality and backstory')
                   : (t.aiCharacterBuilder?.typeBotDesc || 'Utility bot, scenario, or tool — no roleplay framing')}
               </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                {t.characterCreator?.contentRating || 'Content Rating'}
+              </label>
+              <div className="flex gap-2">
+                {['sfw', 'nsfw'].map(value => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setCategory(value)}
+                    className={`flex-1 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                      category === value
+                        ? isGoldMode
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          : 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
+                        : 'bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50 border border-transparent'
+                    }`}
+                  >
+                    {value === 'sfw'
+                      ? (t.characterCreator?.contentRatingSfw || 'SFW')
+                      : (t.characterCreator?.contentRatingNsfw || 'NSFW')}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>
@@ -602,6 +634,32 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
                   />
                 </div>
               ))}
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  {t.characterCreator?.contentRating || 'Content Rating'}
+                </label>
+                <div className="flex gap-2">
+                  {['sfw', 'nsfw'].map(value => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => handleCharacterFieldChange('category', value)}
+                      className={`flex-1 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                        (generatedCharacter.category || 'sfw') === value
+                          ? isGoldMode
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
+                          : 'bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50 border border-transparent'
+                      }`}
+                    >
+                      {value === 'sfw'
+                        ? (t.characterCreator?.contentRatingSfw || 'SFW')
+                        : (t.characterCreator?.contentRatingNsfw || 'NSFW')}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {selectedType !== 'bot' && (
               <div>

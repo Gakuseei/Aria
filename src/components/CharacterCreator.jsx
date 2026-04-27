@@ -19,6 +19,7 @@ function CharacterCreator({ onSave, onBack }) {
     avatarBase64: '',
     startingMessage: '',
     type: 'character',
+    category: 'sfw',
     responseMode: 'normal',
     passionEnabled: true,
     passionSpeed: 'normal',
@@ -126,6 +127,7 @@ function CharacterCreator({ onSave, onBack }) {
       startingMessage: trimmedStartingMessage,
       greeting: trimmedStartingMessage,
       type: formData.type,
+      category: formData.category || 'sfw',
       responseMode: normalizeResponseMode(formData.responseMode, 'normal'),
       passionEnabled: formData.type === 'bot' ? false : formData.passionEnabled,
       passionSpeed: formData.passionSpeed,
@@ -149,6 +151,7 @@ function CharacterCreator({ onSave, onBack }) {
       name: t.characterCreator.blankTemplate,
       data: {
         type: 'character',
+        category: 'sfw',
         name: '',
         subtitle: '',
         description: '',
@@ -168,6 +171,7 @@ function CharacterCreator({ onSave, onBack }) {
       name: t.characterCreator.nsfwTemplate,
       data: {
         type: 'character',
+        category: 'nsfw',
         name: '',
         subtitle: '',
         description: '',
@@ -273,6 +277,31 @@ function CharacterCreator({ onSave, onBack }) {
                 {formData.type === 'character'
                   ? (t.characterCreator?.typeCharacterDesc || 'Roleplay persona with personality and backstory')
                   : (t.characterCreator?.typeBotDesc || 'Utility bot, scenario, or tool — no roleplay framing')}
+              </p>
+            </div>
+
+            <div className="theme-soft-panel rounded-xl p-5">
+              <h3 className="text-sm font-medium text-zinc-400 mb-3">{t.characterCreator?.contentRating || 'Content Rating'}</h3>
+              <div className="flex gap-3">
+                {['sfw', 'nsfw'].map(rating => (
+                  <button
+                    key={rating}
+                    type="button"
+                    onClick={() => handleChange('category', rating)}
+                    className={`flex-1 px-4 py-2 rounded-lg text-sm transition-all ${
+                      formData.category === rating
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        : 'bg-zinc-700/30 text-zinc-300 hover:bg-zinc-700/50 border border-transparent'
+                    }`}
+                  >
+                    {rating === 'sfw'
+                      ? (t.characterCreator?.contentRatingSfw || 'SFW')
+                      : (t.characterCreator?.contentRatingNsfw || 'NSFW')}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-zinc-500 mt-2">
+                {t.characterCreator?.contentRatingHelp || 'NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.'}
               </p>
             </div>
 

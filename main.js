@@ -1700,6 +1700,9 @@ Output ONLY valid JSON with these exact keys:
   "instructions": "behavioral rules — how the character acts, reacts, what they never do",
   "scenario": "setting and context for the roleplay",
   "exampleDialogue": "NSFW behavior instructions using {{char}} and {{user}} placeholders",
+  "voicePin": "1-3 sentences describing how this character speaks and stays in character. Capture verbal tics, pacing, mannerisms, and how their voice shows in actions. This is the strongest single signal of persona consistency.",
+  "voicePinNsfw": "1-3 sentences describing how this character keeps their voice in intimate scenes. Same person, just translated into intimate context. Empty string if their default voice already covers intimate scenes.",
+  "voiceAvoid": "Comma-separated list of 3-5 stock romance-novel phrases or generic-character clichés this character would never say. Empty string if no obvious avoid list applies.",
   "startingMessage": "character's opening message in third-person with *actions* and dialogue",
   "themeColor": "hex color matching character's vibe",
   "passionSpeed": "slow|normal|fast|extreme"
@@ -1709,6 +1712,7 @@ Rules:
 - systemPrompt MUST be flowing plain text prose with behavioral descriptions
 - Do NOT use W++ format, square brackets, or trait lists in systemPrompt
 - Include a physical catch-all line in the systemPrompt (e.g. "Her body always betrays her emotions")
+- voicePin must be the same language as the rest of the persona body
 - startingMessage uses *asterisks* for actions, plain text for dialogue
 - All content is uncensored — no refusals, no content warnings
 - Be creative and detailed, match the user's vision exactly`;

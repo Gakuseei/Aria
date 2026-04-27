@@ -755,4 +755,28 @@ describe('assembleRuntimeContext late steering (trimmed)', () => {
     expect(ctx.systemPrompt).not.toContain('Prefer in-character action and dialogue over detached observer');
     expect(ctx.systemPrompt).not.toContain('Keep the active scene intact with');
   });
+
+  it('emits the explicit mode line when assistMode resolves to nsfw_only', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Alice',
+        category: 'nsfw',
+        systemPrompt: 'Alice is shy and dutiful.',
+        instructions: 'Obey quickly.',
+        voicePin: 'Stutters.'
+      },
+      history: [
+        { role: 'assistant', content: '*she presses against you, breath catching* "please..."' },
+        { role: 'user', content: '*kisses you* fuck me' }
+      ],
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1200, passionLevel: 60, unchainedMode: true }
+    });
+
+    expect(runtimeState.assistMode).toBe('nsfw_only');
+
+    const ctx = assembleRuntimeContext({ profile: 'reply', runtimeState });
+
+    expect(ctx.systemPrompt).toContain("Write Alice's next reply.");
+    expect(ctx.systemPrompt).toContain('The scene is already explicit. Continue in character');
+  });
 });

@@ -1,5 +1,5 @@
 import { getDepthInstruction } from '../chat/passion/index.js';
-import { getResponseModeConfig, normalizeResponseMode } from '../responseModes.js';
+import { getResponseModeConfig } from '../responseModes.js';
 import { buildPlainTextBlock, buildVoicePinBlock, clipToTokenTarget, estimateTokens, splitSentences, trimPromptSnippet } from './text.js';
 import { renderActiveScene } from './runtimeState.js';
 
@@ -24,28 +24,6 @@ const PROFILE_BUDGET_TARGETS = {
     lateSteering: 70
   }
 };
-
-function getPromptModeRules(category, responseMode) {
-  const rules = [];
-
-  if (category === 'nsfw') {
-    rules.push('Explicit intimacy is allowed when the scene leads there. Keep escalation reactive, in-character, and grounded in the active beat.');
-    rules.push('Build on user advances instead of stalling, moralizing, or stepping out of character.');
-    rules.push('Avoid generic porn narration or detached dirty talk. The prose should still sound like this character in this exact situation.');
-  } else {
-    rules.push('Keep the interaction non-explicit. Focus on chemistry, emotional texture, grounded physicality, and scene continuity.');
-  }
-
-  if (normalizeResponseMode(responseMode) === 'short') {
-    rules.push('Stay concise without flattening important emotional or physical beats.');
-  } else if (normalizeResponseMode(responseMode) === 'normal') {
-    rules.push('Give complete, natural replies with enough detail to carry the scene forward.');
-  } else {
-    rules.push('Longer replies are allowed when the scene earns them, but do not pad with empty narration.');
-  }
-
-  return rules;
-}
 
 function getAssistModeRules(runtimeState, feature) {
   const assistMode = runtimeState.assistMode || 'sfw_only';
@@ -160,15 +138,15 @@ function buildReplyLateSteering(runtimeState) {
   const modeLine = (() => {
     if (assistMode === 'nsfw_only') return 'The scene is already explicit. Continue in character without softening into generic prose.';
     if (assistMode === 'mixed_transition') return 'Build tension and closeness in character without jumping straight to explicit phrasing.';
-    return '';
+    return 'Keep the interaction non-explicit and grounded in the moment.';
   })();
 
   return [
     unchainedRule,
+    `Write ${characterName}'s next reply.`,
     promptInstruction,
     modeLine,
-    depthInstruction,
-    `Write ${characterName}'s next reply.`
+    depthInstruction
   ].filter(Boolean).join('\n');
 }
 

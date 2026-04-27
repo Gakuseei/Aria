@@ -22,6 +22,9 @@ function CharacterCreator({ onSave, onBack }) {
     responseMode: 'normal',
     passionEnabled: true,
     passionSpeed: 'normal',
+    voicePin: '',
+    voicePinNsfw: '',
+    voiceAvoid: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -126,6 +129,9 @@ function CharacterCreator({ onSave, onBack }) {
       responseMode: normalizeResponseMode(formData.responseMode, 'normal'),
       passionEnabled: formData.type === 'bot' ? false : formData.passionEnabled,
       passionSpeed: formData.passionSpeed,
+      voicePin: formData.voicePin?.trim() || '',
+      voicePinNsfw: formData.voicePinNsfw?.trim() || '',
+      voiceAvoid: formData.voiceAvoid?.trim() || '',
       isCustom: true,
     };
 
@@ -524,6 +530,45 @@ function CharacterCreator({ onSave, onBack }) {
                 <p className="text-xs text-zinc-600 mt-1">
                   {t.characterCreator?.instructionsTip || 'These rules have the HIGHEST priority — they override everything else including passion intensity.'}
                 </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  {t.characterCreator?.voicePinLabel || 'Voice Anchor'}
+                </label>
+                <p className="text-xs text-zinc-500 mb-2">{t.characterCreator?.voicePinHelp || ''}</p>
+                <textarea
+                  value={formData.voicePin}
+                  onChange={(e) => handleChange('voicePin', e.target.value)}
+                  rows={3}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  {t.characterCreator?.voicePinNsfwLabel || 'Voice Anchor (NSFW Override)'}
+                </label>
+                <p className="text-xs text-zinc-500 mb-2">{t.characterCreator?.voicePinNsfwHelp || ''}</p>
+                <textarea
+                  value={formData.voicePinNsfw}
+                  onChange={(e) => handleChange('voicePinNsfw', e.target.value)}
+                  rows={3}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  {t.characterCreator?.voiceAvoidLabel || 'Avoid Phrases'}
+                </label>
+                <p className="text-xs text-zinc-500 mb-2">{t.characterCreator?.voiceAvoidHelp || ''}</p>
+                <textarea
+                  value={formData.voiceAvoid}
+                  onChange={(e) => handleChange('voiceAvoid', e.target.value)}
+                  rows={2}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+                />
               </div>
 
               <div>

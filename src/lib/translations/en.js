@@ -491,7 +491,15 @@ const locale = {
     "typeCharacterDesc": "Roleplay persona with personality and backstory",
     "typeBotDesc": "Utility bot, scenario, or tool — no roleplay framing",
     "descriptionLabelBot": "Describe your bot",
-    "descriptionPlaceholderBot": "A dirty talk generator that creates vivid, custom dialogue..."
+    "descriptionPlaceholderBot": "A dirty talk generator that creates vivid, custom dialogue...",
+    "voicePinLabel": "Voice Anchor",
+    "voicePinHelp": "Optional. 1-3 sentences describing how this character speaks and stays in character. Strongest single signal of persona consistency.",
+    "voicePinNsfwLabel": "Voice Anchor (NSFW Override)",
+    "voicePinNsfwHelp": "Optional. Use only if the character's voice in intimate scenes meaningfully differs from their default voice.",
+    "voiceAvoidLabel": "Avoid Phrases",
+    "voiceAvoidHelp": "Optional. Comma-separated stock phrases this character would never use. Helps block generic romance-novel drift.",
+    "voicePinGenerate": "Suggest with AI",
+    "voicePinGenerating": "Generating..."
   },
   "modeSelection": {
     "selectMode": "Select Mode",
@@ -617,7 +625,15 @@ const locale = {
     "typeCharacterDesc": "Roleplay persona with personality and backstory",
     "typeBotDesc": "Utility bot, scenario, or tool — no roleplay framing",
     "storageFull": "Storage full — try removing some character avatars to free space",
-    "botInstructions": "Bot Instructions"
+    "botInstructions": "Bot Instructions",
+    "voicePinLabel": "Voice Anchor",
+    "voicePinHelp": "Optional. 1-3 sentences describing how this character speaks and stays in character. Strongest single signal of persona consistency.",
+    "voicePinNsfwLabel": "Voice Anchor (NSFW Override)",
+    "voicePinNsfwHelp": "Optional. Use only if the character's voice in intimate scenes meaningfully differs from their default voice.",
+    "voiceAvoidLabel": "Avoid Phrases",
+    "voiceAvoidHelp": "Optional. Comma-separated stock phrases this character would never use. Helps block generic romance-novel drift.",
+    "voicePinGenerate": "Suggest with AI",
+    "voicePinGenerating": "Generating..."
   },
   "creative": {
     "creativeWriting": "Creative Writing",

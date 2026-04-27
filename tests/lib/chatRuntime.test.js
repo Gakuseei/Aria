@@ -734,6 +734,33 @@ describe('compileCharacterRuntimeCard globalCore (trimmed)', () => {
   });
 });
 
+describe('compileCharacterRuntimeCard structural scoring', () => {
+  it('preserves the first paragraph of a non-English systemPrompt', () => {
+    const runtimeCard = compileCharacterRuntimeCard({
+      name: 'Mira',
+      systemPrompt: `Mira ist eine ruhige Bibliothekarin mit trockenem Humor.
+
+Sie spricht in kurzen Beobachtungen und nennt Leute "Trubelmacher" wenn sie sie mag.
+
+Ihr Körper verrät sie immer. Sie wischt das gleiche Glas zweimal wenn sie nervös ist.`,
+      instructions: 'Bleib präzise.'
+    });
+
+    expect(runtimeCard.characterCore).toContain('Mira ist eine ruhige Bibliothekarin');
+  });
+
+  it('penalizes very long single paragraphs so they do not starve other content', () => {
+    const longPara = 'Ein sehr langer Absatz '.repeat(40);
+    const runtimeCard = compileCharacterRuntimeCard({
+      name: 'Test',
+      systemPrompt: `Kurze Eröffnung mit zentraler Identität.\n\n${longPara}\n\nKurzer dritter Absatz mit wichtigem Hinweis.`
+    });
+
+    expect(runtimeCard.characterCore).toContain('Kurze Eröffnung');
+    expect(runtimeCard.characterCore).toContain('Kurzer dritter Absatz');
+  });
+});
+
 describe('assembleRuntimeContext late steering (trimmed)', () => {
   it('keeps depth, mode, and a final reply cue but drops generic micro-rules', () => {
     const runtimeState = buildRuntimeState({

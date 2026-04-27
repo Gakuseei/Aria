@@ -1,5 +1,9 @@
 import { clipToTokenTarget, estimateTokens, resolveTemplates, splitParagraphs, splitSentences, trimPromptSnippet } from './text.js';
 
+// English-keyword patterns are retained only for scene-anchor selection inside the
+// existing built-in scenarios. Character core scoring is now structural (see
+// scoreCharacterParagraph). Migrating scene-anchor selection off keywords is a
+// future task tracked separately.
 const VOICE_PATTERN = /\b(voice|speaks?|speech|tone|calls?|laughs?|whispers?|murmurs?|says?|dialogue)\b|["']/i;
 const POSTURE_PATTERN = /\b(body|posture|moves?|touch(?:es)?|gaze|eyes|smirk|smile|leans?|stands?|breath|hands?)\b/i;
 const BEHAVIOR_PATTERN = /\b(always|never|reacts?|responds?|obeys?|refuses?|wants?|fears?|craves?|builds?|takes?)\b/i;
@@ -20,25 +24,67 @@ function createParagraphEntries(text, source) {
   return splitParagraphs(text).map((paragraph, index) => ({ text: paragraph, source, index }));
 }
 
-function scoreCharacterParagraph(entry) {
+function tokenizeForFrequency(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s'-]/gu, ' ')
+    .split(/\s+/)
+    .filter((token) => token.length >= 4);
+}
+
+function buildFrequencyMap(allText) {
+  const map = new Map();
+  for (const token of tokenizeForFrequency(allText)) {
+    map.set(token, (map.get(token) || 0) + 1);
+  }
+  return map;
+}
+
+function scoreParagraphFrequency(paragraph, frequencyMap) {
+  const tokens = tokenizeForFrequency(paragraph);
+  if (tokens.length === 0) return 0;
+  let frequencyHits = 0;
+  for (const token of tokens) {
+    const count = frequencyMap.get(token) || 0;
+    if (count >= 2) frequencyHits += count - 1;
+  }
+  return Math.min(frequencyHits, 8);
+}
+
+function scoreCharacterParagraph(entry, frequencyMap) {
   let score = entry.source === 'systemPrompt' ? 20 : 14;
+
   if (entry.source === 'systemPrompt' && entry.index === 0) score += 14;
-  if (entry.source === 'instructions') score += 4;
-  if (VOICE_PATTERN.test(entry.text)) score += 8;
-  if (POSTURE_PATTERN.test(entry.text)) score += 7;
-  if (BEHAVIOR_PATTERN.test(entry.text)) score += 6;
-  if (RELATIONSHIP_PATTERN.test(entry.text)) score += 3;
-  if (entry.text.includes('"') || entry.text.includes("'")) score += 2;
+  if (entry.source === 'instructions' && entry.index === 0) score += 6;
+  if (entry.source === 'instructions') score += 3;
+
+  const length = entry.text.length;
+  if (length >= 80 && length <= 280) score += 6;
+  else if (length > 280 && length <= 500) score += 2;
+  else if (length > 500) score -= 4;
+  if (length < 30) score -= 4;
+
+  if (frequencyMap) {
+    score += scoreParagraphFrequency(entry.text, frequencyMap);
+  }
+
   return score;
 }
 
-function scoreInstructionParagraph(entry) {
+function scoreInstructionParagraph(entry, frequencyMap) {
   let score = 12;
   if (entry.index === 0) score += 6;
-  if (TACTICAL_PATTERN.test(entry.text)) score += 10;
-  if (BEHAVIOR_PATTERN.test(entry.text)) score += 5;
-  if (POSTURE_PATTERN.test(entry.text)) score += 2;
-  if (VOICE_PATTERN.test(entry.text)) score -= 4;
+
+  const length = entry.text.length;
+  if (length >= 60 && length <= 240) score += 6;
+  else if (length > 240 && length <= 400) score += 2;
+  else if (length > 400) score -= 4;
+  if (length < 30) score -= 3;
+
+  if (frequencyMap) {
+    score += scoreParagraphFrequency(entry.text, frequencyMap);
+  }
+
   return score;
 }
 
@@ -58,7 +104,7 @@ function scoreSceneParagraph(entry) {
   return score;
 }
 
-function selectParagraphs(entries, scorer, tokenTarget, preferredEntries = []) {
+function selectParagraphs(entries, scorer, tokenTarget, preferredEntries = [], frequencyMap = null) {
   const selected = [];
   const used = new Set();
   let tokenCount = 0;
@@ -76,7 +122,7 @@ function selectParagraphs(entries, scorer, tokenTarget, preferredEntries = []) {
 
   [...entries]
     .sort((left, right) => {
-      const scoreDelta = scorer(right) - scorer(left);
+      const scoreDelta = scorer(right, frequencyMap) - scorer(left, frequencyMap);
       if (scoreDelta !== 0) return scoreDelta;
       if (left.source !== right.source) return left.source.localeCompare(right.source);
       return left.index - right.index;
@@ -191,12 +237,15 @@ export function compileCharacterRuntimeCard(character = {}) {
   const firstSystemParagraph = createParagraphEntries(systemPrompt, 'systemPrompt')[0] || null;
   const firstInstructionParagraph = instructionParagraphs[0] || null;
 
+  const frequencyMap = buildFrequencyMap(`${systemPrompt}\n${instructions}\n${scenario}`);
+
   const systemCharacterCore = clipToTokenTarget(
     selectParagraphs(
       characterParagraphs,
       scoreCharacterParagraph,
       185,
-      [firstSystemParagraph].filter(Boolean)
+      [firstSystemParagraph].filter(Boolean),
+      frequencyMap
     ),
     190
   );
@@ -205,7 +254,8 @@ export function compileCharacterRuntimeCard(character = {}) {
       instructionParagraphs,
       scoreInstructionParagraph,
       85,
-      [firstInstructionParagraph].filter(Boolean)
+      [firstInstructionParagraph].filter(Boolean),
+      frequencyMap
     ),
     90
   );

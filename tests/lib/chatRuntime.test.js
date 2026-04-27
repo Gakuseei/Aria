@@ -562,3 +562,38 @@ describe('assembleRuntimeContext', () => {
     expect(suggestionContext.userPrompt).toContain('Write one stay sendable reply for Erik in the same exchange');
   });
 });
+
+import { buildVoicePinBlock } from '../../src/lib/chatRuntime/text.js';
+
+describe('buildVoicePinBlock', () => {
+  it('builds a steering block from voice pin and avoid line', () => {
+    const block = buildVoicePinBlock({
+      pin: 'Stays in her stuttering naive voice in every situation, including intimate ones.',
+      avoid: 'heaving bosom, porcelain skin, body and soul'
+    });
+    expect(block).toContain('Voice anchor:');
+    expect(block).toContain('stuttering naive voice');
+    expect(block).toContain('Avoid:');
+    expect(block).toContain('heaving bosom');
+  });
+
+  it('omits the avoid line when avoid is empty', () => {
+    const block = buildVoicePinBlock({ pin: 'Direct, blunt voice.', avoid: '' });
+    expect(block).toContain('Direct, blunt voice');
+    expect(block).not.toContain('Avoid:');
+  });
+
+  it('returns empty string when pin is empty and no fallback supplied', () => {
+    const block = buildVoicePinBlock({ pin: '', avoid: '' });
+    expect(block).toBe('');
+  });
+
+  it('uses fallback wording when pin is empty and fallback is provided', () => {
+    const block = buildVoicePinBlock({
+      pin: '',
+      avoid: '',
+      fallback: 'Stay in {{char}}\'s established voice.'
+    });
+    expect(block).toContain("Stay in {{char}}'s established voice.");
+  });
+});

@@ -699,3 +699,22 @@ describe('assembleRuntimeContext voice pin injection (reply profile)', () => {
     expect(ctx.historyMessages).toBeUndefined();
   });
 });
+
+describe('assembleRuntimeContext (Persona Anchor removed)', () => {
+  it('does not include a Persona Anchor block in the reply system prompt', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Alice',
+        category: 'nsfw',
+        systemPrompt: 'Alice is shy and dutiful.',
+        instructions: 'Obey quickly.',
+        voicePin: 'Stutters.'
+      },
+      history: [{ role: 'user', content: 'hi' }],
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1200 }
+    });
+
+    const ctx = assembleRuntimeContext({ profile: 'reply', runtimeState });
+    expect(ctx.systemPrompt).not.toContain('Persona Anchor');
+  });
+});

@@ -265,7 +265,7 @@ export function compileCharacterRuntimeCard(character = {}) {
     characterCore,
     sceneSeed,
     exampleSeed,
-    personaAnchor,
+    personaAnchor: '',
     runtimeDefaults
   };
 }

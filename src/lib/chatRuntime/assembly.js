@@ -9,7 +9,7 @@ const PROFILE_BUDGET_TARGETS = {
     characterCore: 290,
     activeScene: 140,
     exampleSeed: 180,
-    lateSteering: 145
+    lateSteering: 250
   },
   suggestions: {
     writerRole: 80,

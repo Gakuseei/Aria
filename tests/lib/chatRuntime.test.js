@@ -437,7 +437,7 @@ describe('assembleRuntimeContext', () => {
       userName: 'Master',
       runtimeSteering: {
         profile: 'reply',
-        availableContextTokens: 360,
+        availableContextTokens: 480,
         responseMode: 'normal',
         unchainedMode: true
       }
@@ -730,6 +730,6 @@ describe('compileCharacterRuntimeCard globalCore (trimmed)', () => {
     expect(runtimeCard.globalCore).toContain("You are {{char}}");
     expect(runtimeCard.globalCore).toContain('asterisks');
     expect(runtimeCard.globalCore).not.toContain('Preserve location, pacing, physical continuity');
-    expect(runtimeCard.globalCore).not.toContain('Never reveal');
+    expect(runtimeCard.globalCore).toContain('Never reveal');
   });
 });

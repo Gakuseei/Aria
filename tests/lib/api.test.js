@@ -385,6 +385,7 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('Mei: *She wipes the counter.* "Busy."');
     expect(prompt).toContain("Lead with the reply itself.");
     expect(prompt).toContain('Prefer in-character action and dialogue over detached observer-style scene summary.');
+    expect(prompt).toContain('Keep the interaction non-explicit.');
   });
 
   it('ignores bracketed meta exampleDialogue blocks and adds unchained mode rules cleanly', () => {
@@ -405,6 +406,7 @@ describe('buildSystemPrompt', () => {
 
     expect(prompt).not.toContain('[Instructions:');
     expect((prompt.match(/immediate in-character physical compliance/g) || [])).toHaveLength(1);
+    expect(prompt).toContain('Explicit intimacy is allowed when the scene leads there.');
   });
 
   it('uses a lean bot runtime prompt without roleplay-only reply rules', () => {

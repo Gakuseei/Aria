@@ -65,3 +65,4 @@ secrets.*
 *.sql
 *.csv
 *.xlsx
+research/

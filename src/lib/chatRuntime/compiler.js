@@ -224,6 +224,7 @@ export function compileCharacterRuntimeCard(character = {}) {
   const instructions = String(character.instructions || '').trim();
   const scenario = String(character.scenario || '').trim();
   const authorsNote = String(character.authorsNote || '').trim();
+  const intimacyContract = clipToTokenTarget(String(character.intimacyContract || '').trim(), 200);
   const exampleSeed = buildExampleSeed(character);
   const personaAnchor = buildPersonaAnchor(systemPrompt, instructions, exampleSeed);
 
@@ -304,6 +305,7 @@ export function compileCharacterRuntimeCard(character = {}) {
     characterCore,
     sceneSeed,
     exampleSeed,
+    intimacyContract,
     personaAnchor: '',
     runtimeDefaults
   };
@@ -316,6 +318,7 @@ export function resolveRuntimeCardTemplates(runtimeCard, charName, userName) {
     characterCore: resolveTemplates(runtimeCard.characterCore || '', charName, userName),
     sceneSeed: resolveTemplates(runtimeCard.sceneSeed || '', charName, userName),
     exampleSeed: resolveTemplates(runtimeCard.exampleSeed || '', charName, userName),
+    intimacyContract: resolveTemplates(runtimeCard.intimacyContract || '', charName, userName),
     personaAnchor: resolveTemplates(runtimeCard.personaAnchor || '', charName, userName)
   };
 }

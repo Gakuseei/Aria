@@ -25,6 +25,7 @@ function CharacterCreator({ onSave, onBack }) {
     passionSpeed: 'normal',
     voicePin: '',
     voicePinNsfw: '',
+    intimacyContract: '',
     voiceAvoid: '',
   });
 
@@ -133,6 +134,7 @@ function CharacterCreator({ onSave, onBack }) {
       passionSpeed: formData.passionSpeed,
       voicePin: formData.voicePin?.trim() || '',
       voicePinNsfw: formData.voicePinNsfw?.trim() || '',
+      intimacyContract: formData.intimacyContract?.trim() || '',
       voiceAvoid: formData.voiceAvoid?.trim() || '',
       isCustom: true,
     };
@@ -586,6 +588,21 @@ function CharacterCreator({ onSave, onBack }) {
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
                 />
               </div>
+
+              {formData.category === 'nsfw' && (
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  {t.characterCreator?.intimacyContractLabel || 'Intimacy Contract'}
+                </label>
+                <p className="text-xs text-zinc-500 mb-2">{t.characterCreator?.intimacyContractHelp || '2-4 short sentences naming the structural behavior the character must keep during intimate scenes. Always included whole at NSFW depth — never clipped.'}</p>
+                <textarea
+                  value={formData.intimacyContract}
+                  onChange={(e) => handleChange('intimacyContract', e.target.value)}
+                  rows={4}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+                />
+              </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">

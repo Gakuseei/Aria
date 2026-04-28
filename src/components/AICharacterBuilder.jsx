@@ -280,6 +280,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
       passionSpeed: generatedCharacter.passionSpeed || 'normal',
       voicePin: generatedCharacter.voicePin?.trim() || '',
       voicePinNsfw: generatedCharacter.voicePinNsfw?.trim() || '',
+      intimacyContract: generatedCharacter.intimacyContract?.trim() || '',
       voiceAvoid: generatedCharacter.voiceAvoid?.trim() || '',
       isCustom: true,
     };
@@ -300,6 +301,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
     fields.push({ key: 'voicePin', label: t.aiCharacterBuilder?.voicePinLabel || t.characterCreator?.voicePinLabel || 'Voice Anchor', rows: 3, mono: false });
     if (selectedType !== 'bot') {
       fields.push({ key: 'voicePinNsfw', label: t.aiCharacterBuilder?.voicePinNsfwLabel || t.characterCreator?.voicePinNsfwLabel || 'Voice Anchor (NSFW Override)', rows: 3, mono: false });
+      fields.push({ key: 'intimacyContract', label: t.aiCharacterBuilder?.intimacyContractLabel || t.characterCreator?.intimacyContractLabel || 'Intimacy Contract', rows: 4, mono: false });
     }
     fields.push({ key: 'voiceAvoid', label: t.aiCharacterBuilder?.voiceAvoidLabel || t.characterCreator?.voiceAvoidLabel || 'Avoid Phrases', rows: 2, mono: false });
     return fields;

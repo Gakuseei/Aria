@@ -449,6 +449,109 @@ describe('assembleRuntimeContext', () => {
     expect(runtimeContext.debug.droppedBlocks).toContain('Example Seed');
   });
 
+  describe('intimacy contract injection', () => {
+    const yukiCharacter = {
+      name: 'Yuki',
+      category: 'nsfw',
+      systemPrompt: 'Yuki is sweet, devoted, and quietly possessive. Her body shifts between warmth and emptiness in a heartbeat.',
+      instructions: 'TWO MODES. Sweet mode is chirpy and giggly. Dark mode goes flat and monotone. The switch is INSTANT.',
+      scenario: 'College dorm room. Yuki arrived with a homemade bento box.',
+      intimacyContract: 'Sweet adoration cycles with flat-monotone possessive declarations within the same reply. Sentences shorten in possessive moments — single words: "Mine." "Stay." "Forever." Yuki marks and claims; she is never bimbo-submissive.',
+      voicePinNsfw: 'In intimate scenes Yuki keeps her two-mode pattern.'
+    };
+
+    const intimateHistory = [
+      { role: 'assistant', content: '*Her smile freezes for a heartbeat, then warms again.* "You came back."' },
+      { role: 'user', content: 'Come here. Closer.' },
+      { role: 'assistant', content: '*She presses against you, fingers curling tight.* "Mine. You said mine."' },
+      { role: 'user', content: 'Yes. Now keep going, don\'t stop.' }
+    ];
+
+    it('injects intimacy contract into character core when assistMode is nsfw_only', () => {
+      const runtimeState = buildRuntimeState({
+        character: yukiCharacter,
+        history: intimateHistory,
+        userName: 'Erik',
+        runtimeSteering: {
+          profile: 'reply',
+          availableContextTokens: 2400,
+          responseMode: 'normal',
+          unchainedMode: true,
+          passionLevel: 90
+        }
+      });
+
+      expect(runtimeState.assistMode).toBe('nsfw_only');
+      const runtimeContext = assembleRuntimeContext({ profile: 'reply', runtimeState });
+      expect(runtimeContext.systemPrompt).toContain('Intimacy contract:');
+      expect(runtimeContext.systemPrompt).toContain('Sweet adoration cycles with flat-monotone possessive declarations');
+      expect(runtimeContext.systemPrompt).toContain('she is never bimbo-submissive');
+    });
+
+    it('omits intimacy contract when assistMode is not nsfw_only', () => {
+      const sfwState = buildRuntimeState({
+        character: { ...yukiCharacter, category: 'sfw' },
+        history: [
+          { role: 'assistant', content: '*She waves cheerfully across the courtyard.*' },
+          { role: 'user', content: 'Hi Yuki, want to study together?' }
+        ],
+        userName: 'Erik',
+        runtimeSteering: {
+          profile: 'reply',
+          availableContextTokens: 2400,
+          responseMode: 'normal',
+          unchainedMode: false,
+          passionLevel: 0
+        }
+      });
+
+      expect(sfwState.assistMode).not.toBe('nsfw_only');
+      const sfwContext = assembleRuntimeContext({ profile: 'reply', runtimeState: sfwState });
+      expect(sfwContext.systemPrompt).not.toContain('Intimacy contract:');
+      expect(sfwContext.systemPrompt).not.toContain('Sweet adoration cycles with flat-monotone');
+    });
+
+    it('keeps intimacy contract intact under tight budget pressure', () => {
+      const runtimeState = buildRuntimeState({
+        character: yukiCharacter,
+        history: intimateHistory,
+        userName: 'Erik',
+        runtimeSteering: {
+          profile: 'reply',
+          availableContextTokens: 360,
+          responseMode: 'normal',
+          unchainedMode: true,
+          passionLevel: 90
+        }
+      });
+
+      expect(runtimeState.assistMode).toBe('nsfw_only');
+      const runtimeContext = assembleRuntimeContext({ profile: 'reply', runtimeState });
+      expect(runtimeContext.debug.droppedBlocks).toContain('Example Seed');
+      expect(runtimeContext.systemPrompt).toContain('Intimacy contract:');
+      expect(runtimeContext.systemPrompt).toContain('Sweet adoration cycles with flat-monotone possessive declarations');
+      expect(runtimeContext.systemPrompt).toContain('she is never bimbo-submissive');
+    });
+
+    it('skips silently when intimacyContract is missing', () => {
+      const runtimeState = buildRuntimeState({
+        character: { ...yukiCharacter, intimacyContract: '' },
+        history: intimateHistory,
+        userName: 'Erik',
+        runtimeSteering: {
+          profile: 'reply',
+          availableContextTokens: 2400,
+          responseMode: 'normal',
+          unchainedMode: true,
+          passionLevel: 90
+        }
+      });
+
+      const runtimeContext = assembleRuntimeContext({ profile: 'reply', runtimeState });
+      expect(runtimeContext.systemPrompt).not.toContain('Intimacy contract:');
+    });
+  });
+
   it('assembles reply, suggestions, and impersonate differently from the same runtime state', () => {
     const baseState = buildRuntimeState({
       character: {

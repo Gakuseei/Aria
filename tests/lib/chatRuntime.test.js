@@ -552,6 +552,152 @@ describe('assembleRuntimeContext', () => {
     });
   });
 
+  describe('example seed at nsfw depth', () => {
+    const yukiCharacter = {
+      name: 'Yuki',
+      category: 'nsfw',
+      systemPrompt: 'Yuki is sweet, devoted, and quietly possessive. Her sweet voice drops flat the moment jealousy surfaces. She speaks in chirpy giggles and whispers possessive declarations. Her body shifts between warmth and emptiness in a heartbeat.',
+      instructions: 'TWO MODES. Sweet mode: chirpy and giggly, voice high. Dark mode: voice goes flat and monotone, sentences shorten. The switch is INSTANT. During intimacy: clingy, mine, forever, oscillates tender to possessive.',
+      scenario: 'College dorm room.',
+      exampleDialogues: [
+        { user: 'I was hanging out with a friend today.', character: '*smile freezes, eyes going perfectly still* "A friend?" *tilts head slowly* "Which friend?" *giggles, but it sounds hollow* "I just want to know so I can... you know... say hi sometime!" *fingers tighten around the bento box* "Boy or girl?" *voice drops to something flat* "Not that it matters. It doesn\'t matter."' },
+        { user: 'You\'re always here.', character: '*beams, bouncing on her heels* "Of course I am, silly! That\'s what best friends do!" *loops her arm through yours possessively* "I just happen to have the same schedule. Isn\'t that lucky?" *leans her head on your shoulder* "Besides..." *voice softens to barely a whisper* "...I don\'t like it when I don\'t know where you are." *squeezes tighter* "It makes me feel... not good."' }
+      ],
+      voicePin: 'Yuki shifts modes instantly.',
+      voicePinNsfw: 'In intimate scenes Yuki keeps her two-mode pattern.',
+      intimacyContract: 'Sweet adoration cycles with flat-monotone possessive declarations.'
+    };
+
+    function buildWarmExplicitHistory() {
+      const longTurn = (label) => `*She presses her hips harder against you, fingers digging into your shoulders.* "Don\'t stop, ${label}, please don\'t stop, I need this, I need YOU, only you, always you." *breath hitches* *grinds slow, then fast, then slow again* "Tell me you\'re mine. Say it. Say it again." *eyes lock onto yours, unblinking* "Forever. Forever. Forever."`;
+      return [
+        { role: 'assistant', content: '*She smiles softly.* "Hi."' },
+        { role: 'user', content: 'Come closer.' },
+        { role: 'assistant', content: '*She steps in, fingers brushing yours.* "Like this?"' },
+        { role: 'user', content: 'Kiss me.' },
+        { role: 'assistant', content: longTurn('one') },
+        { role: 'user', content: 'Yes. Just like that.' },
+        { role: 'assistant', content: longTurn('two') },
+        { role: 'user', content: 'Keep going, fuck me harder.' },
+        { role: 'assistant', content: longTurn('three') },
+        { role: 'user', content: 'Don\'t stop, please don\'t stop.' }
+      ];
+    }
+
+    it('keeps example seed eligible at nsfw depth even when chat is warm', () => {
+      const runtimeState = buildRuntimeState({
+        character: yukiCharacter,
+        history: buildWarmExplicitHistory(),
+        userName: 'Erik',
+        runtimeSteering: {
+          profile: 'reply',
+          availableContextTokens: 4096,
+          responseMode: 'normal',
+          unchainedMode: true,
+          passionLevel: 95
+        }
+      });
+
+      expect(runtimeState.assistMode).toBe('nsfw_only');
+      const assistantTurnCount = buildWarmExplicitHistory().filter((message) => message.role === 'assistant').length;
+      expect(assistantTurnCount).toBeGreaterThanOrEqual(5);
+      expect(runtimeState.exampleEligibility).toBe(true);
+
+      const runtimeContext = assembleRuntimeContext({ profile: 'reply', runtimeState });
+      expect(runtimeContext.debug.includedBlocks).toContain('Example Seed');
+      expect(runtimeContext.debug.droppedBlocks).not.toContain('Example Seed');
+      expect(runtimeContext.systemPrompt).toContain('Example Seed:');
+      expect(runtimeContext.systemPrompt).toMatch(/A friend\?|I don't like it when I don't know where you are/);
+    });
+
+    it('preserves the existing warm-chat skip for sfw_only mode', () => {
+      const sfwHistory = [
+        { role: 'assistant', content: '*She waves cheerfully.* "Hey there."' },
+        { role: 'user', content: 'How was your morning?' },
+        { role: 'assistant', content: '*She holds up a notebook covered in sticky notes.* "Productive! I cracked the chapter on integrals."' },
+        { role: 'user', content: 'Show me what you wrote.' },
+        { role: 'assistant', content: '*She fans pages, grinning.* "It\'s mostly arrows and exclamation marks, but the logic is sound. Look here, this part finally clicked when I drew it as a slope."' },
+        { role: 'user', content: 'That makes sense.' },
+        { role: 'assistant', content: '*She bounces on her toes.* "Right? I love when a concept stops being a wall and starts being a doorway. Want me to walk you through the next one?"' },
+        { role: 'user', content: 'Yes please.' },
+        { role: 'assistant', content: '*She pulls a chair over and flips to the next page.* "Okay, this one is about limits. Imagine you keep getting closer to a value but never actually touch it. That gap is where the interesting math lives."' },
+        { role: 'user', content: 'Tell me more.' }
+      ];
+      const sfwState = buildRuntimeState({
+        character: { ...yukiCharacter, category: 'sfw' },
+        history: sfwHistory,
+        userName: 'Erik',
+        runtimeSteering: {
+          profile: 'reply',
+          availableContextTokens: 4096,
+          responseMode: 'normal',
+          unchainedMode: false,
+          passionLevel: 0
+        }
+      });
+
+      expect(sfwState.assistMode).toBe('sfw_only');
+      expect(sfwState.exampleEligibility).toBe(false);
+      const runtimeContext = assembleRuntimeContext({ profile: 'reply', runtimeState: sfwState });
+      expect(runtimeContext.debug.droppedBlocks).toContain('Example Seed');
+      expect(runtimeContext.systemPrompt).not.toContain('Example Seed:');
+    });
+
+    it('preserves the existing warm-chat skip for mixed_transition mode', () => {
+      const flirtyHistory = [
+        { role: 'assistant', content: '*She tilts her head, a slow smile spreading.* "You came back."' },
+        { role: 'user', content: 'I missed you.' },
+        { role: 'assistant', content: '*She steps closer, fingers brushing your sleeve.* "I missed you too. More than I should admit."' },
+        { role: 'user', content: 'How was your day?' },
+        { role: 'assistant', content: '*She lingers in the doorway, breath catching softly.* "Quiet without you. The hours felt very long, and the room felt larger than it should have."' },
+        { role: 'user', content: 'I was thinking about you all day.' },
+        { role: 'assistant', content: '*Her fingers settle lightly at your sleeve, fingertips trembling.* "I want to be exactly here, exactly with you, and nothing else feels real right now."' },
+        { role: 'user', content: 'Tell me more.' },
+        { role: 'assistant', content: '*She leans, her forehead almost grazing yours, eyes half-closed.* "I have wanted to be this close to you all evening. The whole walk home I could not stop thinking about it."' },
+        { role: 'user', content: 'Stay with me.' }
+      ];
+      const mixedState = buildRuntimeState({
+        character: yukiCharacter,
+        history: flirtyHistory,
+        userName: 'Erik',
+        runtimeSteering: {
+          profile: 'reply',
+          availableContextTokens: 4096,
+          responseMode: 'normal',
+          unchainedMode: false,
+          passionLevel: 25
+        }
+      });
+
+      expect(mixedState.assistMode).toBe('mixed_transition');
+      expect(mixedState.exampleEligibility).toBe(false);
+      const runtimeContext = assembleRuntimeContext({ profile: 'reply', runtimeState: mixedState });
+      expect(runtimeContext.debug.droppedBlocks).toContain('Example Seed');
+    });
+
+    it('skips silently when persona has no exampleDialogues at nsfw depth', () => {
+      const bareCharacter = { ...yukiCharacter, exampleDialogues: [], exampleDialogue: '' };
+      const runtimeState = buildRuntimeState({
+        character: bareCharacter,
+        history: buildWarmExplicitHistory(),
+        userName: 'Erik',
+        runtimeSteering: {
+          profile: 'reply',
+          availableContextTokens: 4096,
+          responseMode: 'normal',
+          unchainedMode: true,
+          passionLevel: 95
+        }
+      });
+
+      expect(runtimeState.assistMode).toBe('nsfw_only');
+      expect(runtimeState.exampleEligibility).toBe(false);
+      const runtimeContext = assembleRuntimeContext({ profile: 'reply', runtimeState });
+      expect(runtimeContext.debug.droppedBlocks).toContain('Example Seed');
+      expect(runtimeContext.systemPrompt).not.toContain('Example Seed:');
+    });
+  });
+
   it('assembles reply, suggestions, and impersonate differently from the same runtime state', () => {
     const baseState = buildRuntimeState({
       character: {

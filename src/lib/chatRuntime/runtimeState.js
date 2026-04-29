@@ -1412,6 +1412,66 @@ function accumulateBodyState(history, previousBodyState = []) {
   return out.slice(0, SCENE_MEMORY_MAX_LIST_ENTRIES);
 }
 
+export function extractEstablishedFacts(text) {
+  const source = String(text || '').replace(/[*"]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!source) return [];
+  const found = [];
+  const seen = new Set();
+
+  const pushFact = (fact) => {
+    const cleaned = fact.replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!cleaned) return;
+    if (seen.has(cleaned)) return;
+    seen.add(cleaned);
+    found.push(cleaned);
+  };
+
+  const neverParticiple = /\b(?:has\s+|have\s+|had\s+|is\s+|was\s+)?never\s+(?:been|had|done|tried|touched|kissed|fucked|tasted|seen|felt|met|spoken|talked|gone|gotten)\s+([a-z][\w\s'-]{2,50})/gi;
+  let match;
+  while ((match = neverParticiple.exec(source)) !== null) {
+    const before = source.slice(Math.max(0, match.index - 40), match.index).toLowerCase();
+    if (/\bdon'?t\s+say\s+/.test(before)) continue;
+    const phrase = match[0].toLowerCase().replace(/^(?:has|have|had|is|was)\s+/, '').replace(/\s+/g, ' ').trim();
+    pushFact(phrase);
+  }
+
+  const neverBefore = /\b(?:has\s+|have\s+|had\s+)?never\s+([a-z][\w\s'-]{2,40}?)\s+before\b/gi;
+  while ((match = neverBefore.exec(source)) !== null) {
+    const phrase = `never ${match[1]} before`.toLowerCase().replace(/\s+/g, ' ').trim();
+    pushFact(phrase);
+  }
+
+  const firstTime = /\b(?:first\s+time|virgin\s+(?:to|in|here))\b[^.!?;]{0,80}/gi;
+  while ((match = firstTime.exec(source)) !== null) {
+    const phrase = match[0].toLowerCase().replace(/\s+/g, ' ').trim();
+    pushFact(phrase);
+  }
+
+  return found;
+}
+
+function accumulateEstablishedFacts(history, previousFacts = []) {
+  const seen = new Set();
+  const out = [];
+  for (const entry of previousFacts || []) {
+    const key = String(entry || '').toLowerCase().trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(entry);
+  }
+  for (const message of history || []) {
+    if (message?.role !== 'user' && message?.role !== 'assistant') continue;
+    const facts = extractEstablishedFacts(message.content);
+    for (const fact of facts) {
+      const key = fact.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(fact);
+    }
+  }
+  return out.slice(0, SCENE_MEMORY_MAX_LIST_ENTRIES);
+}
+
 function accumulateWardrobe(history, previousWardrobe = []) {
   const seen = new Set();
   const out = [];
@@ -1500,7 +1560,7 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
     nsfwArcAnchor: nextArcAnchor,
     wardrobe,
     bodyState: accumulateBodyState(normalizedHistory, validatedPrevious?.bodyState),
-    establishedFacts: validatedPrevious?.establishedFacts || [],
+    establishedFacts: accumulateEstablishedFacts(normalizedHistory, validatedPrevious?.establishedFacts),
     mentionedItems: validatedPrevious?.mentionedItems || [],
     source_assistant_timestamp: latestAssistantTimestamp,
     updated_at: new Date().toISOString(),

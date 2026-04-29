@@ -21,8 +21,9 @@ const PROFILE_NON_HISTORY_RESERVE = {
   impersonate: 520
 };
 
-const SCENE_MEMORY_MAX_TOKENS = 120;
+const SCENE_MEMORY_MAX_TOKENS = 200;
 const SCENE_MEMORY_MAX_FACTS = 3;
+const SCENE_MEMORY_MAX_LIST_ENTRIES = 8;
 const SCENE_MEMORY_VERSION = 1;
 
 const RELATIONSHIP_KEYWORDS = [
@@ -500,6 +501,22 @@ function trimSceneMemoryFacts(facts) {
     .slice(0, SCENE_MEMORY_MAX_FACTS);
 }
 
+function sanitizeMemoryListEntries(entries, { maxLength = 64, maxEntries = SCENE_MEMORY_MAX_LIST_ENTRIES } = {}) {
+  if (!Array.isArray(entries)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const entry of entries) {
+    const cleaned = sanitizeSceneMemoryLine(entry, maxLength);
+    if (!cleaned) continue;
+    const key = cleaned.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(cleaned);
+    if (out.length >= maxEntries) break;
+  }
+  return out;
+}
+
 function trimSceneMemoryToBudget(memory) {
   if (!memory) return null;
 
@@ -509,6 +526,10 @@ function trimSceneMemoryToBudget(memory) {
     continuity_facts: trimSceneMemoryFacts(memory.continuity_facts),
     open_thread: sanitizeSceneMemoryLine(memory.open_thread, 96),
     nsfwArcAnchor: sanitizeSceneMemoryLine(memory.nsfwArcAnchor, 96),
+    wardrobe: sanitizeMemoryListEntries(memory.wardrobe, { maxLength: 60 }),
+    bodyState: sanitizeMemoryListEntries(memory.bodyState, { maxLength: 60 }),
+    establishedFacts: sanitizeMemoryListEntries(memory.establishedFacts, { maxLength: 72 }),
+    mentionedItems: sanitizeMemoryListEntries(memory.mentionedItems, { maxLength: 40, maxEntries: 16 }),
     source_assistant_timestamp: normalizeTimestampValue(memory.source_assistant_timestamp),
     updated_at: memory.updated_at || new Date().toISOString(),
     version: SCENE_MEMORY_VERSION
@@ -518,7 +539,11 @@ function trimSceneMemoryToBudget(memory) {
     trimmed.setting_anchor,
     trimmed.relationship_anchor,
     ...(trimmed.continuity_facts || []),
-    trimmed.open_thread
+    trimmed.open_thread,
+    ...(trimmed.wardrobe || []),
+    ...(trimmed.bodyState || []),
+    ...(trimmed.establishedFacts || []),
+    ...(trimmed.mentionedItems || [])
   ].filter(Boolean).join('\n'));
 
   if (contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
@@ -537,11 +562,37 @@ function trimSceneMemoryToBudget(memory) {
     trimmed.setting_anchor = trimPromptSnippet(trimmed.setting_anchor, 72);
   }
 
+  while (trimmed.mentionedItems.length > 0 && contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
+    trimmed.mentionedItems = trimmed.mentionedItems.slice(0, -1);
+  }
+
+  while (trimmed.establishedFacts.length > 0 && contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
+    trimmed.establishedFacts = trimmed.establishedFacts.slice(0, -1);
+  }
+
+  while (trimmed.bodyState.length > 0 && contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
+    trimmed.bodyState = trimmed.bodyState.slice(0, -1);
+  }
+
+  while (trimmed.wardrobe.length > 0 && contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
+    trimmed.wardrobe = trimmed.wardrobe.slice(0, -1);
+  }
+
   if (contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
     return null;
   }
 
-  if (!trimmed.setting_anchor && !trimmed.relationship_anchor && trimmed.continuity_facts.length === 0 && !trimmed.open_thread && !trimmed.nsfwArcAnchor) {
+  const isEmpty = !trimmed.setting_anchor
+    && !trimmed.relationship_anchor
+    && trimmed.continuity_facts.length === 0
+    && !trimmed.open_thread
+    && !trimmed.nsfwArcAnchor
+    && trimmed.wardrobe.length === 0
+    && trimmed.bodyState.length === 0
+    && trimmed.establishedFacts.length === 0
+    && trimmed.mentionedItems.length === 0;
+
+  if (isEmpty) {
     return null;
   }
 

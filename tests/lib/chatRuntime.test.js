@@ -1635,4 +1635,207 @@ describe('scene memory layer (Phase D)', () => {
     expect(Array.isArray(validated?.mentionedItems)).toBe(true);
     expect(validated.mentionedItems).toEqual([]);
   });
+
+  it('filters mentioned items outside the recency window during render', () => {
+    const rendered = renderActiveScene({
+      location_or_setting: 'A bedroom.',
+      immediate_situation: '',
+      relationship_state: '',
+      continuity: '',
+      latest_character_action_or_reaction: '',
+      latest_user_action_or_request: '',
+      open_thread: '',
+      wardrobe: [],
+      body_state: [],
+      established_facts: [],
+      mentioned_items: [
+        { value: 'old scarf', turn_id: 1 },
+        { value: 'fresh ribbon', turn_id: 5 },
+        { value: 'recent vase', turn_id: 11 }
+      ],
+      current_turn: 12
+    });
+    expect(rendered).toContain('Items established by user:');
+    expect(rendered).toContain('fresh ribbon');
+    expect(rendered).toContain('recent vase');
+    expect(rendered).not.toContain('old scarf');
+  });
+
+  it('coerces legacy string mentioned items as turn id zero on validate', () => {
+    const memory = {
+      setting_anchor: 'A bedroom.',
+      relationship_anchor: '',
+      continuity_facts: [],
+      open_thread: '',
+      wardrobe: [],
+      bodyState: [],
+      establishedFacts: [],
+      mentionedItems: ['legacy scarf', 'legacy bed'],
+      source_assistant_timestamp: 1700000001000,
+      updated_at: '2026-04-29T10:00:00.000Z'
+    };
+    const validated = validateSceneMemory(memory, [
+      { role: 'assistant', content: '*She waits.*', timestamp: 1700000001000 }
+    ]);
+    expect(Array.isArray(validated?.mentionedItems)).toBe(true);
+    expect(validated.mentionedItems.every((entry) => typeof entry === 'object' && entry.turn_id === 0)).toBe(true);
+    const rendered = renderActiveScene({
+      location_or_setting: 'A bedroom.',
+      immediate_situation: '',
+      relationship_state: '',
+      continuity: '',
+      latest_character_action_or_reaction: '',
+      latest_user_action_or_request: '',
+      open_thread: '',
+      wardrobe: [],
+      body_state: [],
+      established_facts: [],
+      mentioned_items: validated.mentionedItems,
+      current_turn: 11
+    });
+    expect(rendered).not.toContain('legacy scarf');
+    expect(rendered).not.toContain('legacy bed');
+  });
+
+  it('caps established facts to the most recent eight entries', () => {
+    const character = { name: 'Mei', systemPrompt: 'Mei is dry.', scenario: 'Cafe.' };
+    const history = [];
+    let timestamp = 1700000001000;
+    for (let turn = 1; turn <= 12; turn += 1) {
+      history.push({ role: 'user', content: `she has never tried treat${turn} before`, timestamp });
+      timestamp += 1000;
+      history.push({ role: 'assistant', content: `*She nods at turn ${turn}.*`, timestamp });
+      timestamp += 1000;
+    }
+    const memory = resolveSessionSceneMemory({
+      character,
+      history,
+      userName: 'Erik'
+    });
+    expect(Array.isArray(memory?.establishedFacts)).toBe(true);
+    expect(memory.establishedFacts.length).toBeLessThanOrEqual(8);
+    const values = memory.establishedFacts.map((entry) => entry.value).join(' | ');
+    expect(values).toContain('treat12');
+    expect(values).not.toContain('treat1 ');
+  });
+
+  it('keeps established facts available across many later turns', () => {
+    const character = { name: 'Mei', systemPrompt: 'Mei is dry.', scenario: 'Cafe.' };
+    const history = [
+      { role: 'user', content: 'she has never been kissed before', timestamp: 1700000001000 },
+      { role: 'assistant', content: '*She tenses.*', timestamp: 1700000002000 }
+    ];
+    let memory = resolveSessionSceneMemory({
+      character,
+      history,
+      userName: 'Erik',
+      previousSceneMemory: null
+    });
+    let timestamp = 1700000003000;
+    for (let turn = 0; turn < 95; turn += 1) {
+      history.push({ role: 'user', content: 'she stays close', timestamp });
+      timestamp += 1000;
+      history.push({ role: 'assistant', content: '*She leans against him.*', timestamp });
+      timestamp += 1000;
+      memory = resolveSessionSceneMemory({
+        character,
+        history,
+        userName: 'Erik',
+        previousSceneMemory: memory
+      });
+    }
+    const values = (memory?.establishedFacts || []).map((entry) => entry.value).join(' | ');
+    expect(values).toContain('never been kissed');
+  });
+
+  it('clears mentioned items when the setting anchor shifts to a new scene', () => {
+    const character = { name: 'Mei', systemPrompt: 'Mei is calm.', scenario: 'Bedroom.' };
+    const previousMemory = {
+      setting_anchor: 'in the bedroom',
+      relationship_anchor: '',
+      continuity_facts: [],
+      open_thread: '',
+      wardrobe: [],
+      bodyState: [],
+      establishedFacts: [{ value: 'never been kissed', turn_id: 1 }],
+      mentionedItems: [
+        { value: 'silk scarf', turn_id: 1 },
+        { value: 'four poster bed', turn_id: 1 }
+      ],
+      source_assistant_timestamp: 1700000002000,
+      updated_at: '2026-04-29T10:00:00.000Z'
+    };
+    const history = [
+      { role: 'user', content: 'I want the silk scarf on the bed. she has never been kissed before.', timestamp: 1700000001000 },
+      { role: 'assistant', content: '*She glances at the bed.*', timestamp: 1700000002000 },
+      { role: 'user', content: 'we are now in the kitchen by the stove.', timestamp: 1700000003000 },
+      { role: 'assistant', content: '*She follows into the kitchen.*', timestamp: 1700000004000 }
+    ];
+    const memory = resolveSessionSceneMemory({
+      character,
+      history,
+      userName: 'Erik',
+      previousSceneMemory: previousMemory
+    });
+    const itemValues = (memory?.mentionedItems || []).map((entry) => entry.value).join(' | ');
+    expect(itemValues).not.toContain('silk scarf');
+    expect(itemValues).not.toContain('four poster bed');
+    const factValues = (memory?.establishedFacts || []).map((entry) => entry.value).join(' | ');
+    expect(factValues).toContain('never been kissed');
+  });
+
+  it('retains mentioned items when the setting anchor stays the same', () => {
+    const character = { name: 'Mei', systemPrompt: 'Mei is calm.', scenario: 'Bedroom.' };
+    const previousMemory = {
+      setting_anchor: 'in the bedroom by the window',
+      relationship_anchor: '',
+      continuity_facts: [],
+      open_thread: '',
+      wardrobe: [],
+      bodyState: [],
+      establishedFacts: [],
+      mentionedItems: [
+        { value: 'silk scarf', turn_id: 1 }
+      ],
+      source_assistant_timestamp: 1700000002000,
+      updated_at: '2026-04-29T10:00:00.000Z'
+    };
+    const history = [
+      { role: 'user', content: 'pick up the silk scarf.', timestamp: 1700000001000 },
+      { role: 'assistant', content: '*She nods.*', timestamp: 1700000002000 },
+      { role: 'user', content: 'I touch the bedside table.', timestamp: 1700000003000 },
+      { role: 'assistant', content: '*She watches in the bedroom.*', timestamp: 1700000004000 }
+    ];
+    const memory = resolveSessionSceneMemory({
+      character,
+      history,
+      userName: 'Erik',
+      previousSceneMemory: previousMemory
+    });
+    const itemValues = (memory?.mentionedItems || []).map((entry) => entry.value).join(' | ');
+    expect(itemValues).toContain('silk scarf');
+  });
+
+  it('renders turn-tagged mentioned items as comma-separated values', () => {
+    const rendered = renderActiveScene({
+      location_or_setting: 'A bedroom.',
+      immediate_situation: '',
+      relationship_state: '',
+      continuity: '',
+      latest_character_action_or_reaction: '',
+      latest_user_action_or_request: '',
+      open_thread: '',
+      wardrobe: [],
+      body_state: [],
+      established_facts: [{ value: 'never been kissed before', turn_id: 5 }],
+      mentioned_items: [
+        { value: 'silk scarf', turn_id: 5 },
+        { value: 'panties', turn_id: 5 }
+      ],
+      current_turn: 6
+    });
+    expect(rendered).not.toContain('[object Object]');
+    expect(rendered).toContain('Items established by user: silk scarf, panties');
+    expect(rendered).toContain('Established facts: never been kissed before');
+  });
 });

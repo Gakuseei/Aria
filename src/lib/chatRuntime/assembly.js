@@ -9,7 +9,7 @@ const PROFILE_BUDGET_TARGETS = {
     characterCore: 290,
     activeScene: 140,
     exampleSeed: 180,
-    lateSteering: 130
+    lateSteering: 180
   },
   suggestions: {
     writerRole: 80,
@@ -149,12 +149,19 @@ function buildReplyLateSteering(runtimeState) {
     if (assistMode === 'mixed_transition') return 'Build tension and closeness in character without jumping straight to explicit phrasing.';
     return 'Keep the interaction non-explicit and grounded in the moment.';
   })();
+  const voiceAnchorLines = assistMode === 'nsfw_only'
+    ? [
+        `Stay in ${characterName}'s voice signature; the voice anchor above is the contract.`,
+        'Favor phrases only this character would say. Avoid stock erotica vocabulary that any character could speak.'
+      ]
+    : [];
 
   return [
     unchainedRule,
     `Write ${characterName}'s next reply.`,
     promptInstruction,
     modeLine,
+    ...voiceAnchorLines,
     depthInstruction
   ].filter(Boolean).join('\n');
 }

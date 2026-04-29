@@ -413,6 +413,265 @@ describe('sceneMemory', () => {
     expect(valid?.continuity_facts).toEqual(['The mug is still between them.']);
     expect(stale).toBeNull();
   });
+
+  it('extracts locative phrase and skips action-block sex prose', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Yuki',
+        category: 'nsfw',
+        systemPrompt: 'Yuki is sweet and quietly possessive.',
+        scenario: 'College courtyard.'
+      },
+      history: [
+        { role: 'assistant', content: '*nuzzles into bed tenderly* "Mmm."' },
+        { role: 'user', content: 'I take her into the empty classroom and close the door.' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: { profile: 'reply', availableContextTokens: 900, responseMode: 'normal' }
+    });
+
+    expect(runtimeState.sceneState.setting_anchor.toLowerCase()).toContain('classroom');
+    expect(runtimeState.sceneState.setting_anchor.toLowerCase()).not.toContain('bed');
+  });
+
+  it('rejects body-part locatives and prefers a real setting locative', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Yuki',
+        category: 'nsfw',
+        systemPrompt: 'Yuki is sweet and quietly possessive.',
+        scenario: 'A college dorm.'
+      },
+      history: [
+        { role: 'assistant', content: 'pushes into her mouth slowly.' },
+        { role: 'user', content: 'we are in the kitchen now.' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: { profile: 'reply', availableContextTokens: 900, responseMode: 'normal' }
+    });
+
+    expect(runtimeState.sceneState.setting_anchor.toLowerCase()).toContain('kitchen');
+    expect(runtimeState.sceneState.setting_anchor.toLowerCase()).not.toContain('mouth');
+  });
+
+  it('freezes the nsfw arc anchor across turns even when later prose suggests a new setting', () => {
+    const character = {
+      name: 'Yuki',
+      category: 'nsfw',
+      systemPrompt: 'Yuki is sweet and quietly possessive.',
+      scenario: 'College.'
+    };
+
+    const transitionMemory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'user', content: 'I take her into the empty classroom and lock the door.', timestamp: 1700000001000 },
+        { role: 'assistant', content: '"Yes," she whispers as we enter.', timestamp: 1700000002000 },
+        { role: 'user', content: 'Suck my cock now.', timestamp: 1700000003000 },
+        { role: 'assistant', content: '*she sinks to her knees and takes you deep, lips trembling*', timestamp: 1700000004000 }
+      ],
+      userName: 'Erik',
+      previousSceneMemory: null
+    });
+
+    expect(transitionMemory?.nsfwArcAnchor.toLowerCase()).toContain('classroom');
+
+    const laterMemory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'user', content: 'I take her into the empty classroom and lock the door.', timestamp: 1700000001000 },
+        { role: 'assistant', content: '"Yes," she whispers as we enter.', timestamp: 1700000002000 },
+        { role: 'user', content: 'Suck my cock now.', timestamp: 1700000003000 },
+        { role: 'assistant', content: '*she sinks to her knees and takes you deep, lips trembling*', timestamp: 1700000004000 },
+        { role: 'user', content: 'now keep going, deeper.', timestamp: 1700000005000 },
+        { role: 'assistant', content: '*nuzzles into bed tenderly as you bottom out.*', timestamp: 1700000006000 }
+      ],
+      userName: 'Erik',
+      previousSceneMemory: transitionMemory
+    });
+
+    expect(laterMemory?.nsfwArcAnchor.toLowerCase()).toContain('classroom');
+    expect(laterMemory?.setting_anchor.toLowerCase()).toContain('classroom');
+    expect(laterMemory?.setting_anchor.toLowerCase()).not.toContain('bed');
+  });
+
+  it('overrides frozen nsfw arc anchor when user explicitly relocates', () => {
+    const character = {
+      name: 'Yuki',
+      category: 'nsfw',
+      systemPrompt: 'Yuki is sweet.',
+      scenario: 'College.'
+    };
+
+    const baseMemory = {
+      setting_anchor: 'into the empty classroom',
+      relationship_anchor: '',
+      continuity_facts: [],
+      open_thread: '',
+      nsfwArcAnchor: 'into the empty classroom',
+      source_assistant_timestamp: 1700000004000,
+      updated_at: '2026-04-29T00:00:00.000Z',
+      version: 1
+    };
+
+    const overrideMemory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'assistant', content: '*her pussy clenches around your cock as she rides you*', timestamp: 1700000004000 },
+        { role: 'user', content: "Let's go to the bathroom and keep fucking there.", timestamp: 1700000005000 },
+        { role: 'assistant', content: '*moans as she straddles you again, riding your cock harder*', timestamp: 1700000006000 }
+      ],
+      userName: 'Erik',
+      previousSceneMemory: baseMemory
+    });
+
+    expect(overrideMemory?.nsfwArcAnchor.toLowerCase()).toContain('bathroom');
+    expect(overrideMemory?.setting_anchor.toLowerCase()).toContain('bathroom');
+  });
+
+  it('ignores assistant prose locatives mid-arc when no explicit user relocation', () => {
+    const character = {
+      name: 'Yuki',
+      category: 'nsfw',
+      systemPrompt: 'Yuki is sweet.',
+      scenario: 'College.'
+    };
+
+    const frozen = {
+      setting_anchor: 'into the empty classroom',
+      relationship_anchor: '',
+      continuity_facts: [],
+      open_thread: '',
+      nsfwArcAnchor: 'into the empty classroom',
+      source_assistant_timestamp: 1700000004000,
+      updated_at: '2026-04-29T00:00:00.000Z',
+      version: 1
+    };
+
+    const stillFrozen = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'assistant', content: '*her pussy clenches around your cock as she rides you*', timestamp: 1700000004000 },
+        { role: 'user', content: 'fuck me harder, keep going deep.', timestamp: 1700000005000 },
+        { role: 'assistant', content: 'In the bedroom moonlight she rides your cock harder, her pussy soaking wet around you.', timestamp: 1700000006000 }
+      ],
+      userName: 'Erik',
+      previousSceneMemory: frozen
+    });
+
+    expect(stillFrozen?.nsfwArcAnchor.toLowerCase()).toContain('classroom');
+    expect(stillFrozen?.setting_anchor.toLowerCase()).toContain('classroom');
+    expect(stillFrozen?.setting_anchor.toLowerCase()).not.toContain('bedroom');
+  });
+
+  it('clears the nsfw arc anchor when assistMode returns to non-nsfw', () => {
+    const character = {
+      name: 'Yuki',
+      category: 'nsfw',
+      systemPrompt: 'Yuki is sweet.',
+      scenario: 'College.'
+    };
+
+    const frozen = {
+      setting_anchor: 'into the empty classroom',
+      relationship_anchor: '',
+      continuity_facts: [],
+      open_thread: '',
+      nsfwArcAnchor: 'into the empty classroom',
+      source_assistant_timestamp: 1700000004000,
+      updated_at: '2026-04-29T00:00:00.000Z',
+      version: 1
+    };
+
+    const cleared = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'assistant', content: '*she pulls back, breathing hard*', timestamp: 1700000004000 },
+        { role: 'user', content: 'how was your day at school?', timestamp: 1700000005000 },
+        { role: 'assistant', content: 'It was fine, the lecture ran long but the library was quiet.', timestamp: 1700000006000 }
+      ],
+      userName: 'Erik',
+      previousSceneMemory: frozen
+    });
+
+    expect(cleared?.nsfwArcAnchor || '').toBe('');
+  });
+
+  it('open thread skips action-block sex prose and returns plain question', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Yuki',
+        category: 'nsfw',
+        systemPrompt: 'Yuki is sweet.',
+        scenario: 'College.'
+      },
+      history: [
+        { role: 'user', content: 'I want you so badly.' },
+        { role: 'assistant', content: 'Are you sure about this? *reaches back to hold cheeks open for you*' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: { profile: 'reply', availableContextTokens: 900, responseMode: 'normal' }
+    });
+
+    expect(runtimeState.activeScene.open_thread.toLowerCase()).toContain('are you sure');
+    expect(runtimeState.activeScene.open_thread.toLowerCase()).not.toContain('cheeks');
+  });
+
+  it('loads legacy scene memory without nsfwArcAnchor field without crashing', () => {
+    const legacyMemory = {
+      setting_anchor: 'Cafe counter by the rainy window.',
+      relationship_anchor: 'Quiet trust between regulars.',
+      continuity_facts: ['The mug is still between them.'],
+      open_thread: 'Whether she will stay.',
+      source_assistant_timestamp: 1700000001000,
+      updated_at: '2026-03-23T10:00:00.000Z'
+    };
+
+    const validated = validateSceneMemory(legacyMemory, [
+      { role: 'assistant', content: '*She waits.*', timestamp: 1700000001000 },
+      { role: 'user', content: 'Stay.', timestamp: 1700000002000 }
+    ]);
+
+    expect(validated?.nsfwArcAnchor).toBe('');
+    expect(validated?.setting_anchor).toContain('Cafe counter');
+  });
+
+  it('replays the Yuki failure sequence and lands on a non-bed anchor', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const url = await import('node:url');
+    const here = path.dirname(url.fileURLToPath(import.meta.url));
+    const raw = fs.readFileSync(path.join(here, '..', 'chat-Yuki-1777405049496.json'), 'utf8');
+    const data = JSON.parse(raw);
+    const character = {
+      name: 'Yuki',
+      category: 'nsfw',
+      systemPrompt: 'Yuki is sweet, devoted, and quietly possessive.',
+      scenario: 'College.'
+    };
+
+    const messages = data.messages.filter((message) => message.role === 'user' || message.role === 'assistant');
+    const cutoff = Math.min(messages.length, 24);
+
+    let memory = null;
+    for (let length = 1; length <= cutoff; length += 1) {
+      const slice = messages.slice(0, length);
+      const last = slice[slice.length - 1];
+      if (last?.role !== 'assistant') continue;
+      memory = resolveSessionSceneMemory({
+        character,
+        history: slice,
+        userName: 'Erik',
+        previousSceneMemory: memory
+      });
+    }
+
+    const anchorText = (memory?.setting_anchor || '').toLowerCase();
+    const arcAnchor = (memory?.nsfwArcAnchor || '').toLowerCase();
+    expect(`${anchorText} ${arcAnchor}`).toContain('classroom');
+    expect(anchorText).not.toContain('bed tenderly');
+    expect(anchorText).not.toContain('bottom out');
+  });
 });
 
 describe('assembleRuntimeContext', () => {

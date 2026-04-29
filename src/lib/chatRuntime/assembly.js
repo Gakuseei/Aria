@@ -3,6 +3,8 @@ import { getResponseModeConfig } from '../responseModes.js';
 import { buildPlainTextBlock, buildVoicePinBlock, clipToTokenTarget, estimateTokens, splitSentences, trimPromptSnippet } from './text.js';
 import { renderActiveScene } from './runtimeState.js';
 
+// Reply targets sum to ~850 tokens; PROFILE_NON_HISTORY_RESERVE.reply is 820. The 30-token
+// overshoot is absorbed by the overflow handler and trades headroom for full Late Steering at NSFW.
 const PROFILE_BUDGET_TARGETS = {
   reply: {
     globalCore: 60,

@@ -1153,6 +1153,12 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
   };
 }
 
+/**
+ * Builds the per-turn scene-memory snapshot. nsfwArcAnchor binds only to a continuous
+ * nsfw_only arc — it is snapshotted on first nsfw_only entry, carried while the arc
+ * holds, overridden by an explicit user location move, and cleared when assistMode
+ * leaves nsfw_only.
+ */
 export function resolveSessionSceneMemory({ character, history, userName = 'User', previousSceneMemory = null }) {
   const normalizedHistory = Array.isArray(history) ? history : [];
   const validatedPrevious = validateSceneMemory(previousSceneMemory, normalizedHistory);

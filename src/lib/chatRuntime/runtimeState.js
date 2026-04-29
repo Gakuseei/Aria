@@ -1205,6 +1205,106 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
 }
 
 /**
+ * Closed grammatical class of clothing-shape head-nouns. NOT a wardrobe whitelist —
+ * these are the structural tail markers used by the wardrobe extractor to know when a
+ * captured noun-phrase actually names a garment. Expanding this is acceptable; broad
+ * vocabulary scraping is not.
+ */
+const CLOTHING_HEAD_PATTERN = /(dress|shirt|blouse|skirt|pants|trousers|shorts|coat|jacket|gown|robe|uniform|apron|stockings|socks|shoes|boots|panties|bra|hat|scarf|tie|belt|gloves?|glove|veil|mask|sash|cloak|cape|sweater|hoodie|leggings|tights|underwear|lingerie|bikini|swimsuit|nightgown|chemise|corset|bodice|negligee|kimono|dressing\s+gown|nightie)/;
+const WARDROBE_TAIL_PHRASE = /(?:^|\s)(?:a|an|her|his|their|the|my|your)\s+([a-z][\w-]*(?:\s+[a-z][\w-]*){0,3})/gi;
+
+function tokenizeWords(text) {
+  return String(text || '').toLowerCase().split(/[^a-z]+/).filter(Boolean);
+}
+
+function isAnatomyHead(phrase) {
+  const tokens = tokenizeWords(phrase);
+  if (tokens.length === 0) return false;
+  return ANATOMY_WORDS.has(tokens[tokens.length - 1]);
+}
+
+function isAbstractHead(phrase) {
+  const tokens = tokenizeWords(phrase);
+  if (tokens.length === 0) return false;
+  return ABSTRACT_NOUN_WORDS.has(tokens[tokens.length - 1]);
+}
+
+function normalizeWardrobePhrase(raw) {
+  return String(raw || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function trimToClothingHead(phrase) {
+  const tokens = String(phrase || '').toLowerCase().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return '';
+  for (let index = 0; index < tokens.length; index += 1) {
+    if (CLOTHING_HEAD_PATTERN.test(tokens[index])) {
+      return tokens.slice(0, index + 1).join(' ');
+    }
+  }
+  return '';
+}
+
+function extractWardrobeFromText(text) {
+  const source = String(text || '').replace(/[*"]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!source) return [];
+  const found = [];
+  const seen = new Set();
+
+  const collect = (phrase) => {
+    const head = trimToClothingHead(phrase);
+    if (!head) return;
+    if (isAnatomyHead(head)) return;
+    if (isAbstractHead(head)) return;
+    if (seen.has(head)) return;
+    seen.add(head);
+    found.push(head);
+  };
+
+  const tailRegex = /\b(?:wearing|dressed\s+in|clad\s+in)\s+(?:a|an|her|his|their|the|my|your)\s+([a-z][\w\s-]{2,40})/gi;
+  let match;
+  while ((match = tailRegex.exec(source)) !== null) {
+    collect(match[1]);
+  }
+
+  const possessiveRegex = /\b(?:her|his|their|my|your)\s+([a-z][\w\s-]{2,40})/gi;
+  while ((match = possessiveRegex.exec(source)) !== null) {
+    collect(match[1]);
+  }
+
+  return found;
+}
+
+export function extractWardrobeMutations(text) {
+  return extractWardrobeFromText(text);
+}
+
+function accumulateWardrobe(history, previousWardrobe = []) {
+  const seen = new Set();
+  const out = [];
+  for (const entry of previousWardrobe || []) {
+    const normalized = normalizeWardrobePhrase(entry);
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    out.push(entry);
+  }
+  for (const message of history || []) {
+    if (message?.role !== 'user' && message?.role !== 'assistant') continue;
+    const phrases = extractWardrobeFromText(message.content);
+    for (const phrase of phrases) {
+      const normalized = normalizeWardrobePhrase(phrase);
+      if (!normalized || seen.has(normalized)) continue;
+      seen.add(normalized);
+      out.push(phrase);
+    }
+  }
+  return out.slice(0, SCENE_MEMORY_MAX_LIST_ENTRIES);
+}
+
+/**
  * Builds the per-turn scene-memory snapshot. nsfwArcAnchor binds only to a continuous
  * nsfw_only arc — it is snapshotted on first nsfw_only entry, carried while the arc
  * holds, overridden by an explicit user location move, and cleared when assistMode
@@ -1260,12 +1360,18 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
     }
   }
 
+  const wardrobe = accumulateWardrobe(normalizedHistory, validatedPrevious?.wardrobe);
+
   const sceneMemory = trimSceneMemoryToBudget({
     setting_anchor: runtimeState.sceneState.setting_anchor,
     relationship_anchor: runtimeState.sceneState.relationship_anchor,
     continuity_facts: runtimeState.sceneState.continuity_facts,
     open_thread: derivePersistentOpenThread(latestUserTurn, latestAssistantTurn),
     nsfwArcAnchor: nextArcAnchor,
+    wardrobe,
+    bodyState: validatedPrevious?.bodyState || [],
+    establishedFacts: validatedPrevious?.establishedFacts || [],
+    mentionedItems: validatedPrevious?.mentionedItems || [],
     source_assistant_timestamp: latestAssistantTimestamp,
     updated_at: new Date().toISOString(),
     version: SCENE_MEMORY_VERSION

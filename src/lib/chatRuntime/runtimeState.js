@@ -1837,12 +1837,32 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
   return sceneMemory;
 }
 
+function normalizeAnchorTokens(anchor) {
+  return String(anchor || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]+/g, ' ')
+    .split(/\s+/)
+    .filter((token) => token && token.length >= 4 && !ANCHOR_STOPWORDS.has(token));
+}
+
+const ANCHOR_STOPWORDS = new Set([
+  'into', 'inside', 'onto', 'with', 'from', 'over', 'through', 'past',
+  'near', 'next', 'beside', 'this', 'that', 'these', 'those', 'their',
+  'where', 'while', 'among', 'around', 'still', 'just', 'very'
+]);
+
 function isSceneBoundaryShift(previousAnchor, nextAnchor) {
   const a = String(previousAnchor || '').trim().toLowerCase();
   const b = String(nextAnchor || '').trim().toLowerCase();
   if (!a || !b) return false;
   if (a === b) return false;
   if (a.includes(b) || b.includes(a)) return false;
+  const aTokens = normalizeAnchorTokens(a);
+  const bTokens = normalizeAnchorTokens(b);
+  if (aTokens.length === 0 || bTokens.length === 0) return false;
+  const aSet = new Set(aTokens);
+  const overlap = bTokens.some((token) => aSet.has(token));
+  if (overlap) return false;
   return true;
 }
 

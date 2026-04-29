@@ -950,6 +950,11 @@ function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sc
   const turnScope = deriveTurnScope(latestUserTurn, latestAssistantTurn, latestRole);
   const userTurnScope = deriveScopeFromText(latestUserTurn, 'user');
 
+  const wardrobe = Array.isArray(sceneMemory?.wardrobe) ? sceneMemory.wardrobe : [];
+  const bodyState = Array.isArray(sceneMemory?.bodyState) ? sceneMemory.bodyState : [];
+  const establishedFacts = Array.isArray(sceneMemory?.establishedFacts) ? sceneMemory.establishedFacts : [];
+  const mentionedItems = Array.isArray(sceneMemory?.mentionedItems) ? sceneMemory.mentionedItems : [];
+
   return {
     setting_anchor: settingAnchor.value,
     relationship_anchor: relationshipAnchor.value,
@@ -962,6 +967,10 @@ function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sc
     turn_scope: turnScope,
     last_turn_role: latestRole,
     open_thread: openThread || sanitizeSceneMemoryLine(sceneMemory?.open_thread, 96) || '',
+    wardrobe,
+    bodyState,
+    establishedFacts,
+    mentionedItems,
     debug: {
       settingSource: settingAnchor.source,
       relationshipSource: relationshipAnchor.source,
@@ -1004,7 +1013,11 @@ function buildActiveScene(sceneState) {
     turn_scope_level: sceneState.turn_scope?.level || 'same_beat',
     turn_scope_anchor: sceneState.turn_scope?.anchor || '',
     turn_scope_guidance: sceneState.turn_scope?.guidance || '',
-    open_thread: sceneState.open_thread
+    open_thread: sceneState.open_thread,
+    wardrobe: Array.isArray(sceneState.wardrobe) ? sceneState.wardrobe : [],
+    body_state: Array.isArray(sceneState.bodyState) ? sceneState.bodyState : [],
+    established_facts: Array.isArray(sceneState.establishedFacts) ? sceneState.establishedFacts : [],
+    mentioned_items: Array.isArray(sceneState.mentionedItems) ? sceneState.mentionedItems : []
   };
 }
 
@@ -1629,11 +1642,23 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
   return sceneMemory;
 }
 
+function joinList(list) {
+  if (!Array.isArray(list) || list.length === 0) return '';
+  return list.filter((entry) => String(entry || '').trim()).join(', ');
+}
+
 export function renderActiveScene(activeScene, { compact = false } = {}) {
+  const wardrobeLine = joinList(activeScene.wardrobe);
+  const bodyStateLine = joinList(activeScene.body_state);
+  const establishedFactsLine = joinList(activeScene.established_facts);
+  const mentionedItemsLine = joinList(activeScene.mentioned_items);
+
   const fields = compact
     ? [
         ['Setting', activeScene.location_or_setting],
         ['Situation', activeScene.immediate_situation],
+        ['Wardrobe', wardrobeLine],
+        ['Body state', bodyStateLine],
         ['Continuity', activeScene.continuity],
         ['Character Beat', activeScene.latest_character_action_or_reaction],
         ['User Beat', activeScene.latest_user_action_or_request],
@@ -1642,6 +1667,10 @@ export function renderActiveScene(activeScene, { compact = false } = {}) {
     : [
         ['Setting', activeScene.location_or_setting],
         ['Situation', activeScene.immediate_situation],
+        ['Wardrobe', wardrobeLine],
+        ['Body state', bodyStateLine],
+        ['Established facts', establishedFactsLine],
+        ['Items established by user', mentionedItemsLine],
         ['Relationship', activeScene.relationship_state],
         ['Continuity', activeScene.continuity],
         ['Character Beat', activeScene.latest_character_action_or_reaction],

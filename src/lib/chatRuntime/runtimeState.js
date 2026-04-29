@@ -3,6 +3,7 @@ import {
   estimateTokens,
   normalizeWhitespace,
   pickSentenceByKeywords,
+  resolveTemplates,
   splitSentences,
   trimPromptSnippet,
   truncateMiddle
@@ -880,6 +881,88 @@ function shouldUseExampleSeed({ history, compiledRuntimeCard, profile, assistMod
   return coldChat || stillFormingVoice || compiledRuntimeCard.runtimeDefaults.voiceDependsOnExamples || sparseCadenceEvidence;
 }
 
+const SUBJECT_PRONOUNS = new Set(['i', 'you', 'he', 'she', 'we', 'they', 'it', 'his', 'her', 'their', 'my', 'your', 'our']);
+const STRUCTURAL_SCORE_MARGIN = 2;
+
+function stripLeadingActionsAndQuotes(sentence) {
+  let remaining = String(sentence || '').trim();
+  while (remaining.length > 0) {
+    const before = remaining;
+    remaining = remaining.replace(/^\*[^*]*\*\s*/, '');
+    remaining = remaining.replace(/^["“”'']+/, '').trim();
+    if (remaining === before) break;
+  }
+  return remaining;
+}
+
+function startsWithImperativeMood(sentence) {
+  const stripped = stripLeadingActionsAndQuotes(sentence);
+  if (!stripped) return false;
+  const firstWordMatch = stripped.match(/^([A-Za-z]+)\b/);
+  if (!firstWordMatch) return false;
+  const firstWord = firstWordMatch[1].toLowerCase();
+  if (SUBJECT_PRONOUNS.has(firstWord)) return false;
+  return true;
+}
+
+function scoreCharacterResponseStructure(characterResponse) {
+  const text = String(characterResponse || '').trim();
+  if (!text) return 0;
+
+  const sentences = splitSentences(text).filter(Boolean);
+  if (sentences.length === 0) return 0;
+
+  const wordCounts = sentences.map((sentence) => sentence.replace(/[*"]/g, ' ').trim().split(/\s+/).filter(Boolean).length);
+  const totalWords = wordCounts.reduce((sum, count) => sum + count, 0);
+  const avgSentenceLength = totalWords / sentences.length;
+
+  let score = 0;
+
+  if (avgSentenceLength < 12) score += 2;
+  if (avgSentenceLength < 8) score += 1;
+
+  const fragmentMarkers = (text.match(/—|\.\.\.|…/g) || []).length;
+  if (fragmentMarkers >= 2) score += 1;
+  if (fragmentMarkers >= 4) score += 1;
+
+  const hasInterleavedAsteriskActionsAndQuotes = /\*[^*]+\*[^*"]*"[^"]+"/.test(text) || /"[^"]+"[^*"]*\*[^*]+\*/.test(text);
+  if (hasInterleavedAsteriskActionsAndQuotes) score += 2;
+
+  const imperativeCount = sentences.reduce((count, sentence) => count + (startsWithImperativeMood(sentence) ? 1 : 0), 0);
+  if (imperativeCount >= 1) score += 1;
+  if (imperativeCount >= 2) score += 1;
+
+  return score;
+}
+
+function formatExamplePair(entry) {
+  const userLine = String(entry?.user || '').trim();
+  const assistantLine = String(entry?.character || '').trim();
+  if (!userLine || !assistantLine) return '';
+  return `{{user}}: ${userLine}\n{{char}}: ${assistantLine}`;
+}
+
+function pickExampleDialogue(exampleDialogues, assistMode) {
+  if (!Array.isArray(exampleDialogues) || exampleDialogues.length === 0) return null;
+  if (assistMode !== 'nsfw_only') return null;
+
+  const scored = exampleDialogues
+    .map((entry) => ({ entry, formatted: formatExamplePair(entry), score: scoreCharacterResponseStructure(entry?.character) }))
+    .filter((candidate) => candidate.formatted);
+
+  if (scored.length === 0) return null;
+
+  const sortedByScore = [...scored].sort((left, right) => right.score - left.score);
+  const top = sortedByScore[0];
+  const second = sortedByScore[1];
+
+  if (!second || top.score - second.score >= STRUCTURAL_SCORE_MARGIN) {
+    return top.formatted;
+  }
+
+  return null;
+}
+
 function calculateHistoryBudget(totalBudget, profile) {
   const historyShare = PROFILE_HISTORY_SHARE[profile] || PROFILE_HISTORY_SHARE.reply;
   const nonHistoryReserve = PROFILE_NON_HISTORY_RESERVE[profile] || PROFILE_NON_HISTORY_RESERVE.reply;
@@ -945,6 +1028,11 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
     charName,
     assistMode: assistMode.value
   });
+
+  const intimateExamplePick = pickExampleDialogue(character?.exampleDialogues, assistMode.value);
+  if (intimateExamplePick) {
+    compiledRuntimeCard.exampleSeed = resolveTemplates(intimateExamplePick, charName, userName);
+  }
 
   return {
     compiledRuntimeCard,

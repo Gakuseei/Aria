@@ -862,7 +862,7 @@ function buildActiveScene(sceneState) {
   };
 }
 
-function shouldUseExampleSeed({ history, compiledRuntimeCard, profile }) {
+function shouldUseExampleSeed({ history, compiledRuntimeCard, profile, assistMode }) {
   if (!compiledRuntimeCard.exampleSeed || profile !== 'reply') return false;
 
   const assistantTurns = history.filter((message) => message.role === 'assistant');
@@ -874,6 +874,8 @@ function shouldUseExampleSeed({ history, compiledRuntimeCard, profile }) {
   if (compiledRuntimeCard.runtimeDefaults.type === 'bot') {
     return assistantTurns.length === 0 && compiledRuntimeCard.runtimeDefaults.voiceDependsOnExamples;
   }
+
+  if (assistMode === 'nsfw_only') return true;
 
   return coldChat || stillFormingVoice || compiledRuntimeCard.runtimeDefaults.voiceDependsOnExamples || sparseCadenceEvidence;
 }
@@ -958,7 +960,8 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
     exampleEligibility: shouldUseExampleSeed({
       history: normalizedHistory,
       compiledRuntimeCard,
-      profile
+      profile,
+      assistMode: assistMode.value
     }),
     voicePinResolution
   };

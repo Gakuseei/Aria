@@ -1809,6 +1809,14 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
 
   const wardrobe = accumulateWardrobe(normalizedHistory, validatedPrevious?.wardrobe);
 
+  const previousSettingAnchor = sanitizeSceneMemoryLine(
+    validatedPrevious?.setting_anchor || previousSceneMemory?.setting_anchor,
+    96
+  );
+  const nextSettingAnchor = sanitizeSceneMemoryLine(runtimeState.sceneState.setting_anchor, 96);
+  const sceneChanged = isSceneBoundaryShift(previousSettingAnchor, nextSettingAnchor);
+  const carriedMentionedItems = sceneChanged ? [] : validatedPrevious?.mentionedItems;
+
   const sceneMemory = trimSceneMemoryToBudget({
     setting_anchor: runtimeState.sceneState.setting_anchor,
     relationship_anchor: runtimeState.sceneState.relationship_anchor,
@@ -1818,13 +1826,47 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
     wardrobe,
     bodyState: accumulateBodyState(normalizedHistory, validatedPrevious?.bodyState),
     establishedFacts: accumulateEstablishedFacts(normalizedHistory, validatedPrevious?.establishedFacts),
-    mentionedItems: accumulateMentionedItems(normalizedHistory, validatedPrevious?.mentionedItems),
+    mentionedItems: sceneChanged
+      ? accumulateMentionedItemsSinceLastTurn(normalizedHistory)
+      : accumulateMentionedItems(normalizedHistory, carriedMentionedItems),
     source_assistant_timestamp: latestAssistantTimestamp,
     updated_at: new Date().toISOString(),
     version: SCENE_MEMORY_VERSION
   });
 
   return sceneMemory;
+}
+
+function isSceneBoundaryShift(previousAnchor, nextAnchor) {
+  const a = String(previousAnchor || '').trim().toLowerCase();
+  const b = String(nextAnchor || '').trim().toLowerCase();
+  if (!a || !b) return false;
+  if (a === b) return false;
+  if (a.includes(b) || b.includes(a)) return false;
+  return true;
+}
+
+function accumulateMentionedItemsSinceLastTurn(history) {
+  const messages = Array.isArray(history) ? history : [];
+  let lastUserIndex = -1;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index]?.role === 'user') {
+      lastUserIndex = index;
+      break;
+    }
+  }
+  if (lastUserIndex < 0) return [];
+  const totalAssistantTurns = countAssistantTurns(messages);
+  const items = extractMentionedItems(messages[lastUserIndex].content);
+  const seen = new Set();
+  const out = [];
+  for (const item of items) {
+    const key = item.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ value: item, turn_id: totalAssistantTurns });
+  }
+  return out;
 }
 
 function joinList(list) {

@@ -3,14 +3,15 @@ import { getResponseModeConfig } from '../responseModes.js';
 import { buildPlainTextBlock, buildVoicePinBlock, clipToTokenTarget, estimateTokens, splitSentences, trimPromptSnippet } from './text.js';
 import { renderActiveScene } from './runtimeState.js';
 
-// Reply targets sum to ~910 tokens; PROFILE_NON_HISTORY_RESERVE.reply is 820. The 90-token
+// Reply targets sum to ~1010 tokens; PROFILE_NON_HISTORY_RESERVE.reply is 820. The ~190-token
 // overshoot is absorbed by the overflow handler and trades headroom for full Global Core
-// (embodiment line) plus full Late Steering at NSFW.
+// (embodiment line), full Late Steering at NSFW, plus the Phase D structural memory layer
+// (wardrobe, body state, established facts, mentioned items) inside Active Scene.
 const PROFILE_BUDGET_TARGETS = {
   reply: {
     globalCore: 120,
     characterCore: 290,
-    activeScene: 140,
+    activeScene: 240,
     exampleSeed: 180,
     lateSteering: 180
   },

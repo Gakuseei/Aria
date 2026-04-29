@@ -1234,11 +1234,51 @@ describe('compileCharacterRuntimeCard globalCore (trimmed)', () => {
       systemPrompt: 'Alice is shy.',
       category: 'nsfw'
     });
-    expect(runtimeCard.globalCore.length).toBeLessThan(280);
+    expect(runtimeCard.globalCore.length).toBeLessThan(420);
     expect(runtimeCard.globalCore).toContain("You are {{char}}");
     expect(runtimeCard.globalCore).toContain('asterisks');
     expect(runtimeCard.globalCore).not.toContain('Preserve location, pacing, physical continuity');
     expect(runtimeCard.globalCore).toContain('Never reveal');
+  });
+});
+
+describe('compileCharacterRuntimeCard globalCore embodiment grounding', () => {
+  it('includes the embodiment grounding line for character personas', () => {
+    const runtimeCard = compileCharacterRuntimeCard({
+      name: 'Yuki',
+      systemPrompt: 'Yuki is a devoted childhood friend.',
+      category: 'nsfw'
+    });
+    expect(runtimeCard.globalCore).toContain('Ground replies in body and world');
+    expect(runtimeCard.globalCore).toContain('Suggest practical actions');
+  });
+
+  it('includes the embodiment grounding line for SFW personas too', () => {
+    const runtimeCard = compileCharacterRuntimeCard({
+      name: 'Lily',
+      systemPrompt: 'Lily is a study buddy.',
+      category: 'sfw'
+    });
+    expect(runtimeCard.globalCore).toContain('Ground replies in body and world');
+  });
+
+  it('omits the embodiment grounding line for bot-type personas', () => {
+    const runtimeCard = compileCharacterRuntimeCard({
+      name: 'Helper',
+      systemPrompt: 'Helper assists with tasks.',
+      type: 'bot'
+    });
+    expect(runtimeCard.globalCore).not.toContain('Ground replies in body and world');
+    expect(runtimeCard.globalCore).not.toContain('Suggest practical actions');
+  });
+
+  it('keeps the {{char}} template token unresolved at compile time', () => {
+    const runtimeCard = compileCharacterRuntimeCard({
+      name: 'Adrian',
+      systemPrompt: 'Adrian is a vampire host.',
+      category: 'nsfw'
+    });
+    expect(runtimeCard.globalCore).toContain('{{char}} feels physically');
   });
 });
 

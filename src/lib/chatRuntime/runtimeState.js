@@ -501,13 +501,14 @@ function trimSceneMemoryFacts(facts) {
     .slice(0, SCENE_MEMORY_MAX_FACTS);
 }
 
-function sanitizeMemoryListEntries(entries, { maxLength = 64, maxEntries = SCENE_MEMORY_MAX_LIST_ENTRIES } = {}) {
+function sanitizeMemoryListEntries(entries, { maxLength = 64, maxEntries = SCENE_MEMORY_MAX_LIST_ENTRIES, validate = null } = {}) {
   if (!Array.isArray(entries)) return [];
   const seen = new Set();
   const out = [];
   for (const entry of entries) {
     const cleaned = sanitizeSceneMemoryLine(entry, maxLength);
     if (!cleaned) continue;
+    if (typeof validate === 'function' && !validate(cleaned)) continue;
     const key = cleaned.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -526,7 +527,10 @@ function trimSceneMemoryToBudget(memory) {
     continuity_facts: trimSceneMemoryFacts(memory.continuity_facts),
     open_thread: sanitizeSceneMemoryLine(memory.open_thread, 96),
     nsfwArcAnchor: sanitizeSceneMemoryLine(memory.nsfwArcAnchor, 96),
-    wardrobe: sanitizeMemoryListEntries(memory.wardrobe, { maxLength: 60 }),
+    wardrobe: sanitizeMemoryListEntries(memory.wardrobe, {
+      maxLength: 60,
+      validate: (entry) => Boolean(trimToClothingHead(entry))
+    }),
     bodyState: sanitizeMemoryListEntries(memory.bodyState, { maxLength: 60 }),
     establishedFacts: sanitizeMemoryListEntries(memory.establishedFacts, { maxLength: 72 }),
     mentionedItems: sanitizeMemoryListEntries(memory.mentionedItems, { maxLength: 40, maxEntries: 16 }),

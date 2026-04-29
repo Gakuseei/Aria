@@ -25,6 +25,47 @@ const SCENE_MEMORY_MAX_TOKENS = 200;
 const SCENE_MEMORY_MAX_FACTS = 3;
 const SCENE_MEMORY_MAX_LIST_ENTRIES = 8;
 const SCENE_MEMORY_VERSION = 1;
+const MENTIONED_ITEMS_RECENCY_TURNS = 10;
+const ESTABLISHED_FACTS_CAP = 8;
+
+function countAssistantTurns(history) {
+  if (!Array.isArray(history)) return 0;
+  let count = 0;
+  for (const message of history) {
+    if (message?.role === 'assistant') count += 1;
+  }
+  return count;
+}
+
+function coerceTurnTaggedEntry(entry, fallbackTurnId = 0) {
+  if (!entry) return null;
+  if (typeof entry === 'string') {
+    const value = entry.trim();
+    if (!value) return null;
+    return { value, turn_id: fallbackTurnId };
+  }
+  if (typeof entry === 'object') {
+    const value = String(entry.value || '').trim();
+    if (!value) return null;
+    const turnId = Number.isFinite(entry.turn_id) ? entry.turn_id : fallbackTurnId;
+    return { value, turn_id: turnId };
+  }
+  return null;
+}
+
+function entryValue(entry) {
+  if (!entry) return '';
+  if (typeof entry === 'string') return entry;
+  if (typeof entry === 'object') return String(entry.value || '');
+  return '';
+}
+
+function entryTurnId(entry, fallback = 0) {
+  if (entry && typeof entry === 'object' && Number.isFinite(entry.turn_id)) {
+    return entry.turn_id;
+  }
+  return fallback;
+}
 
 const RELATIONSHIP_KEYWORDS = [
   'master',
@@ -506,13 +547,32 @@ function sanitizeMemoryListEntries(entries, { maxLength = 64, maxEntries = SCENE
   const seen = new Set();
   const out = [];
   for (const entry of entries) {
-    const cleaned = sanitizeSceneMemoryLine(entry, maxLength);
+    const cleaned = sanitizeSceneMemoryLine(entryValue(entry), maxLength);
     if (!cleaned) continue;
     if (typeof validate === 'function' && !validate(cleaned)) continue;
     const key = cleaned.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(cleaned);
+    if (out.length >= maxEntries) break;
+  }
+  return out;
+}
+
+function sanitizeTurnTaggedEntries(entries, { maxLength = 64, maxEntries = SCENE_MEMORY_MAX_LIST_ENTRIES, validate = null } = {}) {
+  if (!Array.isArray(entries)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const raw of entries) {
+    const coerced = coerceTurnTaggedEntry(raw, 0);
+    if (!coerced) continue;
+    const cleaned = sanitizeSceneMemoryLine(coerced.value, maxLength);
+    if (!cleaned) continue;
+    if (typeof validate === 'function' && !validate(cleaned)) continue;
+    const key = cleaned.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ value: cleaned, turn_id: coerced.turn_id });
     if (out.length >= maxEntries) break;
   }
   return out;
@@ -532,8 +592,8 @@ function trimSceneMemoryToBudget(memory) {
       validate: (entry) => Boolean(trimToClothingHead(entry))
     }),
     bodyState: sanitizeMemoryListEntries(memory.bodyState, { maxLength: 60 }),
-    establishedFacts: sanitizeMemoryListEntries(memory.establishedFacts, { maxLength: 72 }),
-    mentionedItems: sanitizeMemoryListEntries(memory.mentionedItems, { maxLength: 40, maxEntries: 16 }),
+    establishedFacts: sanitizeTurnTaggedEntries(memory.establishedFacts, { maxLength: 72, maxEntries: ESTABLISHED_FACTS_CAP }),
+    mentionedItems: sanitizeTurnTaggedEntries(memory.mentionedItems, { maxLength: 40, maxEntries: 16 }),
     source_assistant_timestamp: normalizeTimestampValue(memory.source_assistant_timestamp),
     updated_at: memory.updated_at || new Date().toISOString(),
     version: SCENE_MEMORY_VERSION
@@ -546,8 +606,8 @@ function trimSceneMemoryToBudget(memory) {
     trimmed.open_thread,
     ...(trimmed.wardrobe || []),
     ...(trimmed.bodyState || []),
-    ...(trimmed.establishedFacts || []),
-    ...(trimmed.mentionedItems || [])
+    ...((trimmed.establishedFacts || []).map(entryValue)),
+    ...((trimmed.mentionedItems || []).map(entryValue))
   ].filter(Boolean).join('\n'));
 
   if (contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
@@ -937,7 +997,7 @@ function deriveTurnScope(latestUserTurn, latestAssistantTurn, lastTurnRole = '')
   return deriveScopeFromText(latestUser, 'user');
 }
 
-function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sceneMemory = null }) {
+function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sceneMemory = null, currentTurn = 0 }) {
   const latestUserTurn = findLatestTurn(history, 'user');
   const latestAssistantTurn = findLatestTurn(history, 'assistant');
   const latestRole = findLatestRole(history);
@@ -975,6 +1035,7 @@ function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sc
     bodyState,
     establishedFacts,
     mentionedItems,
+    current_turn: currentTurn,
     debug: {
       settingSource: settingAnchor.source,
       relationshipSource: relationshipAnchor.source,
@@ -1021,7 +1082,8 @@ function buildActiveScene(sceneState) {
     wardrobe: Array.isArray(sceneState.wardrobe) ? sceneState.wardrobe : [],
     body_state: Array.isArray(sceneState.bodyState) ? sceneState.bodyState : [],
     established_facts: Array.isArray(sceneState.establishedFacts) ? sceneState.establishedFacts : [],
-    mentioned_items: Array.isArray(sceneState.mentionedItems) ? sceneState.mentionedItems : []
+    mentioned_items: Array.isArray(sceneState.mentionedItems) ? sceneState.mentionedItems : [],
+    current_turn: Number.isFinite(sceneState.current_turn) ? sceneState.current_turn : 0
   };
 }
 
@@ -1177,7 +1239,8 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
     history: sceneHistory,
     charName,
     userName,
-    sceneMemory: sceneMemoryForDerivation
+    sceneMemory: sceneMemoryForDerivation,
+    currentTurn: countAssistantTurns(normalizedHistory)
   });
   const activeScene = buildActiveScene(sceneState);
   const assistMode = deriveAssistMode({
@@ -1533,23 +1596,40 @@ export function extractEstablishedFacts(text) {
 function accumulateEstablishedFacts(history, previousFacts = []) {
   const seen = new Set();
   const out = [];
-  for (const entry of previousFacts || []) {
-    const key = String(entry || '').toLowerCase().trim();
-    if (!key || seen.has(key)) continue;
+  for (const raw of previousFacts || []) {
+    const coerced = coerceTurnTaggedEntry(raw, 0);
+    if (!coerced) continue;
+    const key = coerced.value.toLowerCase();
+    if (seen.has(key)) continue;
     seen.add(key);
-    out.push(entry);
+    out.push(coerced);
   }
-  for (const message of history || []) {
+  const messages = Array.isArray(history) ? history : [];
+  let assistantTurnCount = 0;
+  for (let index = 0; index < messages.length; index += 1) {
+    const message = messages[index];
     if (message?.role !== 'user' && message?.role !== 'assistant') continue;
+    if (message.role === 'assistant') assistantTurnCount += 1;
     const facts = extractEstablishedFacts(message.content);
+    if (facts.length === 0) continue;
+    let factTurnId = assistantTurnCount;
+    if (message.role === 'user') {
+      for (let lookahead = index + 1; lookahead < messages.length; lookahead += 1) {
+        if (messages[lookahead]?.role === 'assistant') {
+          factTurnId = assistantTurnCount + 1;
+          break;
+        }
+      }
+    }
     for (const fact of facts) {
       const key = fact.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);
-      out.push(fact);
+      out.push({ value: fact, turn_id: factTurnId });
     }
   }
-  return out.slice(0, SCENE_MEMORY_MAX_LIST_ENTRIES);
+  out.sort((a, b) => b.turn_id - a.turn_id);
+  return out.slice(0, ESTABLISHED_FACTS_CAP);
 }
 
 const PRONOUN_HEADS = new Set([
@@ -1592,20 +1672,34 @@ export function extractMentionedItems(userMessageText) {
 function accumulateMentionedItems(history, previousItems = []) {
   const seen = new Set();
   const out = [];
-  for (const entry of previousItems || []) {
-    const key = String(entry || '').toLowerCase().trim();
-    if (!key || seen.has(key)) continue;
+  for (const raw of previousItems || []) {
+    const coerced = coerceTurnTaggedEntry(raw, 0);
+    if (!coerced) continue;
+    const key = coerced.value.toLowerCase();
+    if (seen.has(key)) continue;
     seen.add(key);
-    out.push(entry);
+    out.push(coerced);
   }
-  for (const message of history || []) {
+  const messages = Array.isArray(history) ? history : [];
+  let assistantTurnCount = 0;
+  for (let index = 0; index < messages.length; index += 1) {
+    const message = messages[index];
+    if (message?.role === 'assistant') assistantTurnCount += 1;
     if (message?.role !== 'user') continue;
     const items = extractMentionedItems(message.content);
+    if (items.length === 0) continue;
+    let nextAssistantTurn = assistantTurnCount;
+    for (let lookahead = index + 1; lookahead < messages.length; lookahead += 1) {
+      if (messages[lookahead]?.role === 'assistant') {
+        nextAssistantTurn = assistantTurnCount + 1;
+        break;
+      }
+    }
     for (const item of items) {
       const key = item.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);
-      out.push(item);
+      out.push({ value: item, turn_id: nextAssistantTurn });
     }
   }
   return out.slice(0, 16);
@@ -1735,14 +1829,28 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
 
 function joinList(list) {
   if (!Array.isArray(list) || list.length === 0) return '';
-  return list.filter((entry) => String(entry || '').trim()).join(', ');
+  return list
+    .map((entry) => entryValue(entry).trim())
+    .filter(Boolean)
+    .join(', ');
+}
+
+function filterEntriesByRecency(list, currentTurn, windowSize) {
+  if (!Array.isArray(list) || list.length === 0) return [];
+  if (!Number.isFinite(currentTurn) || !Number.isFinite(windowSize)) return list;
+  const minTurn = currentTurn - windowSize;
+  return list.filter((entry) => entryTurnId(entry, 0) >= minTurn);
 }
 
 export function renderActiveScene(activeScene, { compact = false } = {}) {
   const wardrobeLine = joinList(activeScene.wardrobe);
   const bodyStateLine = joinList(activeScene.body_state);
   const establishedFactsLine = joinList(activeScene.established_facts);
-  const mentionedItemsLine = joinList(activeScene.mentioned_items);
+  const currentTurn = Number.isFinite(activeScene.current_turn) ? activeScene.current_turn : null;
+  const visibleMentionedItems = currentTurn !== null
+    ? filterEntriesByRecency(activeScene.mentioned_items, currentTurn, MENTIONED_ITEMS_RECENCY_TURNS)
+    : (activeScene.mentioned_items || []);
+  const mentionedItemsLine = joinList(visibleMentionedItems);
 
   const fields = compact
     ? [

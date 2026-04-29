@@ -1223,7 +1223,7 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
  * captured noun-phrase actually names a garment. Expanding this is acceptable; broad
  * vocabulary scraping is not.
  */
-const CLOTHING_HEAD_PATTERN = /(dress|shirt|blouse|skirt|pants|trousers|shorts|coat|jacket|gown|robe|uniform|apron|stockings|socks|shoes|boots|panties|bra|hat|scarf|tie|belt|gloves?|glove|veil|mask|sash|cloak|cape|sweater|hoodie|leggings|tights|underwear|lingerie|bikini|swimsuit|nightgown|chemise|corset|bodice|negligee|kimono|dressing\s+gown|nightie)/;
+const CLOTHING_HEAD_PATTERN = /(dress|shirt|blouse|skirt|pants|trousers|shorts|jeans|coat|jacket|gown|robe|uniform|apron|stockings|socks|shoes|boots|heels|panties|thong|bra|hat|scarf|tie|belt|gloves?|glove|veil|mask|sash|cloak|cape|sweater|hoodie|leggings|tights|underwear|lingerie|bikini|swimsuit|nightgown|chemise|corset|bodice|negligee|kimono|dressing\s+gown|nightie|top|camisole|tank)/;
 const WARDROBE_TAIL_PHRASE = /(?:^|\s)(?:a|an|her|his|their|the|my|your)\s+([a-z][\w-]*(?:\s+[a-z][\w-]*){0,3})/gi;
 
 function tokenizeWords(text) {
@@ -1298,6 +1298,63 @@ function extractWardrobeFromText(text) {
 
 export function extractWardrobeMutations(text) {
   return extractWardrobeFromText(text);
+}
+
+/**
+ * Extract clothing-removal head tokens from text. Mirrors extractWardrobeFromText
+ * but for removal-shaped patterns. Returns last-token clothing heads (e.g. 'jeans')
+ * suitable for last-token equality matching against accumulated wardrobe entries.
+ */
+function extractWardrobeRemovalsFromText(text) {
+  const source = String(text || '').replace(/[*"]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!source) return [];
+  const heads = [];
+  const seen = new Set();
+
+  const collectHead = (phrase) => {
+    const trimmed = trimToClothingHead(phrase);
+    if (!trimmed) return;
+    if (isAnatomyHead(trimmed)) return;
+    if (isAbstractHead(trimmed)) return;
+    const tokens = trimmed.split(/\s+/).filter(Boolean);
+    const head = tokens[tokens.length - 1];
+    if (!head) return;
+    if (seen.has(head)) return;
+    seen.add(head);
+    heads.push(head);
+  };
+
+  const trailingDirection = /\b(?:took|takes|taking|removed|removes|removing|slipped|slips|stripped|strips|stripping|peels?|peeled|tugged|tugs|pulled|pulls|pulling|drops|dropped|dropping|tosses|tossed|tossing|throws|threw|throwing|tore|tears|tearing)\s+(?:her|his|their|my|your|the)\s+([a-z][\w\s-]{2,40}?)\s+(?:off|away|aside|down|out)\b/gi;
+  let match;
+  while ((match = trailingDirection.exec(source)) !== null) {
+    collectHead(match[1]);
+  }
+
+  const leadingDirection = /\b(?:took|takes|taking|removed|removes|removing|slipped|slips|stripped|strips|stripping|peels?|peeled|tugged|tugs|pulled|pulls|pulling|drops|dropped|dropping|tosses|tossed|tossing|throws|threw|throwing|tore|tears|tearing)\s+(?:off|away|aside|down|out)\s+(?:of\s+)?(?:a\s+|an\s+|her\s+|his\s+|their\s+|my\s+|your\s+|the\s+)?([a-z][\w\s-]{2,40})/gi;
+  while ((match = leadingDirection.exec(source)) !== null) {
+    collectHead(match[1]);
+  }
+
+  const slipsOutOf = /\bslips?\s+out\s+of\s+(?:a\s+|an\s+|her\s+|his\s+|their\s+|my\s+|your\s+|the\s+)?([a-z][\w\s-]{2,40})/gi;
+  while ((match = slipsOutOf.exec(source)) !== null) {
+    collectHead(match[1]);
+  }
+
+  const fallsToFloor = /\b(?:her|his|their|my|your|the)\s+([a-z][\w\s-]{2,40}?)\s+(?:slips?|fell|falls?|drops?|lands?|hits?)\s+(?:to|on|off)\s+(?:the\s+)?(?:floor|ground)/gi;
+  while ((match = fallsToFloor.exec(source)) !== null) {
+    collectHead(match[1]);
+  }
+
+  const noLonger = /\b(?:without|no\s+longer\s+wearing)\s+(?:a\s+|an\s+|her\s+|his\s+|their\s+|my\s+|your\s+|the\s+)?([a-z][\w\s-]{2,40})/gi;
+  while ((match = noLonger.exec(source)) !== null) {
+    collectHead(match[1]);
+  }
+
+  return heads;
+}
+
+export function extractWardrobeRemovals(text) {
+  return extractWardrobeRemovalsFromText(text);
 }
 
 const BODY_STATE_ADD_VERBS = /^(?:tied|bound|stuffed|gagged|covered|blindfolded|chained|cuffed|lashed)$/i;
@@ -1551,24 +1608,44 @@ function accumulateMentionedItems(history, previousItems = []) {
 
 function accumulateWardrobe(history, previousWardrobe = []) {
   const seen = new Set();
-  const out = [];
+  let entries = [];
   for (const entry of previousWardrobe || []) {
     const normalized = normalizeWardrobePhrase(entry);
     if (!normalized || seen.has(normalized)) continue;
     seen.add(normalized);
-    out.push(entry);
+    entries.push(entry);
   }
+
+  const dropByHead = (head) => {
+    if (!head) return;
+    entries = entries.filter((entry) => {
+      const tokens = normalizeWardrobePhrase(entry).split(/\s+/).filter(Boolean);
+      const lastToken = tokens[tokens.length - 1] || '';
+      if (lastToken === head) {
+        seen.delete(normalizeWardrobePhrase(entry));
+        return false;
+      }
+      return true;
+    });
+  };
+
   for (const message of history || []) {
     if (message?.role !== 'user' && message?.role !== 'assistant') continue;
+
+    const removals = extractWardrobeRemovalsFromText(message.content);
+    for (const head of removals) {
+      dropByHead(head);
+    }
+
     const phrases = extractWardrobeFromText(message.content);
     for (const phrase of phrases) {
       const normalized = normalizeWardrobePhrase(phrase);
       if (!normalized || seen.has(normalized)) continue;
       seen.add(normalized);
-      out.push(phrase);
+      entries.push(phrase);
     }
   }
-  return out.slice(0, SCENE_MEMORY_MAX_LIST_ENTRIES);
+  return entries.slice(0, SCENE_MEMORY_MAX_LIST_ENTRIES);
 }
 
 /**

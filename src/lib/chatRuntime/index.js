@@ -6,6 +6,7 @@ export {
   extractEstablishedFacts,
   extractMentionedItems,
   extractWardrobeMutations,
+  extractWardrobeRemovals,
   renderActiveScene,
   resolveSessionSceneMemory,
   validateSceneMemory

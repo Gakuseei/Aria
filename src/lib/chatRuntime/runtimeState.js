@@ -40,31 +40,37 @@ const RELATIONSHIP_KEYWORDS = [
   'attracted'
 ];
 
-const SETTING_KEYWORDS = [
-  'room',
-  'house',
-  'estate',
-  'apartment',
-  'office',
-  'bar',
-  'cafe',
-  'manor',
-  'road',
-  'hallway',
-  'building',
-  'doorway',
-  'balcony',
-  'street',
-  'kitchen',
-  'bed',
-  'couch',
-  'desk',
-  'counter',
-  'stool',
-  'night',
-  'evening',
-  'morning'
-];
+const LOCATIVE_PHRASE_PATTERN = /\b(?:in|into|inside|on|at|near|by|under|above|across|outside)\s+(?:the|a|an|my|your|his|her|their|our)\s+\w+(?:\s+\w+){0,2}\b/gi;
+const EXPLICIT_LOCATION_INTENT_PATTERN = /(?:let'?s\s+go\s+to|we'?re\s+(?:now\s+)?(?:in|at)|i\s+(?:take|guide|lead|bring|carry|move)\s+(?:her|him|them|you)\s+(?:to|into|inside)|i\s+(?:lock|enter|open)\s+(?:the|a|an|my|your|his|her|their)|now\s+we'?re\s+in)/i;
+
+/**
+ * Structural anatomy-exclusion set. A locative phrase whose noun is in this set
+ * (e.g. "into her mouth", "between her thighs") is a body-part action, not a
+ * physical setting. This is NOT a setting keyword whitelist — never expand it
+ * with location words.
+ */
+const ANATOMY_WORDS = new Set([
+  'mouth', 'throat', 'pussy', 'ass', 'cock', 'breast', 'breasts', 'tits', 'dick',
+  'cunt', 'clit', 'lips', 'fingers', 'hands', 'hair', 'arms', 'legs', 'knees',
+  'thigh', 'thighs', 'neck', 'chest', 'hips', 'back', 'shoulder', 'shoulders',
+  'ear', 'ears', 'eye', 'eyes', 'face', 'hole', 'holes', 'womb', 'tongue',
+  'palm', 'palms', 'cheeks', 'butt', 'butthole', 'anus', 'balls', 'nipple',
+  'nipples', 'mound', 'slit'
+]);
+
+/**
+ * Structural idiom-rejection set. Locative-shaped phrases whose noun is in this
+ * set are stock idioms or temporal markers ("by the way", "in the moment",
+ * "at night") rather than physical settings. This is NOT a setting keyword
+ * whitelist — never expand it with location words.
+ */
+const ABSTRACT_NOUN_WORDS = new Set([
+  'way', 'time', 'times', 'end', 'beginning', 'meantime', 'future', 'past',
+  'present', 'moment', 'moments', 'air', 'light', 'dark', 'mind', 'mood',
+  'sight', 'case', 'fact', 'sense', 'terms', 'contrast', 'general', 'short',
+  'long', 'total', 'addition', 'brief', 'truth', 'process', 'middle',
+  'silence', 'distance', 'morning', 'evening', 'night', 'afternoon'
+]);
 
 const CONTINUITY_KEYWORDS = [
   'still',
@@ -390,6 +396,67 @@ function pickRecentSentenceByKeywords(history, keywords, maxLength = 150) {
   return '';
 }
 
+function stripActionBlocks(text) {
+  return String(text || '')
+    .replace(/\*\*[^*]*\*\*/g, ' ')
+    .replace(/\*[^*]*\*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isAnatomyLocative(phrase) {
+  const tokens = String(phrase || '').toLowerCase().split(/\s+/);
+  return tokens.some((token) => ANATOMY_WORDS.has(token));
+}
+
+function isAbstractLocative(phrase) {
+  const tokens = String(phrase || '').toLowerCase().split(/\s+/);
+  return tokens.some((token) => ABSTRACT_NOUN_WORDS.has(token));
+}
+
+function extractLocativePhrase(text, maxLength = 150, { stripActions = true } = {}) {
+  const source = stripActions ? stripActionBlocks(text) : String(text || '').replace(/[*]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!source) return '';
+  const matches = source.match(LOCATIVE_PHRASE_PATTERN) || [];
+  for (const match of matches) {
+    if (isAnatomyLocative(match)) continue;
+    if (isAbstractLocative(match)) continue;
+    return trimPromptSnippet(match, maxLength);
+  }
+  return '';
+}
+
+function pickRecentLocativePhrase(history, maxLength = 150) {
+  for (let index = history.length - 1; index >= 0; index -= 1) {
+    const message = history[index];
+    const content = message?.content || '';
+    const stripActions = message?.role !== 'user';
+    const phrase = extractLocativePhrase(content, maxLength, { stripActions });
+    if (phrase) return phrase;
+  }
+  return '';
+}
+
+const EXPLICIT_OVERRIDE_NOUN_PATTERN = /(?:let'?s\s+go\s+(?:to|into|inside)|we'?re\s+(?:now\s+)?(?:in|at|inside|into)|i\s+(?:take|guide|lead|bring|carry|move)\s+(?:her|him|them|you)\s+(?:to|into|inside|onto)|i\s+(?:lock|enter|open)|now\s+we'?re\s+(?:in|at|inside|into))\s+((?:the|a|an|my|your|his|her|their|our)\s+\w+(?:\s+\w+){0,2})/i;
+
+function applyExplicitLocationOverride(latestUserContent, fallback) {
+  const text = String(latestUserContent || '');
+  if (!text.trim()) return { value: fallback, overridden: false };
+  if (!EXPLICIT_LOCATION_INTENT_PATTERN.test(text)) {
+    return { value: fallback, overridden: false };
+  }
+  const directMatch = text.match(EXPLICIT_OVERRIDE_NOUN_PATTERN);
+  if (directMatch?.[1]) {
+    const candidate = directMatch[1];
+    if (!isAnatomyLocative(candidate) && !isAbstractLocative(candidate)) {
+      return { value: trimPromptSnippet(candidate, 150), overridden: true };
+    }
+  }
+  const phrase = extractLocativePhrase(text, 150);
+  if (!phrase) return { value: fallback, overridden: false };
+  return { value: phrase, overridden: true };
+}
+
 function sanitizeSceneAnchor(text, keywords = [], maxLength = 150) {
   const flattened = String(text || '')
     .replace(/[*"]/g, ' ')
@@ -441,6 +508,7 @@ function trimSceneMemoryToBudget(memory) {
     relationship_anchor: sanitizeSceneMemoryLine(memory.relationship_anchor, 96),
     continuity_facts: trimSceneMemoryFacts(memory.continuity_facts),
     open_thread: sanitizeSceneMemoryLine(memory.open_thread, 96),
+    nsfwArcAnchor: sanitizeSceneMemoryLine(memory.nsfwArcAnchor, 96),
     source_assistant_timestamp: normalizeTimestampValue(memory.source_assistant_timestamp),
     updated_at: memory.updated_at || new Date().toISOString(),
     version: SCENE_MEMORY_VERSION
@@ -473,7 +541,7 @@ function trimSceneMemoryToBudget(memory) {
     return null;
   }
 
-  if (!trimmed.setting_anchor && !trimmed.relationship_anchor && trimmed.continuity_facts.length === 0 && !trimmed.open_thread) {
+  if (!trimmed.setting_anchor && !trimmed.relationship_anchor && trimmed.continuity_facts.length === 0 && !trimmed.open_thread && !trimmed.nsfwArcAnchor) {
     return null;
   }
 
@@ -495,19 +563,36 @@ export function validateSceneMemory(sceneMemory, history = []) {
   });
 }
 
+function sanitizeLocativeAnchor(text, maxLength = 120) {
+  return trimPromptSnippet(
+    String(text || '').replace(/[*"]/g, ' ').replace(/\s+/g, ' ').trim(),
+    maxLength
+  );
+}
+
 function deriveSettingAnchor(history, sceneSeed, sceneMemory) {
-  const historyAnchor = pickRecentSentenceByKeywords(history, SETTING_KEYWORDS, 150);
+  const frozenArcAnchor = sanitizeSceneMemoryLine(sceneMemory?.nsfwArcAnchor, 120);
+  if (frozenArcAnchor) {
+    const latestUserContent = [...history].reverse().find((message) => message.role === 'user')?.content || '';
+    const override = applyExplicitLocationOverride(latestUserContent, frozenArcAnchor);
+    if (override.overridden) {
+      return { value: sanitizeLocativeAnchor(override.value, 120), source: 'nsfw_arc_override' };
+    }
+    return { value: sanitizeLocativeAnchor(frozenArcAnchor, 120), source: 'nsfw_arc_frozen' };
+  }
+
+  const historyAnchor = pickRecentLocativePhrase(history, 150);
   if (historyAnchor) {
-    return { value: sanitizeSceneAnchor(historyAnchor, SETTING_KEYWORDS, 150), source: 'history' };
+    return { value: sanitizeLocativeAnchor(historyAnchor, 120), source: 'history' };
   }
 
   if (sceneMemory?.setting_anchor) {
     return { value: sanitizeSceneMemoryLine(sceneMemory.setting_anchor, 120), source: 'memory' };
   }
 
-  const seedAnchor = pickSentenceByKeywords(sceneSeed, SETTING_KEYWORDS, 150) || trimPromptSnippet(sceneSeed, 150);
+  const seedAnchor = extractLocativePhrase(sceneSeed, 150) || trimPromptSnippet(sceneSeed, 150);
   if (seedAnchor) {
-    return { value: sanitizeSceneAnchor(seedAnchor, SETTING_KEYWORDS, 150), source: 'seed' };
+    return { value: sanitizeLocativeAnchor(seedAnchor, 120), source: 'seed' };
   }
 
   return { value: '', source: 'none' };
@@ -564,7 +649,7 @@ function extractContinuityFact(message, candidate, maxLength = 110) {
 
   if (message?.role === 'user' && !/[.*]/.test(message.content || '')) {
     const loweredPlain = plainCandidate.toLowerCase();
-    const carriesSceneFact = SETTING_KEYWORDS.some((keyword) => loweredPlain.includes(keyword))
+    const carriesSceneFact = Boolean(extractLocativePhrase(plainCandidate, 110))
       || CONTINUITY_KEYWORDS.some((keyword) => loweredPlain.includes(keyword));
     if (!carriesSceneFact) {
       return '';
@@ -610,11 +695,18 @@ function collectContinuityFacts(history, excludedTurns = []) {
   return facts;
 }
 
+function containsAnatomy(text) {
+  const tokens = String(text || '').toLowerCase().split(/[^a-z]+/).filter(Boolean);
+  return tokens.some((token) => ANATOMY_WORDS.has(token));
+}
+
 function extractAssistantOpenThread(latestAssistantTurn) {
   const latestAssistant = String(latestAssistantTurn || '').trim();
   if (!latestAssistant) return '';
 
-  const assistantQuestion = latestAssistant.match(/[^.?!]*\?/g);
+  const plainAssistant = stripActionBlocks(latestAssistant);
+
+  const assistantQuestion = plainAssistant.match(/[^.?!]*\?/g);
   if (assistantQuestion?.length > 0) {
     return trimPromptSnippet(assistantQuestion[assistantQuestion.length - 1], 160);
   }
@@ -622,14 +714,15 @@ function extractAssistantOpenThread(latestAssistantTurn) {
   const expectationPattern = /\b(?:await(?:ing)?|wait(?:ing)?|approval|acknowledg(?:e|ment)|guidance|instruction|response|answer|permission|decision|choice|expect(?:ing|ant|antly)?|be gentle|keep going|don'?t stop)\b/i;
   const directivePattern = /^(?:sit|stand|come|stay|close|open|take|give|show|tell|look|listen|wait|follow|go|keep|hold|bring|move|step|speak|answer|focus|read|watch|leave|stop|start|continue|join|meet|let'?s)\b/i;
   const trailingAction = latestAssistant.match(/\*([^*]+)\*\s*$/);
-  if (trailingAction?.[1] && expectationPattern.test(trailingAction[1])) {
+  if (trailingAction?.[1] && expectationPattern.test(trailingAction[1]) && !containsAnatomy(trailingAction[1])) {
     return trimPromptSnippet(cleanSceneMemoryLine(trailingAction[1], 160), 160);
   }
 
-  const tailSnippet = latestAssistant.slice(-220).replace(/\s+/g, ' ').trim();
+  const tailSnippet = plainAssistant.slice(-220).replace(/\s+/g, ' ').trim();
   const tailSentences = splitSentences(tailSnippet);
   for (let index = tailSentences.length - 1; index >= 0; index -= 1) {
     const sentence = cleanSceneMemoryLine(tailSentences[index], 160);
+    if (containsAnatomy(sentence)) continue;
     if (expectationPattern.test(sentence)) {
       return trimPromptSnippet(sentence, 160);
     }
@@ -646,9 +739,10 @@ function extractAssistantOpenThread(latestAssistantTurn) {
     }
   }
 
-  const sentences = splitSentences(latestAssistant);
+  const sentences = splitSentences(plainAssistant);
   for (let index = sentences.length - 1; index >= 0; index -= 1) {
     const sentence = cleanSceneMemoryLine(sentences[index], 160);
+    if (containsAnatomy(sentence)) continue;
     if (expectationPattern.test(sentence)) {
       return trimPromptSnippet(sentence, 160);
     }
@@ -999,6 +1093,10 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
   const profile = runtimeSteering.profile || 'reply';
   const normalizedHistory = normalizeHistory(history);
   const validatedSceneMemory = validateSceneMemory(runtimeSteering.persistedSceneMemory, history);
+  const carriedArcAnchor = sanitizeSceneMemoryLine(runtimeSteering.persistedSceneMemory?.nsfwArcAnchor, 96);
+  const sceneMemoryForDerivation = carriedArcAnchor
+    ? { ...(validatedSceneMemory || {}), nsfwArcAnchor: carriedArcAnchor }
+    : validatedSceneMemory;
   const compiledRuntimeCard = resolveRuntimeCardTemplates(compileCharacterRuntimeCard(character), charName, userName);
   const historyBudget = calculateHistoryBudget(totalBudget, profile);
   const selectedRecentHistory = selectRecentHistory(normalizedHistory, historyBudget);
@@ -1011,7 +1109,7 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
     history: sceneHistory,
     charName,
     userName,
-    sceneMemory: validatedSceneMemory
+    sceneMemory: sceneMemoryForDerivation
   });
   const activeScene = buildActiveScene(sceneState);
   const assistMode = deriveAssistMode({
@@ -1058,6 +1156,10 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
 export function resolveSessionSceneMemory({ character, history, userName = 'User', previousSceneMemory = null }) {
   const normalizedHistory = Array.isArray(history) ? history : [];
   const validatedPrevious = validateSceneMemory(previousSceneMemory, normalizedHistory);
+  const carryArcAnchor = sanitizeSceneMemoryLine(
+    validatedPrevious?.nsfwArcAnchor || previousSceneMemory?.nsfwArcAnchor,
+    96
+  );
   const latestMessage = normalizedHistory[normalizedHistory.length - 1] || null;
 
   if (latestMessage?.role !== 'assistant') {
@@ -1069,6 +1171,10 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
     return null;
   }
 
+  const carriedSceneMemory = carryArcAnchor
+    ? { ...(validatedPrevious || {}), nsfwArcAnchor: carryArcAnchor }
+    : validatedPrevious;
+
   const runtimeState = buildRuntimeState({
     character,
     history: normalizedHistory,
@@ -1078,17 +1184,31 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
       availableContextTokens: 8192,
       responseMode: 'normal',
       passionLevel: 0,
-      unchainedMode: false
+      unchainedMode: false,
+      persistedSceneMemory: carriedSceneMemory
     }
   });
 
   const latestUserTurn = findLatestTurn(runtimeState.selectedRecentHistory.messages, 'user');
   const latestAssistantTurn = findLatestTurn(runtimeState.selectedRecentHistory.messages, 'assistant');
+
+  const previousArcAnchor = carryArcAnchor;
+  let nextArcAnchor = '';
+  if (runtimeState.assistMode === 'nsfw_only') {
+    if (previousArcAnchor) {
+      const override = applyExplicitLocationOverride(latestUserTurn, previousArcAnchor);
+      nextArcAnchor = override.overridden ? override.value : previousArcAnchor;
+    } else {
+      nextArcAnchor = runtimeState.sceneState.setting_anchor || '';
+    }
+  }
+
   const sceneMemory = trimSceneMemoryToBudget({
     setting_anchor: runtimeState.sceneState.setting_anchor,
     relationship_anchor: runtimeState.sceneState.relationship_anchor,
     continuity_facts: runtimeState.sceneState.continuity_facts,
     open_thread: derivePersistentOpenThread(latestUserTurn, latestAssistantTurn),
+    nsfwArcAnchor: nextArcAnchor,
     source_assistant_timestamp: latestAssistantTimestamp,
     updated_at: new Date().toISOString(),
     version: SCENE_MEMORY_VERSION

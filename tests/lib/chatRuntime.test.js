@@ -53,7 +53,7 @@ describe('buildRuntimeState', () => {
         scenario: 'Modern apartment hallway at night. Emma is at the user’s door with a borrowed book.'
       },
       history: [
-        { role: 'assistant', content: '*She lingers in the doorway, book pressed to her chest.* "I was hoping you were home."' },
+        { role: 'assistant', content: '*She lingers in the doorway, book pressed to her chest.* She is in the doorway, holding the book to her chest. "I was hoping you were home."' },
         { role: 'user', content: 'Come inside before the neighbors stare.' }
       ],
       userName: 'Erik',
@@ -132,8 +132,8 @@ describe('buildRuntimeState', () => {
         scenario: 'Rainy cafe afternoon.'
       },
       history: [
-        { role: 'assistant', content: '*She slides a mug across the cafe counter and taps the empty stool beside it.* "Your usual."' },
-        { role: 'user', content: 'You always keep the corner stool for me.' },
+        { role: 'assistant', content: '*She slides a mug across the cafe counter and taps the empty stool beside it.* She nods at the empty stool. "Your usual."' },
+        { role: 'user', content: 'You always keep me at the corner stool by the window.' },
         { role: 'assistant', content: '*She nudges your shoulder with hers.* "You are still my favorite partner, trouble."' },
         { role: 'user', content: 'Then stay with me until the rain stops.' }
       ],

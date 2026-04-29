@@ -491,7 +491,17 @@ const locale = {
     "typeCharacterDesc": "個性とバックストーリーを持つロールプレイキャラクター",
     "typeBotDesc": "ユーティリティボット、シナリオ、ツール — ロールプレイなし",
     "descriptionLabelBot": "ボットを説明してください",
-    "descriptionPlaceholderBot": "鮮やかでカスタムな会話を生成するダーティトークジェネレーター..."
+    "descriptionPlaceholderBot": "鮮やかでカスタムな会話を生成するダーティトークジェネレーター...",
+    "voicePinLabel": "ボイスアンカー",
+    "voicePinHelp": "任意。このキャラクターの話し方とキャラクターを保つ方法を表す1〜3文。ペルソナの一貫性を保つ最も強い単一のシグナルです。",
+    "voicePinNsfwLabel": "ボイスアンカー（NSFWオーバーライド）",
+    "voicePinNsfwHelp": "任意。親密なシーンでのキャラクターの声が通常の声と明確に異なる場合のみ使用してください。",
+    "intimacyContractLabel": "親密さ契約",
+    "intimacyContractHelp": "任意。親密なシーン中にキャラクターが保つべき構造的な振る舞い（リズム、特徴的なフレーズ、決してならないもの）を示す2〜4文の短い文章。NSFW深度では常に丸ごと含まれ、決して省略されません。",
+    "voiceAvoidLabel": "避けるフレーズ",
+    "voiceAvoidHelp": "任意。このキャラクターが決して使わない定型句をカンマ区切りで指定します。ありがちなロマンス小説調への流れを防ぎます。",
+    "voicePinGenerate": "AIで提案",
+    "voicePinGenerating": "生成中..."
   },
   "modeSelection": {
     "selectMode": "モード選択",
@@ -608,7 +618,17 @@ const locale = {
     "typeCharacterDesc": "個性とバックストーリーを持つロールプレイキャラクター",
     "typeBotDesc": "ユーティリティボット、シナリオ、ツール — ロールプレイなし",
     "storageFull": "ストレージが満杯です — キャラクターアバターを削除して空き容量を確保してください",
-    "botInstructions": "ボットの指示"
+    "botInstructions": "ボットの指示",
+    "voicePinLabel": "ボイスアンカー",
+    "voicePinHelp": "任意。このキャラクターの話し方とキャラクターを保つ方法を表す1〜3文。ペルソナの一貫性を保つ最も強い単一のシグナルです。",
+    "voicePinNsfwLabel": "ボイスアンカー（NSFWオーバーライド）",
+    "voicePinNsfwHelp": "任意。親密なシーンでのキャラクターの声が通常の声と明確に異なる場合のみ使用してください。",
+    "intimacyContractLabel": "親密さ契約",
+    "intimacyContractHelp": "任意。親密なシーン中にキャラクターが保つべき構造的な振る舞い（リズム、特徴的なフレーズ、決してならないもの）を示す2〜4文の短い文章。NSFW深度では常に丸ごと含まれ、決して省略されません。",
+    "voiceAvoidLabel": "避けるフレーズ",
+    "voiceAvoidHelp": "任意。このキャラクターが決して使わない定型句をカンマ区切りで指定します。ありがちなロマンス小説調への流れを防ぎます。",
+    "voicePinGenerate": "AIで提案",
+    "voicePinGenerating": "生成中..."
   },
   "creative": {
     "creativeWriting": "執筆",

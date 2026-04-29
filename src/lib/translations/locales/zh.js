@@ -491,7 +491,17 @@ const locale = {
     "typeCharacterDesc": "拥有个性和背景故事的角色扮演角色",
     "typeBotDesc": "实用机器人、场景或工具 — 无角色扮演",
     "descriptionLabelBot": "描述你的机器人",
-    "descriptionPlaceholderBot": "一个生成生动、定制对话的污话生成器..."
+    "descriptionPlaceholderBot": "一个生成生动、定制对话的污话生成器...",
+    "voicePinLabel": "声音锚点",
+    "voicePinHelp": "可选。用 1-3 句话描述这个角色如何说话以及如何保持角色感。这是角色一致性最强的单一信号。",
+    "voicePinNsfwLabel": "声音锚点（NSFW 覆盖）",
+    "voicePinNsfwHelp": "可选。仅在角色亲密场景中的声音与默认声音存在明显差异时使用。",
+    "intimacyContractLabel": "亲密契约",
+    "intimacyContractHelp": "可选。用 2-4 句简短的话说明角色在亲密场景中必须保持的结构性行为（节奏、标志性短语、永远不会变成什么）。在 NSFW 深度中始终完整保留 — 绝不会被截断。",
+    "voiceAvoidLabel": "避免的短语",
+    "voiceAvoidHelp": "可选。用逗号分隔此角色绝不会使用的套话。可帮助阻止滑向通用言情小说腔调。",
+    "voicePinGenerate": "用 AI 建议",
+    "voicePinGenerating": "生成中..."
   },
   "modeSelection": {
     "selectMode": "选择模式",
@@ -608,7 +618,17 @@ const locale = {
     "typeCharacterDesc": "拥有个性和背景故事的角色扮演角色",
     "typeBotDesc": "实用机器人、场景或工具 — 无角色扮演",
     "storageFull": "存储空间已满 — 尝试删除一些角色头像以释放空间",
-    "botInstructions": "机器人指令"
+    "botInstructions": "机器人指令",
+    "voicePinLabel": "声音锚点",
+    "voicePinHelp": "可选。用 1-3 句话描述这个角色如何说话以及如何保持角色感。这是角色一致性最强的单一信号。",
+    "voicePinNsfwLabel": "声音锚点（NSFW 覆盖）",
+    "voicePinNsfwHelp": "可选。仅在角色亲密场景中的声音与默认声音存在明显差异时使用。",
+    "intimacyContractLabel": "亲密契约",
+    "intimacyContractHelp": "可选。用 2-4 句简短的话说明角色在亲密场景中必须保持的结构性行为（节奏、标志性短语、永远不会变成什么）。在 NSFW 深度中始终完整保留 — 绝不会被截断。",
+    "voiceAvoidLabel": "避免的短语",
+    "voiceAvoidHelp": "可选。用逗号分隔此角色绝不会使用的套话。可帮助阻止滑向通用言情小说腔调。",
+    "voicePinGenerate": "用 AI 建议",
+    "voicePinGenerating": "生成中..."
   },
   "creative": {
     "creativeWriting": "创意写作",

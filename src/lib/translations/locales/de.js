@@ -491,7 +491,17 @@ const locale = {
     "typeCharacterDesc": "Rollenspielfigur mit Persönlichkeit und Hintergrundgeschichte",
     "typeBotDesc": "Utility-Bot, Szenario oder Tool — kein Rollenspiel",
     "descriptionLabelBot": "Beschreibe deinen Bot",
-    "descriptionPlaceholderBot": "Ein Dirty-Talk-Generator, der lebhafte, individuelle Dialoge erstellt..."
+    "descriptionPlaceholderBot": "Ein Dirty-Talk-Generator, der lebhafte, individuelle Dialoge erstellt...",
+    "voicePinLabel": "Stimm-Anker",
+    "voicePinHelp": "Optional. 1-3 Sätze, die beschreiben, wie dieser Charakter spricht und in der Rolle bleibt. Stärkstes Einzelsignal für Persona-Konsistenz.",
+    "voicePinNsfwLabel": "Stimm-Anker (NSFW-Override)",
+    "voicePinNsfwHelp": "Optional. Nur verwenden, wenn sich die Stimme des Charakters in intimen Szenen merklich von der Standardstimme unterscheidet.",
+    "intimacyContractLabel": "Intimitätsvertrag",
+    "intimacyContractHelp": "Optional. 2-4 kurze Sätze, die das strukturelle Verhalten benennen, das der Charakter in intimen Szenen halten muss (Kadenz, Signaturphrasen, was er nie wird). Wird in NSFW-Tiefe immer ganz eingefügt — niemals gekürzt.",
+    "voiceAvoidLabel": "Vermeidungsliste",
+    "voiceAvoidHelp": "Optional. Komma-getrennte Stockphrasen, die dieser Charakter nie verwenden würde. Verhindert generischen Liebesroman-Drift.",
+    "voicePinGenerate": "Mit KI vorschlagen",
+    "voicePinGenerating": "Wird generiert..."
   },
   "modeSelection": {
     "selectMode": "Modus auswählen",
@@ -617,7 +627,17 @@ const locale = {
     "typeCharacterDesc": "Rollenspielfigur mit Persönlichkeit und Hintergrundgeschichte",
     "typeBotDesc": "Utility-Bot, Szenario oder Tool — kein Rollenspiel",
     "storageFull": "Speicher voll — entferne einige Charakter-Avatare um Platz zu schaffen",
-    "botInstructions": "Bot-Anweisungen"
+    "botInstructions": "Bot-Anweisungen",
+    "voicePinLabel": "Stimm-Anker",
+    "voicePinHelp": "Optional. 1-3 Sätze, die beschreiben, wie dieser Charakter spricht und in der Rolle bleibt. Stärkstes Einzelsignal für Persona-Konsistenz.",
+    "voicePinNsfwLabel": "Stimm-Anker (NSFW-Override)",
+    "voicePinNsfwHelp": "Optional. Nur verwenden, wenn sich die Stimme des Charakters in intimen Szenen merklich von der Standardstimme unterscheidet.",
+    "intimacyContractLabel": "Intimitätsvertrag",
+    "intimacyContractHelp": "Optional. 2-4 kurze Sätze, die das strukturelle Verhalten benennen, das der Charakter in intimen Szenen halten muss (Kadenz, Signaturphrasen, was er nie wird). Wird in NSFW-Tiefe immer ganz eingefügt — niemals gekürzt.",
+    "voiceAvoidLabel": "Vermeidungsliste",
+    "voiceAvoidHelp": "Optional. Komma-getrennte Stockphrasen, die dieser Charakter nie verwenden würde. Verhindert generischen Liebesroman-Drift.",
+    "voicePinGenerate": "Mit KI vorschlagen",
+    "voicePinGenerating": "Wird generiert..."
   },
   "creative": {
     "creativeWriting": "Kreatives Schreiben",

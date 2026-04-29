@@ -491,7 +491,17 @@ const locale = {
     "typeCharacterDesc": "Personaje de rol con personalidad e historia",
     "typeBotDesc": "Bot utilitario, escenario o herramienta — sin marco de rol",
     "descriptionLabelBot": "Describe tu bot",
-    "descriptionPlaceholderBot": "Un generador de dirty talk que crea diálogos vívidos y personalizados..."
+    "descriptionPlaceholderBot": "Un generador de dirty talk que crea diálogos vívidos y personalizados...",
+    "voicePinLabel": "Ancla de voz",
+    "voicePinHelp": "Opcional. 1-3 frases que describan cómo habla este personaje y cómo se mantiene en personaje. La señal individual más fuerte de consistencia de persona.",
+    "voicePinNsfwLabel": "Ancla de voz (anulación NSFW)",
+    "voicePinNsfwHelp": "Opcional. Úsala solo si la voz del personaje en escenas íntimas difiere de manera significativa de su voz por defecto.",
+    "intimacyContractLabel": "Contrato de intimidad",
+    "intimacyContractHelp": "Opcional. 2-4 frases cortas que nombren el comportamiento estructural que el personaje debe mantener durante escenas íntimas (cadencia, frases distintivas, lo que nunca llega a ser). Siempre se incluye entero en profundidad NSFW — nunca se recorta.",
+    "voiceAvoidLabel": "Frases a evitar",
+    "voiceAvoidHelp": "Opcional. Frases hechas separadas por comas que este personaje nunca usaría. Ayuda a bloquear la deriva genérica de novela romántica.",
+    "voicePinGenerate": "Sugerir con IA",
+    "voicePinGenerating": "Generando..."
   },
   "modeSelection": {
     "selectMode": "Seleccionar Modo",
@@ -608,7 +618,17 @@ const locale = {
     "typeCharacterDesc": "Personaje de rol con personalidad e historia",
     "typeBotDesc": "Bot utilitario, escenario o herramienta — sin marco de rol",
     "storageFull": "Almacenamiento lleno — elimina algunos avatares de personaje para liberar espacio",
-    "botInstructions": "Instrucciones del bot"
+    "botInstructions": "Instrucciones del bot",
+    "voicePinLabel": "Ancla de voz",
+    "voicePinHelp": "Opcional. 1-3 frases que describan cómo habla este personaje y cómo se mantiene en personaje. La señal individual más fuerte de consistencia de persona.",
+    "voicePinNsfwLabel": "Ancla de voz (anulación NSFW)",
+    "voicePinNsfwHelp": "Opcional. Úsala solo si la voz del personaje en escenas íntimas difiere de manera significativa de su voz por defecto.",
+    "intimacyContractLabel": "Contrato de intimidad",
+    "intimacyContractHelp": "Opcional. 2-4 frases cortas que nombren el comportamiento estructural que el personaje debe mantener durante escenas íntimas (cadencia, frases distintivas, lo que nunca llega a ser). Siempre se incluye entero en profundidad NSFW — nunca se recorta.",
+    "voiceAvoidLabel": "Frases a evitar",
+    "voiceAvoidHelp": "Opcional. Frases hechas separadas por comas que este personaje nunca usaría. Ayuda a bloquear la deriva genérica de novela romántica.",
+    "voicePinGenerate": "Sugerir con IA",
+    "voicePinGenerating": "Generando..."
   },
   "creative": {
     "creativeWriting": "Escritura Creativa",

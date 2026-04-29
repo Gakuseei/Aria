@@ -491,7 +491,17 @@ const locale = {
     "typeCharacterDesc": "개성과 배경을 가진 롤플레이 캐릭터",
     "typeBotDesc": "유틸리티 봇, 시나리오 또는 도구 — 롤플레이 없음",
     "descriptionLabelBot": "봇을 설명해주세요",
-    "descriptionPlaceholderBot": "생생하고 맞춤형 대화를 생성하는 더티톡 생성기..."
+    "descriptionPlaceholderBot": "생생하고 맞춤형 대화를 생성하는 더티톡 생성기...",
+    "voicePinLabel": "보이스 앵커",
+    "voicePinHelp": "선택 사항. 이 캐릭터가 어떻게 말하고 캐릭터를 유지하는지 설명하는 1-3개의 문장. 페르소나 일관성을 위한 가장 강력한 단일 신호입니다.",
+    "voicePinNsfwLabel": "보이스 앵커 (NSFW 오버라이드)",
+    "voicePinNsfwHelp": "선택 사항. 친밀한 장면에서 캐릭터의 목소리가 기본 목소리와 의미 있게 다를 때만 사용하세요.",
+    "intimacyContractLabel": "친밀함 계약",
+    "intimacyContractHelp": "선택 사항. 친밀한 장면 동안 캐릭터가 유지해야 할 구조적 행동(리듬, 시그니처 문구, 결코 되지 않는 것)을 명시하는 2-4개의 짧은 문장. NSFW 깊이에서 항상 통째로 포함되며 — 절대 잘리지 않습니다.",
+    "voiceAvoidLabel": "피할 문구",
+    "voiceAvoidHelp": "선택 사항. 이 캐릭터가 절대 사용하지 않을 상투적 문구를 쉼표로 구분합니다. 일반적인 로맨스 소설 톤으로 흐르는 것을 방지합니다.",
+    "voicePinGenerate": "AI로 제안",
+    "voicePinGenerating": "생성 중..."
   },
   "modeSelection": {
     "selectMode": "모드 선택",
@@ -608,7 +618,17 @@ const locale = {
     "typeCharacterDesc": "개성과 배경을 가진 롤플레이 캐릭터",
     "typeBotDesc": "유틸리티 봇, 시나리오 또는 도구 — 롤플레이 없음",
     "storageFull": "저장 공간이 가득 찼습니다 — 캐릭터 아바타를 삭제하여 공간을 확보하세요",
-    "botInstructions": "봇 지침"
+    "botInstructions": "봇 지침",
+    "voicePinLabel": "보이스 앵커",
+    "voicePinHelp": "선택 사항. 이 캐릭터가 어떻게 말하고 캐릭터를 유지하는지 설명하는 1-3개의 문장. 페르소나 일관성을 위한 가장 강력한 단일 신호입니다.",
+    "voicePinNsfwLabel": "보이스 앵커 (NSFW 오버라이드)",
+    "voicePinNsfwHelp": "선택 사항. 친밀한 장면에서 캐릭터의 목소리가 기본 목소리와 의미 있게 다를 때만 사용하세요.",
+    "intimacyContractLabel": "친밀함 계약",
+    "intimacyContractHelp": "선택 사항. 친밀한 장면 동안 캐릭터가 유지해야 할 구조적 행동(리듬, 시그니처 문구, 결코 되지 않는 것)을 명시하는 2-4개의 짧은 문장. NSFW 깊이에서 항상 통째로 포함되며 — 절대 잘리지 않습니다.",
+    "voiceAvoidLabel": "피할 문구",
+    "voiceAvoidHelp": "선택 사항. 이 캐릭터가 절대 사용하지 않을 상투적 문구를 쉼표로 구분합니다. 일반적인 로맨스 소설 톤으로 흐르는 것을 방지합니다.",
+    "voicePinGenerate": "AI로 제안",
+    "voicePinGenerating": "생성 중..."
   },
   "creative": {
     "creativeWriting": "창작",

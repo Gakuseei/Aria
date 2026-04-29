@@ -491,7 +491,17 @@ const locale = {
     "typeCharacterDesc": "Kişilik ve arka plana sahip rol yapma karakteri",
     "typeBotDesc": "Yardımcı bot, senaryo veya araç — rol yapma yok",
     "descriptionLabelBot": "Botunuzu tanımlayın",
-    "descriptionPlaceholderBot": "Canlı ve özel diyaloglar oluşturan bir dirty talk jeneratörü..."
+    "descriptionPlaceholderBot": "Canlı ve özel diyaloglar oluşturan bir dirty talk jeneratörü...",
+    "voicePinLabel": "Ses çıpası",
+    "voicePinHelp": "İsteğe bağlı. Bu karakterin nasıl konuştuğunu ve karakterde nasıl kaldığını anlatan 1-3 cümle. Persona tutarlılığının en güçlü tekil sinyali.",
+    "voicePinNsfwLabel": "Ses çıpası (NSFW geçersiz kılma)",
+    "voicePinNsfwHelp": "İsteğe bağlı. Yalnızca karakterin samimi sahnelerdeki sesi varsayılan sesinden anlamlı şekilde farklıysa kullanın.",
+    "intimacyContractLabel": "Yakınlık sözleşmesi",
+    "intimacyContractHelp": "İsteğe bağlı. Karakterin samimi sahneler boyunca koruması gereken yapısal davranışı (ritim, imza ifadeler, asla dönüşmediği şeyler) adlandıran 2-4 kısa cümle. NSFW derinliğinde her zaman bütün halinde dahil edilir — asla kesilmez.",
+    "voiceAvoidLabel": "Kaçınılacak ifadeler",
+    "voiceAvoidHelp": "İsteğe bağlı. Bu karakterin asla kullanmayacağı, virgülle ayrılmış kalıp ifadeler. Genel aşk romanı tonuna kaymayı engellemeye yardımcı olur.",
+    "voicePinGenerate": "Yapay zeka ile öner",
+    "voicePinGenerating": "Oluşturuluyor..."
   },
   "modeSelection": {
     "selectMode": "Mod Seç",
@@ -610,7 +620,17 @@ const locale = {
     "typeCharacterDesc": "Kişilik ve arka plana sahip rol yapma karakteri",
     "typeBotDesc": "Yardımcı bot, senaryo veya araç — rol yapma yok",
     "storageFull": "Depolama dolu — yer açmak için bazı karakter avatarlarını kaldırın",
-    "botInstructions": "Bot Talimatları"
+    "botInstructions": "Bot Talimatları",
+    "voicePinLabel": "Ses çıpası",
+    "voicePinHelp": "İsteğe bağlı. Bu karakterin nasıl konuştuğunu ve karakterde nasıl kaldığını anlatan 1-3 cümle. Persona tutarlılığının en güçlü tekil sinyali.",
+    "voicePinNsfwLabel": "Ses çıpası (NSFW geçersiz kılma)",
+    "voicePinNsfwHelp": "İsteğe bağlı. Yalnızca karakterin samimi sahnelerdeki sesi varsayılan sesinden anlamlı şekilde farklıysa kullanın.",
+    "intimacyContractLabel": "Yakınlık sözleşmesi",
+    "intimacyContractHelp": "İsteğe bağlı. Karakterin samimi sahneler boyunca koruması gereken yapısal davranışı (ritim, imza ifadeler, asla dönüşmediği şeyler) adlandıran 2-4 kısa cümle. NSFW derinliğinde her zaman bütün halinde dahil edilir — asla kesilmez.",
+    "voiceAvoidLabel": "Kaçınılacak ifadeler",
+    "voiceAvoidHelp": "İsteğe bağlı. Bu karakterin asla kullanmayacağı, virgülle ayrılmış kalıp ifadeler. Genel aşk romanı tonuna kaymayı engellemeye yardımcı olur.",
+    "voicePinGenerate": "Yapay zeka ile öner",
+    "voicePinGenerating": "Oluşturuluyor..."
   },
   "creative": {
     "creativeWriting": "Yaratıcı Yazma",

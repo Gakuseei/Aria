@@ -488,7 +488,17 @@ const locale = {
     "typeCharacterDesc": "Personagem de roleplay com personalidade e história",
     "typeBotDesc": "Bot utilitário, cenário ou ferramenta — sem enquadramento de roleplay",
     "descriptionLabelBot": "Descreva seu bot",
-    "descriptionPlaceholderBot": "Um gerador de dirty talk que cria diálogos vívidos e personalizados..."
+    "descriptionPlaceholderBot": "Um gerador de dirty talk que cria diálogos vívidos e personalizados...",
+    "voicePinLabel": "Âncora de voz",
+    "voicePinHelp": "Opcional. 1-3 frases que descrevem como este personagem fala e como permanece em personagem. O sinal único mais forte de consistência de persona.",
+    "voicePinNsfwLabel": "Âncora de voz (substituição NSFW)",
+    "voicePinNsfwHelp": "Opcional. Use apenas se a voz do personagem em cenas íntimas diferir de forma significativa da voz padrão.",
+    "intimacyContractLabel": "Contrato de intimidade",
+    "intimacyContractHelp": "Opcional. 2-4 frases curtas que nomeiam o comportamento estrutural que o personagem deve manter durante cenas íntimas (cadência, frases marcantes, no que nunca se transforma). Sempre incluído inteiro na profundidade NSFW — nunca cortado.",
+    "voiceAvoidLabel": "Frases a evitar",
+    "voiceAvoidHelp": "Opcional. Frases prontas separadas por vírgula que este personagem nunca usaria. Ajuda a bloquear a deriva genérica de romance água com açúcar.",
+    "voicePinGenerate": "Sugerir com IA",
+    "voicePinGenerating": "Gerando..."
   },
   "modeSelection": {
     "selectMode": "Modo",
@@ -605,7 +615,17 @@ const locale = {
     "typeCharacterDesc": "Personagem de roleplay com personalidade e história",
     "typeBotDesc": "Bot utilitário, cenário ou ferramenta — sem enquadramento de roleplay",
     "storageFull": "Armazenamento cheio — remova alguns avatares de personagem para liberar espaço",
-    "botInstructions": "Instruções do bot"
+    "botInstructions": "Instruções do bot",
+    "voicePinLabel": "Âncora de voz",
+    "voicePinHelp": "Opcional. 1-3 frases que descrevem como este personagem fala e como permanece em personagem. O sinal único mais forte de consistência de persona.",
+    "voicePinNsfwLabel": "Âncora de voz (substituição NSFW)",
+    "voicePinNsfwHelp": "Opcional. Use apenas se a voz do personagem em cenas íntimas diferir de forma significativa da voz padrão.",
+    "intimacyContractLabel": "Contrato de intimidade",
+    "intimacyContractHelp": "Opcional. 2-4 frases curtas que nomeiam o comportamento estrutural que o personagem deve manter durante cenas íntimas (cadência, frases marcantes, no que nunca se transforma). Sempre incluído inteiro na profundidade NSFW — nunca cortado.",
+    "voiceAvoidLabel": "Frases a evitar",
+    "voiceAvoidHelp": "Opcional. Frases prontas separadas por vírgula que este personagem nunca usaria. Ajuda a bloquear a deriva genérica de romance água com açúcar.",
+    "voicePinGenerate": "Sugerir com IA",
+    "voicePinGenerating": "Gerando..."
   },
   "creative": {
     "creativeWriting": "Escrita Criativa",

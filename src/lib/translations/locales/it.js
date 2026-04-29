@@ -491,7 +491,17 @@ const locale = {
     "typeCharacterDesc": "Personaggio di roleplay con personalità e storia",
     "typeBotDesc": "Bot utilitario, scenario o strumento — senza ruolo",
     "descriptionLabelBot": "Descrivi il tuo bot",
-    "descriptionPlaceholderBot": "Un generatore di dirty talk che crea dialoghi vividi e personalizzati..."
+    "descriptionPlaceholderBot": "Un generatore di dirty talk che crea dialoghi vividi e personalizzati...",
+    "voicePinLabel": "Ancora vocale",
+    "voicePinHelp": "Opzionale. 1-3 frasi che descrivono come questo personaggio parla e resta nel suo ruolo. Il segnale singolo più forte di coerenza della persona.",
+    "voicePinNsfwLabel": "Ancora vocale (override NSFW)",
+    "voicePinNsfwHelp": "Opzionale. Usala solo se la voce del personaggio nelle scene intime differisce in modo significativo dalla voce predefinita.",
+    "intimacyContractLabel": "Contratto di intimità",
+    "intimacyContractHelp": "Opzionale. 2-4 frasi brevi che nominano il comportamento strutturale che il personaggio deve mantenere nelle scene intime (cadenza, frasi caratteristiche, ciò che non diventa mai). Sempre incluso per intero alla profondità NSFW — mai tagliato.",
+    "voiceAvoidLabel": "Frasi da evitare",
+    "voiceAvoidHelp": "Opzionale. Frasi fatte separate da virgola che questo personaggio non userebbe mai. Aiuta a bloccare la deriva generica da romanzo rosa.",
+    "voicePinGenerate": "Suggerisci con IA",
+    "voicePinGenerating": "Generazione..."
   },
   "modeSelection": {
     "selectMode": "Seleziona Modalità",
@@ -608,7 +618,17 @@ const locale = {
     "typeCharacterDesc": "Personaggio di roleplay con personalità e storia",
     "typeBotDesc": "Bot utilitario, scenario o strumento — senza ruolo",
     "storageFull": "Spazio esaurito — rimuovi alcuni avatar dei personaggi per liberare spazio",
-    "botInstructions": "Istruzioni del bot"
+    "botInstructions": "Istruzioni del bot",
+    "voicePinLabel": "Ancora vocale",
+    "voicePinHelp": "Opzionale. 1-3 frasi che descrivono come questo personaggio parla e resta nel suo ruolo. Il segnale singolo più forte di coerenza della persona.",
+    "voicePinNsfwLabel": "Ancora vocale (override NSFW)",
+    "voicePinNsfwHelp": "Opzionale. Usala solo se la voce del personaggio nelle scene intime differisce in modo significativo dalla voce predefinita.",
+    "intimacyContractLabel": "Contratto di intimità",
+    "intimacyContractHelp": "Opzionale. 2-4 frasi brevi che nominano il comportamento strutturale che il personaggio deve mantenere nelle scene intime (cadenza, frasi caratteristiche, ciò che non diventa mai). Sempre incluso per intero alla profondità NSFW — mai tagliato.",
+    "voiceAvoidLabel": "Frasi da evitare",
+    "voiceAvoidHelp": "Opzionale. Frasi fatte separate da virgola che questo personaggio non userebbe mai. Aiuta a bloccare la deriva generica da romanzo rosa.",
+    "voicePinGenerate": "Suggerisci con IA",
+    "voicePinGenerating": "Generazione..."
   },
   "creative": {
     "creativeWriting": "Scrittura Creativa",

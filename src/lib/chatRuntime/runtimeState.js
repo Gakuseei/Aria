@@ -1365,7 +1365,7 @@ const BODY_STATE_ADD_VERBS = /^(?:tied|bound|stuffed|gagged|covered|blindfolded|
 const BODY_STATE_REMOVE_VERBS = /^(?:untied|unbound|removed|uncovered|ungagged|unblindfolded|unchained|uncuffed)$/i;
 const BODY_STATE_ADD_PATTERN = /\b(tied|bound|stuffed|gagged|covered|blindfolded|chained|cuffed|lashed)\s+(?:her|his|their|the|my|your)?\s*([a-z][\w\s-]{2,40})/gi;
 const BODY_STATE_REMOVE_PATTERN = /\b(untied|unbound|removed|uncovered|ungagged|unblindfolded|unchained|uncuffed)\s+(?:her|his|their|the|my|your)?\s*([a-z][\w\s-]{2,40})/gi;
-const POSITION_PATTERN = /\b(kneeling|standing|sitting|lying|kneels|stands|sits|lies|bent\s+over|bends\s+over|on\s+(?:her|his|their)\s+(?:knees|hands\s+and\s+knees|back|stomach|side))\b/i;
+const POSITION_PATTERN = /(?:^|\b(?:she|he|they)\s+|\b(?:[A-Z][a-z]+)\s+)(kneeling|standing|sitting|lying|kneels|stands|sits|lies|bent\s+over|bends\s+over|on\s+(?:her|his|their)\s+(?:knees|hands\s+and\s+knees|back|stomach|side))\b(?!\s+(?:through|about|to)\b)/i;
 const POSITION_REMOVE_VERB = /\b(?:rises|stands\s+up|gets\s+up|stood\s+up|rose)\b/i;
 const INVERSE_VERB_MAP = {
   untied: 'tied',

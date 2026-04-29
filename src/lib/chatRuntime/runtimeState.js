@@ -1472,6 +1472,65 @@ function accumulateEstablishedFacts(history, previousFacts = []) {
   return out.slice(0, SCENE_MEMORY_MAX_LIST_ENTRIES);
 }
 
+const PRONOUN_HEADS = new Set([
+  'i', 'me', 'my', 'mine', 'myself',
+  'you', 'your', 'yours', 'yourself',
+  'he', 'him', 'his', 'himself',
+  'she', 'her', 'hers', 'herself',
+  'it', 'its', 'itself',
+  'we', 'us', 'our', 'ours', 'ourselves',
+  'they', 'them', 'their', 'theirs', 'themselves',
+  'one', 'ones', 'someone', 'somebody', 'anyone', 'anybody', 'no one', 'nobody'
+]);
+
+export function extractMentionedItems(userMessageText) {
+  const source = String(userMessageText || '').replace(/[*"]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!source) return [];
+  const found = [];
+  const seen = new Set();
+
+  const npRegex = /\b(?:the|a|an|my|your|his|her|their|our)\s+([a-z][\w-]+(?:\s+[a-z][\w-]+){0,2})/gi;
+  let match;
+  while ((match = npRegex.exec(source)) !== null) {
+    const phrase = match[1].toLowerCase().trim();
+    if (!phrase) continue;
+    const tokens = phrase.split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) continue;
+    const head = tokens[tokens.length - 1];
+    if (PRONOUN_HEADS.has(head)) continue;
+    if (ANATOMY_WORDS.has(head)) continue;
+    if (ABSTRACT_NOUN_WORDS.has(head)) continue;
+    if (head.length < 3) continue;
+    if (seen.has(phrase)) continue;
+    seen.add(phrase);
+    found.push(phrase);
+  }
+
+  return found;
+}
+
+function accumulateMentionedItems(history, previousItems = []) {
+  const seen = new Set();
+  const out = [];
+  for (const entry of previousItems || []) {
+    const key = String(entry || '').toLowerCase().trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(entry);
+  }
+  for (const message of history || []) {
+    if (message?.role !== 'user') continue;
+    const items = extractMentionedItems(message.content);
+    for (const item of items) {
+      const key = item.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(item);
+    }
+  }
+  return out.slice(0, 16);
+}
+
 function accumulateWardrobe(history, previousWardrobe = []) {
   const seen = new Set();
   const out = [];
@@ -1561,7 +1620,7 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
     wardrobe,
     bodyState: accumulateBodyState(normalizedHistory, validatedPrevious?.bodyState),
     establishedFacts: accumulateEstablishedFacts(normalizedHistory, validatedPrevious?.establishedFacts),
-    mentionedItems: validatedPrevious?.mentionedItems || [],
+    mentionedItems: accumulateMentionedItems(normalizedHistory, validatedPrevious?.mentionedItems),
     source_assistant_timestamp: latestAssistantTimestamp,
     updated_at: new Date().toISOString(),
     version: SCENE_MEMORY_VERSION

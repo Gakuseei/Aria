@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { assembleRuntimeContext, buildRuntimeState, compileCharacterRuntimeCard, resolveSessionSceneMemory, validateSceneMemory } from '../../src/lib/chatRuntime/index.js';
+import {
+  assembleRuntimeContext,
+  buildRuntimeState,
+  compileCharacterRuntimeCard,
+  extractBodyStateMutations,
+  extractEstablishedFacts,
+  extractMentionedItems,
+  extractWardrobeMutations,
+  renderActiveScene,
+  resolveSessionSceneMemory,
+  validateSceneMemory
+} from '../../src/lib/chatRuntime/index.js';
 
 describe('compileCharacterRuntimeCard', () => {
   it('preserves voice and posture signals from systemPrompt', () => {
@@ -1447,5 +1458,129 @@ describe('assembleRuntimeContext nsfw late steering voice re-anchor', () => {
     const ctx = assembleRuntimeContext({ profile: 'reply', runtimeState: mixedState });
     expect(ctx.systemPrompt).not.toContain('voice anchor above is the contract');
     expect(ctx.systemPrompt).not.toContain('phrases only this character would say');
+  });
+});
+
+describe('scene memory layer (Phase D)', () => {
+  it('extracts wardrobe items via clothing-marker tail patterns', () => {
+    const wardrobe = extractWardrobeMutations("she's wearing a black dress and white apron");
+    expect(wardrobe).toContain('black dress');
+    expect(wardrobe).toContain('white apron');
+  });
+
+  it('skips body-part false positives when extracting wardrobe', () => {
+    const wardrobe = extractWardrobeMutations("she's wearing his shirt over her bare breasts");
+    expect(wardrobe).toContain('shirt');
+    expect(wardrobe.join(' ')).not.toContain('breast');
+  });
+
+  it('adds restraint body state on tying mutation', () => {
+    const state = extractBodyStateMutations('he tied her hands behind her back');
+    expect(state.some((entry) => entry.startsWith('restraint:') && entry.includes('hands'))).toBe(true);
+  });
+
+  it('removes restraint body state on untying mutation', () => {
+    const state = extractBodyStateMutations('he untied her wrists', ['restraint: tied wrists']);
+    expect(state.some((entry) => entry.includes('tied wrists'))).toBe(false);
+  });
+
+  it('captures position state from posture verbs', () => {
+    const state = extractBodyStateMutations('she kneels in front of him');
+    expect(state.some((entry) => entry.startsWith('position:') && entry.includes('kneeling'))).toBe(true);
+  });
+
+  it('captures established facts from never-pattern', () => {
+    const facts = extractEstablishedFacts('Alice has never been touched there before');
+    expect(facts.length).toBeGreaterThan(0);
+    const joined = facts.join(' | ').toLowerCase();
+    expect(joined).toContain('never been touched');
+  });
+
+  it('extracts mentioned items from a user message', () => {
+    const items = extractMentionedItems('Tell me about the silk scarf');
+    expect(items).toContain('silk scarf');
+  });
+
+  it('does not extract items from assistant prose via the user-only tracker', () => {
+    const character = {
+      name: 'Mei',
+      systemPrompt: 'Mei is dry.',
+      scenario: 'Cafe.'
+    };
+    const memory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'user', content: 'Hello there.', timestamp: 1700000001000 },
+        { role: 'assistant', content: 'I love the chair by the window.', timestamp: 1700000002000 }
+      ],
+      userName: 'Erik'
+    });
+    const items = memory?.mentionedItems || [];
+    expect(items.some((entry) => /\bchair\b/.test(entry))).toBe(false);
+  });
+
+  it('renders the new memory layer fields in the active scene block', () => {
+    const rendered = renderActiveScene({
+      location_or_setting: 'A private estate.',
+      immediate_situation: 'Quiet hallway.',
+      relationship_state: '',
+      continuity: '',
+      latest_character_action_or_reaction: '',
+      latest_user_action_or_request: '',
+      open_thread: '',
+      wardrobe: ['black dress', 'white apron'],
+      body_state: ['position: kneeling', 'restraint: tied hands'],
+      established_facts: ['never been touched before'],
+      mentioned_items: ['silk scarf', 'panties']
+    });
+    expect(rendered).toContain('Wardrobe: black dress, white apron');
+    expect(rendered).toContain('Body state: position: kneeling, restraint: tied hands');
+    expect(rendered).toContain('Established facts: never been touched before');
+    expect(rendered).toContain('Items established by user: silk scarf, panties');
+  });
+
+  it('omits empty new-field lines in active scene render', () => {
+    const rendered = renderActiveScene({
+      location_or_setting: 'A doorway.',
+      immediate_situation: 'Quiet.',
+      relationship_state: '',
+      continuity: '',
+      latest_character_action_or_reaction: '',
+      latest_user_action_or_request: '',
+      open_thread: '',
+      wardrobe: [],
+      body_state: [],
+      established_facts: [],
+      mentioned_items: []
+    });
+    expect(rendered).not.toContain('Wardrobe:');
+    expect(rendered).not.toContain('Body state:');
+    expect(rendered).not.toContain('Established facts:');
+    expect(rendered).not.toContain('Items established by user:');
+  });
+
+  it('loads legacy scene memory without phase D fields without crashing', () => {
+    const legacyMemory = {
+      setting_anchor: 'Cafe counter by the rainy window.',
+      relationship_anchor: 'Quiet trust between regulars.',
+      continuity_facts: ['The mug is still between them.'],
+      open_thread: 'Whether she will stay.',
+      source_assistant_timestamp: 1700000001000,
+      updated_at: '2026-03-23T10:00:00.000Z'
+    };
+
+    const validated = validateSceneMemory(legacyMemory, [
+      { role: 'assistant', content: '*She waits.*', timestamp: 1700000001000 },
+      { role: 'user', content: 'Stay.', timestamp: 1700000002000 }
+    ]);
+
+    expect(Array.isArray(validated?.wardrobe)).toBe(true);
+    expect(validated.wardrobe).toEqual([]);
+    expect(Array.isArray(validated?.bodyState)).toBe(true);
+    expect(validated.bodyState).toEqual([]);
+    expect(Array.isArray(validated?.establishedFacts)).toBe(true);
+    expect(validated.establishedFacts).toEqual([]);
+    expect(Array.isArray(validated?.mentionedItems)).toBe(true);
+    expect(validated.mentionedItems).toEqual([]);
   });
 });

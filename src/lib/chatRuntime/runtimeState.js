@@ -1288,6 +1288,11 @@ function extractWardrobeFromText(text) {
     collect(match[1]);
   }
 
+  const conjunctionRegex = /\band\s+(?:a|an|her|his|their|the|my|your)?\s*([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi;
+  while ((match = conjunctionRegex.exec(source)) !== null) {
+    collect(match[1]);
+  }
+
   return found;
 }
 

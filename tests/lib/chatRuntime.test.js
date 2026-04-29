@@ -7,6 +7,7 @@ import {
   extractEstablishedFacts,
   extractMentionedItems,
   extractWardrobeMutations,
+  extractWardrobeRemovals,
   renderActiveScene,
   resolveSessionSceneMemory,
   validateSceneMemory
@@ -1557,6 +1558,57 @@ describe('scene memory layer (Phase D)', () => {
     expect(rendered).not.toContain('Body state:');
     expect(rendered).not.toContain('Established facts:');
     expect(rendered).not.toContain('Items established by user:');
+  });
+
+  it('extracts wardrobe removal heads from clothing-off verbs', () => {
+    expect(extractWardrobeRemovals('he tugs her jeans down')).toContain('jeans');
+    expect(extractWardrobeRemovals('slips out of her dress, lets it fall to the floor')).toContain('dress');
+    expect(extractWardrobeRemovals('her panties slip to the floor')).toContain('panties');
+  });
+
+  it('drops wardrobe entries when clothing-off mutations appear in history', () => {
+    const character = { name: 'Sarah', systemPrompt: 'Sarah is calm.', scenario: 'Bedroom.' };
+    const memory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'assistant', content: 'wearing a silk top and blue jeans and heels.', timestamp: 1700000001000 },
+        { role: 'user', content: 'I tug your jeans down.', timestamp: 1700000002000 },
+        { role: 'assistant', content: 'She nods softly.', timestamp: 1700000003000 }
+      ],
+      userName: 'Erik'
+    });
+    const wardrobe = memory?.wardrobe || [];
+    expect(wardrobe.some((entry) => /\bjeans\b/.test(entry))).toBe(false);
+    expect(wardrobe.some((entry) => /\btop\b/.test(entry))).toBe(true);
+  });
+
+  it('strips garbage wardrobe entries that lack a clothing head on validate', () => {
+    const memory = {
+      setting_anchor: 'A doorway.',
+      relationship_anchor: 'Quiet.',
+      continuity_facts: [],
+      open_thread: '',
+      wardrobe: ['cleavage you know what', 'silk top', 'challenge so what', 'black dress'],
+      bodyState: [],
+      establishedFacts: [],
+      mentionedItems: [],
+      source_assistant_timestamp: 1700000001000,
+      updated_at: '2026-04-29T10:00:00.000Z'
+    };
+    const validated = validateSceneMemory(memory, [
+      { role: 'assistant', content: '*She waits.*', timestamp: 1700000001000 }
+    ]);
+    expect(validated?.wardrobe).toEqual(['silk top', 'black dress']);
+  });
+
+  it('does not change position state on idiom phrases like "lies through her teeth"', () => {
+    const state = extractBodyStateMutations('she lies through her teeth');
+    expect(state.some((entry) => entry.startsWith('position:'))).toBe(false);
+  });
+
+  it('captures position state when a named character takes a posture', () => {
+    const state = extractBodyStateMutations('Sarah kneels in front of him');
+    expect(state.some((entry) => entry.startsWith('position:') && entry.includes('kneeling'))).toBe(true);
   });
 
   it('loads legacy scene memory without phase D fields without crashing', () => {

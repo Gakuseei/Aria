@@ -1228,6 +1228,7 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
  * vocabulary scraping is not.
  */
 const CLOTHING_HEAD_PATTERN = /(dress|shirt|blouse|skirt|pants|trousers|shorts|jeans|coat|jacket|gown|robe|uniform|apron|stockings|socks|shoes|boots|heels|panties|thong|bra|hat|scarf|tie|belt|gloves?|glove|veil|mask|sash|cloak|cape|sweater|hoodie|leggings|tights|underwear|lingerie|bikini|swimsuit|nightgown|chemise|corset|bodice|negligee|kimono|dressing\s+gown|nightie|top|camisole|tank)/;
+const CLOTHING_HEAD_EXACT_PATTERN = /^(?:dress|shirt|blouse|skirt|pants|trousers|shorts|jeans|coat|jacket|gown|robe|uniform|apron|stockings|socks|shoes|boots|heels|panties|thong|bra|hat|scarf|tie|belt|gloves?|glove|veil|mask|sash|cloak|cape|sweater|hoodie|leggings|tights|underwear|lingerie|bikini|swimsuit|nightgown|chemise|corset|bodice|negligee|kimono|nightie|top|camisole|tank)$/;
 const WARDROBE_TAIL_PHRASE = /(?:^|\s)(?:a|an|her|his|their|the|my|your)\s+([a-z][\w-]*(?:\s+[a-z][\w-]*){0,3})/gi;
 
 function tokenizeWords(text) {
@@ -1258,7 +1259,7 @@ function trimToClothingHead(phrase) {
   const tokens = String(phrase || '').toLowerCase().split(/\s+/).filter(Boolean);
   if (tokens.length === 0) return '';
   for (let index = 0; index < tokens.length; index += 1) {
-    if (CLOTHING_HEAD_PATTERN.test(tokens[index])) {
+    if (CLOTHING_HEAD_EXACT_PATTERN.test(tokens[index])) {
       return tokens.slice(0, index + 1).join(' ');
     }
   }
@@ -1328,13 +1329,13 @@ function extractWardrobeRemovalsFromText(text) {
     heads.push(head);
   };
 
-  const trailingDirection = /\b(?:took|takes|taking|removed|removes|removing|slipped|slips|stripped|strips|stripping|peels?|peeled|tugged|tugs|pulled|pulls|pulling|drops|dropped|dropping|tosses|tossed|tossing|throws|threw|throwing|tore|tears|tearing)\s+(?:her|his|their|my|your|the)\s+([a-z][\w\s-]{2,40}?)\s+(?:off|away|aside|down|out)\b/gi;
+  const trailingDirection = /\b(?:take|took|takes|taking|remove|removed|removes|removing|slip|slipped|slips|strip|stripped|strips|stripping|peel|peels?|peeled|tug|tugged|tugs|pull|pulled|pulls|pulling|drop|drops|dropped|dropping|toss|tosses|tossed|tossing|throw|throws|threw|throwing|tore|tears|tearing)\s+(?:her|his|their|my|your|the)\s+([a-z][\w\s-]{2,40}?)\s+(?:off|away|aside|down|out)\b/gi;
   let match;
   while ((match = trailingDirection.exec(source)) !== null) {
     collectHead(match[1]);
   }
 
-  const leadingDirection = /\b(?:took|takes|taking|removed|removes|removing|slipped|slips|stripped|strips|stripping|peels?|peeled|tugged|tugs|pulled|pulls|pulling|drops|dropped|dropping|tosses|tossed|tossing|throws|threw|throwing|tore|tears|tearing)\s+(?:off|away|aside|down|out)\s+(?:of\s+)?(?:a\s+|an\s+|her\s+|his\s+|their\s+|my\s+|your\s+|the\s+)?([a-z][\w\s-]{2,40})/gi;
+  const leadingDirection = /\b(?:take|took|takes|taking|remove|removed|removes|removing|slip|slipped|slips|strip|stripped|strips|stripping|peel|peels?|peeled|tug|tugged|tugs|pull|pulled|pulls|pulling|drop|drops|dropped|dropping|toss|tosses|tossed|tossing|throw|throws|threw|throwing|tore|tears|tearing)\s+(?:off|away|aside|down|out)\s+(?:of\s+)?(?:a\s+|an\s+|her\s+|his\s+|their\s+|my\s+|your\s+|the\s+)?([a-z][\w\s-]{2,40})/gi;
   while ((match = leadingDirection.exec(source)) !== null) {
     collectHead(match[1]);
   }
@@ -1647,6 +1648,10 @@ function accumulateWardrobe(history, previousWardrobe = []) {
       if (!normalized || seen.has(normalized)) continue;
       seen.add(normalized);
       entries.push(phrase);
+    }
+
+    for (const head of removals) {
+      dropByHead(head);
     }
   }
   return entries.slice(0, SCENE_MEMORY_MAX_LIST_ENTRIES);

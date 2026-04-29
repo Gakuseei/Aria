@@ -1282,6 +1282,136 @@ export function extractWardrobeMutations(text) {
   return extractWardrobeFromText(text);
 }
 
+const BODY_STATE_ADD_VERBS = /^(?:tied|bound|stuffed|gagged|covered|blindfolded|chained|cuffed|lashed)$/i;
+const BODY_STATE_REMOVE_VERBS = /^(?:untied|unbound|removed|uncovered|ungagged|unblindfolded|unchained|uncuffed)$/i;
+const BODY_STATE_ADD_PATTERN = /\b(tied|bound|stuffed|gagged|covered|blindfolded|chained|cuffed|lashed)\s+(?:her|his|their|the|my|your)?\s*([a-z][\w\s-]{2,40})/gi;
+const BODY_STATE_REMOVE_PATTERN = /\b(untied|unbound|removed|uncovered|ungagged|unblindfolded|unchained|uncuffed)\s+(?:her|his|their|the|my|your)?\s*([a-z][\w\s-]{2,40})/gi;
+const POSITION_PATTERN = /\b(kneeling|standing|sitting|lying|kneels|stands|sits|lies|bent\s+over|bends\s+over|on\s+(?:her|his|their)\s+(?:knees|hands\s+and\s+knees|back|stomach|side))\b/i;
+const POSITION_REMOVE_VERB = /\b(?:rises|stands\s+up|gets\s+up|stood\s+up|rose)\b/i;
+const INVERSE_VERB_MAP = {
+  untied: 'tied',
+  unbound: 'bound',
+  removed: 'removed',
+  uncovered: 'covered',
+  ungagged: 'gagged',
+  unblindfolded: 'blindfolded',
+  unchained: 'chained',
+  uncuffed: 'cuffed'
+};
+
+function trimBodyStateObject(raw) {
+  const tokens = String(raw || '').toLowerCase().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return '';
+  const stopAt = tokens.findIndex((token, index) => index > 0 && /^(?:and|but|then|so|while|with|to|behind|over|on|under|in|at|near|by)$/i.test(token));
+  const trimmed = stopAt === -1 ? tokens : tokens.slice(0, stopAt + 1);
+  if (trimmed.length === 0) return '';
+  if (/^(?:and|but|then|so|while|with|to|behind|over|on|under|in|at|near|by)$/i.test(trimmed[trimmed.length - 1])) {
+    trimmed.pop();
+  }
+  if (trimmed.length === 0) return '';
+  if (!ANATOMY_WORDS.has(trimmed[trimmed.length - 1]) && trimmed.length > 1) {
+    const last = trimmed[trimmed.length - 1];
+    if (ABSTRACT_NOUN_WORDS.has(last)) return '';
+  }
+  return trimmed.join(' ');
+}
+
+function normalizePositionPhrase(raw) {
+  const lowered = String(raw || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  if (!lowered) return '';
+  if (/^kneels?$|^kneeling$|^on\s+(?:her|his|their)\s+knees$/i.test(lowered)) return 'kneeling';
+  if (/^stands?$|^standing$/i.test(lowered)) return 'standing';
+  if (/^sits?$|^sitting$/i.test(lowered)) return 'sitting';
+  if (/^lies$|^lying$/i.test(lowered)) return 'lying';
+  if (/^bends?\s+over$|^bent\s+over$/i.test(lowered)) return 'bent over';
+  if (/^on\s+(?:her|his|their)\s+hands\s+and\s+knees$/i.test(lowered)) return 'on hands and knees';
+  if (/^on\s+(?:her|his|their)\s+back$/i.test(lowered)) return 'on back';
+  if (/^on\s+(?:her|his|their)\s+stomach$/i.test(lowered)) return 'on stomach';
+  if (/^on\s+(?:her|his|their)\s+side$/i.test(lowered)) return 'on side';
+  return '';
+}
+
+export function extractBodyStateMutations(text, currentState = []) {
+  const source = String(text || '').replace(/[*"]/g, ' ').replace(/\s+/g, ' ').trim();
+  const state = Array.isArray(currentState) ? [...currentState] : [];
+  if (!source) return state;
+
+  const restraintEntries = state.filter((entry) => entry.startsWith('restraint:'));
+  const positionEntries = state.filter((entry) => entry.startsWith('position:'));
+  const otherEntries = state.filter((entry) => !entry.startsWith('restraint:') && !entry.startsWith('position:'));
+
+  const restraintSet = new Set(restraintEntries.map((entry) => entry.slice('restraint:'.length).trim()));
+
+  let match;
+  BODY_STATE_REMOVE_PATTERN.lastIndex = 0;
+  while ((match = BODY_STATE_REMOVE_PATTERN.exec(source)) !== null) {
+    const verb = match[1].toLowerCase();
+    if (!BODY_STATE_REMOVE_VERBS.test(verb)) continue;
+    const obj = trimBodyStateObject(match[2]);
+    if (!obj) continue;
+    const inverseVerb = INVERSE_VERB_MAP[verb];
+    if (!inverseVerb) continue;
+    for (const entry of [...restraintSet]) {
+      const lowered = entry.toLowerCase();
+      if (!lowered.startsWith(`${inverseVerb} `)) continue;
+      const objTokens = obj.split(/\s+/).filter(Boolean);
+      const headToken = objTokens[objTokens.length - 1];
+      if (!headToken) continue;
+      if (lowered.includes(headToken)) {
+        restraintSet.delete(entry);
+      }
+    }
+  }
+
+  BODY_STATE_ADD_PATTERN.lastIndex = 0;
+  while ((match = BODY_STATE_ADD_PATTERN.exec(source)) !== null) {
+    const verb = match[1].toLowerCase();
+    if (!BODY_STATE_ADD_VERBS.test(verb)) continue;
+    const obj = trimBodyStateObject(match[2]);
+    if (!obj) continue;
+    const phrase = `${verb} ${obj}`.trim();
+    restraintSet.add(phrase);
+  }
+
+  let nextPosition = positionEntries.length > 0 ? positionEntries[0].slice('position:'.length).trim() : '';
+  const positionMatch = source.match(POSITION_PATTERN);
+  if (positionMatch?.[1]) {
+    const normalized = normalizePositionPhrase(positionMatch[1]);
+    if (normalized) {
+      nextPosition = normalized;
+    }
+  }
+  if (POSITION_REMOVE_VERB.test(source)) {
+    nextPosition = '';
+  }
+
+  const out = [...otherEntries];
+  if (nextPosition) {
+    out.push(`position: ${nextPosition}`);
+  }
+  for (const entry of restraintSet) {
+    out.push(`restraint: ${entry}`);
+  }
+  return out;
+}
+
+function accumulateBodyState(history, previousBodyState = []) {
+  let state = Array.isArray(previousBodyState) ? [...previousBodyState] : [];
+  for (const message of history || []) {
+    if (message?.role !== 'user' && message?.role !== 'assistant') continue;
+    state = extractBodyStateMutations(message.content, state);
+  }
+  const seen = new Set();
+  const out = [];
+  for (const entry of state) {
+    const key = entry.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(entry);
+  }
+  return out.slice(0, SCENE_MEMORY_MAX_LIST_ENTRIES);
+}
+
 function accumulateWardrobe(history, previousWardrobe = []) {
   const seen = new Set();
   const out = [];
@@ -1369,7 +1499,7 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
     open_thread: derivePersistentOpenThread(latestUserTurn, latestAssistantTurn),
     nsfwArcAnchor: nextArcAnchor,
     wardrobe,
-    bodyState: validatedPrevious?.bodyState || [],
+    bodyState: accumulateBodyState(normalizedHistory, validatedPrevious?.bodyState),
     establishedFacts: validatedPrevious?.establishedFacts || [],
     mentionedItems: validatedPrevious?.mentionedItems || [],
     source_assistant_timestamp: latestAssistantTimestamp,

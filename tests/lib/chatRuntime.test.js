@@ -1330,3 +1330,82 @@ describe('assembleRuntimeContext late steering (trimmed)', () => {
     expect(ctx.systemPrompt).toContain('The scene is already explicit. Continue in character');
   });
 });
+
+describe('assembleRuntimeContext nsfw late steering voice re-anchor', () => {
+  function buildState({ category = 'nsfw', name = 'Yuki', unchainedMode = true, passionLevel = 60, history } = {}) {
+    return buildRuntimeState({
+      character: {
+        name,
+        category,
+        systemPrompt: `${name} is sweet and quietly possessive.`,
+        instructions: 'Stay in voice.',
+        voicePin: 'Stutters when nervous.'
+      },
+      history: history || [
+        { role: 'assistant', content: '*she presses against you, breath catching* "please..."' },
+        { role: 'user', content: '*kisses you* fuck me' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1600, passionLevel, unchainedMode }
+    });
+  }
+
+  it('appends voice-anchor re-anchor lines when assistMode is nsfw_only', () => {
+    const runtimeState = buildState();
+    expect(runtimeState.assistMode).toBe('nsfw_only');
+    const ctx = assembleRuntimeContext({ profile: 'reply', runtimeState });
+    expect(ctx.systemPrompt).toContain('voice anchor above is the contract');
+    expect(ctx.systemPrompt).toContain('phrases only this character would say');
+  });
+
+  it('substitutes the character name into the first re-anchor line', () => {
+    const runtimeState = buildState({ name: 'Yuki' });
+    expect(runtimeState.assistMode).toBe('nsfw_only');
+    const ctx = assembleRuntimeContext({ profile: 'reply', runtimeState });
+    expect(ctx.systemPrompt).toContain("Stay in Yuki's voice signature");
+  });
+
+  it('omits the re-anchor lines when assistMode is sfw_only', () => {
+    const sfwState = buildRuntimeState({
+      character: {
+        name: 'Mei',
+        category: 'sfw',
+        systemPrompt: 'Mei is dry and observant.',
+        instructions: 'Stay blunt.'
+      },
+      history: [
+        { role: 'assistant', content: '*She slides a mug toward you.* "Drink first."' },
+        { role: 'user', content: 'How was your day?' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1600, unchainedMode: false, passionLevel: 0 }
+    });
+
+    expect(sfwState.assistMode).toBe('sfw_only');
+    const ctx = assembleRuntimeContext({ profile: 'reply', runtimeState: sfwState });
+    expect(ctx.systemPrompt).not.toContain('voice anchor above is the contract');
+    expect(ctx.systemPrompt).not.toContain('phrases only this character would say');
+  });
+
+  it('omits the re-anchor lines when assistMode is mixed_transition', () => {
+    const mixedState = buildRuntimeState({
+      character: {
+        name: 'Mei',
+        category: 'sfw',
+        systemPrompt: 'Mei is dry and observant.',
+        instructions: 'Stay blunt.'
+      },
+      history: [
+        { role: 'assistant', content: '*She lingers close, shoulder brushing yours.* "You can stay if you want."' },
+        { role: 'user', content: 'Then stay with me a little closer.' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1600, unchainedMode: true, passionLevel: 32 }
+    });
+
+    expect(mixedState.assistMode).toBe('mixed_transition');
+    const ctx = assembleRuntimeContext({ profile: 'reply', runtimeState: mixedState });
+    expect(ctx.systemPrompt).not.toContain('voice anchor above is the contract');
+    expect(ctx.systemPrompt).not.toContain('phrases only this character would say');
+  });
+});

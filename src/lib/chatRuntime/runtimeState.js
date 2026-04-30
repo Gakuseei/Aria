@@ -589,12 +589,12 @@ function trimSceneMemoryToBudget(memory) {
     nsfwArcAnchor: sanitizeSceneMemoryLine(memory.nsfwArcAnchor, 96),
     wardrobe: sanitizeMemoryListEntries(memory.wardrobe, {
       maxLength: 60,
-      validate: (entry) => Boolean(trimToClothingHead(entry))
+      validate: (entry) => Boolean(trimToClothingHead(stripActorTag(entry)))
     }),
     negativeWardrobe: sanitizeMemoryListEntries(memory.negativeWardrobe, {
       maxLength: 60,
       validate: (entry) => {
-        const normalized = normalizeWardrobePhrase(entry);
+        const normalized = normalizeWardrobePhrase(stripActorTag(entry));
         if (!normalized) return false;
         const tokens = normalized.split(/\s+/).filter(Boolean);
         if (tokens.length < 2) return false;
@@ -1345,10 +1345,41 @@ function normalizeWardrobePhrase(raw) {
     .trim();
 }
 
+const ACTOR_TAG_SUFFIX = /\s*\[(user|character)\]\s*$/i;
+
+function actorFromPossessive(possessive, speakerRole = 'assistant') {
+  const lowered = String(possessive || '').toLowerCase().trim();
+  if (lowered === 'her' || lowered === 'his' || lowered === 'their') return 'character';
+  if (lowered === 'my') return speakerRole === 'user' ? 'user' : 'character';
+  if (lowered === 'your') return speakerRole === 'user' ? 'character' : 'user';
+  return 'character';
+}
+
+function tagEntry(entry, actor) {
+  const value = String(entry || '').trim();
+  if (!value) return '';
+  const stripped = value.replace(ACTOR_TAG_SUFFIX, '').trim();
+  if (!stripped) return '';
+  if (actor === 'user') return `${stripped} [user]`;
+  return stripped;
+}
+
+function stripActorTag(entry) {
+  return String(entry || '').replace(ACTOR_TAG_SUFFIX, '').trim();
+}
+
+function entryActor(entry) {
+  const match = String(entry || '').match(ACTOR_TAG_SUFFIX);
+  if (!match) return 'character';
+  return match[1].toLowerCase() === 'user' ? 'user' : 'character';
+}
+
 function trimToClothingHead(phrase) {
   const tokens = String(phrase || '').toLowerCase().split(/\s+/).filter(Boolean);
   if (tokens.length === 0) return '';
   for (let index = 0; index < tokens.length; index += 1) {
+    if (ANATOMY_WORDS.has(tokens[index])) return '';
+    if (tokens[index] === 'with') return '';
     if (CLOTHING_HEAD_EXACT_PATTERN.test(tokens[index])) {
       return tokens.slice(0, index + 1).join(' ');
     }
@@ -1356,36 +1387,38 @@ function trimToClothingHead(phrase) {
   return '';
 }
 
-function extractWardrobeFromText(text) {
+function extractWardrobeFromText(text, speakerRole = 'assistant') {
   const source = String(text || '').replace(/[*"]/g, ' ').replace(/\s+/g, ' ').trim();
   if (!source) return [];
   const found = [];
   const seen = new Set();
 
-  const collect = (phrase) => {
+  const collect = (phrase, actor) => {
     const head = trimToClothingHead(phrase);
     if (!head) return;
     if (isAnatomyHead(head)) return;
     if (isAbstractHead(head)) return;
-    if (seen.has(head)) return;
-    seen.add(head);
-    found.push(head);
+    const tagged = tagEntry(head, actor);
+    if (!tagged) return;
+    if (seen.has(tagged)) return;
+    seen.add(tagged);
+    found.push(tagged);
   };
 
-  const tailRegex = /\b(?:wearing|dressed\s+in|clad\s+in)\s+(?:a|an|her|his|their|the|my|your)\s+([a-z][\w\s-]{2,40})/gi;
+  const tailRegex = /\b(?:wearing|dressed\s+in|clad\s+in)\s+(a|an|her|his|their|the|my|your)\s+([a-z][\w\s-]{2,40})/gi;
   let match;
   while ((match = tailRegex.exec(source)) !== null) {
-    collect(match[1]);
+    collect(match[2], actorFromPossessive(match[1], speakerRole));
   }
 
-  const possessiveRegex = /\b(?:her|his|their|my|your)\s+([a-z][\w\s-]{2,40})/gi;
+  const possessiveRegex = /\b(her|his|their|my|your)\s+([a-z][\w\s-]{2,40})/gi;
   while ((match = possessiveRegex.exec(source)) !== null) {
-    collect(match[1]);
+    collect(match[2], actorFromPossessive(match[1], speakerRole));
   }
 
-  const conjunctionRegex = /\band\s+(?:a|an|her|his|their|the|my|your)?\s*([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi;
+  const conjunctionRegex = /\band\s+(a|an|her|his|their|the|my|your)?\s*([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi;
   while ((match = conjunctionRegex.exec(source)) !== null) {
-    collect(match[1]);
+    collect(match[2], actorFromPossessive(match[1], speakerRole));
   }
 
   return found;
@@ -1400,13 +1433,13 @@ export function extractWardrobeMutations(text) {
  * but for removal-shaped patterns. Returns last-token clothing heads (e.g. 'jeans')
  * suitable for last-token equality matching against accumulated wardrobe entries.
  */
-function extractWardrobeRemovalsFromText(text) {
+function extractWardrobeRemovalsFromText(text, speakerRole = 'assistant') {
   const source = String(text || '').replace(/[*"]/g, ' ').replace(/\s+/g, ' ').trim();
   if (!source) return [];
-  const heads = [];
+  const removals = [];
   const seen = new Set();
 
-  const collectHead = (phrase) => {
+  const collectHead = (phrase, actor) => {
     const trimmed = trimToClothingHead(phrase);
     if (!trimmed) return;
     if (isAnatomyHead(trimmed)) return;
@@ -1414,42 +1447,43 @@ function extractWardrobeRemovalsFromText(text) {
     const tokens = trimmed.split(/\s+/).filter(Boolean);
     const head = tokens[tokens.length - 1];
     if (!head) return;
-    if (seen.has(head)) return;
-    seen.add(head);
-    heads.push(head);
+    const key = `${actor}::${head}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    removals.push({ head, actor });
   };
 
-  const trailingDirection = /\b(?:take|took|takes|taking|remove|removed|removes|removing|slip|slipped|slips|strip|stripped|strips|stripping|peel|peels?|peeled|tug|tugged|tugs|pull|pulled|pulls|pulling|drop|drops|dropped|dropping|toss|tosses|tossed|tossing|throw|throws|threw|throwing|tore|tears|tearing)\s+(?:her|his|their|my|your|the)\s+([a-z][\w\s-]{2,40}?)\s+(?:off|away|aside|down|out)\b/gi;
+  const trailingDirection = /\b(?:take|took|takes|taking|remove|removed|removes|removing|slip|slipped|slips|strip|stripped|strips|stripping|peel|peels?|peeled|tug|tugged|tugs|pull|pulled|pulls|pulling|drop|drops|dropped|dropping|toss|tosses|tossed|tossing|throw|throws|threw|throwing|tore|tears|tearing)\s+(her|his|their|my|your|the)\s+([a-z][\w\s-]{2,40}?)\s+(?:off|away|aside|down|out)\b/gi;
   let match;
   while ((match = trailingDirection.exec(source)) !== null) {
-    collectHead(match[1]);
+    collectHead(match[2], actorFromPossessive(match[1], speakerRole));
   }
 
-  const leadingDirection = /\b(?:take|took|takes|taking|remove|removed|removes|removing|slip|slipped|slips|strip|stripped|strips|stripping|peel|peels?|peeled|tug|tugged|tugs|pull|pulled|pulls|pulling|drop|drops|dropped|dropping|toss|tosses|tossed|tossing|throw|throws|threw|throwing|tore|tears|tearing)\s+(?:off|away|aside|down|out)\s+(?:of\s+)?(?:a\s+|an\s+|her\s+|his\s+|their\s+|my\s+|your\s+|the\s+)?([a-z][\w\s-]{2,40})/gi;
+  const leadingDirection = /\b(?:take|took|takes|taking|remove|removed|removes|removing|slip|slipped|slips|strip|stripped|strips|stripping|peel|peels?|peeled|tug|tugged|tugs|pull|pulled|pulls|pulling|drop|drops|dropped|dropping|toss|tosses|tossed|tossing|throw|throws|threw|throwing|tore|tears|tearing)\s+(?:off|away|aside|down|out)\s+(?:of\s+)?(a\s+|an\s+|her\s+|his\s+|their\s+|my\s+|your\s+|the\s+)?([a-z][\w\s-]{2,40})/gi;
   while ((match = leadingDirection.exec(source)) !== null) {
-    collectHead(match[1]);
+    collectHead(match[2], actorFromPossessive(match[1], speakerRole));
   }
 
-  const slipsOutOf = /\bslips?\s+out\s+of\s+(?:a\s+|an\s+|her\s+|his\s+|their\s+|my\s+|your\s+|the\s+)?([a-z][\w\s-]{2,40})/gi;
+  const slipsOutOf = /\bslips?\s+out\s+of\s+(a\s+|an\s+|her\s+|his\s+|their\s+|my\s+|your\s+|the\s+)?([a-z][\w\s-]{2,40})/gi;
   while ((match = slipsOutOf.exec(source)) !== null) {
-    collectHead(match[1]);
+    collectHead(match[2], actorFromPossessive(match[1], speakerRole));
   }
 
-  const fallsToFloor = /\b(?:her|his|their|my|your|the)\s+([a-z][\w\s-]{2,40}?)\s+(?:slips?|fell|falls?|drops?|lands?|hits?)\s+(?:to|on|off)\s+(?:the\s+)?(?:floor|ground)/gi;
+  const fallsToFloor = /\b(her|his|their|my|your|the)\s+([a-z][\w\s-]{2,40}?)\s+(?:slips?|fell|falls?|drops?|lands?|hits?)\s+(?:to|on|off)\s+(?:the\s+)?(?:floor|ground)/gi;
   while ((match = fallsToFloor.exec(source)) !== null) {
-    collectHead(match[1]);
+    collectHead(match[2], actorFromPossessive(match[1], speakerRole));
   }
 
-  const noLonger = /\b(?:without|no\s+longer\s+wearing)\s+(?:a\s+|an\s+|her\s+|his\s+|their\s+|my\s+|your\s+|the\s+)?([a-z][\w\s-]{2,40})/gi;
+  const noLonger = /\b(?:without|no\s+longer\s+wearing)\s+(a\s+|an\s+|her\s+|his\s+|their\s+|my\s+|your\s+|the\s+)?([a-z][\w\s-]{2,40})/gi;
   while ((match = noLonger.exec(source)) !== null) {
-    collectHead(match[1]);
+    collectHead(match[2], actorFromPossessive(match[1], speakerRole));
   }
 
-  return heads;
+  return removals;
 }
 
 export function extractWardrobeRemovals(text) {
-  return extractWardrobeRemovalsFromText(text);
+  return extractWardrobeRemovalsFromText(text).map((removal) => removal.head);
 }
 
 /**
@@ -1462,18 +1496,20 @@ export function extractWardrobeRemovals(text) {
  *     Generated from "no X", "without X", "doesn't wear X", "not wearing X",
  *     "isn't wearing X" patterns.
  */
-function extractNegativeWardrobeFromText(text) {
+function extractNegativeWardrobeFromText(text, speakerRole = 'assistant') {
   const source = String(text || '').replace(/[*"]/g, ' ').replace(/\s+/g, ' ').trim();
   if (!source) return [];
   const found = [];
   const seen = new Set();
 
-  const pushEntry = (value) => {
+  const pushEntry = (value, actor) => {
     const normalized = normalizeWardrobePhrase(value);
     if (!normalized) return;
-    if (seen.has(normalized)) return;
-    seen.add(normalized);
-    found.push(normalized);
+    const tagged = tagEntry(normalized, actor);
+    if (!tagged) return;
+    if (seen.has(tagged)) return;
+    seen.add(tagged);
+    found.push(tagged);
   };
 
   const collectHead = (phrase) => {
@@ -1485,25 +1521,45 @@ function extractNegativeWardrobeFromText(text) {
     return tokens[tokens.length - 1] || '';
   };
 
-  const nothingUnder = /\bnothing\s+(?:underneath|under|beneath)\s+(?:the\s+|her\s+|his\s+|their\s+|my\s+|your\s+|a\s+|an\s+)?([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi;
+  const nothingUnder = /\bnothing\s+(?:underneath|under|beneath)\s+(the\s+|her\s+|his\s+|their\s+|my\s+|your\s+|a\s+|an\s+)?([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi;
   let match;
   while ((match = nothingUnder.exec(source)) !== null) {
-    const head = collectHead(match[1]);
+    const head = collectHead(match[2]);
     if (!head) continue;
-    pushEntry(`nothing under ${head}`);
+    const possessive = String(match[1] || '').trim();
+    pushEntry(`nothing under ${head}`, actorFromPossessive(possessive, speakerRole));
   }
 
   const negationHeadPatterns = [
     /\b(?:no|without)\s+(?:a\s+|an\s+)?([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi,
+    /\b(i|you|she|he|they)\s+(?:doesn'?t|don'?t|didn'?t|isn'?t|aren'?t|am\s+not|'?m\s+not|'?re\s+not|'?s\s+not)\s+(?:have|wear|wearing|got)\s+(?:a\s+|an\s+|any\s+)?([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi,
     /\b(?:doesn'?t|don'?t|didn'?t|isn'?t|aren'?t)\s+(?:have|wear|wearing|got)\s+(?:a\s+|an\s+|any\s+)?([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi,
+    /\b(i|you|she|he|they)\s+(?:am\s+not|'?m\s+not|'?re\s+not|'?s\s+not|is\s+not|are\s+not)\s+(?:wearing|in)\s+(?:a\s+|an\s+|any\s+)?([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi,
     /\bnot\s+(?:wearing|in)\s+(?:a\s+|an\s+|any\s+)?([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi
   ];
 
+  const subjectActor = (subject) => {
+    const lowered = String(subject || '').toLowerCase();
+    if (lowered === 'she' || lowered === 'he' || lowered === 'they') return 'character';
+    if (lowered === 'i') return speakerRole === 'user' ? 'user' : 'character';
+    if (lowered === 'you') return speakerRole === 'user' ? 'character' : 'user';
+    return 'character';
+  };
+
   for (const pattern of negationHeadPatterns) {
     while ((match = pattern.exec(source)) !== null) {
-      const head = collectHead(match[1]);
+      const groups = match.slice(1);
+      let actor = 'character';
+      let phrase = '';
+      if (groups.length === 2 && /^(?:i|you|she|he|they)$/i.test(groups[0])) {
+        actor = subjectActor(groups[0]);
+        phrase = groups[1];
+      } else {
+        phrase = groups[0];
+      }
+      const head = collectHead(phrase);
       if (!head) continue;
-      pushEntry(`no ${head}`);
+      pushEntry(`no ${head}`, actor);
     }
   }
 
@@ -1521,7 +1577,8 @@ export function extractNegativeWardrobe(text) {
  *   - "no <head>" — head is the absent garment. Returns the head for cross-cancel.
  */
 function negativeWardrobeCancelHead(entry) {
-  const normalized = normalizeWardrobePhrase(entry);
+  const stripped = stripActorTag(entry);
+  const normalized = normalizeWardrobePhrase(stripped);
   if (!normalized) return null;
   const tokens = normalized.split(/\s+/).filter(Boolean);
   if (tokens.length < 2) return null;
@@ -1531,11 +1588,24 @@ function negativeWardrobeCancelHead(entry) {
   return null;
 }
 
-const BODY_STATE_ADD_VERBS = /^(?:tied|bound|stuffed|gagged|covered|blindfolded|chained|cuffed|lashed)$/i;
+const BODY_STATE_ADD_VERBS = /^(?:tied|bound|stuffed|gagged|covered|blindfolded|chained|cuffed|lashed|tie|tying|ties|bind|binds|binding|stuff|stuffs|stuffing|gag|gags|gagging|cover|covers|covering|blindfold|blindfolds|blindfolding|chain|chains|chaining|cuff|cuffs|cuffing|lash|lashes|lashing)$/i;
+const BODY_STATE_ADD_VERB_NORMALIZED = {
+  tie: 'tied', ties: 'tied', tying: 'tied', tied: 'tied',
+  bind: 'bound', binds: 'bound', binding: 'bound', bound: 'bound',
+  stuff: 'stuffed', stuffs: 'stuffed', stuffing: 'stuffed', stuffed: 'stuffed',
+  gag: 'gagged', gags: 'gagged', gagging: 'gagged', gagged: 'gagged',
+  cover: 'covered', covers: 'covered', covering: 'covered', covered: 'covered',
+  blindfold: 'blindfolded', blindfolds: 'blindfolded', blindfolding: 'blindfolded', blindfolded: 'blindfolded',
+  chain: 'chained', chains: 'chained', chaining: 'chained', chained: 'chained',
+  cuff: 'cuffed', cuffs: 'cuffed', cuffing: 'cuffed', cuffed: 'cuffed',
+  lash: 'lashed', lashes: 'lashed', lashing: 'lashed', lashed: 'lashed'
+};
 const BODY_STATE_REMOVE_VERBS = /^(?:untied|unbound|removed|uncovered|ungagged|unblindfolded|unchained|uncuffed)$/i;
-const BODY_STATE_ADD_PATTERN = /\b(tied|bound|stuffed|gagged|covered|blindfolded|chained|cuffed|lashed)\s+(?:her|his|their|the|my|your)?\s*([a-z][\w\s-]{2,40})/gi;
-const BODY_STATE_REMOVE_PATTERN = /\b(untied|unbound|removed|uncovered|ungagged|unblindfolded|unchained|uncuffed)\s+(?:her|his|their|the|my|your)?\s*([a-z][\w\s-]{2,40})/gi;
-const POSITION_PATTERN = /(?:^|\b(?:she|he|they)\s+|\b(?:[A-Z][a-z]+)\s+)(kneeling|standing|sitting|lying|kneels|stands|sits|lies|bent\s+over|bends\s+over|on\s+(?:her|his|their)\s+(?:knees|hands\s+and\s+knees|back|stomach|side))\b(?!\s+(?:through|about|to|awake|in\s+(?:wait|store|ambush))\b)/i;
+const BODY_STATE_ADD_PATTERN = /\b(tied|bound|stuffed|gagged|covered|blindfolded|chained|cuffed|lashed|tie|tying|ties|bind|binds|binding|stuff|stuffs|stuffing|gag|gags|gagging|cover|covers|covering|blindfold|blindfolds|blindfolding|chain|chains|chaining|cuff|cuffs|cuffing|lash|lashes|lashing)\s+(her|his|their|the|my|your)?\s*([a-z][\w\s-]{2,40})/gi;
+const BODY_STATE_REMOVE_PATTERN = /\b(untied|unbound|removed|uncovered|ungagged|unblindfolded|unchained|uncuffed)\s+(her|his|their|the|my|your)?\s*([a-z][\w\s-]{2,40})/gi;
+const BODY_STATE_WITH_IMPLEMENT_PATTERN = /\bwith\s+(a|an|the|her|his|their|my|your)\s+([a-z][\w\s-]{2,40})/i;
+const POSITION_PATTERN = /(?:^|\b(?:she|he|they|i|you)\s+|\b(?:[A-Z][a-z]+)\s+)(kneeling|standing|sitting|lying|kneels|stands|sits|lies|bent\s+over|bends\s+over|kneel|stand|sit|lie|on\s+(?:her|his|their|my|your)\s+(?:knees|hands\s+and\s+knees|back|stomach|side))\b(?!\s+(?:through|about|to|awake|in\s+(?:wait|store|ambush))\b)/i;
+const POSITION_SUBJECT_PATTERN = /(?:^|\b)(she|he|they|i|you)\s+(kneeling|standing|sitting|lying|kneels|stands|sits|lies|bent\s+over|bends\s+over|kneel|stand|sit|lie|on\s+(?:her|his|their|my|your)\s+(?:knees|hands\s+and\s+knees|back|stomach|side))\b(?!\s+(?:through|about|to|awake|in\s+(?:wait|store|ambush))\b)/i;
 const POSITION_REMOVE_VERB = /\b(?:rises|stands\s+up|gets\s+up|stood\s+up|rose)\b/i;
 const INVERSE_VERB_MAP = {
   untied: 'tied',
@@ -1594,58 +1664,79 @@ function trimBodyStateObject(raw) {
 function normalizePositionPhrase(raw) {
   const lowered = String(raw || '').toLowerCase().replace(/\s+/g, ' ').trim();
   if (!lowered) return '';
-  if (/^kneels?$|^kneeling$|^on\s+(?:her|his|their)\s+knees$/i.test(lowered)) return 'kneeling';
-  if (/^stands?$|^standing$/i.test(lowered)) return 'standing';
-  if (/^sits?$|^sitting$/i.test(lowered)) return 'sitting';
-  if (/^lies$|^lying$/i.test(lowered)) return 'lying';
+  if (/^kneels?$|^kneel$|^kneeling$|^on\s+(?:her|his|their|my|your)\s+knees$/i.test(lowered)) return 'kneeling';
+  if (/^stands?$|^stand$|^standing$/i.test(lowered)) return 'standing';
+  if (/^sits?$|^sit$|^sitting$/i.test(lowered)) return 'sitting';
+  if (/^lies$|^lie$|^lying$/i.test(lowered)) return 'lying';
   if (/^bends?\s+over$|^bent\s+over$/i.test(lowered)) return 'bent over';
-  if (/^on\s+(?:her|his|their)\s+hands\s+and\s+knees$/i.test(lowered)) return 'on hands and knees';
-  if (/^on\s+(?:her|his|their)\s+back$/i.test(lowered)) return 'on back';
-  if (/^on\s+(?:her|his|their)\s+stomach$/i.test(lowered)) return 'on stomach';
-  if (/^on\s+(?:her|his|their)\s+side$/i.test(lowered)) return 'on side';
+  if (/^on\s+(?:her|his|their|my|your)\s+hands\s+and\s+knees$/i.test(lowered)) return 'on hands and knees';
+  if (/^on\s+(?:her|his|their|my|your)\s+back$/i.test(lowered)) return 'on back';
+  if (/^on\s+(?:her|his|their|my|your)\s+stomach$/i.test(lowered)) return 'on stomach';
+  if (/^on\s+(?:her|his|their|my|your)\s+side$/i.test(lowered)) return 'on side';
   return '';
 }
 
-export function extractBodyStateMutations(text, currentState = []) {
+function actorFromPositionSubject(subject, speakerRole = 'assistant') {
+  const lowered = String(subject || '').toLowerCase().trim();
+  if (lowered === 'she' || lowered === 'he' || lowered === 'they') return 'character';
+  if (lowered === 'i') return speakerRole === 'user' ? 'user' : 'character';
+  if (lowered === 'you') return speakerRole === 'user' ? 'character' : 'user';
+  return 'character';
+}
+
+export function extractBodyStateMutations(text, currentState = [], speakerRole = 'assistant') {
   const source = String(text || '').replace(/[*"]/g, ' ').replace(/\s+/g, ' ').trim();
   const state = Array.isArray(currentState) ? [...currentState] : [];
   if (!source) return state;
 
-  const restraintEntries = state.filter((entry) => entry.startsWith('restraint:'));
-  const positionEntries = state.filter((entry) => entry.startsWith('position:'));
-  const otherEntries = state.filter((entry) => !entry.startsWith('restraint:') && !entry.startsWith('position:'));
+  const restraintEntries = state.filter((entry) => stripActorTag(entry).startsWith('restraint:'));
+  const positionEntries = state.filter((entry) => stripActorTag(entry).startsWith('position:'));
+  const otherEntries = state.filter((entry) => {
+    const stripped = stripActorTag(entry);
+    return !stripped.startsWith('restraint:') && !stripped.startsWith('position:');
+  });
 
-  const restraintSet = new Set(restraintEntries.map((entry) => entry.slice('restraint:'.length).trim()));
+  const restraintMap = new Map();
+  for (const entry of restraintEntries) {
+    const actor = entryActor(entry);
+    const stripped = stripActorTag(entry);
+    const phrase = stripped.slice('restraint:'.length).trim();
+    if (phrase) restraintMap.set(`${actor}::${phrase.toLowerCase()}`, { phrase, actor });
+  }
 
   let match;
   BODY_STATE_REMOVE_PATTERN.lastIndex = 0;
   while ((match = BODY_STATE_REMOVE_PATTERN.exec(source)) !== null) {
     const verb = match[1].toLowerCase();
     if (!BODY_STATE_REMOVE_VERBS.test(verb)) continue;
-    const obj = trimBodyStateObject(match[2]);
+    const possessive = match[2] || '';
+    const actor = actorFromPossessive(possessive, speakerRole);
+    const obj = trimBodyStateObject(match[3]);
     if (!obj) continue;
     const inverseVerb = INVERSE_VERB_MAP[verb];
     if (!inverseVerb) continue;
-    for (const entry of [...restraintSet]) {
-      const lowered = entry.toLowerCase();
+    for (const [key, value] of [...restraintMap.entries()]) {
+      if (value.actor !== actor) continue;
+      const lowered = value.phrase.toLowerCase();
       if (!lowered.startsWith(`${inverseVerb} `)) continue;
       const objTokens = obj.split(/\s+/).filter(Boolean);
       const headToken = objTokens[objTokens.length - 1];
       if (!headToken) continue;
       if (lowered.includes(headToken)) {
-        restraintSet.delete(entry);
+        restraintMap.delete(key);
       }
     }
   }
 
-  const dropRestraintsByHeadToken = (headToken) => {
+  const dropRestraintsByHeadToken = (headToken, actor) => {
     if (!headToken) return;
     const synonyms = RESTRAINT_HEAD_SYNONYMS[headToken] || [];
     const candidates = [headToken, ...synonyms];
-    for (const entry of [...restraintSet]) {
-      const lowered = entry.toLowerCase();
+    for (const [key, value] of [...restraintMap.entries()]) {
+      if (actor && value.actor !== actor) continue;
+      const lowered = value.phrase.toLowerCase();
       if (candidates.some((token) => lowered.includes(token))) {
-        restraintSet.delete(entry);
+        restraintMap.delete(key);
       }
     }
   };
@@ -1654,11 +1745,12 @@ export function extractBodyStateMutations(text, currentState = []) {
     pattern.lastIndex = 0;
     let m;
     while ((m = pattern.exec(source)) !== null) {
-      const obj = trimBodyStateObject(m[1]);
+      const obj = trimBodyStateObject(m[2] || m[1]);
       if (!obj) continue;
       const objTokens = obj.split(/\s+/).filter(Boolean);
       const headToken = objTokens[objTokens.length - 1];
-      dropRestraintsByHeadToken(headToken);
+      const possessive = m.length >= 3 ? m[1] : '';
+      dropRestraintsByHeadToken(headToken, actorFromPossessive(possessive, speakerRole));
     }
   };
 
@@ -1666,10 +1758,10 @@ export function extractBodyStateMutations(text, currentState = []) {
   runTargetedRelease(BODY_STATE_LETS_GO_FREE_PATTERN);
   runTargetedRelease(BODY_STATE_LET_GO_OF_PATTERN);
 
-  if (restraintSet.size > 0) {
+  if (restraintMap.size > 0) {
     for (const bareRe of BODY_STATE_BARE_RELEASE_PATTERNS) {
       if (bareRe.test(source)) {
-        restraintSet.clear();
+        restraintMap.clear();
         break;
       }
     }
@@ -1677,20 +1769,49 @@ export function extractBodyStateMutations(text, currentState = []) {
 
   BODY_STATE_ADD_PATTERN.lastIndex = 0;
   while ((match = BODY_STATE_ADD_PATTERN.exec(source)) !== null) {
-    const verb = match[1].toLowerCase();
-    if (!BODY_STATE_ADD_VERBS.test(verb)) continue;
-    const obj = trimBodyStateObject(match[2]);
+    const rawVerb = match[1].toLowerCase();
+    if (!BODY_STATE_ADD_VERBS.test(rawVerb)) continue;
+    const verb = BODY_STATE_ADD_VERB_NORMALIZED[rawVerb] || rawVerb;
+    const possessive = match[2] || '';
+    const actor = actorFromPossessive(possessive, speakerRole);
+    const obj = trimBodyStateObject(match[3]);
     if (!obj) continue;
-    const phrase = `${verb} ${obj}`.trim();
-    restraintSet.add(phrase);
+    const remainder = `${match[3]} ${source.slice(match.index + match[0].length, match.index + match[0].length + 80)}`;
+    const implementMatch = remainder.match(BODY_STATE_WITH_IMPLEMENT_PATTERN);
+    let phrase = `${verb} ${obj}`.trim();
+    if (implementMatch) {
+      const implementHead = trimToClothingHead(implementMatch[2]);
+      if (implementHead) {
+        const tokens = implementHead.split(/\s+/).filter(Boolean);
+        const head = tokens[tokens.length - 1];
+        if (head) {
+          phrase = `${phrase} with ${head}`.trim();
+        }
+      }
+    }
+    const key = `${actor}::${phrase.toLowerCase()}`;
+    restraintMap.set(key, { phrase, actor });
   }
 
-  let nextPosition = positionEntries.length > 0 ? positionEntries[0].slice('position:'.length).trim() : '';
-  const positionMatch = source.match(POSITION_PATTERN);
-  if (positionMatch?.[1]) {
-    const normalized = normalizePositionPhrase(positionMatch[1]);
+  let nextPosition = positionEntries.length > 0
+    ? stripActorTag(positionEntries[0]).slice('position:'.length).trim()
+    : '';
+  let nextPositionActor = positionEntries.length > 0 ? entryActor(positionEntries[0]) : 'character';
+  const subjectMatch = source.match(POSITION_SUBJECT_PATTERN);
+  if (subjectMatch?.[2]) {
+    const normalized = normalizePositionPhrase(subjectMatch[2]);
     if (normalized) {
       nextPosition = normalized;
+      nextPositionActor = actorFromPositionSubject(subjectMatch[1], speakerRole);
+    }
+  } else {
+    const positionMatch = source.match(POSITION_PATTERN);
+    if (positionMatch?.[1]) {
+      const normalized = normalizePositionPhrase(positionMatch[1]);
+      if (normalized) {
+        nextPosition = normalized;
+        nextPositionActor = 'character';
+      }
     }
   }
   if (POSITION_REMOVE_VERB.test(source)) {
@@ -1699,10 +1820,44 @@ export function extractBodyStateMutations(text, currentState = []) {
 
   const out = [...otherEntries];
   if (nextPosition) {
-    out.push(`position: ${nextPosition}`);
+    out.push(tagEntry(`position: ${nextPosition}`, nextPositionActor));
   }
-  for (const entry of restraintSet) {
-    out.push(`restraint: ${entry}`);
+  for (const { phrase, actor } of restraintMap.values()) {
+    out.push(tagEntry(`restraint: ${phrase}`, actor));
+  }
+  return out;
+}
+
+/**
+ * Returns the implements consumed by restraint-add patterns in this text. Each
+ * entry is `{ head, actor }` where actor is whose object was used (from the
+ * `with my/your/...` possessive). Drives wardrobe-side consumption when an item
+ * is repurposed as a restraint and physically leaves its wearer.
+ */
+function extractRestraintImplementsFromText(text, speakerRole = 'assistant') {
+  const source = String(text || '').replace(/[*"]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!source) return [];
+  const out = [];
+  const seen = new Set();
+  BODY_STATE_ADD_PATTERN.lastIndex = 0;
+  let match;
+  while ((match = BODY_STATE_ADD_PATTERN.exec(source)) !== null) {
+    const verb = match[1].toLowerCase();
+    if (!BODY_STATE_ADD_VERBS.test(verb)) continue;
+    const remainder = `${match[3] || ''} ${source.slice(match.index + match[0].length, match.index + match[0].length + 80)}`;
+    const withRegex = /\bwith\s+(a|an|the|her|his|their|my|your)\s+([a-z][\w\s-]{2,40})/i;
+    const implementMatch = remainder.match(withRegex);
+    if (!implementMatch) continue;
+    const implementActor = actorFromPossessive(implementMatch[1], speakerRole);
+    const implementHead = trimToClothingHead(implementMatch[2]);
+    if (!implementHead) continue;
+    const tokens = implementHead.split(/\s+/).filter(Boolean);
+    const head = tokens[tokens.length - 1];
+    if (!head) continue;
+    const key = `${implementActor}::${head}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ head, actor: implementActor });
   }
   return out;
 }
@@ -1711,12 +1866,15 @@ function accumulateBodyState(history, previousBodyState = []) {
   let state = Array.isArray(previousBodyState) ? [...previousBodyState] : [];
   for (const message of history || []) {
     if (message?.role !== 'user' && message?.role !== 'assistant') continue;
-    state = extractBodyStateMutations(message.content, state);
+    state = extractBodyStateMutations(message.content, state, message.role);
   }
   const seen = new Set();
   const out = [];
   for (const entry of state) {
-    const key = entry.toLowerCase();
+    if (!entry) continue;
+    const actor = entryActor(entry);
+    const stripped = stripActorTag(entry);
+    const key = `${actor}::${stripped.toLowerCase()}`;
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(entry);
@@ -1877,41 +2035,59 @@ function accumulateMentionedItems(history, previousItems = []) {
 function accumulateWardrobeAndNegative(history, previousWardrobe = [], previousNegative = []) {
   const seen = new Set();
   let entries = [];
+  const seenKey = (entry) => {
+    const actor = entryActor(entry);
+    const core = normalizeWardrobePhrase(stripActorTag(entry));
+    return `${actor}::${core}`;
+  };
   for (const entry of previousWardrobe || []) {
-    const normalized = normalizeWardrobePhrase(entry);
-    if (!normalized || seen.has(normalized)) continue;
-    seen.add(normalized);
+    const stripped = stripActorTag(entry);
+    if (!normalizeWardrobePhrase(stripped)) continue;
+    const key = seenKey(entry);
+    if (seen.has(key)) continue;
+    seen.add(key);
     entries.push(entry);
   }
 
   const negativeSeen = new Set();
   let negativeEntries = [];
+  const negativeKey = (entry) => {
+    const actor = entryActor(entry);
+    const core = normalizeWardrobePhrase(stripActorTag(entry));
+    return `${actor}::${core}`;
+  };
   for (const entry of previousNegative || []) {
-    const normalized = normalizeWardrobePhrase(entry);
-    if (!normalized || negativeSeen.has(normalized)) continue;
-    negativeSeen.add(normalized);
-    negativeEntries.push(normalized);
+    const stripped = stripActorTag(entry);
+    const normalizedCore = normalizeWardrobePhrase(stripped);
+    if (!normalizedCore) continue;
+    const key = negativeKey(entry);
+    if (negativeSeen.has(key)) continue;
+    negativeSeen.add(key);
+    const tag = entryActor(entry) === 'user' ? ' [user]' : '';
+    negativeEntries.push(`${normalizedCore}${tag}`);
   }
 
-  const dropByHead = (head) => {
+  const dropByHead = (head, actor) => {
     if (!head) return;
     entries = entries.filter((entry) => {
-      const tokens = normalizeWardrobePhrase(entry).split(/\s+/).filter(Boolean);
+      if (entryActor(entry) !== actor) return true;
+      const tokens = normalizeWardrobePhrase(stripActorTag(entry)).split(/\s+/).filter(Boolean);
       const lastToken = tokens[tokens.length - 1] || '';
       if (lastToken === head) {
-        seen.delete(normalizeWardrobePhrase(entry));
+        seen.delete(seenKey(entry));
         return false;
       }
       return true;
     });
   };
 
-  const dropNegativeByHead = (head) => {
+  const dropNegativeByHead = (head, actor) => {
     if (!head) return;
     negativeEntries = negativeEntries.filter((entry) => {
+      if (entryActor(entry) !== actor) return true;
       const cancelHead = negativeWardrobeCancelHead(entry);
       if (cancelHead && cancelHead === head) {
-        negativeSeen.delete(entry);
+        negativeSeen.delete(negativeKey(entry));
         return false;
       }
       return true;
@@ -1920,35 +2096,54 @@ function accumulateWardrobeAndNegative(history, previousWardrobe = [], previousN
 
   for (const message of history || []) {
     if (message?.role !== 'user' && message?.role !== 'assistant') continue;
+    const speakerRole = message.role;
 
-    const removals = extractWardrobeRemovalsFromText(message.content);
-    for (const head of removals) {
-      dropByHead(head);
+    const removals = extractWardrobeRemovalsFromText(message.content, speakerRole);
+    for (const { head, actor } of removals) {
+      dropByHead(head, actor);
     }
 
-    const phrases = extractWardrobeFromText(message.content);
+    const implements_ = extractRestraintImplementsFromText(message.content, speakerRole);
+    for (const { head, actor } of implements_) {
+      dropByHead(head, actor);
+    }
+
+    const phrases = extractWardrobeFromText(message.content, speakerRole);
     for (const phrase of phrases) {
-      const normalized = normalizeWardrobePhrase(phrase);
-      if (!normalized || seen.has(normalized)) continue;
-      seen.add(normalized);
+      const actor = entryActor(phrase);
+      const stripped = stripActorTag(phrase);
+      const normalized = normalizeWardrobePhrase(stripped);
+      if (!normalized) continue;
+      const key = `${actor}::${normalized}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
       entries.push(phrase);
       const tokens = normalized.split(/\s+/).filter(Boolean);
       const lastToken = tokens[tokens.length - 1] || '';
-      dropNegativeByHead(lastToken);
+      dropNegativeByHead(lastToken, actor);
     }
 
-    for (const head of removals) {
-      dropByHead(head);
+    for (const { head, actor } of removals) {
+      dropByHead(head, actor);
+    }
+    for (const { head, actor } of implements_) {
+      dropByHead(head, actor);
     }
 
-    const negatives = extractNegativeWardrobeFromText(message.content);
+    const negatives = extractNegativeWardrobeFromText(message.content, speakerRole);
     for (const negative of negatives) {
-      if (negativeSeen.has(negative)) continue;
-      negativeSeen.add(negative);
-      negativeEntries.push(negative);
+      const actor = entryActor(negative);
+      const stripped = stripActorTag(negative);
+      const normalizedCore = normalizeWardrobePhrase(stripped);
+      if (!normalizedCore) continue;
+      const negKey = `${actor}::${normalizedCore}`;
+      if (negativeSeen.has(negKey)) continue;
+      negativeSeen.add(negKey);
+      const tag = actor === 'user' ? ' [user]' : '';
+      negativeEntries.push(`${normalizedCore}${tag}`);
       const cancelHead = negativeWardrobeCancelHead(negative);
       if (cancelHead) {
-        dropByHead(cancelHead);
+        dropByHead(cancelHead, actor);
       }
     }
   }
@@ -2119,6 +2314,18 @@ function joinList(list) {
     .join(', ');
 }
 
+function joinListByActor(list, actor) {
+  if (!Array.isArray(list) || list.length === 0) return '';
+  return list
+    .map((entry) => {
+      const value = entryValue(entry).trim();
+      return { value, actor: entryActor(value) };
+    })
+    .filter((item) => item.value && item.actor === actor)
+    .map((item) => stripActorTag(item.value))
+    .join(', ');
+}
+
 function filterEntriesByRecency(list, currentTurn, windowSize) {
   if (!Array.isArray(list) || list.length === 0) return [];
   if (!Number.isFinite(currentTurn) || !Number.isFinite(windowSize)) return list;
@@ -2127,9 +2334,12 @@ function filterEntriesByRecency(list, currentTurn, windowSize) {
 }
 
 export function renderActiveScene(activeScene, { compact = false } = {}) {
-  const wardrobeLine = joinList(activeScene.wardrobe);
-  const negativeWardrobeLine = joinList(activeScene.negative_wardrobe);
-  const bodyStateLine = joinList(activeScene.body_state);
+  const wardrobeCharacterLine = joinListByActor(activeScene.wardrobe, 'character');
+  const wardrobeUserLine = joinListByActor(activeScene.wardrobe, 'user');
+  const negativeCharacterLine = joinListByActor(activeScene.negative_wardrobe, 'character');
+  const negativeUserLine = joinListByActor(activeScene.negative_wardrobe, 'user');
+  const bodyStateCharacterLine = joinListByActor(activeScene.body_state, 'character');
+  const bodyStateUserLine = joinListByActor(activeScene.body_state, 'user');
   const establishedFactsLine = joinList(activeScene.established_facts);
   const currentTurn = Number.isFinite(activeScene.current_turn) ? activeScene.current_turn : null;
   const visibleMentionedItems = currentTurn !== null
@@ -2141,9 +2351,12 @@ export function renderActiveScene(activeScene, { compact = false } = {}) {
     ? [
         ['Setting', activeScene.location_or_setting],
         ['Situation', activeScene.immediate_situation],
-        ['Wardrobe', wardrobeLine],
-        ['Wardrobe absent', negativeWardrobeLine],
-        ['Body state', bodyStateLine],
+        ['Wardrobe', wardrobeCharacterLine],
+        ['Wardrobe (you)', wardrobeUserLine],
+        ['Wardrobe absent', negativeCharacterLine],
+        ['Wardrobe absent (you)', negativeUserLine],
+        ['Body state', bodyStateCharacterLine],
+        ['Body state (you)', bodyStateUserLine],
         ['Continuity', activeScene.continuity],
         ['Character Beat', activeScene.latest_character_action_or_reaction],
         ['User Beat', activeScene.latest_user_action_or_request],
@@ -2152,9 +2365,12 @@ export function renderActiveScene(activeScene, { compact = false } = {}) {
     : [
         ['Setting', activeScene.location_or_setting],
         ['Situation', activeScene.immediate_situation],
-        ['Wardrobe', wardrobeLine],
-        ['Wardrobe absent', negativeWardrobeLine],
-        ['Body state', bodyStateLine],
+        ['Wardrobe', wardrobeCharacterLine],
+        ['Wardrobe (you)', wardrobeUserLine],
+        ['Wardrobe absent', negativeCharacterLine],
+        ['Wardrobe absent (you)', negativeUserLine],
+        ['Body state', bodyStateCharacterLine],
+        ['Body state (you)', bodyStateUserLine],
         ['Established facts', establishedFactsLine],
         ['Items established by user', mentionedItemsLine],
         ['Relationship', activeScene.relationship_state],

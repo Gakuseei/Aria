@@ -2128,4 +2128,168 @@ describe('scene memory layer (Phase D)', () => {
     expect(Array.isArray(validated?.negativeWardrobe)).toBe(true);
     expect(validated.negativeWardrobe).toEqual([]);
   });
+
+  it('tags wardrobe entry with [user] when the user describes their own clothing', () => {
+    const character = { name: 'Mei', systemPrompt: 'Mei is dry.', scenario: 'Cafe.' };
+    const memory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'user', content: "I'm wearing my tie.", timestamp: 1700000001000 },
+        { role: 'assistant', content: '*She glances at the tie.*', timestamp: 1700000002000 }
+      ],
+      userName: 'Erik'
+    });
+    expect(memory?.wardrobe || []).toContain('tie [user]');
+  });
+
+  it('tags character clothing untagged when described with her possessive', () => {
+    const character = { name: 'Mei', systemPrompt: 'Mei is dry.', scenario: 'Cafe.' };
+    const memory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'user', content: 'You look stunning.', timestamp: 1700000001000 },
+        { role: 'assistant', content: 'Her bra peeks out beneath the blouse.', timestamp: 1700000002000 }
+      ],
+      userName: 'Erik'
+    });
+    const wardrobe = memory?.wardrobe || [];
+    expect(wardrobe).toContain('bra');
+    expect(wardrobe).not.toContain('bra [user]');
+  });
+
+  it('drops only the user-side wardrobe entry on user-side removal', () => {
+    const character = { name: 'Mei', systemPrompt: 'Mei is dry.', scenario: 'Bedroom.' };
+    const memory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'user', content: "I'm wearing my tie and my shirt.", timestamp: 1700000001000 },
+        { role: 'assistant', content: 'She nods at the tie.', timestamp: 1700000002000 },
+        { role: 'user', content: 'I take my tie off.', timestamp: 1700000003000 },
+        { role: 'assistant', content: 'She watches.', timestamp: 1700000004000 }
+      ],
+      userName: 'Erik'
+    });
+    const wardrobe = memory?.wardrobe || [];
+    expect(wardrobe).not.toContain('tie [user]');
+    expect(wardrobe).toContain('shirt [user]');
+  });
+
+  it('keeps user wardrobe untouched when character-side removal fires', () => {
+    const character = { name: 'Mei', systemPrompt: 'Mei is dry.', scenario: 'Bedroom.' };
+    const memory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'user', content: "I'm wearing my tie.", timestamp: 1700000001000 },
+        { role: 'assistant', content: "Her dress is on. She's wearing a dress.", timestamp: 1700000002000 },
+        { role: 'user', content: 'I tug your dress down.', timestamp: 1700000003000 },
+        { role: 'assistant', content: 'She blushes.', timestamp: 1700000004000 }
+      ],
+      userName: 'Erik'
+    });
+    const wardrobe = memory?.wardrobe || [];
+    expect(wardrobe).toContain('tie [user]');
+    expect(wardrobe.some((entry) => /\bdress\b/.test(entry))).toBe(false);
+  });
+
+  it('embeds implement in restraint phrase and consumes wardrobe entry', () => {
+    const character = { name: 'Mei', systemPrompt: 'Mei is firm.', scenario: 'Bedroom.' };
+    const memory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'user', content: "I'm wearing my tie.", timestamp: 1700000001000 },
+        { role: 'assistant', content: 'She studies him.', timestamp: 1700000002000 },
+        { role: 'user', content: 'I tie her wrists with my tie.', timestamp: 1700000003000 },
+        { role: 'assistant', content: 'She gasps softly.', timestamp: 1700000004000 }
+      ],
+      userName: 'Erik'
+    });
+    const wardrobe = memory?.wardrobe || [];
+    const bodyState = memory?.bodyState || [];
+    expect(wardrobe).not.toContain('tie [user]');
+    expect(bodyState.some((entry) => /restraint:\s*tied wrists with tie/.test(entry))).toBe(true);
+  });
+
+  it('does not restore consumed implement when restraint releases via bare-stative', () => {
+    const character = { name: 'Mei', systemPrompt: 'Mei is firm.', scenario: 'Bedroom.' };
+    const memory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'user', content: "I'm wearing my tie.", timestamp: 1700000001000 },
+        { role: 'assistant', content: 'She studies him.', timestamp: 1700000002000 },
+        { role: 'user', content: 'I tie her wrists with my tie.', timestamp: 1700000003000 },
+        { role: 'assistant', content: 'Her hands are free now.', timestamp: 1700000004000 }
+      ],
+      userName: 'Erik'
+    });
+    const wardrobe = memory?.wardrobe || [];
+    const bodyState = memory?.bodyState || [];
+    expect(wardrobe.some((entry) => /\btie\b/.test(entry))).toBe(false);
+    expect(bodyState.some((entry) => entry.startsWith('restraint:'))).toBe(false);
+  });
+
+  it('routes position to user when user states "I kneel"', () => {
+    const state = extractBodyStateMutations('I kneel on the floor.', [], 'user');
+    expect(state.some((entry) => entry === 'position: kneeling [user]')).toBe(true);
+  });
+
+  it('routes position to character on third-person posture verb', () => {
+    const state = extractBodyStateMutations('She kneels in front of him.');
+    expect(state.some((entry) => entry === 'position: kneeling')).toBe(true);
+  });
+
+  it('renders mixed-actor wardrobe and body state with two lanes', () => {
+    const rendered = renderActiveScene({
+      location_or_setting: 'A bedroom.',
+      immediate_situation: 'Quiet.',
+      relationship_state: '',
+      continuity: '',
+      latest_character_action_or_reaction: '',
+      latest_user_action_or_request: '',
+      open_thread: '',
+      wardrobe: ['black dress', 'tie [user]'],
+      negative_wardrobe: [],
+      body_state: ['position: kneeling', 'position: kneeling [user]'],
+      established_facts: [],
+      mentioned_items: []
+    });
+    expect(rendered).toContain('Wardrobe: black dress');
+    expect(rendered).toContain('Wardrobe (you): tie');
+    expect(rendered).toContain('Body state: position: kneeling');
+    expect(rendered).toContain('Body state (you): position: kneeling');
+  });
+
+  it('hydrates legacy untagged wardrobe entries as character actor on render', () => {
+    const validated = validateSceneMemory({
+      setting_anchor: 'A doorway.',
+      relationship_anchor: '',
+      continuity_facts: [],
+      open_thread: '',
+      wardrobe: ['blazer', 'silk top'],
+      negativeWardrobe: [],
+      bodyState: [],
+      establishedFacts: [],
+      mentionedItems: [],
+      source_assistant_timestamp: 1700000001000,
+      updated_at: '2026-04-29T10:00:00.000Z'
+    }, [
+      { role: 'assistant', content: '*She waits.*', timestamp: 1700000001000 }
+    ]);
+    expect(validated?.wardrobe).toEqual(['blazer', 'silk top']);
+    const rendered = renderActiveScene({
+      location_or_setting: 'A doorway.',
+      immediate_situation: '',
+      relationship_state: '',
+      continuity: '',
+      latest_character_action_or_reaction: '',
+      latest_user_action_or_request: '',
+      open_thread: '',
+      wardrobe: validated.wardrobe,
+      negative_wardrobe: [],
+      body_state: [],
+      established_facts: [],
+      mentioned_items: []
+    });
+    expect(rendered).toContain('Wardrobe: blazer, silk top');
+    expect(rendered).not.toContain('Wardrobe (you):');
+  });
 });

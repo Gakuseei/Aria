@@ -5,6 +5,7 @@ export {
   extractBodyStateMutations,
   extractEstablishedFacts,
   extractMentionedItems,
+  extractNegativeWardrobe,
   extractWardrobeMutations,
   extractWardrobeRemovals,
   renderActiveScene,

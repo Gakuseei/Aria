@@ -6,6 +6,7 @@ import {
   extractBodyStateMutations,
   extractEstablishedFacts,
   extractMentionedItems,
+  extractNegativeWardrobe,
   extractWardrobeMutations,
   extractWardrobeRemovals,
   renderActiveScene,
@@ -1973,5 +1974,158 @@ describe('scene memory layer (Phase D)', () => {
     expect(rendered).not.toContain('[object Object]');
     expect(rendered).toContain('Items established by user: silk scarf, panties');
     expect(rendered).toContain('Established facts: never been kissed before');
+  });
+
+  it('extracts nothing-under explicit absence as scope-tagged entry', () => {
+    const negatives = extractNegativeWardrobe("I'm wearing nothing under the blazer.");
+    expect(negatives).toContain('nothing under blazer');
+  });
+
+  it('extracts no-head and without-head explicit absences', () => {
+    expect(extractNegativeWardrobe('she has no bra')).toContain('no bra');
+    expect(extractNegativeWardrobe('she walks without panties')).toContain('no panties');
+  });
+
+  it('extracts doesn\'t-wear and not-wearing explicit absences', () => {
+    expect(extractNegativeWardrobe("she doesn't wear shoes")).toContain('no shoes');
+    expect(extractNegativeWardrobe("she isn't wearing a bra")).toContain('no bra');
+    expect(extractNegativeWardrobe("she's not wearing a blouse")).toContain('no blouse');
+  });
+
+  it('does not produce negative wardrobe entries for non-clothing heads', () => {
+    expect(extractNegativeWardrobe('she has free time and no idea')).toEqual([]);
+    expect(extractNegativeWardrobe("she's not the kind of person to lie")).toEqual([]);
+    expect(extractNegativeWardrobe('not in the mood, no longer waiting')).toEqual([]);
+  });
+
+  it('contradicting positive wardrobe entry drops a stored negative entry', () => {
+    const character = { name: 'Kira', systemPrompt: 'Kira is sharp.', scenario: 'Office.' };
+    const previousMemory = {
+      setting_anchor: 'in the office',
+      relationship_anchor: '',
+      continuity_facts: [],
+      open_thread: '',
+      wardrobe: [],
+      negativeWardrobe: ['no bra'],
+      bodyState: [],
+      establishedFacts: [],
+      mentionedItems: [],
+      source_assistant_timestamp: 1700000002000,
+      updated_at: '2026-04-30T10:00:00.000Z'
+    };
+    const history = [
+      { role: 'user', content: 'You have no bra under the blazer.', timestamp: 1700000001000 },
+      { role: 'assistant', content: '*She tenses.*', timestamp: 1700000002000 },
+      { role: 'assistant', content: 'Her white bra peeks out from the blazer.', timestamp: 1700000003000 }
+    ];
+    const memory = resolveSessionSceneMemory({
+      character,
+      history,
+      userName: 'Erik',
+      previousSceneMemory: previousMemory
+    });
+    expect(memory?.negativeWardrobe || []).not.toContain('no bra');
+    expect((memory?.wardrobe || []).some((entry) => /\bbra\b/.test(entry))).toBe(true);
+  });
+
+  it('contradicting negative entry drops a stored positive wardrobe entry', () => {
+    const character = { name: 'Kira', systemPrompt: 'Kira is sharp.', scenario: 'Office.' };
+    const history = [
+      { role: 'assistant', content: "She's wearing a black blouse.", timestamp: 1700000001000 },
+      { role: 'user', content: "Wait, she's not wearing a blouse.", timestamp: 1700000002000 },
+      { role: 'assistant', content: '*She nods.*', timestamp: 1700000003000 }
+    ];
+    const memory = resolveSessionSceneMemory({
+      character,
+      history,
+      userName: 'Erik'
+    });
+    expect((memory?.wardrobe || []).some((entry) => /\bblouse\b/.test(entry))).toBe(false);
+    expect(memory?.negativeWardrobe || []).toContain('no blouse');
+  });
+
+  it('renders Wardrobe absent line when negative entries exist', () => {
+    const rendered = renderActiveScene({
+      location_or_setting: 'An office.',
+      immediate_situation: '',
+      relationship_state: '',
+      continuity: '',
+      latest_character_action_or_reaction: '',
+      latest_user_action_or_request: '',
+      open_thread: '',
+      wardrobe: ['blazer'],
+      negative_wardrobe: ['nothing under blazer', 'no bra'],
+      body_state: [],
+      established_facts: [],
+      mentioned_items: []
+    });
+    expect(rendered).toContain('Wardrobe: blazer');
+    expect(rendered).toContain('Wardrobe absent: nothing under blazer, no bra');
+  });
+
+  it('omits Wardrobe absent line when negative entries are empty', () => {
+    const rendered = renderActiveScene({
+      location_or_setting: 'An office.',
+      immediate_situation: '',
+      relationship_state: '',
+      continuity: '',
+      latest_character_action_or_reaction: '',
+      latest_user_action_or_request: '',
+      open_thread: '',
+      wardrobe: ['blazer'],
+      negative_wardrobe: [],
+      body_state: [],
+      established_facts: [],
+      mentioned_items: []
+    });
+    expect(rendered).not.toContain('Wardrobe absent:');
+  });
+
+  it('end-to-end: history with negative-then-positive resolves into positive wardrobe only', () => {
+    const character = { name: 'Kira', systemPrompt: 'Kira is sharp.', scenario: 'Office.' };
+    const history1 = [
+      { role: 'user', content: "She's not wearing a bra. She wears a blazer.", timestamp: 1700000001000 },
+      { role: 'assistant', content: '*She straightens her blazer.*', timestamp: 1700000002000 }
+    ];
+    const memory1 = resolveSessionSceneMemory({
+      character,
+      history: history1,
+      userName: 'Erik'
+    });
+    expect((memory1?.wardrobe || []).some((entry) => /\bblazer\b/.test(entry))).toBe(true);
+    expect(memory1?.negativeWardrobe || []).toContain('no bra');
+
+    const history2 = [
+      ...history1,
+      { role: 'assistant', content: 'Her white bra peeks out from the blazer.', timestamp: 1700000003000 }
+    ];
+    const memory2 = resolveSessionSceneMemory({
+      character,
+      history: history2,
+      userName: 'Erik',
+      previousSceneMemory: memory1
+    });
+    expect((memory2?.wardrobe || []).some((entry) => /\bbra\b/.test(entry))).toBe(true);
+    expect(memory2?.negativeWardrobe || []).not.toContain('no bra');
+  });
+
+  it('legacy memory missing negativeWardrobe hydrates as empty array on validate', () => {
+    const legacyMemory = {
+      setting_anchor: 'A doorway.',
+      relationship_anchor: '',
+      continuity_facts: [],
+      open_thread: '',
+      wardrobe: [],
+      bodyState: [],
+      establishedFacts: [],
+      mentionedItems: [],
+      source_assistant_timestamp: 1700000001000,
+      updated_at: '2026-04-29T10:00:00.000Z'
+    };
+    const validated = validateSceneMemory(legacyMemory, [
+      { role: 'assistant', content: '*She waits.*', timestamp: 1700000001000 }
+    ]);
+    expect(Array.isArray(validated?.negativeWardrobe)).toBe(true);
+    expect(validated.negativeWardrobe).toEqual([]);
   });
 });

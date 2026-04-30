@@ -24,7 +24,7 @@ const PROFILE_NON_HISTORY_RESERVE = {
 const SCENE_MEMORY_MAX_TOKENS = 200;
 const SCENE_MEMORY_MAX_FACTS = 3;
 const SCENE_MEMORY_MAX_LIST_ENTRIES = 8;
-const SCENE_MEMORY_VERSION = 1;
+const SCENE_MEMORY_VERSION = 2;
 const MENTIONED_ITEMS_RECENCY_TURNS = 10;
 const ESTABLISHED_FACTS_CAP = 8;
 
@@ -591,6 +591,18 @@ function trimSceneMemoryToBudget(memory) {
       maxLength: 60,
       validate: (entry) => Boolean(trimToClothingHead(entry))
     }),
+    negativeWardrobe: sanitizeMemoryListEntries(memory.negativeWardrobe, {
+      maxLength: 60,
+      validate: (entry) => {
+        const normalized = normalizeWardrobePhrase(entry);
+        if (!normalized) return false;
+        const tokens = normalized.split(/\s+/).filter(Boolean);
+        if (tokens.length < 2) return false;
+        if (tokens[0] === 'no' && CLOTHING_HEAD_EXACT_PATTERN.test(tokens[tokens.length - 1])) return true;
+        if (tokens[0] === 'nothing' && (tokens[1] === 'under' || tokens[1] === 'underneath' || tokens[1] === 'beneath')) return true;
+        return false;
+      }
+    }),
     bodyState: sanitizeMemoryListEntries(memory.bodyState, { maxLength: 60 }),
     establishedFacts: sanitizeTurnTaggedEntries(memory.establishedFacts, { maxLength: 72, maxEntries: ESTABLISHED_FACTS_CAP }),
     mentionedItems: sanitizeTurnTaggedEntries(memory.mentionedItems, { maxLength: 40, maxEntries: 16 }),
@@ -605,6 +617,7 @@ function trimSceneMemoryToBudget(memory) {
     ...(trimmed.continuity_facts || []),
     trimmed.open_thread,
     ...(trimmed.wardrobe || []),
+    ...(trimmed.negativeWardrobe || []),
     ...(trimmed.bodyState || []),
     ...((trimmed.establishedFacts || []).map(entryValue)),
     ...((trimmed.mentionedItems || []).map(entryValue))
@@ -642,6 +655,10 @@ function trimSceneMemoryToBudget(memory) {
     trimmed.wardrobe = trimmed.wardrobe.slice(0, -1);
   }
 
+  while (trimmed.negativeWardrobe.length > 0 && contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
+    trimmed.negativeWardrobe = trimmed.negativeWardrobe.slice(0, -1);
+  }
+
   if (contentTokenCount() > SCENE_MEMORY_MAX_TOKENS) {
     return null;
   }
@@ -652,6 +669,7 @@ function trimSceneMemoryToBudget(memory) {
     && !trimmed.open_thread
     && !trimmed.nsfwArcAnchor
     && trimmed.wardrobe.length === 0
+    && trimmed.negativeWardrobe.length === 0
     && trimmed.bodyState.length === 0
     && trimmed.establishedFacts.length === 0
     && trimmed.mentionedItems.length === 0;
@@ -1021,6 +1039,7 @@ function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sc
   const userTurnScope = deriveScopeFromText(latestUserTurn, 'user');
 
   const wardrobe = Array.isArray(sceneMemory?.wardrobe) ? sceneMemory.wardrobe : [];
+  const negativeWardrobe = Array.isArray(sceneMemory?.negativeWardrobe) ? sceneMemory.negativeWardrobe : [];
   const bodyState = Array.isArray(sceneMemory?.bodyState) ? sceneMemory.bodyState : [];
   const establishedFacts = Array.isArray(sceneMemory?.establishedFacts) ? sceneMemory.establishedFacts : [];
   const mentionedItems = Array.isArray(sceneMemory?.mentionedItems) ? sceneMemory.mentionedItems : [];
@@ -1038,6 +1057,7 @@ function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sc
     last_turn_role: latestRole,
     open_thread: openThread || sanitizeSceneMemoryLine(sceneMemory?.open_thread, 96) || '',
     wardrobe,
+    negativeWardrobe,
     bodyState,
     establishedFacts,
     mentionedItems,
@@ -1086,6 +1106,7 @@ function buildActiveScene(sceneState) {
     turn_scope_guidance: sceneState.turn_scope?.guidance || '',
     open_thread: sceneState.open_thread,
     wardrobe: Array.isArray(sceneState.wardrobe) ? sceneState.wardrobe : [],
+    negative_wardrobe: Array.isArray(sceneState.negativeWardrobe) ? sceneState.negativeWardrobe : [],
     body_state: Array.isArray(sceneState.bodyState) ? sceneState.bodyState : [],
     established_facts: Array.isArray(sceneState.establishedFacts) ? sceneState.establishedFacts : [],
     mentioned_items: Array.isArray(sceneState.mentionedItems) ? sceneState.mentionedItems : [],
@@ -1296,8 +1317,8 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
  * captured noun-phrase actually names a garment. Expanding this is acceptable; broad
  * vocabulary scraping is not.
  */
-const CLOTHING_HEAD_PATTERN = /(dress|shirt|blouse|skirt|pants|trousers|shorts|jeans|coat|jacket|gown|robe|uniform|apron|stockings|socks|shoes|boots|heels|panties|thong|bra|hat|scarf|tie|belt|gloves?|glove|veil|mask|sash|cloak|cape|sweater|hoodie|leggings|tights|underwear|lingerie|bikini|swimsuit|nightgown|chemise|corset|bodice|negligee|kimono|dressing\s+gown|nightie|top|camisole|tank)/;
-const CLOTHING_HEAD_EXACT_PATTERN = /^(?:dress|shirt|blouse|skirt|pants|trousers|shorts|jeans|coat|jacket|gown|robe|uniform|apron|stockings|socks|shoes|boots|heels|panties|thong|bra|hat|scarf|tie|belt|gloves?|glove|veil|mask|sash|cloak|cape|sweater|hoodie|leggings|tights|underwear|lingerie|bikini|swimsuit|nightgown|chemise|corset|bodice|negligee|kimono|nightie|top|camisole|tank)$/;
+const CLOTHING_HEAD_PATTERN = /(dress|shirt|blouse|blazer|skirt|pants|trousers|shorts|jeans|coat|jacket|gown|robe|uniform|apron|stockings|socks|shoes|boots|heels|panties|thong|bra|hat|scarf|tie|belt|gloves?|glove|veil|mask|sash|cloak|cape|sweater|hoodie|leggings|tights|underwear|lingerie|bikini|swimsuit|nightgown|chemise|corset|bodice|negligee|kimono|dressing\s+gown|nightie|top|camisole|tank)/;
+const CLOTHING_HEAD_EXACT_PATTERN = /^(?:dress|shirt|blouse|blazer|skirt|pants|trousers|shorts|jeans|coat|jacket|gown|robe|uniform|apron|stockings|socks|shoes|boots|heels|panties|thong|bra|hat|scarf|tie|belt|gloves?|glove|veil|mask|sash|cloak|cape|sweater|hoodie|leggings|tights|underwear|lingerie|bikini|swimsuit|nightgown|chemise|corset|bodice|negligee|kimono|nightie|top|camisole|tank)$/;
 const WARDROBE_TAIL_PHRASE = /(?:^|\s)(?:a|an|her|his|their|the|my|your)\s+([a-z][\w-]*(?:\s+[a-z][\w-]*){0,3})/gi;
 
 function tokenizeWords(text) {
@@ -1429,6 +1450,85 @@ function extractWardrobeRemovalsFromText(text) {
 
 export function extractWardrobeRemovals(text) {
   return extractWardrobeRemovalsFromText(text);
+}
+
+/**
+ * Extract explicit-absence wardrobe statements. Returns normalized strings of two
+ * shapes:
+ *   - "nothing under <scope>" where <scope> is the covering garment (e.g.
+ *     "nothing under blazer"). Scope head is the covering layer, not the absent
+ *     garment.
+ *   - "no <head>" where <head> is a closed-class clothing head (e.g. "no bra").
+ *     Generated from "no X", "without X", "doesn't wear X", "not wearing X",
+ *     "isn't wearing X" patterns.
+ */
+function extractNegativeWardrobeFromText(text) {
+  const source = String(text || '').replace(/[*"]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!source) return [];
+  const found = [];
+  const seen = new Set();
+
+  const pushEntry = (value) => {
+    const normalized = normalizeWardrobePhrase(value);
+    if (!normalized) return;
+    if (seen.has(normalized)) return;
+    seen.add(normalized);
+    found.push(normalized);
+  };
+
+  const collectHead = (phrase) => {
+    const head = trimToClothingHead(phrase);
+    if (!head) return '';
+    if (isAnatomyHead(head)) return '';
+    if (isAbstractHead(head)) return '';
+    const tokens = head.split(/\s+/).filter(Boolean);
+    return tokens[tokens.length - 1] || '';
+  };
+
+  const nothingUnder = /\bnothing\s+(?:underneath|under|beneath)\s+(?:the\s+|her\s+|his\s+|their\s+|my\s+|your\s+|a\s+|an\s+)?([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi;
+  let match;
+  while ((match = nothingUnder.exec(source)) !== null) {
+    const head = collectHead(match[1]);
+    if (!head) continue;
+    pushEntry(`nothing under ${head}`);
+  }
+
+  const negationHeadPatterns = [
+    /\b(?:no|without)\s+(?:a\s+|an\s+)?([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi,
+    /\b(?:doesn'?t|don'?t|didn'?t|isn'?t|aren'?t)\s+(?:have|wear|wearing|got)\s+(?:a\s+|an\s+|any\s+)?([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi,
+    /\bnot\s+(?:wearing|in)\s+(?:a\s+|an\s+|any\s+)?([a-z][\w-]+(?:\s+[a-z][\w-]+){0,3})/gi
+  ];
+
+  for (const pattern of negationHeadPatterns) {
+    while ((match = pattern.exec(source)) !== null) {
+      const head = collectHead(match[1]);
+      if (!head) continue;
+      pushEntry(`no ${head}`);
+    }
+  }
+
+  return found;
+}
+
+export function extractNegativeWardrobe(text) {
+  return extractNegativeWardrobeFromText(text);
+}
+
+/**
+ * Negative-wardrobe entries split into two semantic groups:
+ *   - "nothing under <scope>" — scope is a covering garment, NOT a head to cancel
+ *     against. Returns null so cross-cancel logic skips it.
+ *   - "no <head>" — head is the absent garment. Returns the head for cross-cancel.
+ */
+function negativeWardrobeCancelHead(entry) {
+  const normalized = normalizeWardrobePhrase(entry);
+  if (!normalized) return null;
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  if (tokens.length < 2) return null;
+  if (tokens[0] === 'no' && CLOTHING_HEAD_EXACT_PATTERN.test(tokens[tokens.length - 1])) {
+    return tokens[tokens.length - 1];
+  }
+  return null;
 }
 
 const BODY_STATE_ADD_VERBS = /^(?:tied|bound|stuffed|gagged|covered|blindfolded|chained|cuffed|lashed)$/i;
@@ -1774,7 +1874,7 @@ function accumulateMentionedItems(history, previousItems = []) {
   return out.slice(0, 16);
 }
 
-function accumulateWardrobe(history, previousWardrobe = []) {
+function accumulateWardrobeAndNegative(history, previousWardrobe = [], previousNegative = []) {
   const seen = new Set();
   let entries = [];
   for (const entry of previousWardrobe || []) {
@@ -1784,6 +1884,15 @@ function accumulateWardrobe(history, previousWardrobe = []) {
     entries.push(entry);
   }
 
+  const negativeSeen = new Set();
+  let negativeEntries = [];
+  for (const entry of previousNegative || []) {
+    const normalized = normalizeWardrobePhrase(entry);
+    if (!normalized || negativeSeen.has(normalized)) continue;
+    negativeSeen.add(normalized);
+    negativeEntries.push(normalized);
+  }
+
   const dropByHead = (head) => {
     if (!head) return;
     entries = entries.filter((entry) => {
@@ -1791,6 +1900,18 @@ function accumulateWardrobe(history, previousWardrobe = []) {
       const lastToken = tokens[tokens.length - 1] || '';
       if (lastToken === head) {
         seen.delete(normalizeWardrobePhrase(entry));
+        return false;
+      }
+      return true;
+    });
+  };
+
+  const dropNegativeByHead = (head) => {
+    if (!head) return;
+    negativeEntries = negativeEntries.filter((entry) => {
+      const cancelHead = negativeWardrobeCancelHead(entry);
+      if (cancelHead && cancelHead === head) {
+        negativeSeen.delete(entry);
         return false;
       }
       return true;
@@ -1811,13 +1932,38 @@ function accumulateWardrobe(history, previousWardrobe = []) {
       if (!normalized || seen.has(normalized)) continue;
       seen.add(normalized);
       entries.push(phrase);
+      const tokens = normalized.split(/\s+/).filter(Boolean);
+      const lastToken = tokens[tokens.length - 1] || '';
+      dropNegativeByHead(lastToken);
     }
 
     for (const head of removals) {
       dropByHead(head);
     }
+
+    const negatives = extractNegativeWardrobeFromText(message.content);
+    for (const negative of negatives) {
+      if (negativeSeen.has(negative)) continue;
+      negativeSeen.add(negative);
+      negativeEntries.push(negative);
+      const cancelHead = negativeWardrobeCancelHead(negative);
+      if (cancelHead) {
+        dropByHead(cancelHead);
+      }
+    }
   }
-  return entries.slice(0, SCENE_MEMORY_MAX_LIST_ENTRIES);
+  return {
+    wardrobe: entries.slice(0, SCENE_MEMORY_MAX_LIST_ENTRIES),
+    negativeWardrobe: negativeEntries.slice(0, SCENE_MEMORY_MAX_LIST_ENTRIES)
+  };
+}
+
+function accumulateWardrobe(history, previousWardrobe = []) {
+  return accumulateWardrobeAndNegative(history, previousWardrobe, []).wardrobe;
+}
+
+function accumulateNegativeWardrobe(history, previousNegative = []) {
+  return accumulateWardrobeAndNegative(history, [], previousNegative).negativeWardrobe;
 }
 
 /**
@@ -1876,7 +2022,13 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
     }
   }
 
-  const wardrobe = accumulateWardrobe(normalizedHistory, validatedPrevious?.wardrobe);
+  const wardrobeAccumulation = accumulateWardrobeAndNegative(
+    normalizedHistory,
+    validatedPrevious?.wardrobe,
+    validatedPrevious?.negativeWardrobe
+  );
+  const wardrobe = wardrobeAccumulation.wardrobe;
+  const negativeWardrobe = wardrobeAccumulation.negativeWardrobe;
 
   const previousSettingAnchor = sanitizeSceneMemoryLine(
     validatedPrevious?.setting_anchor || previousSceneMemory?.setting_anchor,
@@ -1893,6 +2045,7 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
     open_thread: derivePersistentOpenThread(latestUserTurn, latestAssistantTurn),
     nsfwArcAnchor: nextArcAnchor,
     wardrobe,
+    negativeWardrobe,
     bodyState: accumulateBodyState(normalizedHistory, validatedPrevious?.bodyState),
     establishedFacts: accumulateEstablishedFacts(normalizedHistory, validatedPrevious?.establishedFacts),
     mentionedItems: sceneChanged
@@ -1975,6 +2128,7 @@ function filterEntriesByRecency(list, currentTurn, windowSize) {
 
 export function renderActiveScene(activeScene, { compact = false } = {}) {
   const wardrobeLine = joinList(activeScene.wardrobe);
+  const negativeWardrobeLine = joinList(activeScene.negative_wardrobe);
   const bodyStateLine = joinList(activeScene.body_state);
   const establishedFactsLine = joinList(activeScene.established_facts);
   const currentTurn = Number.isFinite(activeScene.current_turn) ? activeScene.current_turn : null;
@@ -1988,6 +2142,7 @@ export function renderActiveScene(activeScene, { compact = false } = {}) {
         ['Setting', activeScene.location_or_setting],
         ['Situation', activeScene.immediate_situation],
         ['Wardrobe', wardrobeLine],
+        ['Wardrobe absent', negativeWardrobeLine],
         ['Body state', bodyStateLine],
         ['Continuity', activeScene.continuity],
         ['Character Beat', activeScene.latest_character_action_or_reaction],
@@ -1998,6 +2153,7 @@ export function renderActiveScene(activeScene, { compact = false } = {}) {
         ['Setting', activeScene.location_or_setting],
         ['Situation', activeScene.immediate_situation],
         ['Wardrobe', wardrobeLine],
+        ['Wardrobe absent', negativeWardrobeLine],
         ['Body state', bodyStateLine],
         ['Established facts', establishedFactsLine],
         ['Items established by user', mentionedItemsLine],

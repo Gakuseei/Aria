@@ -2109,6 +2109,80 @@ describe('scene memory layer (Phase D)', () => {
     expect(memory2?.negativeWardrobe || []).not.toContain('no bra');
   });
 
+  it('keeps only the latest wardrobe entry when colored modifier changes', () => {
+    const character = { name: 'Kira', systemPrompt: 'Kira is sharp.', scenario: 'Office.' };
+    const memory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'assistant', content: "She's wearing a blue blouse.", timestamp: 1700000001000 },
+        { role: 'assistant', content: 'Now her white blouse glints in the light.', timestamp: 1700000002000 }
+      ],
+      userName: 'Erik'
+    });
+    const wardrobe = memory?.wardrobe || [];
+    expect(wardrobe.some((entry) => /blue blouse/.test(entry))).toBe(false);
+    expect(wardrobe.some((entry) => /white blouse/.test(entry))).toBe(true);
+  });
+
+  it('replaces single-token wardrobe entry when later turn adds a modifier', () => {
+    const character = { name: 'Kira', systemPrompt: 'Kira is sharp.', scenario: 'Office.' };
+    const memory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'assistant', content: 'She is wearing a blouse.', timestamp: 1700000001000 },
+        { role: 'assistant', content: 'Her white blouse catches the light.', timestamp: 1700000002000 }
+      ],
+      userName: 'Erik'
+    });
+    const wardrobe = memory?.wardrobe || [];
+    expect(wardrobe.filter((entry) => /\bblouse\b/.test(entry))).toEqual(['white blouse']);
+  });
+
+  it('keeps user and character wardrobe entries that share a head when actors differ', () => {
+    const character = { name: 'Mei', systemPrompt: 'Mei is dry.', scenario: 'Office.' };
+    const memory = resolveSessionSceneMemory({
+      character,
+      history: [
+        { role: 'user', content: 'I wear my blue tie.', timestamp: 1700000001000 },
+        { role: 'assistant', content: 'She wears her white tie.', timestamp: 1700000002000 }
+      ],
+      userName: 'Erik'
+    });
+    const wardrobe = memory?.wardrobe || [];
+    expect(wardrobe).toContain('blue tie [user]');
+    expect(wardrobe).toContain('white tie');
+  });
+
+  it('still drops a stored negative entry when a contradicting positive shares the head', () => {
+    const character = { name: 'Kira', systemPrompt: 'Kira is sharp.', scenario: 'Office.' };
+    const previousMemory = {
+      setting_anchor: 'in the office',
+      relationship_anchor: '',
+      continuity_facts: [],
+      open_thread: '',
+      wardrobe: [],
+      negativeWardrobe: ['no blouse'],
+      bodyState: [],
+      establishedFacts: [],
+      mentionedItems: [],
+      source_assistant_timestamp: 1700000002000,
+      updated_at: '2026-04-30T10:00:00.000Z'
+    };
+    const history = [
+      { role: 'user', content: 'You have no blouse on.', timestamp: 1700000001000 },
+      { role: 'assistant', content: '*She nods.*', timestamp: 1700000002000 },
+      { role: 'assistant', content: 'Her white blouse peeks under the blazer.', timestamp: 1700000003000 }
+    ];
+    const memory = resolveSessionSceneMemory({
+      character,
+      history,
+      userName: 'Erik',
+      previousSceneMemory: previousMemory
+    });
+    expect(memory?.negativeWardrobe || []).not.toContain('no blouse');
+    expect((memory?.wardrobe || []).some((entry) => /white blouse/.test(entry))).toBe(true);
+  });
+
   it('legacy memory missing negativeWardrobe hydrates as empty array on validate', () => {
     const legacyMemory = {
       setting_anchor: 'A doorway.',

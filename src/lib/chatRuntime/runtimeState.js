@@ -2116,10 +2116,13 @@ function accumulateWardrobeAndNegative(history, previousWardrobe = [], previousN
       if (!normalized) continue;
       const key = `${actor}::${normalized}`;
       if (seen.has(key)) continue;
-      seen.add(key);
-      entries.push(phrase);
       const tokens = normalized.split(/\s+/).filter(Boolean);
       const lastToken = tokens[tokens.length - 1] || '';
+      if (lastToken && CLOTHING_HEAD_EXACT_PATTERN.test(lastToken)) {
+        dropByHead(lastToken, actor);
+      }
+      seen.add(key);
+      entries.push(phrase);
       dropNegativeByHead(lastToken, actor);
     }
 

@@ -79,6 +79,7 @@ function App() {
     temperature: 0.85,
     userName: 'User',
     userGender: 'male',
+    userPronouns: 'he/him',
     imageGenEnabled: false,
     imageGenUrl: IMAGE_GEN_DEFAULT_URL,
     imageGenTier: 'standard',
@@ -130,6 +131,7 @@ function App() {
             temperature: loadedSettings.temperature ?? 0.85,
             userName: loadedSettings.userName || 'User',
             userGender: loadedSettings.userGender || 'male',
+            userPronouns: loadedSettings.userPronouns || 'he/him',
             imageGenEnabled: loadedSettings.imageGenEnabled ?? false,
             imageGenUrl: loadedSettings.imageGenUrl || IMAGE_GEN_DEFAULT_URL,
             imageGenTier: loadedSettings.imageGenTier || 'standard',
@@ -260,9 +262,28 @@ function App() {
       settingValue = normalizeThemeMode(settingValue);
     }
 
+    const genderToDefaultPronouns = {
+      male: 'he/him',
+      female: 'she/her',
+      nonbinary: 'they/them',
+      futa: 'she/her'
+    };
+
+    const patch = { [settingKey]: settingValue };
+
+    if (settingKey === 'userGender') {
+      const oldGender = settings.userGender || 'male';
+      const oldDefault = genderToDefaultPronouns[oldGender] || 'he/him';
+      const currentPronouns = String(settings.userPronouns || '').trim();
+      const nextDefault = genderToDefaultPronouns[settingValue] || 'he/him';
+      if (!currentPronouns || currentPronouns === oldDefault) {
+        patch.userPronouns = nextDefault;
+      }
+    }
+
     const newSettings = withResolvedThemeSettings({
       ...settings,
-      [settingKey]: settingValue
+      ...patch
     });
 
     setSettings(newSettings);

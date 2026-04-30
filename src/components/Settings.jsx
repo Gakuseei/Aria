@@ -201,6 +201,52 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   {t.settings.definesAnatomy}
                 </p>
               </div>
+
+              {(() => {
+                const pronounPresets = ['he/him', 'she/her', 'they/them', 'he/they', 'she/they', 'xe/xem'];
+                const currentPronouns = settings.userPronouns || '';
+                const dropdownValue = pronounPresets.includes(currentPronouns) ? currentPronouns : '__custom__';
+                const showCustomInput = dropdownValue === '__custom__';
+                return (
+                  <div>
+                    <label className="block text-sm font-medium theme-text-muted mb-2">{t.settings.userPronouns}</label>
+                    <CustomDropdown
+                      value={dropdownValue}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        if (next === '__custom__') {
+                          onSettingChange('userPronouns', '');
+                        } else {
+                          onSettingChange('userPronouns', next);
+                        }
+                      }}
+                      options={[
+                        { value: 'he/him', label: 'he/him' },
+                        { value: 'she/her', label: 'she/her' },
+                        { value: 'they/them', label: 'they/them' },
+                        { value: 'he/they', label: 'he/they' },
+                        { value: 'she/they', label: 'she/they' },
+                        { value: 'xe/xem', label: 'xe/xem' },
+                        { value: '__custom__', label: t.settings.pronounsCustom }
+                      ]}
+                    />
+                    {showCustomInput && (
+                      <input
+                        type="text"
+                        value={currentPronouns}
+                        onChange={(e) => onSettingChange('userPronouns', e.target.value)}
+                        className={`w-full bg-zinc-900/80 border border-zinc-700/50 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 transition-all mt-2 ${
+                          isGoldMode ? 'focus:ring-amber-500/50 focus:border-amber-500/50' : 'focus:ring-rose-500/50 focus:border-rose-500/50'
+                        }`}
+                        placeholder={t.settings.pronounsCustomPlaceholder}
+                      />
+                    )}
+                    <p className="text-xs theme-text-soft mt-1.5">
+                      {t.settings.pronounsHelper}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           </section>
 

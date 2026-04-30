@@ -981,10 +981,14 @@ export async function generateSuggestionsBackground(history, character, userName
   const suggestionNumCtx = Math.min(numCtx, budgetConfig.suggestionNumCtxCap);
   const profile = getModelProfile(model);
   const lastUserMsg = [...(history || [])].reverse().find((message) => message?.role === 'user')?.content || '';
+  const userGender = settings.userGender || 'male';
+  const userPronouns = settings.userPronouns || 'he/him';
   const baseRuntimeState = buildRuntimeState({
     character,
     history,
     userName,
+    userGender,
+    userPronouns,
     runtimeSteering: {
       profile: 'suggestions',
       suggestionMode: 'batch',

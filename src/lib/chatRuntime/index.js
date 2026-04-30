@@ -10,6 +10,7 @@ export {
   extractWardrobeRemovals,
   renderActiveScene,
   resolveSessionSceneMemory,
+  resolveUserIdentity,
   validateSceneMemory
 } from './runtimeState.js';
 export { estimateTokens, resolveTemplates, trimPromptSnippet } from './text.js';

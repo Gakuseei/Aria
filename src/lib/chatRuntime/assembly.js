@@ -426,6 +426,11 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     blocks.push(buildPlainTextBlock('Character Core', appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState)));
     debug.includedBlocks.push('Character Core');
 
+    const userIdentity = runtimeState.userIdentity || {};
+    const userBlockText = `${userIdentity.name || runtimeState.userName} (${userIdentity.label || 'male'}, pronouns: ${userIdentity.pronouns || 'he/him'})`;
+    blocks.push(buildPlainTextBlock('User', userBlockText));
+    debug.includedBlocks.push('User');
+
     blocks.push(buildPlainTextBlock('Active Scene', activeScene));
     debug.includedBlocks.push('Active Scene');
 
@@ -448,6 +453,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       systemPrompt = [
         buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)),
         buildPlainTextBlock('Character Core', appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState)),
+        buildPlainTextBlock('User', userBlockText),
         buildPlainTextBlock('Active Scene', activeScene),
         buildPlainTextBlock('Example Seed', exampleSeed),
         buildPlainTextBlock('Late Steering', lateSteering)
@@ -462,6 +468,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       systemPrompt = [
         buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)),
         buildPlainTextBlock('Character Core', appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState)),
+        buildPlainTextBlock('User', userBlockText),
         buildPlainTextBlock('Active Scene', activeScene),
         buildPlainTextBlock('Late Steering', lateSteering)
       ].filter(Boolean).join('\n\n');
@@ -474,6 +481,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       systemPrompt = [
         buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)),
         buildPlainTextBlock('Character Core', appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState)),
+        buildPlainTextBlock('User', userBlockText),
         buildPlainTextBlock('Active Scene', activeScene),
         exampleSeed ? buildPlainTextBlock('Example Seed', exampleSeed) : '',
         buildPlainTextBlock('Late Steering', lateSteering)
@@ -557,8 +565,11 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     const personaAnchor = runtimeState.compiledRuntimeCard.personaAnchor
       ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, 36))
       : buildPlainTextBlock('Character Reference', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, 34));
+    const suggestionsUserIdentity = runtimeState.userIdentity || {};
+    const suggestionsUserBlock = buildPlainTextBlock('User', `${suggestionsUserIdentity.name || runtimeState.userName} (${suggestionsUserIdentity.label || 'male'}, pronouns: ${suggestionsUserIdentity.pronouns || 'he/him'})`);
     const systemPrompt = [
       buildPlainTextBlock('Suggestion Writer Role', clipToTokenTarget(buildSuggestionWriterRole(runtimeState), targets.writerRole || 64)),
+      suggestionsUserBlock,
       buildPlainTextBlock('Active Scene', clipStructuredSceneText(compactScene, targets.activeScene, 110)),
       suggestionScopeBlock,
       suggestionExampleSeed ? buildPlainTextBlock('Voice Seed', suggestionExampleSeed) : '',
@@ -569,7 +580,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       personaAnchor
     ].filter(Boolean).join('\n\n');
 
-    debug.includedBlocks.push('Suggestion Writer Role', 'Active Scene', 'Late Steering');
+    debug.includedBlocks.push('Suggestion Writer Role', 'User', 'Active Scene', 'Late Steering');
     if (suggestionScopeBlock) {
       debug.includedBlocks.push('Turn Scope');
     }
@@ -633,8 +644,11 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
 
   const recentTail = runtimeState.selectedRecentHistory.messages.slice(-4);
   const minimalCharacterReference = clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore);
+  const impersonateUserIdentity = runtimeState.userIdentity || {};
+  const impersonateUserBlock = buildPlainTextBlock('User', `${impersonateUserIdentity.name || runtimeState.userName} (${impersonateUserIdentity.label || 'male'}, pronouns: ${impersonateUserIdentity.pronouns || 'he/him'})`);
   const systemPrompt = [
     buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, 60)),
+    impersonateUserBlock,
     buildPlainTextBlock('Active Scene', clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene, 115)),
     runtimeState.compiledRuntimeCard.personaAnchor
       ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, 75))
@@ -643,7 +657,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     buildPlainTextBlock('Late Steering', clipToTokenTarget(buildImpersonateLateSteering(runtimeState), targets.lateSteering))
   ].filter(Boolean).join('\n\n');
 
-  debug.includedBlocks.push('Global Core', 'Active Scene', 'Character Reference', 'Late Steering');
+  debug.includedBlocks.push('Global Core', 'User', 'Active Scene', 'Character Reference', 'Late Steering');
   if (runtimeState.compiledRuntimeCard.personaAnchor) {
     debug.includedBlocks.push('Persona Anchor');
   } else {

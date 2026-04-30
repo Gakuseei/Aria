@@ -229,10 +229,14 @@ export async function impersonateUser(history, character, userName, passionLevel
   const impersonateNumCtx = Math.min(numCtx, budgetConfig.impersonateNumCtxCap);
   const profile = getModelProfile(model);
   const charName = character?.name || 'Character';
+  const userGender = settings.userGender || 'male';
+  const userPronouns = settings.userPronouns || 'he/him';
   const runtimeState = buildRuntimeState({
     character,
     history,
     userName,
+    userGender,
+    userPronouns,
     runtimeSteering: {
       profile: 'impersonate',
       availableContextTokens: Math.max(320, impersonateNumCtx - budgetConfig.impersonateContextReserve),

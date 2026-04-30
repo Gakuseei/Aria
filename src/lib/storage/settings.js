@@ -27,6 +27,7 @@ const DEFAULT_SETTINGS = {
   preferredLanguage: 'en',
   userName: 'User',
   userGender: 'male',
+  userPronouns: 'he/him',
   imageGenEnabled: false,
   imageGenUrl: IMAGE_GEN_DEFAULT_URL,
   voiceEnabled: false,

@@ -11,6 +11,7 @@ import {
   extractWardrobeRemovals,
   renderActiveScene,
   resolveSessionSceneMemory,
+  resolveUserIdentity,
   validateSceneMemory
 } from '../../src/lib/chatRuntime/index.js';
 
@@ -775,7 +776,7 @@ describe('assembleRuntimeContext', () => {
       userName: 'Master',
       runtimeSteering: {
         profile: 'reply',
-        availableContextTokens: 360,
+        availableContextTokens: 400,
         responseMode: 'normal',
         unchainedMode: true
       }
@@ -2365,5 +2366,111 @@ describe('scene memory layer (Phase D)', () => {
     });
     expect(rendered).toContain('Wardrobe: blazer, silk top');
     expect(rendered).not.toContain('Wardrobe (you):');
+  });
+});
+
+describe('resolveUserIdentity', () => {
+  it('returns expected label and pronouns for male', () => {
+    const result = resolveUserIdentity({ userName: 'Erik', userGender: 'male' });
+    expect(result).toEqual({ name: 'Erik', gender: 'male', label: 'male', pronouns: 'he/him' });
+  });
+
+  it('returns expected label and pronouns for female', () => {
+    const result = resolveUserIdentity({ userName: 'Mia', userGender: 'female' });
+    expect(result).toEqual({ name: 'Mia', gender: 'female', label: 'female', pronouns: 'she/her' });
+  });
+
+  it('returns expected label and pronouns for nonbinary', () => {
+    const result = resolveUserIdentity({ userName: 'Sam', userGender: 'nonbinary' });
+    expect(result).toEqual({ name: 'Sam', gender: 'nonbinary', label: 'non-binary', pronouns: 'they/them' });
+  });
+
+  it('returns expected label and pronouns for futa', () => {
+    const result = resolveUserIdentity({ userName: 'Lyra', userGender: 'futa' });
+    expect(result).toEqual({ name: 'Lyra', gender: 'futa', label: 'futa', pronouns: 'she/her' });
+  });
+
+  it('honors a custom userPronouns value over the gender default', () => {
+    const result = resolveUserIdentity({ userName: 'Kai', userGender: 'male', userPronouns: 'ze/zir' });
+    expect(result.pronouns).toBe('ze/zir');
+    expect(result.label).toBe('male');
+  });
+
+  it('falls back to male and he/him on missing input', () => {
+    const result = resolveUserIdentity({});
+    expect(result.name).toBe('User');
+    expect(result.gender).toBe('male');
+    expect(result.label).toBe('male');
+    expect(result.pronouns).toBe('he/him');
+  });
+
+  it('falls back to male on invalid gender values', () => {
+    const result = resolveUserIdentity({ userName: 'X', userGender: 'invalid-gender' });
+    expect(result.gender).toBe('male');
+    expect(result.label).toBe('male');
+    expect(result.pronouns).toBe('he/him');
+  });
+});
+
+describe('buildRuntimeState user identity', () => {
+  it('exposes userIdentity on runtimeState with provided gender and pronouns', () => {
+    const runtimeState = buildRuntimeState({
+      character: { name: 'Mei', systemPrompt: 'Mei is calm.' },
+      history: [],
+      userName: 'Erik',
+      userGender: 'female',
+      userPronouns: 'she/her',
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1024 }
+    });
+    expect(runtimeState.userIdentity).toEqual({
+      name: 'Erik',
+      gender: 'female',
+      label: 'female',
+      pronouns: 'she/her'
+    });
+  });
+
+  it('defaults userIdentity to male/he/him when no gender or pronouns are provided', () => {
+    const runtimeState = buildRuntimeState({
+      character: { name: 'Mei', systemPrompt: 'Mei is calm.' },
+      history: [],
+      userName: 'Erik',
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1024 }
+    });
+    expect(runtimeState.userIdentity.label).toBe('male');
+    expect(runtimeState.userIdentity.pronouns).toBe('he/him');
+  });
+});
+
+describe('assembleRuntimeContext user block', () => {
+  it('includes a User line in the reply system prompt with name, label, and pronouns', () => {
+    const runtimeState = buildRuntimeState({
+      character: { name: 'Mei', systemPrompt: 'Mei is calm.', scenario: 'A quiet cafe.' },
+      history: [
+        { role: 'assistant', content: 'Mei smiles softly.' },
+        { role: 'user', content: 'Hello.' }
+      ],
+      userName: 'Erik',
+      userGender: 'female',
+      userPronouns: 'she/her',
+      runtimeSteering: { profile: 'reply', availableContextTokens: 2048 }
+    });
+    const runtimeContext = assembleRuntimeContext({ profile: 'reply', runtimeState });
+    expect(runtimeContext.systemPrompt).toMatch(/User:\s+Erik \(female, pronouns: she\/her\)/);
+    expect(runtimeContext.debug.includedBlocks).toContain('User');
+  });
+
+  it('produces default User block when no gender or pronouns are provided', () => {
+    const runtimeState = buildRuntimeState({
+      character: { name: 'Mei', systemPrompt: 'Mei is calm.', scenario: 'A quiet cafe.' },
+      history: [
+        { role: 'assistant', content: 'Mei smiles softly.' },
+        { role: 'user', content: 'Hello.' }
+      ],
+      userName: 'Erik',
+      runtimeSteering: { profile: 'reply', availableContextTokens: 2048 }
+    });
+    const runtimeContext = assembleRuntimeContext({ profile: 'reply', runtimeState });
+    expect(runtimeContext.systemPrompt).toMatch(/User:\s+Erik \(male, pronouns: he\/him\)/);
   });
 });

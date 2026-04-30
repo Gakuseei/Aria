@@ -127,6 +127,8 @@ export const sendMessage = async (
     const currentPassionLevel = passionManager.getPassionLevel(sessionId || '');
 
     const userName = settings.userName || 'User';
+    const userGender = settings.userGender || 'male';
+    const userPronouns = settings.userPronouns || 'he/him';
 
     const responseMode = getEffectiveResponseMode(character, userMessage);
     const baseNumPredict = settings.maxResponseTokens ?? profile.maxResponseTokens ?? 512;
@@ -141,6 +143,8 @@ export const sendMessage = async (
       character,
       history: historyToUse,
       userName,
+      userGender,
+      userPronouns,
       runtimeSteering: {
         profile: 'reply',
         availableContextTokens: Math.max(320, modelCtx - numPredict - 128),

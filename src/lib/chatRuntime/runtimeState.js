@@ -1244,8 +1244,28 @@ function resolveVoicePin({ character, charName, assistMode }) {
   };
 }
 
-export function buildRuntimeState({ character, history, userName = 'User', runtimeSteering = {} }) {
+const GENDER_LABEL_MAP = {
+  male: 'male',
+  female: 'female',
+  nonbinary: 'non-binary',
+  futa: 'futa'
+};
+
+export function resolveUserIdentity({ userName, userGender, userPronouns } = {}) {
+  const name = String(userName || 'User').trim() || 'User';
+  const genderKey = GENDER_LABEL_MAP[userGender] ? userGender : 'male';
+  const label = GENDER_LABEL_MAP[genderKey];
+  const pronouns = String(userPronouns || '').trim() || (
+    genderKey === 'female' ? 'she/her' :
+    genderKey === 'nonbinary' ? 'they/them' :
+    genderKey === 'futa' ? 'she/her' : 'he/him'
+  );
+  return { name, gender: genderKey, label, pronouns };
+}
+
+export function buildRuntimeState({ character, history, userName = 'User', userGender = 'male', userPronouns = 'he/him', runtimeSteering = {} }) {
   const charName = String(character?.name || 'Character').trim() || 'Character';
+  const userIdentity = resolveUserIdentity({ userName, userGender, userPronouns });
   const totalBudget = Math.max(320, runtimeSteering.availableContextTokens || 2048);
   const profile = runtimeSteering.profile || 'reply';
   const normalizedHistory = normalizeHistory(history);
@@ -1300,6 +1320,7 @@ export function buildRuntimeState({ character, history, userName = 'User', runti
     selectedRecentHistory,
     runtimeSteering,
     userName,
+    userIdentity,
     characterName: charName,
     exampleEligibility: shouldUseExampleSeed({
       history: normalizedHistory,

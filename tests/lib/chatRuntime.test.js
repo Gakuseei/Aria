@@ -1672,6 +1672,16 @@ describe('scene memory layer (Phase D)', () => {
     expect(state.some((entry) => entry.startsWith('position:'))).toBe(false);
   });
 
+  it('does not change position state on idiom phrase "lies in wait"', () => {
+    const state = extractBodyStateMutations('She lies in wait by the door.');
+    expect(state.some((entry) => entry.startsWith('position:'))).toBe(false);
+  });
+
+  it('does not change position state on idiom phrase "lying awake"', () => {
+    const state = extractBodyStateMutations('She lying awake.');
+    expect(state.some((entry) => entry.startsWith('position:'))).toBe(false);
+  });
+
   it('captures position state when a named character takes a posture', () => {
     const state = extractBodyStateMutations('Sarah kneels in front of him');
     expect(state.some((entry) => entry.startsWith('position:') && entry.includes('kneeling'))).toBe(true);

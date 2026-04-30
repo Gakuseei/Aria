@@ -686,9 +686,10 @@ function sanitizeLocativeAnchor(text, maxLength = 120) {
 }
 
 function deriveSettingAnchor(history, sceneSeed, sceneMemory) {
+  const latestUserContent = [...history].reverse().find((message) => message.role === 'user')?.content || '';
+
   const frozenArcAnchor = sanitizeSceneMemoryLine(sceneMemory?.nsfwArcAnchor, 120);
   if (frozenArcAnchor) {
-    const latestUserContent = [...history].reverse().find((message) => message.role === 'user')?.content || '';
     const override = applyExplicitLocationOverride(latestUserContent, frozenArcAnchor);
     if (override.overridden) {
       return { value: sanitizeLocativeAnchor(override.value, 120), source: 'nsfw_arc_override' };
@@ -696,13 +697,18 @@ function deriveSettingAnchor(history, sceneSeed, sceneMemory) {
     return { value: sanitizeLocativeAnchor(frozenArcAnchor, 120), source: 'nsfw_arc_frozen' };
   }
 
-  const historyAnchor = pickRecentLocativePhrase(history, 150);
-  if (historyAnchor) {
-    return { value: sanitizeLocativeAnchor(historyAnchor, 120), source: 'history' };
+  const memoryAnchor = sanitizeSceneMemoryLine(sceneMemory?.setting_anchor, 120);
+  if (memoryAnchor) {
+    const override = applyExplicitLocationOverride(latestUserContent, memoryAnchor);
+    if (override.overridden) {
+      return { value: sanitizeLocativeAnchor(override.value, 120), source: 'memory_override' };
+    }
+    return { value: memoryAnchor, source: 'memory' };
   }
 
-  if (sceneMemory?.setting_anchor) {
-    return { value: sanitizeSceneMemoryLine(sceneMemory.setting_anchor, 120), source: 'memory' };
+  const historyAnchor = pickRecentLocativePhrase(history, 150);
+  if (historyAnchor) {
+    return { value: sanitizeLocativeAnchor(historyAnchor, 120), source: 'history_bootstrap' };
   }
 
   const seedAnchor = extractLocativePhrase(sceneSeed, 150) || trimPromptSnippet(sceneSeed, 150);

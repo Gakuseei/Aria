@@ -159,7 +159,7 @@ describe('buildRuntimeState', () => {
 
     expect(runtimeState.sceneState.setting_anchor).toMatch(/counter|stool/i);
     expect(runtimeState.sceneState.relationship_anchor).toContain('favorite partner');
-    expect(runtimeState.sceneState.debug.settingSource).toBe('history');
+    expect(runtimeState.sceneState.debug.settingSource).toBe('history_bootstrap');
     expect(runtimeState.sceneState.debug.relationshipSource).toBe('history');
     expect(runtimeState.sceneState.continuity_facts.length).toBeGreaterThan(0);
     expect(runtimeState.sceneState.continuity_facts.join(' ')).not.toContain('Mei:');
@@ -199,6 +199,72 @@ describe('buildRuntimeState', () => {
     expect(runtimeState.sceneState.relationship_anchor).toContain('regular');
     expect(runtimeState.sceneState.debug.settingSource).toBe('memory');
     expect(runtimeState.sceneState.debug.relationshipSource).toBe('memory');
+  });
+
+  it('keeps persisted setting_anchor when assistant prose drifts to a new locative', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Kira',
+        category: 'sfw',
+        systemPrompt: 'Kira is a sharp project lead.',
+        scenario: 'Workday meeting in the conference room.'
+      },
+      history: [
+        { role: 'user', content: 'Walk me through the deck.', timestamp: 1700000001000 },
+        { role: 'assistant', content: 'I have to step out of my office for a minute, but the slides are ready.', timestamp: 1700000002000 }
+      ],
+      userName: 'Erik',
+      runtimeSteering: {
+        profile: 'reply',
+        availableContextTokens: 900,
+        responseMode: 'normal',
+        persistedSceneMemory: {
+          setting_anchor: 'in the conference room',
+          relationship_anchor: '',
+          continuity_facts: [],
+          open_thread: '',
+          source_assistant_timestamp: 1700000002000,
+          updated_at: '2026-04-30T00:00:00.000Z'
+        }
+      }
+    });
+
+    expect(runtimeState.sceneState.setting_anchor.toLowerCase()).toContain('conference room');
+    expect(runtimeState.sceneState.setting_anchor.toLowerCase()).not.toContain('office');
+    expect(runtimeState.sceneState.debug.settingSource).toBe('memory');
+  });
+
+  it('lets explicit user relocation override persisted setting_anchor', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Kira',
+        category: 'sfw',
+        systemPrompt: 'Kira is a sharp project lead.',
+        scenario: 'Workday meeting in the conference room.'
+      },
+      history: [
+        { role: 'assistant', content: 'I have to step out of my office for a minute, but the slides are ready.', timestamp: 1700000002000 },
+        { role: 'user', content: "Let's go to the kitchen and grab coffee.", timestamp: 1700000003000 }
+      ],
+      userName: 'Erik',
+      runtimeSteering: {
+        profile: 'reply',
+        availableContextTokens: 900,
+        responseMode: 'normal',
+        persistedSceneMemory: {
+          setting_anchor: 'in the conference room',
+          relationship_anchor: '',
+          continuity_facts: [],
+          open_thread: '',
+          source_assistant_timestamp: 1700000002000,
+          updated_at: '2026-04-30T00:00:00.000Z'
+        }
+      }
+    });
+
+    expect(runtimeState.sceneState.setting_anchor.toLowerCase()).toContain('kitchen');
+    expect(runtimeState.sceneState.setting_anchor.toLowerCase()).not.toContain('conference');
+    expect(runtimeState.sceneState.debug.settingSource).toBe('memory_override');
   });
 
   it('keeps sfw personas in sfw_only when unchained mode is off', () => {

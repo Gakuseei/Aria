@@ -1448,6 +1448,32 @@ const INVERSE_VERB_MAP = {
   uncuffed: 'cuffed'
 };
 
+const BODY_STATE_GENERIC_RELEASE_PATTERN = /\b(?:freed|frees|free|freeing|released|releases|release|releasing|loosened|loosens|loosen|loosening)\s+(?:her|his|their|the|my|your)\s+([a-z][\w\s-]{2,40})/gi;
+const BODY_STATE_LETS_GO_FREE_PATTERN = /\blets?\s+(?:her|his|their|the|my|your)\s+([a-z][\w\s-]{2,40}?)\s+go\s+(?:free|loose)\b/gi;
+const BODY_STATE_LET_GO_OF_PATTERN = /\b(?:lets?|letting|let)\s+go\s+of\s+(?:her|his|their|the|my|your)\s+([a-z][\w\s-]{2,40})/gi;
+
+const BODY_STATE_BARE_RELEASE_PATTERNS = [
+  /\b(?:now|finally|fully|completely|at\s+last)\s+free\b(?!\s+(?:time|spirit|will|fall|range|of|from)\b)/i,
+  /\b(?:i'?m|she'?s|he'?s|they'?re|you'?re|hands?\s+are|wrists?\s+are)\s+free\b(?!\s+(?:time|spirit|will|fall|range|of|from|to)\b)/i,
+  /\bfreed\b(?=\s*(?:[,.!?]|$))/i,
+  /\b(?:released|let\s+go)\b(?!\s+(?:of\s+)?(?:her|his|their|the|my|your|a|an)\b)/i
+];
+
+const RESTRAINT_HEAD_SYNONYMS = {
+  hands: ['wrists', 'wrist', 'hand'],
+  hand: ['wrists', 'wrist', 'hands'],
+  wrists: ['hands', 'hand', 'wrist'],
+  wrist: ['hands', 'hand', 'wrists'],
+  feet: ['ankles', 'ankle', 'foot'],
+  foot: ['ankles', 'ankle', 'feet'],
+  ankles: ['feet', 'foot', 'ankle'],
+  ankle: ['feet', 'foot', 'ankles'],
+  mouth: ['gag', 'gagged'],
+  gag: ['mouth', 'gagged'],
+  eyes: ['blindfold', 'blindfolded'],
+  eye: ['blindfold', 'blindfolded']
+};
+
 function trimBodyStateObject(raw) {
   const tokens = String(raw || '').toLowerCase().split(/\s+/).filter(Boolean);
   if (tokens.length === 0) return '';
@@ -1508,6 +1534,43 @@ export function extractBodyStateMutations(text, currentState = []) {
       if (!headToken) continue;
       if (lowered.includes(headToken)) {
         restraintSet.delete(entry);
+      }
+    }
+  }
+
+  const dropRestraintsByHeadToken = (headToken) => {
+    if (!headToken) return;
+    const synonyms = RESTRAINT_HEAD_SYNONYMS[headToken] || [];
+    const candidates = [headToken, ...synonyms];
+    for (const entry of [...restraintSet]) {
+      const lowered = entry.toLowerCase();
+      if (candidates.some((token) => lowered.includes(token))) {
+        restraintSet.delete(entry);
+      }
+    }
+  };
+
+  const runTargetedRelease = (pattern) => {
+    pattern.lastIndex = 0;
+    let m;
+    while ((m = pattern.exec(source)) !== null) {
+      const obj = trimBodyStateObject(m[1]);
+      if (!obj) continue;
+      const objTokens = obj.split(/\s+/).filter(Boolean);
+      const headToken = objTokens[objTokens.length - 1];
+      dropRestraintsByHeadToken(headToken);
+    }
+  };
+
+  runTargetedRelease(BODY_STATE_GENERIC_RELEASE_PATTERN);
+  runTargetedRelease(BODY_STATE_LETS_GO_FREE_PATTERN);
+  runTargetedRelease(BODY_STATE_LET_GO_OF_PATTERN);
+
+  if (restraintSet.size > 0) {
+    for (const bareRe of BODY_STATE_BARE_RELEASE_PATTERNS) {
+      if (bareRe.test(source)) {
+        restraintSet.clear();
+        break;
       }
     }
   }

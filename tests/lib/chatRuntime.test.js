@@ -1551,6 +1551,66 @@ describe('scene memory layer (Phase D)', () => {
     expect(state.some((entry) => entry.includes('tied wrists'))).toBe(false);
   });
 
+  it('clears matching restraint on targeted "loosens" verb', () => {
+    const state = extractBodyStateMutations('She loosens the wrists', ['restraint: tied wrists']);
+    expect(state.some((entry) => entry.includes('tied wrists'))).toBe(false);
+  });
+
+  it('clears matching restraint on targeted "releases" verb', () => {
+    const state = extractBodyStateMutations('He releases her gag', ['restraint: gagged mouth']);
+    expect(state.some((entry) => entry.includes('gagged mouth'))).toBe(false);
+  });
+
+  it('clears matching restraint on "lets X go free" via synonym mapping', () => {
+    const state = extractBodyStateMutations('She lets her hands go free', ['restraint: tied wrists']);
+    expect(state.some((entry) => entry.includes('tied wrists'))).toBe(false);
+  });
+
+  it('clears all restraints on bare-stative "hands are free now"', () => {
+    const state = extractBodyStateMutations(
+      'Her hands are free now and she breathes deep',
+      ['restraint: tied wrists', 'restraint: gagged mouth']
+    );
+    expect(state.some((entry) => entry.startsWith('restraint:'))).toBe(false);
+  });
+
+  it('clears all restraints on standalone "Released," past participle clause', () => {
+    const state = extractBodyStateMutations('Released, she stretches', ['restraint: bound ankles']);
+    expect(state.some((entry) => entry.startsWith('restraint:'))).toBe(false);
+  });
+
+  it('clears all restraints on "she\'s finally free."', () => {
+    const state = extractBodyStateMutations("She's finally free.", ['restraint: cuffed wrists']);
+    expect(state.some((entry) => entry.startsWith('restraint:'))).toBe(false);
+  });
+
+  it('does not clear restraints on idiomatic "free spirit"', () => {
+    const state = extractBodyStateMutations("She's a free spirit", ['restraint: tied wrists']);
+    expect(state.some((entry) => entry.includes('tied wrists'))).toBe(true);
+  });
+
+  it('does not clear restraints on idiomatic "free time"', () => {
+    const state = extractBodyStateMutations('Free time tomorrow', ['restraint: tied wrists']);
+    expect(state.some((entry) => entry.includes('tied wrists'))).toBe(true);
+  });
+
+  it('does not clear restraints on "let go of" a body part not in restraint', () => {
+    const state = extractBodyStateMutations(
+      'He let go of her hand and stepped back',
+      ['restraint: blindfolded eyes']
+    );
+    expect(state.some((entry) => entry.includes('blindfolded eyes'))).toBe(true);
+  });
+
+  it('preserves position state when generic release clears restraints', () => {
+    const state = extractBodyStateMutations(
+      'Her wrists are free now',
+      ['position: kneeling', 'restraint: tied wrists']
+    );
+    expect(state.some((entry) => entry === 'position: kneeling')).toBe(true);
+    expect(state.some((entry) => entry.startsWith('restraint:'))).toBe(false);
+  });
+
   it('captures position state from posture verbs', () => {
     const state = extractBodyStateMutations('she kneels in front of him');
     expect(state.some((entry) => entry.startsWith('position:') && entry.includes('kneeling'))).toBe(true);

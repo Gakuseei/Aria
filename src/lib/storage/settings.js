@@ -10,13 +10,13 @@ const DEFAULT_SETTINGS = {
   dataVersion: DATA_VERSION,
   ollamaUrl: OLLAMA_DEFAULT_URL,
   ollamaModel: DEFAULT_MODEL_NAME,
-  temperature: 0.8,
-  topK: 30,
-  topP: 0.9,
-  minP: 0.05,
-  repeatPenalty: 1.1,
-  repeatLastN: 256,
-  penalizeNewline: false,
+  temperature: null,
+  topK: null,
+  topP: null,
+  minP: null,
+  repeatPenalty: null,
+  repeatLastN: null,
+  penalizeNewline: null,
   contextSize: 4096,
   fontSize: 'medium',
   autoSave: true,
@@ -35,16 +35,33 @@ const DEFAULT_SETTINGS = {
   maxResponseTokens: 256
 };
 
+const LEGACY_SAMPLING_DEFAULTS = {
+  temperature: 0.8,
+  topK: 30,
+  topP: 0.9,
+  minP: 0.05,
+  repeatPenalty: 1.1,
+  repeatLastN: 256,
+  penalizeNewline: false
+};
+
+function migrateLegacySamplingDefaults(settings) {
+  for (const [key, legacyValue] of Object.entries(LEGACY_SAMPLING_DEFAULTS)) {
+    if (settings[key] === legacyValue) settings[key] = null;
+  }
+  return settings;
+}
+
 export const loadSettings = async () => {
   try {
     if (isElectron()) {
       const result = await window.electronAPI.loadSettings();
 
       if (result && result.success && result.settings) {
-        const merged = {
+        const merged = migrateLegacySamplingDefaults({
           ...DEFAULT_SETTINGS,
           ...result.settings
-        };
+        });
         return {
           ...merged,
           contextSize: normalizeContextSize(merged.contextSize, merged.ollamaModel),
@@ -58,10 +75,10 @@ export const loadSettings = async () => {
 
       if (stored) {
         const parsed = JSON.parse(stored);
-        const merged = {
+        const merged = migrateLegacySamplingDefaults({
           ...DEFAULT_SETTINGS,
           ...parsed
-        };
+        });
         return {
           ...merged,
           contextSize: normalizeContextSize(merged.contextSize, merged.ollamaModel),

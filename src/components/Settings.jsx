@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { CONTEXT_SIZE_OPTIONS, fetchOllamaModels, getRecommendedContextSizeForModel, normalizeContextSize, testOllamaConnection } from '../lib/ollama';
+import { getModelProfile } from '../lib/modelProfiles';
 import { Globe, Zap, Moon, RefreshCw, Check, X, User, Image, Volume2, HelpCircle, FolderOpen } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import ImageGenSetup from './tutorials/ImageGenSetup';
@@ -12,6 +13,8 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const isGoldMode = useGoldMode();
   const normalizedContextSize = normalizeContextSize(settings.contextSize, settings.ollamaModel);
   const recommendedContextSize = getRecommendedContextSizeForModel(settings.ollamaModel);
+  const modelProfile = getModelProfile(settings.ollamaModel);
+  const effectiveTemperature = settings.temperature ?? modelProfile.temperature;
   const contextIndex = Math.max(0, CONTEXT_SIZE_OPTIONS.indexOf(normalizedContextSize));
 
   const settingsRef = useRef(settings);
@@ -362,14 +365,14 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   <label className="text-sm font-medium theme-text-muted">{t.settings.temperature}</label>
                   <span className={`text-sm font-mono px-2 py-0.5 rounded ${
                     isGoldMode ? 'text-amber-300 bg-amber-500/10' : 'text-rose-300 bg-rose-500/10'
-                  }`}>{(settings.temperature ?? 0.8).toFixed(2)}</span>
+                  }`}>{effectiveTemperature.toFixed(2)}</span>
                 </div>
                 <input
                   type="range"
                   min="0"
                   max="2"
                   step="0.05"
-                  value={settings.temperature}
+                  value={effectiveTemperature}
                   onChange={(e) => onSettingChange('temperature', parseFloat(e.target.value))}
                   className={`w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer ${
                     isGoldMode ? 'accent-amber-500' : 'accent-rose-500'

@@ -3,6 +3,14 @@ const locale = {
     "label": "Español",
     "flag": "🇪🇸"
   },
+  "pronouns": {
+    "heHim": "he/him",
+    "sheHer": "she/her",
+    "theyThem": "they/them",
+    "heThey": "he/they",
+    "sheThey": "she/they",
+    "xeXem": "xe/xem"
+  },
   "mainMenu": {
     "newGame": "Nuevo Juego",
     "load": "Cargar",

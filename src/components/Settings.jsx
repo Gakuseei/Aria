@@ -221,12 +221,12 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                         }
                       }}
                       options={[
-                        { value: 'he/him', label: 'he/him' },
-                        { value: 'she/her', label: 'she/her' },
-                        { value: 'they/them', label: 'they/them' },
-                        { value: 'he/they', label: 'he/they' },
-                        { value: 'she/they', label: 'she/they' },
-                        { value: 'xe/xem', label: 'xe/xem' },
+                        { value: 'he/him', label: t.pronouns.heHim },
+                        { value: 'she/her', label: t.pronouns.sheHer },
+                        { value: 'they/them', label: t.pronouns.theyThem },
+                        { value: 'he/they', label: t.pronouns.heThey },
+                        { value: 'she/they', label: t.pronouns.sheThey },
+                        { value: 'xe/xem', label: t.pronouns.xeXem },
                         { value: '__custom__', label: t.settings.pronounsCustom }
                       ]}
                     />

@@ -3,6 +3,14 @@ const locale = {
     "label": "Русский",
     "flag": "🇷🇺"
   },
+  "pronouns": {
+    "heHim": "he/him",
+    "sheHer": "she/her",
+    "theyThem": "they/them",
+    "heThey": "he/they",
+    "sheThey": "she/they",
+    "xeXem": "xe/xem"
+  },
   "mainMenu": {
     "newGame": "Новая Игра",
     "load": "Загрузить",

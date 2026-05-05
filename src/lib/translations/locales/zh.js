@@ -3,6 +3,14 @@ const locale = {
     "label": "中文",
     "flag": "🇨🇳"
   },
+  "pronouns": {
+    "heHim": "he/him",
+    "sheHer": "she/her",
+    "theyThem": "they/them",
+    "heThey": "he/they",
+    "sheThey": "she/they",
+    "xeXem": "xe/xem"
+  },
   "mainMenu": {
     "newGame": "新游戏",
     "load": "加载",

@@ -2282,12 +2282,18 @@ ipcMain.handle('save-settings', async (event, newSettings) => {
 
   try {
     const settingsPath = getSettingsPath();
-    
-    // Merge with existing settings to preserve all values
+
     let existingSettings = {};
     try {
       const raw = await fs.promises.readFile(settingsPath, 'utf-8');
-      existingSettings = JSON.parse(raw);
+      const trimmed = raw.trim();
+      if (trimmed) {
+        try {
+          existingSettings = JSON.parse(trimmed);
+        } catch {
+          existingSettings = {};
+        }
+      }
     } catch (err) {
       if (err.code !== 'ENOENT') throw err;
     }
@@ -2296,7 +2302,9 @@ ipcMain.handle('save-settings', async (event, newSettings) => {
       return { success: false, error: 'Invalid settings: expected an object' };
     }
     const mergedSettings = { ...existingSettings, ...newSettings };
-    await fs.promises.writeFile(settingsPath, JSON.stringify(mergedSettings, null, 2));
+    const tempPath = `${settingsPath}.${process.pid}.${Date.now()}.tmp`;
+    await fs.promises.writeFile(tempPath, JSON.stringify(mergedSettings, null, 2));
+    await fs.promises.rename(tempPath, settingsPath);
     
     // FIX 3: Broadcast voice status changes to all renderers
     if ('voiceEnabled' in newSettings && newSettings.voiceEnabled !== existingSettings.voiceEnabled) {

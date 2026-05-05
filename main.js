@@ -2275,36 +2275,52 @@ ipcMain.handle('delete-session', async (event, { sessionId }) => {
 
 const getSettingsPath = () => path.join(app.getPath('userData'), 'settings.json');
 
+let settingsWriteQueue = Promise.resolve();
+let settingsTempCounter = 0;
+
+async function persistSettingsAtomic(newSettings) {
+  const settingsPath = getSettingsPath();
+  let existingSettings = {};
+  try {
+    const raw = await fs.promises.readFile(settingsPath, 'utf-8');
+    const trimmed = raw.trim();
+    if (trimmed) {
+      try {
+        existingSettings = JSON.parse(trimmed);
+      } catch {
+        existingSettings = {};
+      }
+    }
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+  }
+
+  const mergedSettings = { ...existingSettings, ...newSettings };
+  const tempPath = `${settingsPath}.${process.pid}.${Date.now()}.${settingsTempCounter++}.tmp`;
+  await fs.promises.writeFile(tempPath, JSON.stringify(mergedSettings, null, 2));
+  try {
+    await fs.promises.rename(tempPath, settingsPath);
+  } catch (err) {
+    try { await fs.promises.unlink(tempPath); } catch {}
+    throw err;
+  }
+  return { existingSettings, mergedSettings };
+}
+
 ipcMain.handle('save-settings', async (event, newSettings) => {
   if (!isTrustedIpcSender(event)) {
     return blockUntrustedIpc(event, 'save-settings');
   }
 
+  if (newSettings === null || typeof newSettings !== 'object' || Array.isArray(newSettings)) {
+    return { success: false, error: 'Invalid settings: expected an object' };
+  }
+
+  const job = settingsWriteQueue.then(() => persistSettingsAtomic(newSettings), () => persistSettingsAtomic(newSettings));
+  settingsWriteQueue = job.catch(() => {});
+
   try {
-    const settingsPath = getSettingsPath();
-
-    let existingSettings = {};
-    try {
-      const raw = await fs.promises.readFile(settingsPath, 'utf-8');
-      const trimmed = raw.trim();
-      if (trimmed) {
-        try {
-          existingSettings = JSON.parse(trimmed);
-        } catch {
-          existingSettings = {};
-        }
-      }
-    } catch (err) {
-      if (err.code !== 'ENOENT') throw err;
-    }
-
-    if (newSettings === null || typeof newSettings !== 'object' || Array.isArray(newSettings)) {
-      return { success: false, error: 'Invalid settings: expected an object' };
-    }
-    const mergedSettings = { ...existingSettings, ...newSettings };
-    const tempPath = `${settingsPath}.${process.pid}.${Date.now()}.tmp`;
-    await fs.promises.writeFile(tempPath, JSON.stringify(mergedSettings, null, 2));
-    await fs.promises.rename(tempPath, settingsPath);
+    const { existingSettings, mergedSettings } = await job;
     
     // FIX 3: Broadcast voice status changes to all renderers
     if ('voiceEnabled' in newSettings && newSettings.voiceEnabled !== existingSettings.voiceEnabled) {

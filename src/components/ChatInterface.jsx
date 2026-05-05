@@ -14,7 +14,7 @@ import { generateSuggestionsBackground, abortSuggestionCall, normalizeSuggestion
 import { impersonateUser, abortImpersonateCall } from '../lib/chat/impersonate';
 import { passionManager, getTierKey, PASSION_TIERS } from '../lib/chat/passion';
 import { isCommand, executeCommand } from '../lib/commandHandler';
-import { getModelProfile } from '../lib/modelProfiles';
+import { resolveProfile } from '../lib/modelProfiles';
 import { loadImageGenModule } from '../lib/loadImageGenModule';
 import TutorialModal from './tutorials/TutorialModal';
 import { version as appVersion } from '../../package.json';
@@ -2300,7 +2300,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               <div>
                 <h3 className="theme-modal-section-title mb-2 text-lg font-semibold">{t.settings.samplingParams || 'Sampling Parameters'}</h3>
                 {(() => {
-                  const mp = getModelProfile(settings?.ollamaModel);
+                  const mp = resolveProfile(settings?.ollamaModel, settings?.customProfiles);
                   return (
                     <div className="theme-modal-panel rounded-lg p-4">
                       <div className="theme-modal-copy grid grid-cols-2 gap-2 text-sm">

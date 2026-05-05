@@ -128,7 +128,9 @@ function App() {
           const mergedSettings = withResolvedThemeSettings({
             ollamaUrl: loadedSettings.ollamaUrl || OLLAMA_DEFAULT_URL,
             ollamaModel: loadedSettings.ollamaModel || DEFAULT_MODEL_NAME,
-            temperature: loadedSettings.temperature ?? 0.85,
+            customProfiles: loadedSettings.customProfiles && typeof loadedSettings.customProfiles === 'object'
+              ? loadedSettings.customProfiles
+              : {},
             userName: loadedSettings.userName || 'User',
             userGender: loadedSettings.userGender || 'male',
             userPronouns: loadedSettings.userPronouns || 'he/him',

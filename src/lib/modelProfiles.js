@@ -136,3 +136,20 @@ export function getModelProfile(modelName) {
   const family = detectModelFamily(modelName);
   return { family, ...MODEL_PROFILES[family] };
 }
+
+/**
+ * Resolve effective sampling profile for a model: family floor + Aria default + per-model user override.
+ * `flags` is deep-merged so toggles like `dry: false` work without dropping other flag fields.
+ * @param {string} modelName - Ollama model name
+ * @param {Record<string, Record<string, unknown>>} [customProfiles] - settings.customProfiles map
+ * @returns {ReturnType<typeof getModelProfile>}
+ */
+export function resolveProfile(modelName, customProfiles) {
+  const base = getModelProfile(modelName);
+  const override = (customProfiles && typeof customProfiles === 'object' && customProfiles[modelName]) || {};
+  return {
+    ...base,
+    ...override,
+    flags: { ...(base.flags || {}), ...(override.flags || {}) }
+  };
+}

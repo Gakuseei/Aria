@@ -1,4 +1,4 @@
-import { getModelProfile } from '../../modelProfiles.js';
+import { resolveProfile } from '../../modelProfiles.js';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from '../../defaults.js';
 import { assembleRuntimeContext, buildRuntimeState } from '../../chatRuntime/index.js';
 import { ASSIST_BUDGET_CONFIG, deriveAssistBudgetTier, getModelCtx, getModelCapabilities } from '../../ollama/index.js';
@@ -227,7 +227,7 @@ export async function impersonateUser(history, character, userName, passionLevel
   });
   const budgetConfig = ASSIST_BUDGET_CONFIG[assistBudgetTier];
   const impersonateNumCtx = Math.min(numCtx, budgetConfig.impersonateNumCtxCap);
-  const profile = getModelProfile(model);
+  const profile = resolveProfile(model, settings.customProfiles);
   const charName = character?.name || 'Character';
   const userGender = settings.userGender || 'male';
   const userPronouns = settings.userPronouns || 'he/him';
@@ -250,7 +250,7 @@ export async function impersonateUser(history, character, userName, passionLevel
   console.log('[API] Impersonate runtime:', runtimeContext.debug);
   const stop = [`\n${charName}:`, `\n${charName} :`, `${charName}:`];
 
-  const generateDraft = async ({ numPredict, promptSuffix = '', temperature = settings.temperature ?? profile.temperature }) => {
+  const generateDraft = async ({ numPredict, promptSuffix = '', temperature = profile.temperature }) => {
     const messages = [
       { role: 'system', content: runtimeContext.systemPrompt },
       { role: 'user', content: `${runtimeContext.userPrompt}${promptSuffix}` }
@@ -259,12 +259,12 @@ export async function impersonateUser(history, character, userName, passionLevel
       num_predict: numPredict,
       temperature,
       num_ctx: impersonateNumCtx,
-      top_k: settings.topK ?? profile.topK,
-      top_p: settings.topP ?? profile.topP,
-      min_p: settings.minP ?? profile.minP,
-      repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty,
-      repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
-      penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline
+      top_k: profile.topK,
+      top_p: profile.topP,
+      min_p: profile.minP,
+      repeat_penalty: profile.repeatPenalty,
+      repeat_last_n: profile.repeatLastN,
+      penalize_newline: profile.penalizeNewline
     };
 
     if (isElectron()) {
@@ -330,7 +330,7 @@ export async function impersonateUser(history, character, userName, passionLevel
 
   let finalized = await generateDraft({
     numPredict: budgetConfig.impersonateFirstTokens,
-    temperature: Math.max(0.58, (settings.temperature ?? profile.temperature) - 0.04)
+    temperature: Math.max(0.58, profile.temperature - 0.04)
   });
   let finalizedScore = scoreDraft(finalized);
 
@@ -342,7 +342,7 @@ export async function impersonateUser(history, character, userName, passionLevel
     const retryDraft = await generateDraft({
       numPredict: budgetConfig.impersonateRetryTokens,
       promptSuffix: '\n\nWrite one complete first-person reply that clearly moves the scene forward while still sounding like the user. Stay grounded in the exact current beat. Prefer a natural, sendable reply over a perfect one. End cleanly after one to three sentences.',
-      temperature: Math.max(0.55, (settings.temperature ?? profile.temperature) - 0.08)
+      temperature: Math.max(0.55, profile.temperature - 0.08)
     });
     const retryScore = scoreDraft(retryDraft);
 

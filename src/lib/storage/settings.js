@@ -10,13 +10,7 @@ const DEFAULT_SETTINGS = {
   dataVersion: DATA_VERSION,
   ollamaUrl: OLLAMA_DEFAULT_URL,
   ollamaModel: DEFAULT_MODEL_NAME,
-  temperature: null,
-  topK: null,
-  topP: null,
-  minP: null,
-  repeatPenalty: null,
-  repeatLastN: null,
-  penalizeNewline: null,
+  customProfiles: {},
   contextSize: 4096,
   fontSize: 'medium',
   autoSave: true,
@@ -35,19 +29,33 @@ const DEFAULT_SETTINGS = {
   maxResponseTokens: 256
 };
 
-const LEGACY_SAMPLING_DEFAULTS = {
-  temperature: 0.8,
-  topK: 30,
-  topP: 0.9,
-  minP: 0.05,
-  repeatPenalty: 1.1,
-  repeatLastN: 256,
-  penalizeNewline: false
-};
+const LEGACY_SAMPLING_FIELDS = [
+  'temperature',
+  'topK',
+  'topP',
+  'minP',
+  'repeatPenalty',
+  'repeatLastN',
+  'penalizeNewline'
+];
 
-function migrateLegacySamplingDefaults(settings) {
-  for (const [key, legacyValue] of Object.entries(LEGACY_SAMPLING_DEFAULTS)) {
-    if (settings[key] === legacyValue) settings[key] = null;
+export function hoistLegacySamplingToCustomProfiles(settings) {
+  if (!settings || typeof settings !== 'object') return settings;
+  const model = settings.ollamaModel;
+  const hoist = {};
+  for (const field of LEGACY_SAMPLING_FIELDS) {
+    const value = settings[field];
+    if (value !== undefined && value !== null) hoist[field] = value;
+    delete settings[field];
+  }
+  if (model && Object.keys(hoist).length > 0) {
+    const existing = (settings.customProfiles && settings.customProfiles[model]) || {};
+    settings.customProfiles = {
+      ...(settings.customProfiles || {}),
+      [model]: { ...hoist, ...existing }
+    };
+  } else if (!settings.customProfiles) {
+    settings.customProfiles = {};
   }
   return settings;
 }
@@ -58,7 +66,7 @@ export const loadSettings = async () => {
       const result = await window.electronAPI.loadSettings();
 
       if (result && result.success && result.settings) {
-        const merged = migrateLegacySamplingDefaults({
+        const merged = hoistLegacySamplingToCustomProfiles({
           ...DEFAULT_SETTINGS,
           ...result.settings
         });
@@ -75,7 +83,7 @@ export const loadSettings = async () => {
 
       if (stored) {
         const parsed = JSON.parse(stored);
-        const merged = migrateLegacySamplingDefaults({
+        const merged = hoistLegacySamplingToCustomProfiles({
           ...DEFAULT_SETTINGS,
           ...parsed
         });

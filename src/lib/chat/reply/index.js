@@ -1,5 +1,5 @@
 import { passionManager, getSpeedMultiplier } from '../passion/index.js';
-import { getModelProfile } from '../../modelProfiles.js';
+import { resolveProfile } from '../../modelProfiles.js';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from '../../defaults.js';
 import { getEffectiveResponseMode, getResponseModeTokenLimit } from '../../responseModes.js';
 import { assembleRuntimeContext, buildRuntimeState, estimateTokens as estimateRuntimeTokens } from '../../chatRuntime/index.js';
@@ -119,7 +119,7 @@ export const sendMessage = async (
     const model = settings.ollamaModel || DEFAULT_MODEL_NAME;
     const modelCtx = await getModelCtx(ollamaUrl, model, settings.contextSize || 4096);
     const modelCapabilities = await getModelCapabilities(ollamaUrl, model);
-    const profile = getModelProfile(model);
+    const profile = resolveProfile(model, settings.customProfiles);
     const historyToUse = (Array.isArray(conversationHistory) ? conversationHistory : []).filter(m => m.role !== 'system');
 
     console.log(`[API] Model: ${model} (${profile.family}), ctx: ${modelCtx}`);
@@ -172,15 +172,15 @@ export const sendMessage = async (
     ];
 
     const chatOptions = {
-      temperature: settings.temperature ?? profile.temperature,
+      temperature: profile.temperature,
       num_predict: numPredict,
       num_ctx: modelCtx,
-      top_k: settings.topK ?? profile.topK,
-      top_p: settings.topP ?? profile.topP,
-      min_p: settings.minP ?? profile.minP,
-      repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty,
-      repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
-      penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline
+      top_k: profile.topK,
+      top_p: profile.topP,
+      min_p: profile.minP,
+      repeat_penalty: profile.repeatPenalty,
+      repeat_last_n: profile.repeatLastN,
+      penalize_newline: profile.penalizeNewline
     };
     if (profile.flags?.dry) {
       chatOptions.dry_multiplier = profile.flags.dryMultiplier ?? 0.8;

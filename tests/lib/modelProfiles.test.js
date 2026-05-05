@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectModelFamily, getModelProfile, MODEL_PROFILES } from '../../src/lib/modelProfiles.js';
+import { detectModelFamily, getModelProfile, resolveProfile, MODEL_PROFILES } from '../../src/lib/modelProfiles.js';
 
 describe('detectModelFamily', () => {
   it('detects qwen family', () => {
@@ -92,5 +92,54 @@ describe('getModelProfile', () => {
     const llama = getModelProfile('llama3:8b');
     expect(gemma.temperature).toBe(MODEL_PROFILES.gemma.temperature);
     expect(llama.topK).toBe(MODEL_PROFILES.llama.topK);
+  });
+});
+
+describe('resolveProfile', () => {
+  const magmellName = 'HammerAI/mn-mag-mell-r1:12b-q4_K_M';
+
+  it('returns base profile when customProfiles is empty or missing', () => {
+    const base = getModelProfile(magmellName);
+    expect(resolveProfile(magmellName)).toEqual(base);
+    expect(resolveProfile(magmellName, {})).toEqual(base);
+    expect(resolveProfile(magmellName, null)).toEqual(base);
+  });
+
+  it('overrides scalar fields when set in customProfiles[modelName]', () => {
+    const resolved = resolveProfile(magmellName, {
+      [magmellName]: { temperature: 0.85, minP: 0.1 }
+    });
+    expect(resolved.temperature).toBe(0.85);
+    expect(resolved.minP).toBe(0.1);
+    expect(resolved.topP).toBe(MODEL_PROFILES.magmell.topP);
+    expect(resolved.family).toBe('magmell');
+  });
+
+  it('deep-merges flags so DRY toggle off works', () => {
+    const resolved = resolveProfile(magmellName, {
+      [magmellName]: { flags: { dry: false } }
+    });
+    expect(resolved.flags.dry).toBe(false);
+    expect(resolved.flags.dryMultiplier).toBe(MODEL_PROFILES.magmell.flags.dryMultiplier);
+    expect(resolved.flags.dryBase).toBe(MODEL_PROFILES.magmell.flags.dryBase);
+  });
+
+  it('does not leak overrides between models', () => {
+    const customs = {
+      [magmellName]: { temperature: 0.5 }
+    };
+    const magmell = resolveProfile(magmellName, customs);
+    const llama = resolveProfile('llama3:8b', customs);
+    expect(magmell.temperature).toBe(0.5);
+    expect(llama.temperature).toBe(MODEL_PROFILES.llama.temperature);
+  });
+
+  it('falls back to generic + override for unknown models', () => {
+    const resolved = resolveProfile('some-custom:7b', {
+      'some-custom:7b': { temperature: 1.0 }
+    });
+    expect(resolved.family).toBe('generic');
+    expect(resolved.temperature).toBe(1.0);
+    expect(resolved.minP).toBe(MODEL_PROFILES.generic.minP);
   });
 });

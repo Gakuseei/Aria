@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { CONTEXT_SIZE_OPTIONS, fetchOllamaModels, getRecommendedContextSizeForModel, normalizeContextSize, testOllamaConnection } from '../lib/ollama';
-import { getModelProfile } from '../lib/modelProfiles';
+import { getModelProfile, resolveProfile, MODEL_PROFILES } from '../lib/modelProfiles';
 import { Globe, Zap, Moon, RefreshCw, Check, X, User, Image, Volume2, HelpCircle, FolderOpen } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import ImageGenSetup from './tutorials/ImageGenSetup';
@@ -8,14 +8,179 @@ import VoiceSetup from './tutorials/VoiceSetup';
 import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
 
+function SamplingFieldChrome({ label, isOverridden, onReset, isGoldMode, t, valueDisplay, children }) {
+  const accent = isGoldMode ? 'text-amber-300 bg-amber-500/10' : 'text-rose-300 bg-rose-500/10';
+  const badgeAccent = isOverridden
+    ? (isGoldMode ? 'text-amber-300 bg-amber-500/15' : 'text-rose-300 bg-rose-500/15')
+    : 'text-zinc-400 bg-zinc-800/60';
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5 gap-2">
+        <label className="text-sm font-medium theme-text-muted flex-1">{label}</label>
+        <span className={`text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded ${badgeAccent}`}>
+          {isOverridden ? (t.settings.samplingCustom || 'Custom') : (t.settings.samplingDefault || 'Default')}
+        </span>
+        {valueDisplay && (
+          <span className={`text-sm font-mono px-2 py-0.5 rounded ${accent}`}>{valueDisplay}</span>
+        )}
+        {isOverridden && (
+          <button
+            type="button"
+            onClick={onReset}
+            title={t.settings.samplingResetField || 'Revert to default'}
+            className="text-zinc-400 hover:text-zinc-100 text-sm leading-none px-1"
+          >
+            ⟲
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function SamplingSlider({ label, min, max, step, decimals = 2, value, isOverridden, onChange, onReset, isGoldMode, t }) {
+  const safeValue = Number.isFinite(value) ? value : min;
+  return (
+    <SamplingFieldChrome
+      label={label}
+      isOverridden={isOverridden}
+      onReset={onReset}
+      isGoldMode={isGoldMode}
+      t={t}
+      valueDisplay={safeValue.toFixed(decimals)}
+    >
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={safeValue}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className={`w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer ${
+          isGoldMode ? 'accent-amber-500' : 'accent-rose-500'
+        }`}
+      />
+    </SamplingFieldChrome>
+  );
+}
+
+function SamplingNumber({ label, min, max, step = 1, value, isOverridden, onChange, onReset, isGoldMode, t }) {
+  const safeValue = Number.isFinite(value) ? value : min;
+  return (
+    <SamplingFieldChrome
+      label={label}
+      isOverridden={isOverridden}
+      onReset={onReset}
+      isGoldMode={isGoldMode}
+      t={t}
+    >
+      <input
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        value={safeValue}
+        onChange={(e) => {
+          const parsed = step < 1 ? parseFloat(e.target.value) : parseInt(e.target.value, 10);
+          if (Number.isFinite(parsed)) onChange(parsed);
+        }}
+        className={`w-32 bg-zinc-900/80 border border-zinc-700/50 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 transition-all ${
+          isGoldMode ? 'focus:ring-amber-500/50' : 'focus:ring-rose-500/50'
+        }`}
+      />
+    </SamplingFieldChrome>
+  );
+}
+
+function SamplingToggle({ label, value, isOverridden, onChange, onReset, isGoldMode, t }) {
+  const accent = isGoldMode ? 'bg-amber-500' : 'bg-rose-500';
+  return (
+    <SamplingFieldChrome
+      label={label}
+      isOverridden={isOverridden}
+      onReset={onReset}
+      isGoldMode={isGoldMode}
+      t={t}
+    >
+      <button
+        type="button"
+        onClick={() => onChange(!value)}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${value ? accent : 'bg-zinc-700'}`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${value ? 'translate-x-6' : 'translate-x-1'}`}
+        />
+      </button>
+    </SamplingFieldChrome>
+  );
+}
+
 export default function Settings({ settings, onSettingChange, onClose }) {
   const { t, language, setLanguage } = useLanguage();
   const isGoldMode = useGoldMode();
   const normalizedContextSize = normalizeContextSize(settings.contextSize, settings.ollamaModel);
   const recommendedContextSize = getRecommendedContextSizeForModel(settings.ollamaModel);
-  const modelProfile = getModelProfile(settings.ollamaModel);
-  const effectiveTemperature = settings.temperature ?? modelProfile.temperature;
+  const baseProfile = getModelProfile(settings.ollamaModel);
+  const modelProfile = resolveProfile(settings.ollamaModel, settings.customProfiles);
+  const effectiveTemperature = modelProfile.temperature;
   const contextIndex = Math.max(0, CONTEXT_SIZE_OPTIONS.indexOf(normalizedContextSize));
+
+  const currentCustom = settings.customProfiles?.[settings.ollamaModel] || {};
+  const currentCustomFlags = currentCustom.flags || {};
+  const baseFlags = baseProfile.flags || {};
+  const hasAnyOverride = Object.keys(currentCustom).length > 0;
+  const sectionTitle = (t.settings.samplingSection || 'Sampling — {model}').replace('{model}', baseProfile.label || settings.ollamaModel || 'Model');
+
+  function writeCustomProfiles(nextEntry) {
+    const next = { ...(settings.customProfiles || {}) };
+    if (nextEntry === null || (typeof nextEntry === 'object' && Object.keys(nextEntry).length === 0)) {
+      delete next[settings.ollamaModel];
+    } else {
+      next[settings.ollamaModel] = nextEntry;
+    }
+    onSettingChange('customProfiles', next);
+  }
+
+  function setProfileField(field, value) {
+    const entry = { ...(currentCustom) };
+    const baseValue = baseProfile[field];
+    if (value === undefined || value === null || value === baseValue) {
+      delete entry[field];
+    } else {
+      entry[field] = value;
+    }
+    writeCustomProfiles(entry);
+  }
+
+  function setFlagField(flagName, value) {
+    const entry = { ...(currentCustom) };
+    const flags = { ...(currentCustomFlags) };
+    const baseValue = baseFlags[flagName];
+    if (value === undefined || value === null || value === baseValue) {
+      delete flags[flagName];
+    } else {
+      flags[flagName] = value;
+    }
+    if (Object.keys(flags).length === 0) {
+      delete entry.flags;
+    } else {
+      entry.flags = flags;
+    }
+    writeCustomProfiles(entry);
+  }
+
+  function clearAllProfileForModel() {
+    writeCustomProfiles(null);
+  }
+
+  function isFieldOverridden(field) {
+    return Object.prototype.hasOwnProperty.call(currentCustom, field);
+  }
+
+  function isFlagOverridden(flagName) {
+    return Object.prototype.hasOwnProperty.call(currentCustomFlags, flagName);
+  }
 
   const settingsRef = useRef(settings);
   const onSettingChangeRef = useRef(onSettingChange);
@@ -360,26 +525,191 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                 </p>
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium theme-text-muted">{t.settings.temperature}</label>
-                  <span className={`text-sm font-mono px-2 py-0.5 rounded ${
-                    isGoldMode ? 'text-amber-300 bg-amber-500/10' : 'text-rose-300 bg-rose-500/10'
-                  }`}>{effectiveTemperature.toFixed(2)}</span>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold theme-text-muted">{sectionTitle}</h4>
+                  {hasAnyOverride && (
+                    <button
+                      type="button"
+                      onClick={clearAllProfileForModel}
+                      className={`text-xs px-2 py-1 rounded ${isGoldMode ? 'text-amber-300 hover:bg-amber-500/10' : 'text-rose-300 hover:bg-rose-500/10'}`}
+                    >
+                      {t.settings.samplingResetAll || 'Reset all for this model'}
+                    </button>
+                  )}
                 </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="2"
-                  step="0.05"
-                  value={effectiveTemperature}
-                  onChange={(e) => onSettingChange('temperature', parseFloat(e.target.value))}
-                  className={`w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer ${
-                    isGoldMode ? 'accent-amber-500' : 'accent-rose-500'
-                  }`}
+
+                <SamplingSlider
+                  label={t.settings.temperature}
+                  field="temperature"
+                  min={0}
+                  max={2}
+                  step={0.05}
+                  decimals={2}
+                  value={modelProfile.temperature}
+                  isOverridden={isFieldOverridden('temperature')}
+                  onChange={(v) => setProfileField('temperature', v)}
+                  onReset={() => setProfileField('temperature', undefined)}
+                  isGoldMode={isGoldMode}
+                  t={t}
                 />
-                <p className="text-xs theme-text-soft mt-1.5">
-                  {t.settings.lowerMoreFocused}
+                <p className="text-xs theme-text-soft -mt-2">{t.settings.lowerMoreFocused}</p>
+
+                <SamplingSlider
+                  label={t.settings.topP || 'Top-P'}
+                  field="topP"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  decimals={2}
+                  value={modelProfile.topP}
+                  isOverridden={isFieldOverridden('topP')}
+                  onChange={(v) => setProfileField('topP', v)}
+                  onReset={() => setProfileField('topP', undefined)}
+                  isGoldMode={isGoldMode}
+                  t={t}
+                />
+
+                <SamplingSlider
+                  label={t.settings.minP || 'Min-P'}
+                  field="minP"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  decimals={2}
+                  value={modelProfile.minP}
+                  isOverridden={isFieldOverridden('minP')}
+                  onChange={(v) => setProfileField('minP', v)}
+                  onReset={() => setProfileField('minP', undefined)}
+                  isGoldMode={isGoldMode}
+                  t={t}
+                />
+
+                <SamplingSlider
+                  label={t.settings.repeatPenalty || 'Repeat Penalty'}
+                  field="repeatPenalty"
+                  min={0.5}
+                  max={2}
+                  step={0.01}
+                  decimals={2}
+                  value={modelProfile.repeatPenalty}
+                  isOverridden={isFieldOverridden('repeatPenalty')}
+                  onChange={(v) => setProfileField('repeatPenalty', v)}
+                  onReset={() => setProfileField('repeatPenalty', undefined)}
+                  isGoldMode={isGoldMode}
+                  t={t}
+                />
+
+                <SamplingNumber
+                  label={t.settings.topK || 'Top-K'}
+                  field="topK"
+                  min={1}
+                  max={200}
+                  step={1}
+                  value={modelProfile.topK}
+                  isOverridden={isFieldOverridden('topK')}
+                  onChange={(v) => setProfileField('topK', v)}
+                  onReset={() => setProfileField('topK', undefined)}
+                  isGoldMode={isGoldMode}
+                  t={t}
+                />
+
+                <SamplingNumber
+                  label={t.settings.repeatLastN || 'Repeat Last N'}
+                  field="repeatLastN"
+                  min={0}
+                  max={4096}
+                  step={1}
+                  value={modelProfile.repeatLastN}
+                  isOverridden={isFieldOverridden('repeatLastN')}
+                  onChange={(v) => setProfileField('repeatLastN', v)}
+                  onReset={() => setProfileField('repeatLastN', undefined)}
+                  isGoldMode={isGoldMode}
+                  t={t}
+                />
+
+                <SamplingToggle
+                  label={t.settings.penalizeNewline || 'Penalize Newline'}
+                  field="penalizeNewline"
+                  value={Boolean(modelProfile.penalizeNewline)}
+                  isOverridden={isFieldOverridden('penalizeNewline')}
+                  onChange={(v) => setProfileField('penalizeNewline', v)}
+                  onReset={() => setProfileField('penalizeNewline', undefined)}
+                  isGoldMode={isGoldMode}
+                  t={t}
+                />
+
+                <SamplingToggle
+                  label={t.settings.dryEnabled || "DRY (Don't Repeat Yourself)"}
+                  field="dry"
+                  value={Boolean(modelProfile.flags?.dry)}
+                  isOverridden={isFlagOverridden('dry')}
+                  onChange={(v) => setFlagField('dry', v)}
+                  onReset={() => setFlagField('dry', undefined)}
+                  isGoldMode={isGoldMode}
+                  t={t}
+                />
+
+                {modelProfile.flags?.dry && (
+                  <div className="ml-4 space-y-3 border-l border-zinc-700/40 pl-3">
+                    <SamplingSlider
+                      label={t.settings.dryMultiplier || 'DRY Multiplier'}
+                      field="dryMultiplier"
+                      min={0}
+                      max={2}
+                      step={0.05}
+                      decimals={2}
+                      value={modelProfile.flags?.dryMultiplier ?? 0.8}
+                      isOverridden={isFlagOverridden('dryMultiplier')}
+                      onChange={(v) => setFlagField('dryMultiplier', v)}
+                      onReset={() => setFlagField('dryMultiplier', undefined)}
+                      isGoldMode={isGoldMode}
+                      t={t}
+                    />
+                    <SamplingNumber
+                      label={t.settings.dryBase || 'DRY Base'}
+                      field="dryBase"
+                      min={0.5}
+                      max={5}
+                      step={0.05}
+                      value={modelProfile.flags?.dryBase ?? 1.75}
+                      isOverridden={isFlagOverridden('dryBase')}
+                      onChange={(v) => setFlagField('dryBase', v)}
+                      onReset={() => setFlagField('dryBase', undefined)}
+                      isGoldMode={isGoldMode}
+                      t={t}
+                    />
+                    <SamplingNumber
+                      label={t.settings.dryAllowedLength || 'DRY Allowed Length'}
+                      field="dryAllowedLength"
+                      min={1}
+                      max={20}
+                      step={1}
+                      value={modelProfile.flags?.dryAllowedLength ?? 2}
+                      isOverridden={isFlagOverridden('dryAllowedLength')}
+                      onChange={(v) => setFlagField('dryAllowedLength', v)}
+                      onReset={() => setFlagField('dryAllowedLength', undefined)}
+                      isGoldMode={isGoldMode}
+                      t={t}
+                    />
+                    <SamplingNumber
+                      label={t.settings.dryPenaltyLastN || 'DRY Penalty Last N'}
+                      field="dryPenaltyLastN"
+                      min={0}
+                      max={4096}
+                      step={1}
+                      value={modelProfile.flags?.dryPenaltyLastN ?? 512}
+                      isOverridden={isFlagOverridden('dryPenaltyLastN')}
+                      onChange={(v) => setFlagField('dryPenaltyLastN', v)}
+                      onReset={() => setFlagField('dryPenaltyLastN', undefined)}
+                      isGoldMode={isGoldMode}
+                      t={t}
+                    />
+                  </div>
+                )}
+
+                <p className="text-xs theme-text-soft">
+                  {t.settings.samplingHelper || 'Sliders override the per-model defaults. Click ⟲ to revert any field.'}
                 </p>
               </div>
 

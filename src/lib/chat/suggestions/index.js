@@ -3,7 +3,7 @@ import { assembleRuntimeContext, buildRuntimeState } from '../../chatRuntime/ind
 import { ASSIST_BUDGET_CONFIG, deriveAssistBudgetTier, getModelCtx, getModelCapabilities } from '../../ollama/index.js';
 import { isElectron } from '../platform.js';
 import { deconjugateSimplePresent, repairLeadingActionBlock, repairLeadingNarrationSegment } from '../language.js';
-import { getModelProfile } from '../../modelProfiles.js';
+import { resolveProfile } from '../../modelProfiles.js';
 
 let suggestionAbortController = null;
 let suggestionRequestId = 0;
@@ -979,7 +979,7 @@ export async function generateSuggestionsBackground(history, character, userName
   });
   const budgetConfig = ASSIST_BUDGET_CONFIG[assistBudgetTier];
   const suggestionNumCtx = Math.min(numCtx, budgetConfig.suggestionNumCtxCap);
-  const profile = getModelProfile(model);
+  const profile = resolveProfile(model, settings.customProfiles);
   const lastUserMsg = [...(history || [])].reverse().find((message) => message?.role === 'user')?.content || '';
   const userGender = settings.userGender || 'male';
   const userPronouns = settings.userPronouns || 'he/him';
@@ -1015,12 +1015,12 @@ export async function generateSuggestionsBackground(history, character, userName
     temperature: 0.42,
     maxTokens: suggestionMaxTokens,
     num_ctx: suggestionNumCtx,
-    top_k: settings.topK ?? profile.topK,
-    top_p: settings.topP ?? profile.topP,
-    min_p: settings.minP ?? profile.minP,
-    repeat_penalty: settings.repeatPenalty ?? profile.repeatPenalty,
-    repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
-    penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline,
+    top_k: profile.topK,
+    top_p: profile.topP,
+    min_p: profile.minP,
+    repeat_penalty: profile.repeatPenalty,
+    repeat_last_n: profile.repeatLastN,
+    penalize_newline: profile.penalizeNewline,
     format: BATCH_SUGGESTION_JSON_SCHEMA
   };
 

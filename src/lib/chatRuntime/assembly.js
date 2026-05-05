@@ -149,14 +149,14 @@ function buildReplyLateSteering(runtimeState) {
     : '';
   const assistMode = runtimeState.assistMode || 'sfw_only';
   const modeLine = (() => {
-    if (assistMode === 'nsfw_only') return 'The scene is already explicit. Continue in character without softening into generic prose.';
-    if (assistMode === 'mixed_transition') return 'Build tension and closeness in character without jumping straight to explicit phrasing.';
-    return 'Keep the interaction non-explicit and grounded in the moment.';
+    if (assistMode === 'nsfw_only') return 'The scene is already explicit. Lean into physical and sensory presence in character.';
+    if (assistMode === 'mixed_transition') return 'Build tension, closeness, and physical awareness moment by moment.';
+    return 'Stay non-explicit. Keep the moment grounded in body, environment, and tone.';
   })();
   const voiceAnchorLines = assistMode === 'nsfw_only'
     ? [
         `Stay in ${characterName}'s voice signature; the voice anchor above is the contract.`,
-        'Favor phrases only this character would say. Avoid stock erotica vocabulary that any character could speak.'
+        `Favor phrases and rhythms only ${characterName} would use.`
       ]
     : [];
 

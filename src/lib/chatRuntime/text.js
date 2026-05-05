@@ -95,9 +95,8 @@ export function pickSentenceByKeywords(text, keywords = [], maxLength = 180) {
   return trimPromptSnippet(match || sentences[0] || '', maxLength);
 }
 
-export function buildVoicePinBlock({ pin = '', avoid = '', fallback = '' } = {}) {
+export function buildVoicePinBlock({ pin = '', avoid: _avoid = '', fallback = '' } = {}) {
   const usePin = String(pin || '').trim();
-  const useAvoid = String(avoid || '').trim();
   const useFallback = String(fallback || '').trim();
 
   if (!usePin && !useFallback) return '';
@@ -105,8 +104,5 @@ export function buildVoicePinBlock({ pin = '', avoid = '', fallback = '' } = {})
   const lines = [];
   lines.push('Voice anchor:');
   lines.push(usePin || useFallback);
-  if (useAvoid) {
-    lines.push('Avoid: ' + useAvoid);
-  }
   return lines.join('\n');
 }

@@ -1154,19 +1154,19 @@ describe('assembleRuntimeContext', () => {
 import { buildVoicePinBlock } from '../../src/lib/chatRuntime/text.js';
 
 describe('buildVoicePinBlock', () => {
-  it('builds a steering block from voice pin and avoid line', () => {
+  it('builds a steering block from voice pin (avoid input ignored)', () => {
     const block = buildVoicePinBlock({
       pin: 'Stays in her stuttering naive voice in every situation, including intimate ones.',
       avoid: 'heaving bosom, porcelain skin, body and soul'
     });
     expect(block).toContain('Voice anchor:');
     expect(block).toContain('stuttering naive voice');
-    expect(block).toContain('Avoid:');
-    expect(block).toContain('heaving bosom');
+    expect(block).not.toContain('Avoid:');
+    expect(block).not.toContain('heaving bosom');
   });
 
-  it('omits the avoid line when avoid is empty', () => {
-    const block = buildVoicePinBlock({ pin: 'Direct, blunt voice.', avoid: '' });
+  it('never injects an Avoid: line even when avoid is non-empty', () => {
+    const block = buildVoicePinBlock({ pin: 'Direct, blunt voice.', avoid: 'soft euphemisms' });
     expect(block).toContain('Direct, blunt voice');
     expect(block).not.toContain('Avoid:');
   });
@@ -1268,7 +1268,7 @@ describe('assembleRuntimeContext voice pin injection (reply profile)', () => {
     expect(lastMessage.role).toBe('system');
     expect(lastMessage.content).toContain('Voice anchor:');
     expect(lastMessage.content).toContain('Stutters when nervous');
-    expect(lastMessage.content).toContain('Avoid:');
+    expect(lastMessage.content).not.toContain('Avoid:');
   });
 
   it('does not append a voice pin message for non-reply profiles', () => {
@@ -1447,7 +1447,7 @@ describe('assembleRuntimeContext late steering (trimmed)', () => {
     const ctx = assembleRuntimeContext({ profile: 'reply', runtimeState });
 
     expect(ctx.systemPrompt).toContain("Write Alice's next reply.");
-    expect(ctx.systemPrompt).toContain('The scene is already explicit. Continue in character');
+    expect(ctx.systemPrompt).toContain('The scene is already explicit. Lean into physical and sensory presence');
   });
 });
 
@@ -1475,7 +1475,7 @@ describe('assembleRuntimeContext nsfw late steering voice re-anchor', () => {
     expect(runtimeState.assistMode).toBe('nsfw_only');
     const ctx = assembleRuntimeContext({ profile: 'reply', runtimeState });
     expect(ctx.systemPrompt).toContain('voice anchor above is the contract');
-    expect(ctx.systemPrompt).toContain('phrases only this character would say');
+    expect(ctx.systemPrompt).toContain('Favor phrases and rhythms only Yuki would use');
   });
 
   it('substitutes the character name into the first re-anchor line', () => {

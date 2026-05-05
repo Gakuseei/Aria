@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { CONTEXT_SIZE_OPTIONS, fetchOllamaModels, getRecommendedContextSizeForModel, normalizeContextSize, testOllamaConnection } from '../lib/ollama';
 import { getModelProfile, resolveProfile, MODEL_PROFILES } from '../lib/modelProfiles';
-import { Globe, Zap, Moon, RefreshCw, Check, X, User, Image, Volume2, HelpCircle, FolderOpen } from 'lucide-react';
+import { Globe, Zap, Moon, RefreshCw, Check, X, User, Image, Volume2, HelpCircle, FolderOpen, ChevronDown, ChevronRight } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import ImageGenSetup from './tutorials/ImageGenSetup';
 import VoiceSetup from './tutorials/VoiceSetup';
@@ -193,6 +193,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const [testResult, setTestResult] = useState(null);
   const [showTutorial, setShowTutorial] = useState(null);
   const [availableVoiceModels, setAvailableVoiceModels] = useState([]);
+  const [samplingExpanded, setSamplingExpanded] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('settings', JSON.stringify(settings));
@@ -526,9 +527,21 @@ export default function Settings({ settings, onSettingChange, onClose }) {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold theme-text-muted">{sectionTitle}</h4>
-                  {hasAnyOverride && (
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSamplingExpanded((v) => !v)}
+                    className="flex items-center gap-2 text-sm font-semibold theme-text-muted hover:text-white transition-colors"
+                  >
+                    {samplingExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    <span>{sectionTitle}</span>
+                    {hasAnyOverride && (
+                      <span className={`text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded ${isGoldMode ? 'text-amber-300 bg-amber-500/15' : 'text-rose-300 bg-rose-500/15'}`}>
+                        {t.settings.samplingCustom || 'Custom'}
+                      </span>
+                    )}
+                  </button>
+                  {samplingExpanded && hasAnyOverride && (
                     <button
                       type="button"
                       onClick={clearAllProfileForModel}
@@ -539,6 +552,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   )}
                 </div>
 
+                {samplingExpanded && (<>
                 <SamplingSlider
                   label={t.settings.temperature}
                   field="temperature"
@@ -711,6 +725,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                 <p className="text-xs theme-text-soft">
                   {t.settings.samplingHelper || 'Sliders override the per-model defaults. Click ⟲ to revert any field.'}
                 </p>
+                </>)}
               </div>
 
               <div>

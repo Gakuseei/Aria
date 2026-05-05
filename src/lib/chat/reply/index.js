@@ -182,6 +182,12 @@ export const sendMessage = async (
       repeat_last_n: settings.repeatLastN ?? profile.repeatLastN,
       penalize_newline: settings.penalizeNewline ?? profile.penalizeNewline
     };
+    if (profile.flags?.dry) {
+      chatOptions.dry_multiplier = profile.flags.dryMultiplier ?? 0.8;
+      chatOptions.dry_base = profile.flags.dryBase ?? 1.75;
+      chatOptions.dry_allowed_length = profile.flags.dryAllowedLength ?? 2;
+      chatOptions.dry_penalty_last_n = profile.flags.dryPenaltyLastN ?? 512;
+    }
     const stopSequences = ['\nUser:', '\nHuman:', `\n${userName}:`, `\n${character.name}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>', '<|start_header_id|>'];
 
     let data;

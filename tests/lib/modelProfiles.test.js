@@ -12,8 +12,12 @@ describe('detectModelFamily', () => {
     expect(detectModelFamily('mixtral:8x7b')).toBe('mistral');
   });
 
-  it('returns generic for custom-named models without family keyword', () => {
-    expect(detectModelFamily('HammerAI/mn-mag-mell-r1:12b-q4_K_M')).toBe('generic');
+  it('detects mag-mell family from HammerAI quantization name', () => {
+    expect(detectModelFamily('HammerAI/mn-mag-mell-r1:12b-q4_K_M')).toBe('magmell');
+    expect(detectModelFamily('mag-mell-12b')).toBe('magmell');
+  });
+
+  it('returns generic for unrelated custom-named models', () => {
     expect(detectModelFamily('HammerAI/l3.3-omega-directive-unslop-v2:70b')).toBe('generic');
   });
 

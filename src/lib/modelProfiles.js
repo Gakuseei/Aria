@@ -77,6 +77,18 @@ export const MODEL_PROFILES = {
     penalizeNewline: false,
     flags: {}
   },
+  magmell: {
+    label: 'Mag-Mell',
+    temperature: 1.25,
+    topP: 0.95,
+    topK: 40,
+    maxResponseTokens: 512,
+    minP: 0.2,
+    repeatPenalty: 1.0,
+    repeatLastN: 0,
+    penalizeNewline: false,
+    flags: { dry: true, dryMultiplier: 0.8, dryBase: 1.75, dryAllowedLength: 2 }
+  },
   generic: {
     label: 'Generic',
     temperature: 0.8,
@@ -93,6 +105,7 @@ export const MODEL_PROFILES = {
 
 /** @type {Array<{key: string, patterns: string[]}>} */
 const FAMILY_KEYWORDS = [
+  { key: 'magmell', patterns: ['mag-mell'] },
   { key: 'qwen', patterns: ['qwen'] },
   { key: 'mistral', patterns: ['mistral', 'mixtral'] },
   { key: 'llama', patterns: ['llama'] },

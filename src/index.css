@@ -2077,3 +2077,57 @@ body:not(.oled-mode) .passion-glow-high {
 [dir="rtl"] .flex-row {
   flex-direction: row-reverse;
 }
+
+/* Sampling status bar in settings — reserved-border hover (no layout shift) */
+.sampling-status-bar {
+  border-color: var(--color-border);
+}
+.sampling-status-bar:hover,
+.sampling-status-bar:focus-visible {
+  border-color: rgb(244 63 94);
+  outline: none;
+}
+
+/* Sampling modal hover and focus polish */
+.sm-close:hover,
+.sm-close:focus-visible {
+  background: var(--color-border);
+  color: var(--color-text);
+  outline: none;
+}
+.sm-tab:hover {
+  color: var(--color-text);
+}
+.sm-tab:focus-visible {
+  outline: none;
+  color: var(--color-text);
+}
+.sm-field:hover .sm-reset:not([disabled]) {
+  opacity: 0.85 !important;
+  color: var(--color-text-muted);
+}
+.sm-reset:focus-visible {
+  outline: none;
+  opacity: 1 !important;
+  color: var(--color-text) !important;
+}
+.sm-btn-secondary:not([disabled]):hover,
+.sm-btn-secondary:not([disabled]):focus-visible {
+  border-color: var(--theme-accent-border);
+  color: var(--color-text);
+  outline: none;
+  background: var(--theme-accent-soft);
+}
+.sm-btn-primary:hover,
+.sm-btn-primary:focus-visible {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  outline: none;
+}
+.sm-body::-webkit-scrollbar {
+  width: 4px;
+}
+.sm-body::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+}

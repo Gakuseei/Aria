@@ -42,6 +42,9 @@ PROJECT_STRUCTURE.md
 gemini-rules.md
 docs/plans/
 docs/superpowers/
+.superpowers/
+superpowers/
+.playwright/
 Discord/
 tools/Zonos
 testsprite_tests

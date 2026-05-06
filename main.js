@@ -2322,18 +2322,16 @@ ipcMain.handle('save-settings', async (event, newSettings) => {
   try {
     const { existingSettings, mergedSettings } = await job;
     
-    // FIX 3: Broadcast voice status changes to all renderers
     if ('voiceEnabled' in newSettings && newSettings.voiceEnabled !== existingSettings.voiceEnabled) {
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('voice-status-changed', newSettings.voiceEnabled);
       }
     }
-    
-    // FIX 1: Broadcast settings-updated event to all renderers
+
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('settings-updated', mergedSettings);
     }
-    
+
     return { success: true };
   } catch (error) {
     console.error('Save settings error:', error);

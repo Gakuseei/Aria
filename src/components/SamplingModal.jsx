@@ -60,7 +60,7 @@ function FieldRow({
     <div
       className="sm-field"
       style={{
-        padding: '17px 0',
+        padding: '14px 0',
         borderBottom: isLast
           ? 'none'
           : '1px solid color-mix(in srgb, var(--color-border) 50%, transparent)'
@@ -666,8 +666,8 @@ export default function SamplingModal({
         aria-labelledby="sampling-modal-title"
         style={{
           width: '100%',
-          maxWidth: 560,
-          maxHeight: 660,
+          maxWidth: 500,
+          maxHeight: 580,
           display: 'flex',
           flexDirection: 'column',
           background: 'linear-gradient(180deg, #1a1c20 0%, #15171b 100%)',
@@ -680,7 +680,7 @@ export default function SamplingModal({
         <div
           style={{
             position: 'relative',
-            padding: '24px 28px 18px',
+            padding: '22px 24px 16px',
             borderBottom: '1px solid var(--color-border)'
           }}
         >
@@ -733,13 +733,13 @@ export default function SamplingModal({
             className="sm-close"
             style={{
               position: 'absolute',
-              top: 18,
-              right: 18,
+              top: 16,
+              right: 16,
               background: 'transparent',
               border: 'none',
               color: 'var(--color-text-soft)',
               cursor: 'pointer',
-              fontSize: 24,
+              fontSize: 22,
               lineHeight: 1,
               padding: 4,
               borderRadius: 6,
@@ -754,8 +754,8 @@ export default function SamplingModal({
           role="tablist"
           style={{
             display: 'flex',
-            gap: 26,
-            padding: '0 28px',
+            gap: 24,
+            padding: '0 24px',
             borderBottom: '1px solid var(--color-border)'
           }}
         >
@@ -778,7 +778,7 @@ export default function SamplingModal({
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  padding: '14px 0',
+                  padding: '12px 0',
                   fontSize: 13,
                   fontWeight: 500,
                   color: isActive ? 'var(--color-text)' : 'var(--color-text-muted)',
@@ -816,7 +816,7 @@ export default function SamplingModal({
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '6px 28px 10px'
+            padding: '4px 24px 8px'
           }}
         >
           {isSamplingTab ? (
@@ -837,7 +837,7 @@ export default function SamplingModal({
                       letterSpacing: '0.22em',
                       color: 'var(--color-text-soft)',
                       fontWeight: 600,
-                      padding: '12px 0 0'
+                      padding: '8px 0 0'
                     }}
                   >
                     {tx(t, 'samplingDrySectionCap', 'PARAMETERS')}
@@ -856,10 +856,10 @@ export default function SamplingModal({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '16px 28px',
+            padding: '14px 24px',
             borderTop: '1px solid var(--color-border)',
             background: 'rgba(0, 0, 0, 0.18)',
-            gap: 14
+            gap: 12
           }}
         >
           <span
@@ -886,7 +886,7 @@ export default function SamplingModal({
                 background: 'transparent',
                 border: '1px solid var(--color-border)',
                 color: overrideCount === 0 ? 'var(--color-text-soft)' : 'var(--color-text-muted)',
-                padding: '8px 16px',
+                padding: '7px 14px',
                 borderRadius: 6,
                 fontSize: 13,
                 fontWeight: 500,
@@ -905,7 +905,7 @@ export default function SamplingModal({
                 background: 'var(--color-primary)',
                 border: '1px solid var(--color-primary)',
                 color: '#fff',
-                padding: '8px 18px',
+                padding: '7px 16px',
                 borderRadius: 6,
                 fontSize: 13,
                 fontWeight: 600,

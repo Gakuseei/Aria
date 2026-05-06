@@ -145,7 +145,8 @@ const locale = {
     "samplingHelperDryMultiplier": "पुनरावृत्ति दंड की तीव्रता।",
     "samplingHelperDryBase": "अधिक = लंबी पुनरावृत्तियों पर मज़बूत दंड।",
     "samplingHelperDryAllowedLength": "इस लंबाई तक की पुनरावृत्तियां बिना दंड के निकल जाती हैं।",
-    "samplingHelperDryPenaltyLastN": "दंड कितने पीछे तक tokens की जाँच करता है।"
+    "samplingHelperDryPenaltyLastN": "दंड कितने पीछे तक tokens की जाँच करता है।",
+    "samplingResetField": "डिफ़ॉल्ट पर वापस लाएं"
   },
   "chat": {
     "passion": "जुनून",

@@ -145,7 +145,8 @@ const locale = {
     "samplingHelperDryMultiplier": "Stärke der Wiederholungsstrafe.",
     "samplingHelperDryBase": "Höher = stärkere Strafe für längere Wiederholungen.",
     "samplingHelperDryAllowedLength": "Wiederholungen bis zu dieser Länge bleiben straffrei.",
-    "samplingHelperDryPenaltyLastN": "Token-Fenster, das die Strafe rückblickend prüft."
+    "samplingHelperDryPenaltyLastN": "Token-Fenster, das die Strafe rückblickend prüft.",
+    "samplingResetField": "Auf Standard zurücksetzen"
   },
   "chat": {
     "passion": "Leidenschaft",

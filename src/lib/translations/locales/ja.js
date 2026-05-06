@@ -145,7 +145,8 @@ const locale = {
     "samplingHelperDryMultiplier": "繰り返しペナルティの強度。",
     "samplingHelperDryBase": "高い = 長い繰り返しへのペナルティが強くなります。",
     "samplingHelperDryAllowedLength": "この長さまでの繰り返しはペナルティなしで通ります。",
-    "samplingHelperDryPenaltyLastN": "ペナルティが遡って参照するトークン窓。"
+    "samplingHelperDryPenaltyLastN": "ペナルティが遡って参照するトークン窓。",
+    "samplingResetField": "デフォルトに戻す"
   },
   "chat": {
     "passion": "情熱",

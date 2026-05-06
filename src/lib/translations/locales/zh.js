@@ -145,7 +145,8 @@ const locale = {
     "samplingHelperDryMultiplier": "重复惩罚的强度。",
     "samplingHelperDryBase": "越高 = 对较长重复的惩罚越强。",
     "samplingHelperDryAllowedLength": "不超过该长度的重复无惩罚。",
-    "samplingHelperDryPenaltyLastN": "惩罚回溯查看的 token 窗口。"
+    "samplingHelperDryPenaltyLastN": "惩罚回溯查看的 token 窗口。",
+    "samplingResetField": "恢复默认值"
   },
   "chat": {
     "passion": "激情",

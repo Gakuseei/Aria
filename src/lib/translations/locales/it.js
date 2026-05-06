@@ -145,7 +145,8 @@ const locale = {
     "samplingHelperDryMultiplier": "Intensità della penalità di ripetizione.",
     "samplingHelperDryBase": "Più alto = penalità più forte per ripetizioni più lunghe.",
     "samplingHelperDryAllowedLength": "Ripetizioni fino a questa lunghezza passano senza penalità.",
-    "samplingHelperDryPenaltyLastN": "Finestra di token esaminata dalla penalità."
+    "samplingHelperDryPenaltyLastN": "Finestra di token esaminata dalla penalità.",
+    "samplingResetField": "Ripristina predefinito"
   },
   "chat": {
     "passion": "Passione",

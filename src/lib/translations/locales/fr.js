@@ -145,7 +145,8 @@ const locale = {
     "samplingHelperDryMultiplier": "Force de la pénalité de répétition.",
     "samplingHelperDryBase": "Plus haut = pénalité plus forte pour les répétitions longues.",
     "samplingHelperDryAllowedLength": "Les répétitions jusqu'à cette longueur passent sans pénalité.",
-    "samplingHelperDryPenaltyLastN": "Fenêtre de tokens examinée par la pénalité."
+    "samplingHelperDryPenaltyLastN": "Fenêtre de tokens examinée par la pénalité.",
+    "samplingResetField": "Revenir au défaut"
   },
   "chat": {
     "passion": "Passion",

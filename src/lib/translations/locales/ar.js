@@ -145,7 +145,8 @@ const locale = {
     "samplingHelperDryMultiplier": "قوة عقوبة التكرار.",
     "samplingHelperDryBase": "أعلى = عقوبة أقوى للتكرارات الأطول.",
     "samplingHelperDryAllowedLength": "التكرارات حتى هذا الطول تمر دون عقوبة.",
-    "samplingHelperDryPenaltyLastN": "نافذة الـ tokens التي ترجع إليها العقوبة."
+    "samplingHelperDryPenaltyLastN": "نافذة الـ tokens التي ترجع إليها العقوبة.",
+    "samplingResetField": "إعادة إلى الافتراضي"
   },
   "chat": {
     "passion": "الشغف",

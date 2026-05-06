@@ -145,7 +145,8 @@ const locale = {
     "samplingHelperDryMultiplier": "Сила штрафа за повторы.",
     "samplingHelperDryBase": "Выше = сильнее штраф за длинные повторы.",
     "samplingHelperDryAllowedLength": "Повторы такой длины проходят без штрафа.",
-    "samplingHelperDryPenaltyLastN": "Окно токенов, в котором ищет штраф."
+    "samplingHelperDryPenaltyLastN": "Окно токенов, в котором ищет штраф.",
+    "samplingResetField": "Вернуть по умолчанию"
   },
   "chat": {
     "passion": "Страсть",

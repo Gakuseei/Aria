@@ -145,7 +145,8 @@ const locale = {
     "samplingHelperDryMultiplier": "Tekrar cezasının şiddeti.",
     "samplingHelperDryBase": "Yüksek = daha uzun tekrarlara daha güçlü ceza.",
     "samplingHelperDryAllowedLength": "Bu uzunluğa kadar tekrarlar cezasız geçer.",
-    "samplingHelperDryPenaltyLastN": "Cezanın geriye baktığı token penceresi."
+    "samplingHelperDryPenaltyLastN": "Cezanın geriye baktığı token penceresi.",
+    "samplingResetField": "Varsayılana döndür"
   },
   "chat": {
     "passion": "Tutku",

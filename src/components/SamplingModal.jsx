@@ -60,7 +60,7 @@ function FieldRow({
     <div
       className="sm-field"
       style={{
-        padding: '14px 0',
+        padding: '17px 0',
         borderBottom: isLast
           ? 'none'
           : '1px solid color-mix(in srgb, var(--color-border) 50%, transparent)'
@@ -76,7 +76,7 @@ function FieldRow({
       >
         <label
           style={{
-            fontSize: 13,
+            fontSize: 14,
             color: 'var(--color-text)',
             fontWeight: 500,
             letterSpacing: '-0.005em'
@@ -84,14 +84,14 @@ function FieldRow({
         >
           {label}
         </label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {showValue && (
             <span
               style={{
                 fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
-                fontSize: 13,
+                fontSize: 14,
                 fontVariantNumeric: 'tabular-nums',
-                minWidth: 44,
+                minWidth: 48,
                 textAlign: 'right',
                 color: isOverridden
                   ? 'var(--color-primary)'
@@ -113,13 +113,13 @@ function FieldRow({
               background: 'transparent',
               border: 'none',
               padding: 0,
-              fontSize: 12,
+              fontSize: 14,
               lineHeight: 1,
               cursor: isOverridden ? 'pointer' : 'default',
               color: 'var(--color-text-soft)',
               opacity: isOverridden ? 0.55 : 0,
               transition: 'opacity 120ms ease, color 120ms ease',
-              width: 14,
+              width: 16,
               textAlign: 'center'
             }}
           >
@@ -127,14 +127,14 @@ function FieldRow({
           </button>
         </div>
       </div>
-      {control && <div style={{ marginTop: 10 }}>{control}</div>}
+      {control && <div style={{ marginTop: 12 }}>{control}</div>}
       {helper && (
         <p
           style={{
-            fontSize: 11,
-            lineHeight: 1.45,
+            fontSize: 12,
+            lineHeight: 1.5,
             color: 'var(--color-text-soft)',
-            marginTop: 7
+            marginTop: 8
           }}
         >
           {helper}
@@ -534,12 +534,13 @@ export default function SamplingModal({
     },
     {
       key: 'dryBase',
-      type: 'number',
+      type: 'slider',
       label: tx(t, 'dryBase', 'DRY Base'),
       helper: tx(t, 'samplingHelperDryBase', ''),
       min: 0.5,
       max: 5,
       step: 0.05,
+      decimals: 2,
       value: modelProfile.flags?.dryBase ?? 1.75,
       isOverridden: isFlagOverridden('dryBase'),
       onChange: (v) => setFlagField('dryBase', v),
@@ -547,12 +548,13 @@ export default function SamplingModal({
     },
     {
       key: 'dryAllowedLength',
-      type: 'number',
+      type: 'slider',
       label: tx(t, 'dryAllowedLength', 'DRY Allowed Length'),
       helper: tx(t, 'samplingHelperDryAllowedLength', ''),
       min: 1,
       max: 20,
       step: 1,
+      decimals: 0,
       value: modelProfile.flags?.dryAllowedLength ?? 2,
       isOverridden: isFlagOverridden('dryAllowedLength'),
       onChange: (v) => setFlagField('dryAllowedLength', v),
@@ -560,12 +562,13 @@ export default function SamplingModal({
     },
     {
       key: 'dryPenaltyLastN',
-      type: 'number',
+      type: 'slider',
       label: tx(t, 'dryPenaltyLastN', 'DRY Penalty Last N'),
       helper: tx(t, 'samplingHelperDryPenaltyLastN', ''),
       min: 0,
       max: 4096,
-      step: 1,
+      step: 16,
+      decimals: 0,
       value: modelProfile.flags?.dryPenaltyLastN ?? 512,
       isOverridden: isFlagOverridden('dryPenaltyLastN'),
       onChange: (v) => setFlagField('dryPenaltyLastN', v),
@@ -663,8 +666,8 @@ export default function SamplingModal({
         aria-labelledby="sampling-modal-title"
         style={{
           width: '100%',
-          maxWidth: 500,
-          maxHeight: 580,
+          maxWidth: 560,
+          maxHeight: 660,
           display: 'flex',
           flexDirection: 'column',
           background: 'linear-gradient(180deg, #1a1c20 0%, #15171b 100%)',
@@ -677,18 +680,18 @@ export default function SamplingModal({
         <div
           style={{
             position: 'relative',
-            padding: '22px 24px 16px',
+            padding: '24px 28px 18px',
             borderBottom: '1px solid var(--color-border)'
           }}
         >
           <div
             style={{
-              fontSize: 9,
+              fontSize: 10,
               textTransform: 'uppercase',
               letterSpacing: '0.24em',
               color: 'var(--color-text-soft)',
               fontWeight: 600,
-              marginBottom: 6
+              marginBottom: 8
             }}
           >
             {tx(t, 'samplingModalEyebrow', 'PER-MODEL')}
@@ -696,7 +699,7 @@ export default function SamplingModal({
           <h2
             id="sampling-modal-title"
             style={{
-              fontSize: 17,
+              fontSize: 20,
               fontWeight: 600,
               color: 'var(--color-text)',
               letterSpacing: '-0.01em',
@@ -707,13 +710,13 @@ export default function SamplingModal({
           </h2>
           <p
             style={{
-              fontSize: 11.5,
+              fontSize: 13,
               fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
               color: 'var(--color-text-soft)',
-              margin: '6px 0 0 0',
-              maxWidth: 'calc(100% - 36px)',
+              margin: '8px 0 0 0',
+              maxWidth: 'calc(100% - 40px)',
               overflowWrap: 'anywhere',
-              lineHeight: 1.45
+              lineHeight: 1.5
             }}
           >
             {modelIdentifier} ·{' '}
@@ -730,13 +733,13 @@ export default function SamplingModal({
             className="sm-close"
             style={{
               position: 'absolute',
-              top: 16,
-              right: 16,
+              top: 18,
+              right: 18,
               background: 'transparent',
               border: 'none',
               color: 'var(--color-text-soft)',
               cursor: 'pointer',
-              fontSize: 20,
+              fontSize: 24,
               lineHeight: 1,
               padding: 4,
               borderRadius: 6,
@@ -751,8 +754,8 @@ export default function SamplingModal({
           role="tablist"
           style={{
             display: 'flex',
-            gap: 24,
-            padding: '0 24px',
+            gap: 26,
+            padding: '0 28px',
             borderBottom: '1px solid var(--color-border)'
           }}
         >
@@ -775,8 +778,8 @@ export default function SamplingModal({
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  padding: '12px 0',
-                  fontSize: 12,
+                  padding: '14px 0',
+                  fontSize: 13,
                   fontWeight: 500,
                   color: isActive ? 'var(--color-text)' : 'var(--color-text-muted)',
                   borderBottom: `1.5px solid ${isActive ? 'var(--color-primary)' : 'transparent'}`,
@@ -813,7 +816,7 @@ export default function SamplingModal({
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '4px 24px 8px'
+            padding: '6px 28px 10px'
           }}
         >
           {isSamplingTab ? (
@@ -829,12 +832,12 @@ export default function SamplingModal({
                 <>
                   <div
                     style={{
-                      fontSize: 9,
+                      fontSize: 10,
                       textTransform: 'uppercase',
                       letterSpacing: '0.22em',
                       color: 'var(--color-text-soft)',
                       fontWeight: 600,
-                      padding: '8px 0 0'
+                      padding: '12px 0 0'
                     }}
                   >
                     {tx(t, 'samplingDrySectionCap', 'PARAMETERS')}
@@ -853,15 +856,15 @@ export default function SamplingModal({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '14px 24px',
+            padding: '16px 28px',
             borderTop: '1px solid var(--color-border)',
             background: 'rgba(0, 0, 0, 0.18)',
-            gap: 12
+            gap: 14
           }}
         >
           <span
             style={{
-              fontSize: 10.5,
+              fontSize: 11.5,
               fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
               color: 'var(--color-text-soft)'
             }}
@@ -883,9 +886,9 @@ export default function SamplingModal({
                 background: 'transparent',
                 border: '1px solid var(--color-border)',
                 color: overrideCount === 0 ? 'var(--color-text-soft)' : 'var(--color-text-muted)',
-                padding: '7px 14px',
+                padding: '8px 16px',
                 borderRadius: 6,
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: 500,
                 cursor: overrideCount === 0 ? 'default' : 'pointer',
                 opacity: overrideCount === 0 ? 0.5 : 1,
@@ -902,9 +905,9 @@ export default function SamplingModal({
                 background: 'var(--color-primary)',
                 border: '1px solid var(--color-primary)',
                 color: '#fff',
-                padding: '7px 16px',
+                padding: '8px 18px',
                 borderRadius: 6,
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: 600,
                 cursor: 'pointer',
                 letterSpacing: '0.01em',

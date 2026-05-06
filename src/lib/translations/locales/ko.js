@@ -145,7 +145,8 @@ const locale = {
     "samplingHelperDryMultiplier": "반복 페널티의 강도.",
     "samplingHelperDryBase": "높을수록 긴 반복에 대한 페널티가 강해집니다.",
     "samplingHelperDryAllowedLength": "이 길이까지의 반복은 페널티 없이 통과합니다.",
-    "samplingHelperDryPenaltyLastN": "페널티가 거슬러 살피는 토큰 창."
+    "samplingHelperDryPenaltyLastN": "페널티가 거슬러 살피는 토큰 창.",
+    "samplingResetField": "기본값으로 되돌리기"
   },
   "chat": {
     "passion": "열정",

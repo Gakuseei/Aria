@@ -30,6 +30,5 @@ export const DEFAULT_SUGGESTION_PROFILE = Object.freeze({
   topP: 0.92,
   topK: 40,
   minP: 0.05,
-  repeatPenalty: 1.05,
-  maxTokens: 120
+  repeatPenalty: 1.05
 });

@@ -68,8 +68,8 @@ function pickModel(settings) {
 
 function pickProfile(model, settings) {
   const customProfiles = settings?.customProfiles || {};
-  if (model && customProfiles[model]) return customProfiles[model];
-  return DEFAULT_SUGGESTION_PROFILE;
+  const override = (model && customProfiles[model]) || {};
+  return { ...DEFAULT_SUGGESTION_PROFILE, ...override };
 }
 
 async function callOllama({ currentRequestId, model, profile, prompts, maxTokens, ollamaUrl }) {
@@ -78,12 +78,12 @@ async function callOllama({ currentRequestId, model, profile, prompts, maxTokens
     systemPrompt: prompts.systemPrompt,
     model,
     ollamaUrl,
-    temperature: profile.temperature ?? profile.temp ?? 0.55,
+    temperature: profile.temperature,
     maxTokens,
-    top_k: profile.topK ?? profile.top_k ?? 40,
-    top_p: profile.topP ?? profile.top_p ?? 0.92,
-    min_p: profile.minP ?? profile.min_p ?? 0.05,
-    repeat_penalty: profile.repeatPenalty ?? profile.repeat_penalty ?? 1.05,
+    top_k: profile.topK,
+    top_p: profile.topP,
+    min_p: profile.minP,
+    repeat_penalty: profile.repeatPenalty,
     format: SUGGESTION_JSON_SCHEMA,
     tag: 'suggestions'
   };
@@ -202,4 +202,8 @@ export async function generateSuggestionsBackground(history, character, userName
   }
 }
 
+/**
+ * Legacy export alias maintained for callers that still import the old name.
+ * Prefer `parseSuggestionJson` from `./parse.js` directly.
+ */
 export { parseSuggestionJson as parseSuggestionResponse } from './parse.js';

@@ -2025,37 +2025,35 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           isGoldMode ? 'border-amber-500/30' : ''
         }`}>
           {settings.smartSuggestionsEnabled && isGeneratingSuggestions && smartSuggestions.length === 0 && !isStreaming && !isImpersonating && (
-            <div className="theme-composer-suggestion-band mb-3 flex flex-wrap gap-2.5 px-2 pt-1" aria-hidden="true">
-              {[0, 1, 2].map(i => (
+            <div className="theme-composer-suggestion-band mb-2 flex flex-row gap-2 overflow-x-auto px-3 py-2 scrollbar-hide [mask-image:linear-gradient(to_right,black_0%,black_calc(100%-32px),transparent_100%)]" aria-hidden="true">
+              {[100, 130, 110].map((w, i) => (
                 <div
                   key={`skeleton-${i}`}
-                  className={`theme-suggestion-skeleton suggestion-skeleton flex items-center gap-2 rounded-full px-4 py-2 ${
+                  className={`theme-suggestion-skeleton suggestion-skeleton h-9 shrink-0 rounded-full ${
                     isGoldMode ? 'border-amber-500/20 bg-amber-500/5' : ''
                   }`}
-                  style={{ animationDelay: `${i * 100}ms` }}
-                >
-                  <div className={`theme-suggestion-skeleton-dot h-3 w-3 rounded-full ${isGoldMode ? 'bg-amber-500/20' : ''}`} />
-                  <div className={`theme-suggestion-skeleton-line h-3 rounded-full ${isGoldMode ? 'bg-amber-500/15' : ''}`} style={{ width: `${60 + i * 20}px` }} />
-                </div>
+                  style={{ animationDelay: `${i * 100}ms`, width: `${w}px` }}
+                />
               ))}
             </div>
           )}
           {settings.smartSuggestionsEnabled && smartSuggestions.length > 0 && !isStreaming && !isImpersonating && (
-            <div className="theme-composer-suggestion-band mb-3 flex flex-wrap gap-2.5 px-2 pt-1" role="group" aria-label={t.settings?.smartSuggestions || 'Suggestions'}>
+            <div className="theme-composer-suggestion-band mb-2 flex flex-row gap-2 overflow-x-auto px-3 py-2 scrollbar-hide [mask-image:linear-gradient(to_right,black_0%,black_calc(100%-32px),transparent_100%)]" role="group" aria-label={t.settings?.smartSuggestions || 'Suggestions'}>
               {smartSuggestions.map((suggestion, i) => (
                 <button
                   key={`suggestion-${suggestion.slice(0, 20)}-${i}`}
                   onClick={() => handleSuggestionClick(suggestion)}
                   disabled={isLoading}
-                  className={`theme-suggestion-pill suggestion-pill flex items-start gap-2 rounded-2xl px-4 py-2.5 text-sm leading-snug text-left transition-all duration-200 disabled:opacity-50 border-2 border-transparent hover:border-rose-500 ${
+                  title={suggestion}
+                  className={`theme-suggestion-pill suggestion-pill inline-flex items-center gap-1.5 shrink-0 rounded-full border px-3.5 py-2 text-[13px] leading-none whitespace-nowrap font-medium text-zinc-200 hover:text-zinc-50 border-white/8 bg-zinc-900/60 backdrop-blur-sm hover:border-rose-500/60 hover:bg-rose-500/8 transition-colors duration-200 disabled:opacity-50 ${
                     isGoldMode
-                      ? 'border-amber-500/40 text-amber-100 hover:bg-amber-500/10 hover:shadow-[0_0_15px_-3px_rgba(245,158,11,0.3)] hover:border-amber-400'
+                      ? 'border-amber-500/40 text-amber-100 hover:bg-amber-500/10 hover:border-amber-400'
                       : ''
                   }`}
                   style={{ animationDelay: `${i * 75}ms` }}
                 >
-                  <Sparkles size={12} className={`shrink-0 mt-1 ${isGoldMode ? 'text-amber-400/70' : 'theme-suggestion-pill-icon'}`} />
-                  <span className="whitespace-normal max-w-[420px] sm:max-w-[560px] md:max-w-[680px]">{suggestion}</span>
+                  <Sparkles size={11} className={`shrink-0 ${isGoldMode ? 'text-amber-400/70' : 'theme-suggestion-pill-icon text-zinc-500 group-hover:text-rose-400'}`} />
+                  <span>{suggestion}</span>
                 </button>
               ))}
             </div>

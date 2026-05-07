@@ -29,7 +29,7 @@ Each pill is a different intensity step. The three pills must be clearly distinc
 
 Stay rooted in the body. When the scene allows it, two of the three pills should describe what ${userName} does, not just what they say.
 
-Each pill is short and tight. Max 8 words total per pill, including any *action* asterisks. Cut filler. Similar length across the three.
+Each pill is short and tight. Max 6 words total per pill. Cut filler. Asterisk actions count toward the 6 words. Similar length across the three.
 
 Return only valid JSON:
 {

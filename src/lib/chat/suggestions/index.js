@@ -10,6 +10,7 @@ import { buildSuggestionPrompt } from './prompt.js';
 import { parseSuggestionJson } from './parse.js';
 import { applySanityFilters } from './sanity.js';
 import { isElectron } from '../platform.js';
+import { checkPhraseRepetition } from '../repetitionGuard.js';
 
 const OPEN_THREAD_MAX_CHARS = 280;
 
@@ -161,7 +162,7 @@ async function callOllama({ currentRequestId, model, profile, prompts, maxTokens
  * @returns {string[]|null} string array on success or no-model skip (terminal),
  *   null on retry-eligible failure (parse, sanity, ollama error).
  */
-async function attemptOnce({ history, character, userName, settings, currentRequestId, maxTokens, previousPills }) {
+async function attemptOnce({ history, character, userName, settings, currentRequestId, maxTokens, previousPills, enforceRepetitionGuard = true }) {
   const model = pickModel(settings);
   if (!model) return [];
 
@@ -193,7 +194,22 @@ async function attemptOnce({ history, character, userName, settings, currentRequ
     console.warn('[suggestions] sanity rejected pills:', parsed, 'previousPills:', previousPills);
     return null;
   }
-  return [filtered.stay, filtered.forward, filtered.push];
+  const pills = [filtered.stay, filtered.forward, filtered.push];
+  if (enforceRepetitionGuard) {
+    const repetitionPool = Array.isArray(previousPills) ? previousPills : [];
+    for (let i = 0; i < pills.length; i += 1) {
+      const others = pills.filter((_, idx) => idx !== i);
+      const phrase = checkPhraseRepetition(pills[i], [...others, ...repetitionPool], {
+        charName: characterName,
+        userName: resolvedUserName
+      });
+      if (phrase.banned) {
+        console.warn(`[suggestions] pill repetition guard — ${phrase.source}: "${phrase.phrase}"`);
+        return null;
+      }
+    }
+  }
+  return pills;
 }
 
 /**
@@ -229,7 +245,8 @@ export async function generateSuggestionsBackground(history, character, userName
         history, character, userName, settings,
         currentRequestId,
         maxTokens: PILL_MAX_TOKENS_RETRY,
-        previousPills
+        previousPills,
+        enforceRepetitionGuard: false
       });
       if (currentRequestId !== suggestionRequestId) return;
     }

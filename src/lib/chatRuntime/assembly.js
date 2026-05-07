@@ -142,6 +142,7 @@ function buildImpersonateLateSteering(runtimeState, { isFirstReply = false } = {
   return [
     `Continue in ${runtimeState.userName}'s voice and rhythm — match the user_voice_examples for sentence length, format, and energy.`,
     `${runtimeState.userName}'s reply takes a concrete action or response that fits the latest beat — not a question, not a meta comment.`,
+    `If ${runtimeState.characterName}'s last message contains a direct request or instruction (e.g. "kiss me", "show me", "take me there"), ${runtimeState.userName}'s reply carries it out as a concrete physical action — no tease, no counter-question, no slowing the beat.`,
     `Reply stays in first person (${pronouns}) and in the same language as the conversation.`,
     intensityLine
   ].filter(Boolean).join('\n');

@@ -2025,7 +2025,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           isGoldMode ? 'border-amber-500/30' : ''
         }`}>
           {settings.smartSuggestionsEnabled && isGeneratingSuggestions && smartSuggestions.length === 0 && !isStreaming && !isImpersonating && (
-            <div className="theme-composer-suggestion-band mb-3 flex flex-wrap gap-2.5 px-2 pt-1">
+            <div className="theme-composer-suggestion-band mb-3 flex flex-wrap gap-2.5 px-2 pt-1" aria-hidden="true">
               {[0, 1, 2].map(i => (
                 <div
                   key={`skeleton-${i}`}
@@ -2047,7 +2047,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                   key={`suggestion-${suggestion.slice(0, 20)}-${i}`}
                   onClick={() => handleSuggestionClick(suggestion)}
                   disabled={isLoading}
-                  className={`theme-suggestion-pill suggestion-pill flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-all duration-200 disabled:opacity-50 ${
+                  className={`theme-suggestion-pill suggestion-pill flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-all duration-200 disabled:opacity-50 border-2 border-transparent hover:border-rose-500 ${
                     isGoldMode
                       ? 'border-amber-500/40 text-amber-100 hover:bg-amber-500/10 hover:shadow-[0_0_15px_-3px_rgba(245,158,11,0.3)] hover:border-amber-400'
                       : ''

@@ -19,7 +19,7 @@ const PROFILE_BUDGET_TARGETS = {
   impersonate: {
     characterCore: 90,
     activeScene: 110,
-    lateSteering: 70,
+    lateSteering: 110,
     globalCore: 60,
     personaAnchor: 75
   }
@@ -134,7 +134,7 @@ function buildImpersonateLateSteering(runtimeState, { isFirstReply = false } = {
     return [
       `${runtimeState.userName} is the visitor. ${runtimeState.characterName} just spoke first, and ${runtimeState.userName} now replies.`,
       `Write a short, natural opener — 1 or 2 sentences as ${runtimeState.userName} would respond. End cleanly after the second sentence; no more than two sentences.`,
-      `Stay in first person (${pronouns}). Match the same language as the conversation. Output is ${runtimeState.userName}'s words and actions only.`,
+      `Stay in first person throughout — use I/me/my for ${runtimeState.userName}, including inside *action* asterisks. Never refer to ${runtimeState.userName} as he/she/his/her. Match the same language as the conversation.`,
       intensityLine
     ].filter(Boolean).join('\n');
   }

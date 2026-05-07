@@ -8,7 +8,7 @@ import {
   isStructurallyValid
 } from './draftValidator.js';
 
-const FIRST_REPLY_NUM_PREDICT_CAP = 80;
+const FIRST_REPLY_NUM_PREDICT_CAP = 120;
 
 let activeRequestId = null;
 
@@ -32,6 +32,63 @@ function isPossiblePrefixPrefix(accumulated, userName) {
   const withSpace = `${userName}: `;
   if (accumulated.length >= withSpace.length) return false;
   return withSpace.startsWith(accumulated);
+}
+
+/**
+ * Trim a draft to complete sentences for first-reply outputs.
+ *
+ * Drops trailing ellipsis-truncation markers (`..."`, `...*`, `…"`),
+ * fixes orphan trailing asterisks from unclosed action segments, and caps
+ * the result to a sentence ceiling.
+ *
+ * @param {string} text - Draft text after finalize.
+ * @param {number} [maxSentences=2] - Maximum sentences to keep.
+ * @returns {string} Cleaned text.
+ */
+function trimToCompleteSentences(text, maxSentences = 2) {
+  let cleaned = String(text || '').trim();
+  if (!cleaned) return cleaned;
+
+  const ELLIPSIS_TAIL = /(?:\.{3}|…)["'*)\]]?\s*$/;
+  if (ELLIPSIS_TAIL.test(cleaned)) {
+    cleaned = cleaned.replace(ELLIPSIS_TAIL, '').trim();
+    const lastClose = Math.max(
+      cleaned.lastIndexOf('."'),
+      cleaned.lastIndexOf('!"'),
+      cleaned.lastIndexOf('?"'),
+      cleaned.lastIndexOf('.*'),
+      cleaned.lastIndexOf('!*'),
+      cleaned.lastIndexOf('?*'),
+      cleaned.lastIndexOf('.'),
+      cleaned.lastIndexOf('!'),
+      cleaned.lastIndexOf('?')
+    );
+    if (lastClose > 0) cleaned = cleaned.substring(0, lastClose + 1).trim();
+  }
+
+  const asteriskCount = (cleaned.match(/\*/g) || []).length;
+  if (asteriskCount % 2 === 1) {
+    const lastAsterisk = cleaned.lastIndexOf('*');
+    if (lastAsterisk > 0) {
+      const beforeAsterisk = cleaned.substring(0, lastAsterisk).trimEnd();
+      const lastEnd = Math.max(
+        beforeAsterisk.lastIndexOf('."'),
+        beforeAsterisk.lastIndexOf('!"'),
+        beforeAsterisk.lastIndexOf('?"'),
+        beforeAsterisk.lastIndexOf('.'),
+        beforeAsterisk.lastIndexOf('!'),
+        beforeAsterisk.lastIndexOf('?')
+      );
+      cleaned = lastEnd > 0 ? beforeAsterisk.substring(0, lastEnd + 1).trim() : beforeAsterisk;
+    }
+  }
+
+  const sentenceParts = cleaned.split(/(?<=[.!?])\s+/).filter(Boolean);
+  if (sentenceParts.length > maxSentences) {
+    cleaned = sentenceParts.slice(0, maxSentences).join(' ').trim();
+  }
+
+  return cleaned;
 }
 
 async function runStreamingDraft({
@@ -192,10 +249,16 @@ export async function impersonateUser(
   });
 
   let finalized = await runOnce();
+  if (ctx.debug?.firstReply && finalized.text) {
+    finalized = { ...finalized, text: trimToCompleteSentences(finalized.text, 2) };
+  }
   if (!isStructurallyValid(finalized.text, userName, charName)) {
     console.info('[API] Impersonate retry: first stream produced invalid structure');
     onToken(null, '');
     finalized = await runOnce();
+    if (ctx.debug?.firstReply && finalized.text) {
+      finalized = { ...finalized, text: trimToCompleteSentences(finalized.text, 2) };
+    }
   }
   if (!isStructurallyValid(finalized.text, userName, charName)) {
     onToken(null, '');

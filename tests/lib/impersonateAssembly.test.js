@@ -140,10 +140,12 @@ describe('assembleRuntimeContext — impersonate first-reply branch', () => {
     expect(ctx.debug.droppedBlocks).toEqual(expect.arrayContaining(['Persona Anchor', 'Character Reference']));
   });
 
-  it('first-reply Late Steering caps reply length to 1-2 sentences with positive framing', () => {
+  it('first-reply Late Steering caps reply length to 1-2 sentences and locks first-person POV', () => {
     const ctx = buildFirstReplyContext();
     expect(ctx.systemPrompt).toMatch(/1 or 2 sentences/);
     expect(ctx.systemPrompt).toMatch(/no more than two sentences/);
-    expect(ctx.systemPrompt).not.toMatch(/NEVER/);
+    expect(ctx.systemPrompt).toMatch(/I\/me\/my for Erik/);
+    expect(ctx.systemPrompt).toMatch(/Never refer to Erik as he\/she\/his\/her/);
+    expect(ctx.systemPrompt).not.toMatch(/NEVER (write|narrate|use)/);
   });
 });

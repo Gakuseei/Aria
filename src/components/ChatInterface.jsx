@@ -2023,9 +2023,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       <div className="theme-composer-dock fixed bottom-8 left-1/2 z-50 w-[92%] max-w-[70rem] -translate-x-1/2 flex flex-col gap-2.5">
         {settings.smartSuggestionsEnabled && (isGeneratingSuggestions || smartSuggestions.length > 0) && !isStreaming && !isImpersonating && (
           <div
-            className={`flex flex-row gap-2 rounded-2xl px-3 py-2.5 bg-zinc-900/40 backdrop-blur-md border border-white/5 ${
-              isGoldMode ? 'border-amber-500/15 bg-amber-950/20' : ''
-            }`}
+            className="flex flex-row gap-2 px-1"
             role={smartSuggestions.length > 0 ? 'group' : undefined}
             aria-label={smartSuggestions.length > 0 ? (t.settings?.smartSuggestions || 'Suggestions') : undefined}
             aria-hidden={smartSuggestions.length === 0 ? 'true' : undefined}
@@ -2059,12 +2057,9 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             )}
           </div>
         )}
-        <div className={`theme-composer-dock-shell rounded-[2rem] px-3 py-2.5 transition-all duration-200 ${
-          isGoldMode ? 'border-amber-500/30' : ''
+        <div className={`theme-composer flex items-center gap-3 rounded-[1.75rem] px-4 py-3.5 transition-all duration-200 ${
+          isGoldMode ? 'border-amber-500/30 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50' : ''
         }`}>
-          <div className={`theme-composer flex items-center gap-3 rounded-[1.5rem] px-4 py-3.5 transition-all duration-200 ${
-            isGoldMode ? 'border-amber-500/30 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50' : ''
-          }`}>
             <textarea
               ref={inputRef}
               value={input}
@@ -2117,7 +2112,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             >
               <Send size={18} strokeWidth={1.5} />
             </button>
-          </div>
         </div>
       </div>
 

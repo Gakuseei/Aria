@@ -18,20 +18,25 @@ ${characterName}: ${characterCore}
 
 Open thread right now: ${openThread || '(scene just started)'}
 
-Match ${userName}'s voice and the language of the most recent ${userName} messages. Anchor every pill to the latest beat from ${characterName} — especially the closing line.
+Mirror ${userName}'s style. Use the same rhythm, format, and register as the most recent ${userName} messages. If they use *asterisk actions*, use them too. If they speak in plain dialogue, do the same. Match the language of the latest ${userName} messages.
+
+If the latest ${characterName} message ends with a question, an invitation, or a clear cue, every pill answers or responds to it directly.
+
+Each pill is a different intensity step:
+- stay = the most natural immediate response that meets ${characterName} where they are
+- forward = the same response but one step bolder, one concrete move further
+- push = commit fully, take the strongest fitting action, no hedging
+
+Keep all three pills sendable as a complete line. Similar length across the three. Max ~12 words each.
 
 Return only valid JSON:
 {
   "pills": [
-    { "role": "stay",    "text": "<natural immediate response>" },
-    { "role": "forward", "text": "<lean in slightly>" },
-    { "role": "push",    "text": "<commit fully>" }
+    { "role": "stay",    "text": "" },
+    { "role": "forward", "text": "" },
+    { "role": "push",    "text": "" }
   ]
 }
-
-Pills can be dialogue, action, or a mix — pick whichever fits the latest beat.
-Keep similar length across the three.
-Each pill is a single sendable line, max ~12 words.
 `.trim();
 
 function trimText(value, cap) {

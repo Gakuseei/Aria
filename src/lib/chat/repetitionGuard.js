@@ -23,9 +23,8 @@ const PET_NAMES = new Set([
 export const REPETITION_RETRY_HINT = 'Avoid recycling phrases or gestures from your last replies. Use fresh phrasing.';
 
 function normalizeForPhrases(text) {
-  const noActions = String(text || '').replace(/\*[^*]*\*/g, ' ');
-  const noFormatting = noActions.replace(/[*_~`"'‘’“”‹›«»]/g, ' ');
-  return noFormatting
+  const stripped = String(text || '').replace(/[*_~`"'‘’“”‹›«»]/g, ' ');
+  return stripped
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s']/gu, ' ')
     .replace(/\s+/g, ' ')

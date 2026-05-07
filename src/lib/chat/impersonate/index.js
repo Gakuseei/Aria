@@ -45,25 +45,34 @@ function isPossiblePrefixPrefix(accumulated, userName) {
  * @param {number} [maxSentences=2] - Maximum sentences to keep.
  * @returns {string} Cleaned text.
  */
-function trimToCompleteSentences(text, maxSentences = 2) {
+export function trimToCompleteSentences(text, maxSentences = 2) {
   let cleaned = String(text || '').trim();
   if (!cleaned) return cleaned;
+
+  const SENTENCE_END_RE = /(?<![.!?])[.!?]["'*)\]]?(?=\s|$)/g;
+
+  function lastSentenceBoundary(input) {
+    let lastIdx = -1;
+    let lastLen = 0;
+    const re = new RegExp(SENTENCE_END_RE.source, 'g');
+    let m;
+    while ((m = re.exec(input)) !== null) {
+      lastIdx = m.index;
+      lastLen = m[0].length;
+    }
+    return lastIdx >= 0 ? lastIdx + lastLen : -1;
+  }
 
   const ELLIPSIS_TAIL = /(?:\.{3}|…)["'*)\]]?\s*$/;
   if (ELLIPSIS_TAIL.test(cleaned)) {
     cleaned = cleaned.replace(ELLIPSIS_TAIL, '').trim();
-    const lastClose = Math.max(
-      cleaned.lastIndexOf('."'),
-      cleaned.lastIndexOf('!"'),
-      cleaned.lastIndexOf('?"'),
-      cleaned.lastIndexOf('.*'),
-      cleaned.lastIndexOf('!*'),
-      cleaned.lastIndexOf('?*'),
-      cleaned.lastIndexOf('.'),
-      cleaned.lastIndexOf('!'),
-      cleaned.lastIndexOf('?')
-    );
-    if (lastClose > 0) cleaned = cleaned.substring(0, lastClose + 1).trim();
+    const quoteCount = (cleaned.match(/"/g) || []).length;
+    if (quoteCount % 2 === 1) {
+      const lastQuote = cleaned.lastIndexOf('"');
+      if (lastQuote >= 0) cleaned = cleaned.substring(0, lastQuote).trim();
+    }
+    const boundary = lastSentenceBoundary(cleaned);
+    if (boundary > 0) cleaned = cleaned.substring(0, boundary).trim();
   }
 
   const asteriskCount = (cleaned.match(/\*/g) || []).length;
@@ -71,21 +80,19 @@ function trimToCompleteSentences(text, maxSentences = 2) {
     const lastAsterisk = cleaned.lastIndexOf('*');
     if (lastAsterisk > 0) {
       const beforeAsterisk = cleaned.substring(0, lastAsterisk).trimEnd();
-      const lastEnd = Math.max(
-        beforeAsterisk.lastIndexOf('."'),
-        beforeAsterisk.lastIndexOf('!"'),
-        beforeAsterisk.lastIndexOf('?"'),
-        beforeAsterisk.lastIndexOf('.'),
-        beforeAsterisk.lastIndexOf('!'),
-        beforeAsterisk.lastIndexOf('?')
-      );
-      cleaned = lastEnd > 0 ? beforeAsterisk.substring(0, lastEnd + 1).trim() : beforeAsterisk;
+      const boundary = lastSentenceBoundary(beforeAsterisk);
+      cleaned = boundary > 0 ? beforeAsterisk.substring(0, boundary).trim() : beforeAsterisk.trim();
     }
   }
 
-  const sentenceParts = cleaned.split(/(?<=[.!?])\s+/).filter(Boolean);
-  if (sentenceParts.length > maxSentences) {
-    cleaned = sentenceParts.slice(0, maxSentences).join(' ').trim();
+  const sentenceEnds = [];
+  const allRe = new RegExp(SENTENCE_END_RE.source, 'g');
+  let match;
+  while ((match = allRe.exec(cleaned)) !== null) {
+    sentenceEnds.push(match.index + match[0].length);
+  }
+  if (sentenceEnds.length > maxSentences) {
+    cleaned = cleaned.substring(0, sentenceEnds[maxSentences - 1]).trim();
   }
 
   return cleaned;

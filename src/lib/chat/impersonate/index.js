@@ -330,6 +330,7 @@ export async function impersonateUser(
     return gesture.banned ? { banned: true, source: 'gesture', phrase: gesture.gesture } : { banned: false };
   };
   const initialImpersonateRepetition = evaluateImpersonateRepetition(finalized.text);
+  console.info(`[API] Impersonate repetition guard: history=${recentUserReplies.length}, banned=${initialImpersonateRepetition.banned}${initialImpersonateRepetition.banned ? `, source=${initialImpersonateRepetition.source}` : ''}`);
   if (initialImpersonateRepetition.banned) {
     console.warn(`[API] Impersonate repetition guard — ${initialImpersonateRepetition.source}: "${initialImpersonateRepetition.phrase}", retrying`);
     onToken(null, '');

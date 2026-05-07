@@ -544,6 +544,7 @@ export const sendMessage = async (
       return gesture.banned ? { banned: true, source: 'gesture', phrase: gesture.gesture } : { banned: false };
     };
     const initialRepetition = evaluateRepetition(aiMessage);
+    console.info(`[API] Repetition guard: history=${recentReplies.length}, banned=${initialRepetition.banned}${initialRepetition.banned ? `, source=${initialRepetition.source}` : ''}`);
     if (initialRepetition.banned) {
       console.warn(`[API] Repetition guard — ${initialRepetition.source}: "${initialRepetition.phrase}", retrying`);
       const retryPrompt = `${finalSystemPrompt}\n\n${REPETITION_RETRY_HINT}`;

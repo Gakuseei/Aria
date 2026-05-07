@@ -7,6 +7,7 @@ import {
   finalizeImpersonateDraft,
   isStructurallyValid
 } from './draftValidator.js';
+import { checkPhraseRepetition, checkGestureRepetition, REPETITION_RETRY_HINT } from '../repetitionGuard.js';
 
 const FIRST_REPLY_NUM_PREDICT_CAP = 120;
 
@@ -276,12 +277,12 @@ export async function impersonateUser(
     : budgetConfig.impersonateFirstTokens;
   const earlyStopMaxSentences = ctx.debug?.firstReply ? 2 : 0;
 
-  const runOnce = () => runStreamingDraft({
+  const runOnce = (extraSystemHint = '') => runStreamingDraft({
     ollamaUrl,
     model,
     numCtx: impersonateNumCtx,
     numPredict: numPredictForRun,
-    systemPrompt: ctx.systemPrompt,
+    systemPrompt: extraSystemHint ? `${ctx.systemPrompt}\n\n${extraSystemHint}` : ctx.systemPrompt,
     userPrompt: ctx.userPrompt,
     assistantPrefix: ctx.assistantPrefix,
     stopStrings: ctx.stopStrings,
@@ -307,6 +308,36 @@ export async function impersonateUser(
   if (!isStructurallyValid(finalized.text, userName, charName)) {
     onToken(null, '');
     throw new Error('Failed to generate a usable draft');
+  }
+
+  const recentUserReplies = (history || [])
+    .filter((message) => message && message.role === 'user' && typeof message.content === 'string')
+    .slice(-5)
+    .map((message) => message.content);
+  const evaluateImpersonateRepetition = (candidate) => {
+    const phrase = checkPhraseRepetition(candidate, recentUserReplies, { charName, userName });
+    if (phrase.banned) return phrase;
+    const gesture = checkGestureRepetition(candidate, recentUserReplies);
+    return gesture.banned ? { banned: true, source: 'gesture', phrase: gesture.gesture } : { banned: false };
+  };
+  const initialImpersonateRepetition = evaluateImpersonateRepetition(finalized.text);
+  if (initialImpersonateRepetition.banned) {
+    console.warn(`[API] Impersonate repetition guard — ${initialImpersonateRepetition.source}: "${initialImpersonateRepetition.phrase}", retrying`);
+    onToken(null, '');
+    let retryFinalized = await runOnce(REPETITION_RETRY_HINT);
+    if (ctx.debug?.firstReply && retryFinalized.text) {
+      retryFinalized = { ...retryFinalized, text: trimToCompleteSentences(retryFinalized.text, 2) };
+    }
+    if (isStructurallyValid(retryFinalized.text, userName, charName)) {
+      const retryRepetition = evaluateImpersonateRepetition(retryFinalized.text);
+      if (!retryRepetition.banned) {
+        finalized = retryFinalized;
+      } else {
+        console.warn('[API] Impersonate repetition retry still banned, accepting original');
+      }
+    } else {
+      console.warn('[API] Impersonate repetition retry produced invalid structure, accepting original');
+    }
   }
 
   onToken(null, finalized.text);

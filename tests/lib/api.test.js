@@ -6,10 +6,7 @@ import {
   cleanTranscriptArtifacts,
   deriveAssistBudgetTier,
   finalizeImpersonateDraft,
-  generateSuggestionsBackground,
   isUnderfilledShortReply,
-  normalizeSuggestionDisplayValue,
-  parseSuggestionResponse,
   resolveTemplates,
   saveSession,
   sendMessage,
@@ -243,9 +240,9 @@ describe('getRestoredSuggestions', () => {
     ];
 
     expect(getRestoredSuggestions(messages)).toEqual([
-      'Sit closer.',
-      'Ask about the coffee.',
-      'Smile back.'
+      'Sit closer',
+      'Ask about the coffee',
+      'Smile back'
     ]);
   });
 
@@ -285,27 +282,8 @@ describe('getRestoredSuggestions', () => {
     ];
 
     expect(getRestoredSuggestions(messages)).toEqual([
-      'Sit closer.',
-      'Ask about the coffee.'
-    ]);
-  });
-
-  it('dedupes and normalizes restored suggestions before rendering', () => {
-    const messages = [
-      {
-        role: 'assistant',
-        content: 'What would you like to do next?',
-        suggestions: [
-          ' gently pats her shoulder in reassurance gently pats her shoulder in reassurance ',
-          'Gently pats her shoulder in reassurance',
-          'Smile reassuringly to ease her nerves'
-        ]
-      }
-    ];
-
-    expect(getRestoredSuggestions(messages)).toEqual([
-      'gently pats her shoulder in reassurance.',
-      'Smile reassuringly to ease her nerves.'
+      'Sit closer',
+      'Ask about the coffee'
     ]);
   });
 });
@@ -423,269 +401,6 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('Respond as the configured bot.');
     expect(prompt).not.toContain('Actions go in *asterisks*.');
     expect(prompt).not.toContain('Continue the active scene with DeskBot instead of summarizing or resetting it.');
-  });
-});
-
-describe('suggestions stabilization', () => {
-  it('keeps click-ready action suggestions that use valid leading verbs', () => {
-    const parsed = parseSuggestionResponse(
-      'Option 1: Continue kissing her neck | Option 2: Offer her your hand | Option 3: Pull her closer and murmur in her ear',
-      '',
-      []
-    );
-
-    expect(parsed).toEqual([
-      '*I continue kissing her neck.*',
-      '*I offer her my hand.*',
-      '*I pull her closer and murmur in her ear.*'
-    ]);
-  });
-
-  it('salvages an overlong third suggestion instead of dropping the batch to two', () => {
-    const parsed = parseSuggestionResponse(
-      'Gaze into her eyes intensely | Slowly run a hand down her side | Murmur huskily, "Please Sarah, I need you to keep me right here while you make me beg for more."',
-      '',
-      []
-    );
-
-    expect(parsed).toHaveLength(3);
-    expect(parsed[2].split(/\s+/).filter(Boolean).length).toBeLessThanOrEqual(14);
-    expect(parsed[2]).toContain('Murmur huskily');
-  });
-
-  it('cuts quoted or prose-heavy suggestion tails down to a compact action', () => {
-    const parsed = parseSuggestionResponse(
-      "Lean in closer to Alice, so she can feel the warmth radiating from your body as you begin explaining. This proximity will calm her nerves | Smile reassuringly to ease her nervousness | Gently adjust Alice's fingers on the pen to improve her grip",
-      '',
-      []
-    );
-
-    expect(parsed).toEqual([
-      '*I lean in closer to Alice.*',
-      '*I smile reassuringly to ease her nervousness.*',
-      "*I gently adjust Alice's fingers on the pen to improve her grip.*"
-    ]);
-  });
-
-  it('keeps bot suggestions conversational instead of bodily when mode-aware parsing is used', () => {
-    const parsed = parseSuggestionResponse(
-      'Kiss her neck | Ask what time works best | Confirm the requested duration',
-      '',
-      [],
-      { assistMode: 'bot_conversation' }
-    );
-
-    expect(parsed).toEqual([
-      'Ask what time works best.',
-      'Confirm the requested duration.'
-    ]);
-  });
-
-  it('drops quoted dialogue and repeated phrase spam during normalization', () => {
-    expect(normalizeSuggestionDisplayValue('gently pats her shoulder in reassurance gently pats her shoulder in reassurance'))
-      .toBe('gently pats her shoulder in reassurance.');
-    expect(normalizeSuggestionDisplayValue('Hold her gaze intently and smile*'))
-      .toBe('Hold her gaze intently and smile*.');
-    expect(parseSuggestionResponse(
-      'Offer Alice a reassuring smile and nod "I have every confidence in you" | Guide her gently by the elbow towards the study | Push open the study door for her',
-      '',
-      []
-    )).toEqual([
-      '*I offer Alice a reassuring smile and nod.*',
-      '*I guide her gently by the elbow towards the study.*',
-      '*I push open the study door for her.*'
-    ]);
-    expect(parseSuggestionResponse(
-      "Smile warmly at Alice's attentiveness and begin listing out the day's duties | Gently pat the seat next to you | Ask Alice if she has any questions about today's tasks before continuing",
-      '',
-      []
-    )).toEqual([
-      "*I smile warmly at Alice's attentiveness.*",
-      '*I gently pat the seat next to me.*'
-    ]);
-  });
-
-  it('drops clipped suggestions instead of returning visibly truncated chips', () => {
-    const parsed = parseSuggestionResponse(
-      'Take a deep breath | Confide more details about the specific challenges at work that have | Change the subject by commenting on how much you enjoy',
-      '',
-      []
-    );
-
-    expect(parsed).toEqual([
-      '*I take a deep breath.*',
-      'Confide more details about the specific challenges at work.'
-    ]);
-  });
-
-  it('returns parsed suggestions from the public generator without forcing a retry', async () => {
-    const fetchMock = vi.fn(async (url) => {
-      if (String(url).endsWith('/api/show')) {
-        return createJsonResponse({
-          details: { parameter_size: '7B' },
-          model_info: { 'general.context_length': 4096 }
-        });
-      }
-
-      if (String(url).endsWith('/api/chat')) {
-        return createJsonResponse({
-          message: {
-            content: 'Option 1: Continue kissing her neck | Option 2: Offer her your hand | Option 3: Pull her closer and murmur in her ear'
-          }
-        });
-      }
-
-      throw new Error(`Unexpected fetch URL: ${url}`);
-    });
-
-    global.fetch = fetchMock;
-
-    const suggestions = await new Promise(async (resolve) => {
-      await generateSuggestionsBackground(
-        [
-          { role: 'assistant', content: '*She tilts her throat toward you.* "Well?"' },
-          { role: 'user', content: 'I kiss her neck slowly.' }
-        ],
-        {
-          name: 'Sarah',
-          category: 'nsfw',
-          systemPrompt: 'Sarah is dominant, poised, and exacting.',
-          instructions: 'Stay in the active beat.',
-          scenario: 'Private lounge at night.'
-        },
-        'Erik',
-        {
-          ollamaUrl: 'http://127.0.0.1:11434',
-          ollamaModel: 'test-model',
-          contextSize: 'medium'
-        },
-        resolve,
-        [],
-        35
-      );
-    });
-
-    expect(suggestions).toEqual([
-      '*I continue kissing her neck.*',
-      '*I offer her my hand.*',
-      '*I pull her closer and murmur in her ear.*'
-    ]);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-  });
-
-  it('keeps a usable 2-option retry instead of collapsing the UI result to null', async () => {
-    const fetchMock = vi.fn(async (url) => {
-      if (String(url).endsWith('/api/show')) {
-        return createJsonResponse({
-          details: { parameter_size: '7B' },
-          model_info: { 'general.context_length': 4096 }
-        });
-      }
-
-      if (String(url).endsWith('/api/chat')) {
-        const callIndex = fetchMock.mock.calls.filter(([calledUrl]) => String(calledUrl).endsWith('/api/chat')).length;
-        if (callIndex === 1) {
-          return createJsonResponse({
-            message: { content: 'Here are some ideas: | Explain what you want more clearly' }
-          });
-        }
-
-        return createJsonResponse({
-          message: { content: 'Hold her gaze | Lean closer across the bar' }
-        });
-      }
-
-      throw new Error(`Unexpected fetch URL: ${url}`);
-    });
-
-    global.fetch = fetchMock;
-
-    const suggestions = await new Promise(async (resolve) => {
-      await generateSuggestionsBackground(
-        [
-          { role: 'assistant', content: '*She keeps your chin tilted up.* "Ask nicely."' },
-          { role: 'user', content: 'Then give me something worth asking for.' }
-        ],
-        {
-          name: 'Sarah',
-          category: 'nsfw',
-          systemPrompt: 'Sarah is dominant, poised, and exacting.',
-          instructions: 'Stay in the active beat.',
-          scenario: 'Private lounge at night.'
-        },
-        'Erik',
-        {
-          ollamaUrl: 'http://127.0.0.1:11434',
-          ollamaModel: 'test-model',
-          contextSize: 'medium'
-        },
-        resolve,
-        [],
-        35
-      );
-    });
-
-    expect(suggestions).toEqual([
-      '*I hold her gaze.*',
-      '*I lean closer across the bar.*'
-    ]);
-  });
-
-  it('uses a current-task fallback for a missing progress pill instead of dropping pill 3 entirely', async () => {
-    const fetchMock = vi.fn(async (url) => {
-      if (String(url).endsWith('/api/show')) {
-        return createJsonResponse({
-          details: { parameter_size: '12B' },
-          model_info: { 'general.context_length': 4096 }
-        });
-      }
-
-      if (String(url).endsWith('/api/chat')) {
-        const callIndex = fetchMock.mock.calls.filter(([calledUrl]) => String(calledUrl).endsWith('/api/chat')).length;
-        if (callIndex === 1) {
-          return createJsonResponse({ message: { content: '{"suggestion":"Keep going."}' } });
-        }
-        if (callIndex === 2) {
-          return createJsonResponse({ message: { content: '{"suggestion":"Come closer and show me."}' } });
-        }
-        return createJsonResponse({ message: { content: '{"suggestion":"Go on, demonstrate the next step."}' } });
-      }
-
-      throw new Error(`Unexpected fetch URL: ${url}`);
-    });
-
-    global.fetch = fetchMock;
-
-    const suggestions = await new Promise(async (resolve) => {
-      await generateSuggestionsBackground(
-        [
-          { role: 'user', content: 'Please, show me how you cleaned the windows.' },
-          { role: 'assistant', content: '*She beams up at you proudly, awaiting acknowledgement that she has performed her task correctly.*' }
-        ],
-        {
-          name: 'Alice',
-          category: 'nsfw',
-          systemPrompt: 'Alice is shy, dutiful, and eager to please.',
-          instructions: 'Stay in the active beat.',
-          scenario: 'Private drawing room.'
-        },
-        'Master',
-        {
-          ollamaUrl: 'http://127.0.0.1:11434',
-          ollamaModel: 'test-model',
-          contextSize: 'medium'
-        },
-        resolve,
-        [],
-        5
-      );
-    });
-
-    expect(suggestions).toEqual([
-      '*I keep going.*',
-      'Come closer.',
-      'Go on, demonstrate the next step.'
-    ]);
   });
 });
 

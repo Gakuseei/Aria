@@ -98,6 +98,14 @@ export function trimToCompleteSentences(text, maxSentences = 2) {
   return cleaned;
 }
 
+function countSentenceEnds(text) {
+  if (!text) return 0;
+  const re = /(?<![.!?])[.!?]["'*)\]]?(?=\s|$)/g;
+  let count = 0;
+  while (re.exec(text) !== null) count += 1;
+  return count;
+}
+
 async function runStreamingDraft({
   ollamaUrl,
   model,
@@ -110,7 +118,8 @@ async function runStreamingDraft({
   sampler,
   userName,
   charName,
-  onToken
+  onToken,
+  earlyStopMaxSentences = 0
 }) {
   const requestId = `impersonate-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -133,6 +142,7 @@ async function runStreamingDraft({
   };
 
   let accumulated = '';
+  let earlyStopFired = false;
   let unsubscribe = () => {};
 
   if (isElectron()) {
@@ -142,6 +152,16 @@ async function runStreamingDraft({
       if (isPossiblePrefixPrefix(accumulated, userName)) return;
       const visible = stripAssistantPrefix(accumulated, userName);
       onToken(token, visible);
+      if (
+        earlyStopMaxSentences > 0
+        && !earlyStopFired
+        && countSentenceEnds(visible) >= earlyStopMaxSentences
+      ) {
+        earlyStopFired = true;
+        if (window.electronAPI?.ollamaStreamAbort) {
+          window.electronAPI.ollamaStreamAbort(requestId, 'auto-length');
+        }
+      }
     });
     activeRequestId = requestId;
 
@@ -157,7 +177,7 @@ async function runStreamingDraft({
       if (!result?.success && !result?.aborted) {
         throw new Error(result?.error || 'Ollama stream failed');
       }
-      if (result?.aborted) {
+      if (result?.aborted && !result?.success) {
         const err = new Error('Aborted');
         err.name = 'AbortError';
         throw err;
@@ -239,6 +259,7 @@ export async function impersonateUser(
   const numPredictForRun = ctx.debug?.firstReply
     ? Math.min(budgetConfig.impersonateFirstTokens, FIRST_REPLY_NUM_PREDICT_CAP)
     : budgetConfig.impersonateFirstTokens;
+  const earlyStopMaxSentences = ctx.debug?.firstReply ? 2 : 0;
 
   const runOnce = () => runStreamingDraft({
     ollamaUrl,
@@ -250,6 +271,7 @@ export async function impersonateUser(
     assistantPrefix: ctx.assistantPrefix,
     stopStrings: ctx.stopStrings,
     sampler: ctx.sampler,
+    earlyStopMaxSentences,
     userName,
     charName,
     onToken

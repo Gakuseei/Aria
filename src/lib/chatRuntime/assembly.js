@@ -379,7 +379,8 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     minP: profileSampler.minP,
     repeatPenalty: profileSampler.repeatPenalty,
     repeatLastN: profileSampler.repeatLastN,
-    penalizeNewline: profileSampler.penalizeNewline
+    penalizeNewline: profileSampler.penalizeNewline,
+    flags: profileSampler.flags || {}
   } : null;
 
   return {

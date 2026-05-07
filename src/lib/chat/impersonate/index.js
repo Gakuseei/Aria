@@ -153,9 +153,15 @@ async function runStreamingDraft({
     top_p: sampler?.topP ?? 0.9,
     min_p: sampler?.minP ?? 0,
     repeat_penalty: sampler?.repeatPenalty ?? 1.0,
-    repeat_last_n: sampler?.repeatLastN ?? 64,
+    repeat_last_n: sampler?.repeatLastN ?? 256,
     penalize_newline: sampler?.penalizeNewline ?? false
   };
+  if (sampler?.flags?.dry) {
+    options.dry_multiplier = sampler.flags.dryMultiplier ?? 0.8;
+    options.dry_base = sampler.flags.dryBase ?? 1.75;
+    options.dry_allowed_length = sampler.flags.dryAllowedLength ?? 2;
+    options.dry_penalty_last_n = sampler.flags.dryPenaltyLastN ?? 512;
+  }
 
   let accumulated = '';
   let earlyStopFired = false;

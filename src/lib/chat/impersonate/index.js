@@ -98,11 +98,26 @@ export function trimToCompleteSentences(text, maxSentences = 2) {
   return cleaned;
 }
 
-function countSentenceEnds(text) {
+function countCompletedUnits(text) {
   if (!text) return 0;
-  const re = /(?<![.!?])[.!?]["'*)\]]?(?=\s|$)/g;
   let count = 0;
-  while (re.exec(text) !== null) count += 1;
+  let inQuote = false;
+  let inAction = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (ch === '"' && !inAction) {
+      if (inQuote) count += 1;
+      inQuote = !inQuote;
+    } else if (ch === '*' && !inQuote) {
+      if (inAction) count += 1;
+      inAction = !inAction;
+    } else if (!inQuote && !inAction && (ch === '.' || ch === '!' || ch === '?')) {
+      const prev = text[i - 1];
+      if (prev === '.' || prev === '!' || prev === '?') continue;
+      const next = text[i + 1];
+      if (!next || /\s/.test(next)) count += 1;
+    }
+  }
   return count;
 }
 
@@ -155,7 +170,7 @@ async function runStreamingDraft({
       if (
         earlyStopMaxSentences > 0
         && !earlyStopFired
-        && countSentenceEnds(visible) >= earlyStopMaxSentences
+        && countCompletedUnits(visible) >= earlyStopMaxSentences
       ) {
         earlyStopFired = true;
         if (window.electronAPI?.ollamaStreamAbort) {

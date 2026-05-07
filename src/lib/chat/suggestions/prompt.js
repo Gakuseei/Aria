@@ -44,6 +44,17 @@ function takeLast(messages, role, count) {
   return messages.filter((m) => m?.role === role).slice(-count);
 }
 
+/**
+ * Builds system and user prompts for the Smart Suggestions feature.
+ * @param {Object} options
+ * @param {Object} options.compiledCard - Character runtime card with characterCore and activeScene.open_thread properties.
+ * @param {string} options.compiledCard.characterCore - Character's core personality and traits.
+ * @param {string} options.compiledCard.activeScene.open_thread - Current scene context or opening line.
+ * @param {Array<{role: string, content: string}>} options.history - Recent chat messages with role ('user'|'assistant') and content.
+ * @param {string} options.characterName - Character's display name.
+ * @param {string} options.userName - User's display name.
+ * @returns {{systemPrompt: string, userPrompt: string}} Object containing formatted system and user prompts.
+ */
 export function buildSuggestionPrompt({
   compiledCard,
   history,

@@ -9,6 +9,24 @@ import VoiceSetup from './tutorials/VoiceSetup';
 import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
 
+const RECOMMENDED_SUGGESTION_MODELS = [
+  {
+    tag: 'huihui_ai/qwen3-abliterated:4b-instruct-2507-q4_K_M',
+    sizeGB: 2.5,
+    badge: 'recommended'
+  },
+  {
+    tag: 'huihui_ai/qwen2.5-abliterate:3b',
+    sizeGB: 1.9,
+    badge: 'fastest'
+  },
+  {
+    tag: 'goekdenizguelmez/JOSIEFIED-Qwen2.5:3b',
+    sizeGB: 2.8,
+    badge: 'hardcore'
+  }
+];
+
 export default function Settings({ settings, onSettingChange, onClose }) {
   const { t, language, setLanguage } = useLanguage();
   const isGoldMode = useGoldMode();
@@ -126,6 +144,24 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const [showTutorial, setShowTutorial] = useState(null);
   const [availableVoiceModels, setAvailableVoiceModels] = useState([]);
   const [samplingModalOpen, setSamplingModalOpen] = useState(false);
+  const [installedTags, setInstalledTags] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchTags() {
+      try {
+        const res = await fetch(`${settings.ollamaUrl || 'http://127.0.0.1:11434'}/api/tags`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        setInstalledTags((data?.models || []).map((m) => m.name));
+      } catch {
+        // intentionally swallowed: ollama unreachable, leave list empty
+      }
+    }
+    fetchTags();
+    return () => { cancelled = true; };
+  }, [settings.ollamaUrl]);
 
   useEffect(() => {
     localStorage.setItem('settings', JSON.stringify(settings));
@@ -1014,6 +1050,77 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                     {settings.smartSuggestionsEnabled ? 'ON' : 'OFF'}
                   </button>
                 </div>
+
+                {settings.smartSuggestionsEnabled && (
+                  <div className="theme-card-subtle p-4 rounded-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-zinc-200">{t.settings.suggestionModelTitle}</span>
+                    </div>
+                    <p className="text-xs theme-text-soft leading-relaxed">{t.settings.suggestionModelDesc}</p>
+
+                    <div className="space-y-2">
+                      {RECOMMENDED_SUGGESTION_MODELS.map((m) => {
+                        const isSelected = settings.suggestionModel === m.tag;
+                        const isInstalled = installedTags.includes(m.tag);
+                        return (
+                          <button
+                            key={m.tag}
+                            onClick={() => onSettingChange('suggestionModel', isSelected ? null : m.tag)}
+                            className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                              isSelected
+                                ? 'border-rose-500 bg-rose-500/5'
+                                : 'border-transparent bg-zinc-800/40 hover:border-rose-500'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className="font-mono text-xs text-zinc-100 break-all">{m.tag}</span>
+                              <span className="text-xs text-zinc-500">{m.sizeGB} GB</span>
+                              {m.badge === 'recommended' && <span className="badge-rose">{t.settings.suggestionModelBadgeRecommended}</span>}
+                              {m.badge === 'fastest' && <span className="badge-green">{t.settings.suggestionModelBadgeFastest}</span>}
+                              {m.badge === 'hardcore' && <span className="badge-purple">{t.settings.suggestionModelBadgeHardcore}</span>}
+                              <span className="badge-cyan">{t.settings.suggestionModelBadgeNoThink}</span>
+                              {m.badge === 'hardcore' && <span className="badge-orange">{t.settings.suggestionModelBadgeSfwWarn}</span>}
+                              <span className={isInstalled ? 'badge-green' : 'badge-amber'}>
+                                {isInstalled ? t.settings.suggestionModelInstalled : t.settings.suggestionModelNotInstalled}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="border border-dashed border-white/10 rounded-lg p-3 space-y-2">
+                      <div className="text-xs text-zinc-300">{t.settings.suggestionModelCustom}</div>
+                      <p className="text-xs theme-text-soft">{t.settings.suggestionModelCustomHint}</p>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={settings.suggestionModel && !RECOMMENDED_SUGGESTION_MODELS.find((m) => m.tag === settings.suggestionModel) ? settings.suggestionModel : ''}
+                          onChange={(e) => onSettingChange('suggestionModel', e.target.value || null)}
+                          placeholder="user/model-name:tag"
+                          className="flex-1 px-3 py-1.5 rounded bg-zinc-900 border border-white/10 text-xs font-mono text-zinc-100"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                      <div>
+                        <div className="text-sm text-zinc-300">{t.settings.suggestionModelFallbackTitle}</div>
+                        <div className="text-xs theme-text-soft mt-0.5">{t.settings.suggestionModelFallbackDesc}</div>
+                      </div>
+                      <button
+                        onClick={() => onSettingChange('suggestionFallbackToChat', !settings.suggestionFallbackToChat)}
+                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                          settings.suggestionFallbackToChat
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                            : 'bg-zinc-700/50 text-zinc-400 border border-zinc-600/30'
+                        }`}
+                      >
+                        {settings.suggestionFallbackToChat ? 'ON' : 'OFF'}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                   <span className="text-sm text-zinc-300">{t.settings.animations}</span>

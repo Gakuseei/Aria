@@ -2131,3 +2131,11 @@ body:not(.oled-mode) .passion-glow-high {
   background: var(--color-border);
   border-radius: 999px;
 }
+
+.badge-rose   { @apply px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-rose-500/15 text-rose-300; }
+.badge-green  { @apply px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/15 text-emerald-300; }
+.badge-purple { @apply px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-violet-500/15 text-violet-300; }
+.badge-cyan   { @apply px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-sky-500/15 text-sky-300; }
+.badge-orange { @apply px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-orange-500/15 text-orange-300; }
+.badge-amber  { @apply px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-amber-500/15 text-amber-300; }
+

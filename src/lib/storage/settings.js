@@ -26,7 +26,9 @@ const DEFAULT_SETTINGS = {
   imageGenUrl: IMAGE_GEN_DEFAULT_URL,
   voiceEnabled: false,
   voiceUrl: VOICE_DEFAULT_URL,
-  maxResponseTokens: 256
+  maxResponseTokens: 256,
+  suggestionModel: null,
+  suggestionFallbackToChat: true
 };
 
 const LEGACY_SAMPLING_FIELDS = [

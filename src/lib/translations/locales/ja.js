@@ -148,7 +148,7 @@ const locale = {
     "samplingHelperDryPenaltyLastN": "ペナルティが遡って参照するトークン窓。",
     "samplingResetField": "デフォルトに戻す",
     "suggestionModelTitle": "スマート提案モデル",
-    "suggestionModelDesc": "チャットモデルと並行して動く小型・高速モデル。3 つの返信ピルを生成します。",
+    "suggestionModelDesc": "別の小型・非検閲・非思考モデル。チャットモデルと並行して 3 つの返信ピルを生成します。",
     "suggestionModelInstalled": "INSTALLED",
     "suggestionModelNotInstalled": "NOT INSTALLED",
     "suggestionModelPull": "取得",
@@ -162,7 +162,16 @@ const locale = {
     "suggestionModelBadgeFastest": "FASTEST",
     "suggestionModelBadgeHardcore": "HARDCORE NSFW",
     "suggestionModelBadgeNoThink": "NO THINKING",
-    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK"
+    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK",
+    "suggestionModelPullStarting": "開始中",
+    "suggestionModelPullManifest": "マニフェスト取得",
+    "suggestionModelPullDownloading": "ダウンロード中",
+    "suggestionModelPullVerifying": "検証中",
+    "suggestionModelPullWriting": "書き込み中",
+    "suggestionModelPullCleanup": "後片付け",
+    "suggestionModelPullSuccess": "完了",
+    "suggestionModelPullEta": "残り",
+    "suggestionModelPullAlmostDone": "もうすぐ完了"
   },
   "chat": {
     "passion": "情熱",

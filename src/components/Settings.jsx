@@ -28,6 +28,56 @@ const RECOMMENDED_SUGGESTION_MODELS = [
   }
 ];
 
+function formatBytes(bytes) {
+  if (!bytes || bytes < 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let i = 0;
+  let n = bytes;
+  while (n >= 1024 && i < units.length - 1) {
+    n /= 1024;
+    i++;
+  }
+  return `${n.toFixed(n >= 100 ? 0 : n >= 10 ? 1 : 2)} ${units[i]}`;
+}
+
+function percentFor(p) {
+  if (!p?.total || p.total <= 0) return 0;
+  return Math.min(100, Math.max(0, (p.completed || 0) / p.total * 100));
+}
+
+function formatPercent(p) {
+  const v = percentFor(p);
+  return `${v.toFixed(v >= 10 ? 0 : 1)}%`;
+}
+
+function formatEta(p, t) {
+  if (!p?.startedAt || !p?.completed || !p?.total || p.total <= 0) return '';
+  const elapsed = (Date.now() - p.startedAt) / 1000;
+  if (elapsed < 1.5) return '';
+  const rate = p.completed / elapsed;
+  if (rate <= 0) return '';
+  const remaining = (p.total - p.completed) / rate;
+  const left = t?.settings?.suggestionModelPullEta || 'left';
+  if (remaining < 1) return t?.settings?.suggestionModelPullAlmostDone || 'almost done';
+  if (remaining < 60) return `${Math.ceil(remaining)}s ${left}`;
+  if (remaining < 3600) return `${Math.ceil(remaining / 60)}m ${left}`;
+  return `${(remaining / 3600).toFixed(1)}h ${left}`;
+}
+
+function mapOllamaStatus(rawStatus, t) {
+  if (!rawStatus) return '';
+  const s = String(rawStatus).toLowerCase();
+  const tr = t?.settings || {};
+  if (s.startsWith('pulling manifest')) return tr.suggestionModelPullManifest || 'fetching manifest';
+  if (s.startsWith('pulling ') || s.includes('downloading')) return tr.suggestionModelPullDownloading || 'downloading';
+  if (s.startsWith('verifying')) return tr.suggestionModelPullVerifying || 'verifying';
+  if (s.startsWith('writing')) return tr.suggestionModelPullWriting || 'writing';
+  if (s.includes('removing')) return tr.suggestionModelPullCleanup || 'cleaning up';
+  if (s === 'success') return tr.suggestionModelPullSuccess || 'complete';
+  if (s === 'starting' || s === 'starting...') return tr.suggestionModelPullStarting || 'starting';
+  return rawStatus;
+}
+
 export default function Settings({ settings, onSettingChange, onClose }) {
   const { t, language, setLanguage } = useLanguage();
   const isGoldMode = useGoldMode();
@@ -147,7 +197,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const [samplingModalOpen, setSamplingModalOpen] = useState(false);
   const [showSuggestionSamplingModal, setShowSuggestionSamplingModal] = useState(false);
   const [installedTags, setInstalledTags] = useState([]);
-  const [pullingTag, setPullingTag] = useState(null);
+  const [pullProgress, setPullProgress] = useState({});
 
   async function refreshInstalledTags() {
     try {
@@ -162,16 +212,54 @@ export default function Settings({ settings, onSettingChange, onClose }) {
 
   async function handlePullTag(tag) {
     if (!tag) return;
-    setPullingTag(tag);
+    setPullProgress((prev) => ({
+      ...prev,
+      [tag]: { startedAt: Date.now(), status: 'starting', completed: 0, total: 0 }
+    }));
     const result = await window.electronAPI.ollamaPull({ tag, ollamaUrl: settings.ollamaUrl });
-    setPullingTag(null);
     if (result?.success) {
+      setPullProgress((prev) => ({
+        ...prev,
+        [tag]: { ...(prev[tag] || {}), status: 'success' }
+      }));
       await refreshInstalledTags();
       toast.success(`Pulled ${tag}`);
     } else {
+      setPullProgress((prev) => ({
+        ...prev,
+        [tag]: { ...(prev[tag] || {}), error: result?.error || 'unknown' }
+      }));
       toast.error(`Pull failed: ${result?.error || 'unknown'}`);
     }
+    setTimeout(() => {
+      setPullProgress((prev) => {
+        const next = { ...prev };
+        delete next[tag];
+        return next;
+      });
+    }, 1500);
   }
+
+  useEffect(() => {
+    if (!window.electronAPI?.onOllamaPullProgress) return undefined;
+    const unsubscribe = window.electronAPI.onOllamaPullProgress((payload) => {
+      if (!payload?.tag) return;
+      setPullProgress((prev) => {
+        const prevTag = prev[payload.tag] || { startedAt: Date.now() };
+        return {
+          ...prev,
+          [payload.tag]: {
+            ...prevTag,
+            status: payload.status || prevTag.status || '',
+            completed: typeof payload.completed === 'number' ? payload.completed : prevTag.completed,
+            total: typeof payload.total === 'number' ? payload.total : prevTag.total,
+            error: payload.error || prevTag.error || null
+          }
+        };
+      });
+    });
+    return unsubscribe;
+  }, []);
 
   async function handleCheckTag(tag) {
     if (!tag) return;
@@ -1120,27 +1208,42 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap mb-1">
                                 <span className="font-mono text-xs text-zinc-100 break-all">{m.tag}</span>
+                                {isInstalled && <Check size={14} className="text-emerald-400 shrink-0" aria-hidden="true" />}
                                 <span className="text-xs text-zinc-500">{m.sizeGB} GB</span>
                                 {m.badge === 'recommended' && <span className="badge-rose">{t.settings.suggestionModelBadgeRecommended}</span>}
                                 {m.badge === 'fastest' && <span className="badge-green">{t.settings.suggestionModelBadgeFastest}</span>}
                                 {m.badge === 'hardcore' && <span className="badge-purple">{t.settings.suggestionModelBadgeHardcore}</span>}
-                                <span className="badge-cyan">{t.settings.suggestionModelBadgeNoThink}</span>
                                 {m.badge === 'hardcore' && <span className="badge-orange">{t.settings.suggestionModelBadgeSfwWarn}</span>}
-                                <span className={isInstalled ? 'badge-green' : 'badge-amber'}>
-                                  {isInstalled ? t.settings.suggestionModelInstalled : t.settings.suggestionModelNotInstalled}
-                                </span>
                               </div>
                             </div>
-                            {!isInstalled && (
+                            {pullProgress[m.tag] ? (
+                              <div className="shrink-0 w-full sm:w-72 flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-baseline justify-between gap-3">
+                                  <span className="text-[11px] uppercase tracking-wider text-zinc-400 truncate">
+                                    {mapOllamaStatus(pullProgress[m.tag].status, t) || (t.settings.suggestionModelPullStarting || 'starting')}
+                                  </span>
+                                  <span className="text-xs font-mono tabular-nums text-rose-300">{formatPercent(pullProgress[m.tag])}</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                                  <div
+                                    className="h-full pull-progress-fill transition-all duration-300 ease-out"
+                                    style={{ width: `${percentFor(pullProgress[m.tag])}%` }}
+                                  />
+                                </div>
+                                <div className="flex items-center justify-between gap-3 text-[11px] tabular-nums text-zinc-500">
+                                  <span className="font-mono">{formatBytes(pullProgress[m.tag].completed)} / {formatBytes(pullProgress[m.tag].total)}</span>
+                                  <span>{formatEta(pullProgress[m.tag], t)}</span>
+                                </div>
+                              </div>
+                            ) : !isInstalled ? (
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); handlePullTag(m.tag); }}
-                                disabled={pullingTag === m.tag}
-                                className="shrink-0 px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/30 text-xs hover:bg-rose-500/25 disabled:opacity-50"
+                                className="shrink-0 px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/30 text-xs hover:bg-rose-500/25"
                               >
-                                {pullingTag === m.tag ? '…' : `${t.settings.suggestionModelPull} (${m.sizeGB} GB)`}
+                                {`${t.settings.suggestionModelPull} (${m.sizeGB} GB)`}
                               </button>
-                            )}
+                            ) : null}
                           </div>
                         );
                       })}
@@ -1158,7 +1261,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                           className="flex-1 px-3 py-1.5 rounded bg-zinc-900 border border-white/10 text-xs font-mono text-zinc-100"
                         />
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
                         <button
                           type="button"
                           onClick={() => handleCheckTag(settings.suggestionModel?.trim())}
@@ -1167,14 +1270,35 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                         >
                           {t.settings.suggestionModelCheck}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handlePullTag(settings.suggestionModel?.trim())}
-                          disabled={!settings.suggestionModel?.trim() || pullingTag === settings.suggestionModel}
-                          className="px-3 py-1.5 text-xs rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 disabled:opacity-50"
-                        >
-                          {pullingTag === settings.suggestionModel ? '…' : t.settings.suggestionModelPull}
-                        </button>
+                        {pullProgress[settings.suggestionModel] ? (
+                          <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                            <div className="flex items-baseline justify-between gap-3">
+                              <span className="text-[11px] uppercase tracking-wider text-zinc-400 truncate">
+                                {mapOllamaStatus(pullProgress[settings.suggestionModel].status, t) || (t.settings.suggestionModelPullStarting || 'starting')}
+                              </span>
+                              <span className="text-xs font-mono tabular-nums text-rose-300">{formatPercent(pullProgress[settings.suggestionModel])}</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                              <div
+                                className="h-full pull-progress-fill transition-all duration-300 ease-out"
+                                style={{ width: `${percentFor(pullProgress[settings.suggestionModel])}%` }}
+                              />
+                            </div>
+                            <div className="flex items-center justify-between gap-3 text-[11px] tabular-nums text-zinc-500">
+                              <span className="font-mono">{formatBytes(pullProgress[settings.suggestionModel].completed)} / {formatBytes(pullProgress[settings.suggestionModel].total)}</span>
+                              <span>{formatEta(pullProgress[settings.suggestionModel], t)}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handlePullTag(settings.suggestionModel?.trim())}
+                            disabled={!settings.suggestionModel?.trim()}
+                            className="px-3 py-1.5 text-xs rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 disabled:opacity-50"
+                          >
+                            {t.settings.suggestionModelPull}
+                          </button>
+                        )}
                       </div>
                     </div>
 

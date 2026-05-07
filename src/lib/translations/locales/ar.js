@@ -148,7 +148,7 @@ const locale = {
     "samplingHelperDryPenaltyLastN": "نافذة الـ tokens التي ترجع إليها العقوبة.",
     "samplingResetField": "إعادة إلى الافتراضي",
     "suggestionModelTitle": "نموذج الاقتراحات الذكية",
-    "suggestionModelDesc": "نموذج صغير وسريع يعمل بالتوازي مع نموذج الدردشة. يولّد حبوب الردود الثلاث.",
+    "suggestionModelDesc": "نموذج صغير منفصل، غير خاضع للرقابة وبدون تفكير. يولّد حبوب الردود الثلاث بالتوازي مع نموذج الدردشة.",
     "suggestionModelInstalled": "مثبَّت",
     "suggestionModelNotInstalled": "غير مثبَّت",
     "suggestionModelPull": "تنزيل",
@@ -162,7 +162,16 @@ const locale = {
     "suggestionModelBadgeFastest": "FASTEST",
     "suggestionModelBadgeHardcore": "HARDCORE NSFW",
     "suggestionModelBadgeNoThink": "NO THINKING",
-    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK"
+    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK",
+    "suggestionModelPullStarting": "بدء",
+    "suggestionModelPullManifest": "جلب البيان",
+    "suggestionModelPullDownloading": "تنزيل",
+    "suggestionModelPullVerifying": "تحقق",
+    "suggestionModelPullWriting": "كتابة",
+    "suggestionModelPullCleanup": "تنظيف",
+    "suggestionModelPullSuccess": "اكتمل",
+    "suggestionModelPullEta": "متبقٍ",
+    "suggestionModelPullAlmostDone": "اقترب الانتهاء"
   },
   "chat": {
     "passion": "الشغف",

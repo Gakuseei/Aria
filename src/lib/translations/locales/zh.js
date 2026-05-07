@@ -148,7 +148,7 @@ const locale = {
     "samplingHelperDryPenaltyLastN": "惩罚回溯查看的 token 窗口。",
     "samplingResetField": "恢复默认值",
     "suggestionModelTitle": "智能建议模型",
-    "suggestionModelDesc": "与聊天模型并行运行的小型快速模型，生成三个回复气泡。",
+    "suggestionModelDesc": "一个独立的小型无审查、非思考模型。与聊天模型并行生成三个回复气泡。",
     "suggestionModelInstalled": "已安装",
     "suggestionModelNotInstalled": "未安装",
     "suggestionModelPull": "拉取",
@@ -162,7 +162,16 @@ const locale = {
     "suggestionModelBadgeFastest": "FASTEST",
     "suggestionModelBadgeHardcore": "HARDCORE NSFW",
     "suggestionModelBadgeNoThink": "NO THINKING",
-    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK"
+    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK",
+    "suggestionModelPullStarting": "启动中",
+    "suggestionModelPullManifest": "获取清单",
+    "suggestionModelPullDownloading": "下载中",
+    "suggestionModelPullVerifying": "校验中",
+    "suggestionModelPullWriting": "写入中",
+    "suggestionModelPullCleanup": "清理中",
+    "suggestionModelPullSuccess": "完成",
+    "suggestionModelPullEta": "剩余",
+    "suggestionModelPullAlmostDone": "即将完成"
   },
   "chat": {
     "passion": "激情",

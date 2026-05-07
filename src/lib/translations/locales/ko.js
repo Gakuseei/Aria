@@ -148,7 +148,7 @@ const locale = {
     "samplingHelperDryPenaltyLastN": "페널티가 거슬러 살피는 토큰 창.",
     "samplingResetField": "기본값으로 되돌리기",
     "suggestionModelTitle": "스마트 제안 모델",
-    "suggestionModelDesc": "채팅 모델과 병렬로 실행되는 작고 빠른 모델. 세 개의 답장 알약을 생성합니다.",
+    "suggestionModelDesc": "별도의 작고 무검열·비추론 모델. 채팅 모델과 병렬로 세 개의 답장 알약을 생성합니다.",
     "suggestionModelInstalled": "설치됨",
     "suggestionModelNotInstalled": "설치되지 않음",
     "suggestionModelPull": "받기",
@@ -162,7 +162,16 @@ const locale = {
     "suggestionModelBadgeFastest": "FASTEST",
     "suggestionModelBadgeHardcore": "HARDCORE NSFW",
     "suggestionModelBadgeNoThink": "NO THINKING",
-    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK"
+    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK",
+    "suggestionModelPullStarting": "시작 중",
+    "suggestionModelPullManifest": "매니페스트 가져오기",
+    "suggestionModelPullDownloading": "다운로드 중",
+    "suggestionModelPullVerifying": "검증 중",
+    "suggestionModelPullWriting": "쓰는 중",
+    "suggestionModelPullCleanup": "정리 중",
+    "suggestionModelPullSuccess": "완료",
+    "suggestionModelPullEta": "남음",
+    "suggestionModelPullAlmostDone": "거의 완료"
   },
   "chat": {
     "passion": "열정",

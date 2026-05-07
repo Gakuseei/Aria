@@ -148,7 +148,7 @@ const locale = {
     "samplingHelperDryPenaltyLastN": "Окно токенов, в котором ищет штраф.",
     "samplingResetField": "Вернуть по умолчанию",
     "suggestionModelTitle": "Модель умных подсказок",
-    "suggestionModelDesc": "Маленькая быстрая модель, работающая параллельно с моделью чата. Генерирует три варианта ответа.",
+    "suggestionModelDesc": "Отдельная маленькая модель без цензуры и без размышлений. Генерирует три варианта ответа параллельно с моделью чата.",
     "suggestionModelInstalled": "УСТАНОВЛЕНА",
     "suggestionModelNotInstalled": "НЕ УСТАНОВЛЕНА",
     "suggestionModelPull": "Загрузить",
@@ -162,7 +162,16 @@ const locale = {
     "suggestionModelBadgeFastest": "FASTEST",
     "suggestionModelBadgeHardcore": "HARDCORE NSFW",
     "suggestionModelBadgeNoThink": "NO THINKING",
-    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK"
+    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK",
+    "suggestionModelPullStarting": "запуск",
+    "suggestionModelPullManifest": "получение манифеста",
+    "suggestionModelPullDownloading": "загрузка",
+    "suggestionModelPullVerifying": "проверка",
+    "suggestionModelPullWriting": "запись",
+    "suggestionModelPullCleanup": "очистка",
+    "suggestionModelPullSuccess": "готово",
+    "suggestionModelPullEta": "осталось",
+    "suggestionModelPullAlmostDone": "почти готово"
   },
   "chat": {
     "passion": "Страсть",

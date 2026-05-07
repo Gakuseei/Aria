@@ -73,6 +73,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ollamaModelInfo: (params) => ipcRenderer.invoke('ollama-model-info', params),
   ollamaPull: (params) => ipcRenderer.invoke('ollama-pull', params),
   ollamaCheckTag: (params) => ipcRenderer.invoke('ollama-check-tag', params),
+  onOllamaPullProgress: (cb) => {
+    const handler = (_e, payload) => cb(payload);
+    ipcRenderer.on('ollama-pull-progress', handler);
+    return () => ipcRenderer.removeListener('ollama-pull-progress', handler);
+  },
   
   // Session Management
   saveSession: (sessionId, data) => ipcRenderer.invoke('save-session', { sessionId, data }),

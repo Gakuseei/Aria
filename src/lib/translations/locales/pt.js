@@ -145,7 +145,7 @@ const locale = {
     "samplingHelperDryPenaltyLastN": "Janela de tokens examinada pela penalidade.",
     "samplingResetField": "Reverter ao padrão",
     "suggestionModelTitle": "Modelo de Sugestões Inteligentes",
-    "suggestionModelDesc": "Modelo pequeno e rápido executado em paralelo ao seu modelo de chat. Gera as três pílulas de resposta.",
+    "suggestionModelDesc": "Um modelo pequeno separado, sem censura e sem pensamento. Gera as três pílulas de resposta em paralelo ao seu modelo de chat.",
     "suggestionModelInstalled": "INSTALADO",
     "suggestionModelNotInstalled": "NÃO INSTALADO",
     "suggestionModelPull": "Baixar",
@@ -159,7 +159,16 @@ const locale = {
     "suggestionModelBadgeFastest": "FASTEST",
     "suggestionModelBadgeHardcore": "HARDCORE NSFW",
     "suggestionModelBadgeNoThink": "NO THINKING",
-    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK"
+    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK",
+    "suggestionModelPullStarting": "iniciando",
+    "suggestionModelPullManifest": "obtendo manifesto",
+    "suggestionModelPullDownloading": "baixando",
+    "suggestionModelPullVerifying": "verificando",
+    "suggestionModelPullWriting": "gravando",
+    "suggestionModelPullCleanup": "limpando",
+    "suggestionModelPullSuccess": "completo",
+    "suggestionModelPullEta": "restante",
+    "suggestionModelPullAlmostDone": "quase pronto"
   },
   "chat": {
     "passion": "Paixão",

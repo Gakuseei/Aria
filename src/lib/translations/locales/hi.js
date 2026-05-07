@@ -148,7 +148,7 @@ const locale = {
     "samplingHelperDryPenaltyLastN": "दंड कितने पीछे तक tokens की जाँच करता है।",
     "samplingResetField": "डिफ़ॉल्ट पर वापस लाएं",
     "suggestionModelTitle": "स्मार्ट सुझाव मॉडल",
-    "suggestionModelDesc": "आपके चैट मॉडल के साथ-साथ चलने वाला छोटा और तेज़ मॉडल। तीन रिप्लाई पिल्स बनाता है।",
+    "suggestionModelDesc": "एक अलग छोटा, असेंसर्ड और बिना-सोच वाला मॉडल। आपके चैट मॉडल के साथ समानांतर में तीन रिप्लाई पिल्स बनाता है।",
     "suggestionModelInstalled": "इंस्टॉल किया हुआ",
     "suggestionModelNotInstalled": "इंस्टॉल नहीं है",
     "suggestionModelPull": "डाउनलोड",
@@ -162,7 +162,16 @@ const locale = {
     "suggestionModelBadgeFastest": "FASTEST",
     "suggestionModelBadgeHardcore": "HARDCORE NSFW",
     "suggestionModelBadgeNoThink": "NO THINKING",
-    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK"
+    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK",
+    "suggestionModelPullStarting": "शुरू हो रहा",
+    "suggestionModelPullManifest": "मैनिफ़ेस्ट ला रहा",
+    "suggestionModelPullDownloading": "डाउनलोड",
+    "suggestionModelPullVerifying": "जाँच",
+    "suggestionModelPullWriting": "लिख रहा",
+    "suggestionModelPullCleanup": "साफ़ कर रहा",
+    "suggestionModelPullSuccess": "पूर्ण",
+    "suggestionModelPullEta": "बाक़ी",
+    "suggestionModelPullAlmostDone": "लगभग पूरा"
   },
   "chat": {
     "passion": "जुनून",

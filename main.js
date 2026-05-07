@@ -2060,7 +2060,8 @@ ipcMain.handle('ollama-models', async (event, params = {}) => {
 });
 
 /**
- * Pull a model from the Ollama registry (blocking, non-streamed).
+ * Pull a model from the Ollama registry, streaming progress events
+ * to the renderer via the 'ollama-pull-progress' channel.
  * Params: { tag, ollamaUrl }
  */
 ipcMain.handle('ollama-pull', async (event, params = {}) => {
@@ -2077,11 +2078,39 @@ ipcMain.handle('ollama-pull', async (event, params = {}) => {
     const response = await fetch(`${trustedUrl.origin}/api/pull`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: tag, stream: false })
+      body: JSON.stringify({ name: tag, stream: true })
     });
-    if (!response.ok) {
+    if (!response.ok || !response.body) {
       return { success: false, error: `Ollama pull returned ${response.status}` };
     }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let lastError = null;
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let nl;
+      while ((nl = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, nl).trim();
+        buffer = buffer.slice(nl + 1);
+        if (!line) continue;
+        try {
+          const evt = JSON.parse(line);
+          if (evt.error) lastError = evt.error;
+          if (event.sender.isDestroyed()) break;
+          event.sender.send('ollama-pull-progress', { tag, ...evt });
+        } catch {
+          // skip malformed line
+        }
+      }
+      if (event.sender.isDestroyed()) break;
+    }
+
+    if (lastError) return { success: false, error: lastError };
     return { success: true };
   } catch (error) {
     console.error('[IPC] ollama-pull error:', error);

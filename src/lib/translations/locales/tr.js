@@ -148,7 +148,7 @@ const locale = {
     "samplingHelperDryPenaltyLastN": "Cezanın geriye baktığı token penceresi.",
     "samplingResetField": "Varsayılana döndür",
     "suggestionModelTitle": "Akıllı Öneri Modeli",
-    "suggestionModelDesc": "Sohbet modelinin yanında çalışan küçük ve hızlı model. Üç yanıt önerisini üretir.",
+    "suggestionModelDesc": "Ayrı bir küçük, sansürsüz ve düşünmeyen model. Üç yanıt önerisini sohbet modelinizin yanında paralel olarak üretir.",
     "suggestionModelInstalled": "YÜKLÜ",
     "suggestionModelNotInstalled": "YÜKLÜ DEĞİL",
     "suggestionModelPull": "İndir",
@@ -162,7 +162,16 @@ const locale = {
     "suggestionModelBadgeFastest": "FASTEST",
     "suggestionModelBadgeHardcore": "HARDCORE NSFW",
     "suggestionModelBadgeNoThink": "NO THINKING",
-    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK"
+    "suggestionModelBadgeSfwWarn": "SFW-DRIFT RISK",
+    "suggestionModelPullStarting": "başlatılıyor",
+    "suggestionModelPullManifest": "manifest alınıyor",
+    "suggestionModelPullDownloading": "indiriliyor",
+    "suggestionModelPullVerifying": "doğrulanıyor",
+    "suggestionModelPullWriting": "yazılıyor",
+    "suggestionModelPullCleanup": "temizleniyor",
+    "suggestionModelPullSuccess": "tamamlandı",
+    "suggestionModelPullEta": "kaldı",
+    "suggestionModelPullAlmostDone": "neredeyse bitti"
   },
   "chat": {
     "passion": "Tutku",

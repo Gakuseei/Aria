@@ -145,6 +145,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const [showTutorial, setShowTutorial] = useState(null);
   const [availableVoiceModels, setAvailableVoiceModels] = useState([]);
   const [samplingModalOpen, setSamplingModalOpen] = useState(false);
+  const [showSuggestionSamplingModal, setShowSuggestionSamplingModal] = useState(false);
   const [installedTags, setInstalledTags] = useState([]);
   const [pullingTag, setPullingTag] = useState(null);
 
@@ -1193,6 +1194,20 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                         {settings.suggestionFallbackToChat ? 'ON' : 'OFF'}
                       </button>
                     </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                      <div>
+                        <div className="text-sm text-zinc-300">{t.settings.suggestionModelEditProfile}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowSuggestionSamplingModal(true)}
+                        disabled={!settings.suggestionModel}
+                        className="px-3 py-1 rounded-lg text-xs font-medium bg-zinc-700/50 text-zinc-300 border border-zinc-600/30 hover:bg-zinc-700/70 disabled:opacity-40"
+                      >
+                        EDIT
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -1284,6 +1299,15 @@ export default function Settings({ settings, onSettingChange, onClose }) {
           clearAllProfileForModel={clearAllProfileForModel}
           isFieldOverridden={isFieldOverridden}
           isFlagOverridden={isFlagOverridden}
+          isGoldMode={isGoldMode}
+        />
+
+        <SamplingModal
+          feature="suggestion"
+          isOpen={showSuggestionSamplingModal}
+          onClose={() => setShowSuggestionSamplingModal(false)}
+          settings={settings}
+          onSettingChange={onSettingChange}
           isGoldMode={isGoldMode}
         />
       </div>

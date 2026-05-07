@@ -37,11 +37,11 @@ export function parseSuggestionJson(raw) {
   for (const entry of pills) {
     if (!entry || typeof entry !== 'object') return null;
     const role = String(entry.role || '').trim().toLowerCase();
-    const text = String(entry.text || '').trim();
+    const pillText = String(entry.text || '').trim();
     if (!REQUIRED_ROLES.includes(role)) return null;
-    if (!text) return null;
+    if (!pillText) return null;
     if (byRole[role]) continue;
-    byRole[role] = text;
+    byRole[role] = pillText;
   }
 
   for (const role of REQUIRED_ROLES) {

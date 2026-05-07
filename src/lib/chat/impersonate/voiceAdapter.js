@@ -51,7 +51,7 @@ function recentUserMessages(history, limit = 8) {
  */
 export function extractVoiceFeatures(history, _userName, _userIdentity) {
   const samples = recentUserMessages(history, 8);
-  if (samples.length === 0) return { ...DEFAULT_FEATURES };
+  if (samples.length === 0) return { ...DEFAULT_FEATURES, registerHints: [] };
 
   let asteriskCount = 0;
   let dialogueCount = 0;
@@ -138,7 +138,7 @@ function sanitizeForExample(raw) {
  * @param {Array<{ role: string, content: string }>} history
  * @param {string} userName
  * @param {{ name?: string, pronouns?: string }} userIdentity
- * @returns {{ examples: string, guidance: string, assistantPrefix: string, features: object }}
+ * @returns {{ examples: string, assistantPrefix: string, features: object }}
  */
 export function buildVoiceCard(history, userName, userIdentity) {
   const features = extractVoiceFeatures(history, userName, userIdentity);
@@ -158,8 +158,7 @@ export function buildVoiceCard(history, userName, userIdentity) {
         `</user_voice_examples>`
       ].join('\n');
 
-  const guidance = '';
   const assistantPrefix = `${userName || 'User'}: `;
 
-  return { examples, guidance, assistantPrefix, features };
+  return { examples, assistantPrefix, features };
 }

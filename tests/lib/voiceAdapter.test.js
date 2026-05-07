@@ -15,6 +15,14 @@ describe('extractVoiceFeatures', () => {
     expect(features.punctuation).toBe('neutral');
     expect(Array.isArray(features.registerHints)).toBe(true);
   });
+
+  it('returns a fresh registerHints array per call (not the frozen default)', () => {
+    const a = extractVoiceFeatures([], 'Erik', USER_IDENTITY);
+    const b = extractVoiceFeatures([], 'Erik', USER_IDENTITY);
+    expect(a.registerHints).not.toBe(b.registerHints);
+    a.registerHints.push('mutated');
+    expect(b.registerHints).toEqual([]);
+  });
 });
 
 describe('extractVoiceFeatures — format detection', () => {
@@ -74,6 +82,11 @@ describe('buildVoiceCard', () => {
   it('returns assistantPrefix in the form `${userName}: `', () => {
     const card = buildVoiceCard(HISTORY, 'Erik', USER_IDENTITY);
     expect(card.assistantPrefix).toBe('Erik: ');
+  });
+
+  it('returns { examples, assistantPrefix, features } and nothing else', () => {
+    const card = buildVoiceCard(HISTORY, 'Erik', USER_IDENTITY);
+    expect(Object.keys(card).sort()).toEqual(['assistantPrefix', 'examples', 'features']);
   });
 
   it('builds an XML-tagged examples block with up to 5 sanitized user turns', () => {

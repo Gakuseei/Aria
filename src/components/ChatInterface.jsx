@@ -942,13 +942,13 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         userName,
         passionLevel,
         settings,
-        (_token, display) => setInput(display),
+        (_token, display) => {
+          if (typeof display === 'string') setInput(display);
+        },
         sceneMemoryRef.current,
         isUnchainedMode
       );
-      if (cleaned) {
-        setInput(cleaned);
-      }
+      if (cleaned) setInput(cleaned);
     } catch (err) {
       if (err?.name !== 'AbortError') {
         console.warn('[ChatInterface] Impersonate failed:', err?.message);

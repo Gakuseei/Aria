@@ -11,13 +11,11 @@ import {
 
 const PROFILE_HISTORY_SHARE = {
   reply: 0.4,
-  suggestions: 0.18,
   impersonate: 0.22
 };
 
 const PROFILE_NON_HISTORY_RESERVE = {
   reply: 820,
-  suggestions: 420,
   impersonate: 520
 };
 

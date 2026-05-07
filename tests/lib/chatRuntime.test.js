@@ -1037,55 +1037,6 @@ describe('assembleRuntimeContext', () => {
     });
   });
 
-  it('assembles reply, suggestions, and impersonate differently from the same runtime state', () => {
-    const baseState = buildRuntimeState({
-      character: {
-        name: 'Mei',
-        category: 'sfw',
-        systemPrompt: 'Mei is dry, observant, and quietly protective.',
-        instructions: 'Stay blunt but gentle.',
-        scenario: 'Rainy cafe afternoon.'
-      },
-      history: [
-        { role: 'assistant', content: '*She slides a mug toward you.* "Drink first."' },
-        { role: 'user', content: 'Are you always this bossy?' }
-      ],
-      userName: 'Erik',
-      runtimeSteering: {
-        profile: 'reply',
-        availableContextTokens: 900,
-        responseMode: 'normal'
-      }
-    });
-
-    const replyContext = assembleRuntimeContext({ profile: 'reply', runtimeState: baseState });
-    const suggestionState = { ...baseState, runtimeSteering: { ...baseState.runtimeSteering, profile: 'suggestions', passionLevel: 35, avoidSuggestions: [] } };
-    const suggestionContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState: suggestionState });
-    const impersonateState = { ...baseState, runtimeSteering: { ...baseState.runtimeSteering, profile: 'impersonate', passionLevel: 0 } };
-    const impersonateContext = assembleRuntimeContext({ profile: 'impersonate', runtimeState: impersonateState });
-
-    expect(replyContext.systemPrompt).toContain('Global Core:');
-    expect(replyContext.systemPrompt).toContain('Late Steering:');
-    expect(replyContext.systemPrompt).toContain("Write Mei's next reply.");
-    expect(replyContext.systemPrompt).toContain('Active Scene:\nSetting:');
-    expect(suggestionContext.systemPrompt).not.toContain('Global Core:');
-    expect(suggestionContext.systemPrompt).toContain('same scene with Mei');
-    expect(suggestionContext.systemPrompt).toContain('Write one sendable reply the user can click now.');
-    expect(suggestionContext.systemPrompt).toContain('Return only valid JSON with exactly one string key: suggestion.');
-    expect(suggestionContext.userPrompt).toContain('Write one stay sendable next turn for Erik');
-    expect(suggestionContext.userPrompt).toContain('Response cue:');
-    expect(suggestionContext.userPrompt).toContain('Current task:');
-    expect(suggestionContext.userPrompt).toContain('Are you always this bossy?');
-    expect(impersonateContext.systemPrompt).toContain('Character Reference:');
-    expect(impersonateContext.systemPrompt).toContain("Continue in Erik's voice and rhythm");
-    expect(impersonateContext.systemPrompt).not.toMatch(/NEVER/);
-    expect(impersonateContext.assistantPrefix).toBe('Erik: ');
-    expect(impersonateContext.stopStrings).toContain('Mei:');
-    expect(impersonateContext.userPrompt).toContain('Current beat:');
-    expect(impersonateContext.userPrompt).toContain('Recent conversation:');
-    expect(impersonateContext.userPrompt).toMatch(/Continue Erik's next reply\.$/);
-  });
-
   it('surfaces persisted scene-memory usage in debug output', () => {
     const runtimeState = buildRuntimeState({
       character: {
@@ -1119,37 +1070,6 @@ describe('assembleRuntimeContext', () => {
     expect(replyContext.debug.sceneMemoryUsed).toBe(true);
   });
 
-  it('uses an explicit lightweight bot runtime path without roleplay-only reply steering', () => {
-    const botState = buildRuntimeState({
-      character: {
-        name: 'DeskBot',
-        type: 'bot',
-        systemPrompt: 'DeskBot handles scheduling requests with crisp answers.',
-        instructions: 'Ask for the missing time window before committing.',
-        scenario: 'Office planning assistant.'
-      },
-      history: [
-        { role: 'assistant', content: 'I can help schedule that.' },
-        { role: 'user', content: 'Book a 30-minute check-in for tomorrow.' }
-      ],
-      userName: 'Erik',
-      runtimeSteering: {
-        profile: 'reply',
-        availableContextTokens: 900,
-        responseMode: 'normal'
-      }
-    });
-
-    const replyContext = assembleRuntimeContext({ profile: 'reply', runtimeState: botState });
-    const suggestionState = { ...botState, runtimeSteering: { ...botState.runtimeSteering, profile: 'suggestions', avoidSuggestions: [] } };
-    const suggestionContext = assembleRuntimeContext({ profile: 'suggestions', runtimeState: suggestionState });
-
-    expect(replyContext.systemPrompt).toContain('Respond as the configured bot.');
-    expect(replyContext.systemPrompt).not.toContain('Actions go in *asterisks*');
-    expect(replyContext.systemPrompt).not.toContain('Continue the active scene with DeskBot');
-    expect(suggestionContext.systemPrompt).toContain('same exchange with DeskBot');
-    expect(suggestionContext.userPrompt).toContain('Write one stay sendable reply for Erik in the same exchange');
-  });
 });
 
 import { buildVoicePinBlock } from '../../src/lib/chatRuntime/text.js';
@@ -1272,21 +1192,6 @@ describe('assembleRuntimeContext voice pin injection (reply profile)', () => {
     expect(lastMessage.content).not.toContain('Avoid:');
   });
 
-  it('does not append a voice pin message for non-reply profiles', () => {
-    const runtimeState = buildRuntimeState({
-      character: {
-        name: 'Alice',
-        category: 'nsfw',
-        systemPrompt: 'Alice is shy.',
-        voicePin: 'Stutters when nervous.'
-      },
-      history: [{ role: 'user', content: 'hi' }],
-      runtimeSteering: { profile: 'suggestions', availableContextTokens: 1200 }
-    });
-
-    const ctx = assembleRuntimeContext({ profile: 'suggestions', runtimeState });
-    expect(ctx.historyMessages).toBeUndefined();
-  });
 });
 
 describe('assembleRuntimeContext (Persona Anchor removed)', () => {

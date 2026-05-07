@@ -24,3 +24,12 @@ export const IMAGE_GEN_PREMIUM = {
   width: 1024,
   height: 1024,
 };
+
+export const DEFAULT_SUGGESTION_PROFILE = Object.freeze({
+  temperature: 0.55,
+  topP: 0.92,
+  topK: 40,
+  minP: 0.05,
+  repeatPenalty: 1.05,
+  maxTokens: 120
+});

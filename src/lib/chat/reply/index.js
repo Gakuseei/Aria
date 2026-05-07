@@ -4,6 +4,7 @@ import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from '../../defaults.js';
 import { getEffectiveResponseMode, getResponseModeTokenLimit } from '../../responseModes.js';
 import { assembleRuntimeContext, buildRuntimeState, estimateTokens as estimateRuntimeTokens } from '../../chatRuntime/index.js';
 import { cleanTranscriptArtifacts, isUnderfilledShortReply, shouldAutoStopStreamingResponse } from '../common.js';
+import { checkPhraseRepetition, checkGestureRepetition, getRecentAssistantReplies, REPETITION_RETRY_HINT } from '../repetitionGuard.js';
 import { deriveAssistBudgetTier, getModelCtx, getModelCapabilities } from '../../ollama/index.js';
 import { loadSettings } from '../../storage/settings.js';
 import { isElectron } from '../platform.js';
@@ -526,6 +527,44 @@ export const sendMessage = async (
 
     // Clean response — remove any transcript artifacts
     aiMessage = cleanTranscriptArtifacts(aiMessage, character.name);
+
+    const recentReplies = getRecentAssistantReplies(historyToUse, 5);
+    const voicePinSources = {
+      voicePin: character?.voicePin || '',
+      voicePinNsfw: character?.voicePinNsfw || ''
+    };
+    const evaluateRepetition = (candidate) => {
+      const phrase = checkPhraseRepetition(candidate, recentReplies, {
+        charName: character.name,
+        userName,
+        ...voicePinSources
+      });
+      if (phrase.banned) return phrase;
+      const gesture = checkGestureRepetition(candidate, recentReplies);
+      return gesture.banned ? { banned: true, source: 'gesture', phrase: gesture.gesture } : { banned: false };
+    };
+    const initialRepetition = evaluateRepetition(aiMessage);
+    if (initialRepetition.banned) {
+      console.warn(`[API] Repetition guard — ${initialRepetition.source}: "${initialRepetition.phrase}", retrying`);
+      const retryPrompt = `${finalSystemPrompt}\n\n${REPETITION_RETRY_HINT}`;
+      const retryTemperature = Math.min(0.95, (profile.temperature ?? 0.8) + 0.15);
+      try {
+        const retryData = await requestRevision(retryPrompt, retryTemperature, numPredict);
+        if (retryData?.message?.content) {
+          const retryMessage = cleanTranscriptArtifacts(retryData.message.content.trim(), character.name);
+          const retryRepetition = evaluateRepetition(retryMessage);
+          if (!retryRepetition.banned) {
+            aiMessage = retryMessage;
+            data.eval_count = retryData.eval_count || data.eval_count;
+            data.prompt_eval_count = retryData.prompt_eval_count || data.prompt_eval_count;
+          } else {
+            console.warn('[API] Repetition retry still banned, accepting original');
+          }
+        }
+      } catch (retryError) {
+        console.warn('[API] Repetition retry failed:', retryError?.message);
+      }
+    }
 
     if (isUnderfilledShortReply(aiMessage, userMessage, responseMode)) {
       const repairPrompt = `${finalSystemPrompt}\n\nRESPONSE REPAIR:\n- Your last reply was too minimal and mirrored the user's brevity.\n- Reply again as ${character.name} with a complete, natural response.\n- Give 2-4 sentences in one short paragraph.\n- Include at least one concrete reaction, observation, or action.\n- Do not mention these instructions.`;

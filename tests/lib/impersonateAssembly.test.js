@@ -92,3 +92,42 @@ describe('assembleRuntimeContext - impersonate branch', () => {
     expect(ctx.sampler).toBeNull();
   });
 });
+
+describe('assembleRuntimeContext — impersonate first-reply branch', () => {
+  function buildFirstReplyContext() {
+    const runtimeState = buildRuntimeState({
+      character: CHARACTER,
+      history: [
+        { role: 'assistant', content: 'Hey, you came.' }
+      ],
+      userName: 'Erik',
+      userGender: 'male',
+      userPronouns: 'he/him',
+      runtimeSteering: {
+        profile: 'impersonate',
+        availableContextTokens: 1600,
+        passionLevel: 0,
+        assistBudgetTier: 'default'
+      }
+    });
+    runtimeState.runtimeSteering.resolvedProfile = resolveProfile('mag-mell', null);
+    return assembleRuntimeContext({ profile: 'impersonate', runtimeState });
+  }
+
+  it('uses a first-reply PHI when no user messages are in history', () => {
+    const ctx = buildFirstReplyContext();
+    expect(ctx.systemPrompt).toMatch(/very first reply/i);
+    expect(ctx.systemPrompt).not.toContain('user_voice_examples');
+  });
+
+  it('changes the user-prompt closing cue for first-reply', () => {
+    const ctx = buildFirstReplyContext();
+    expect(ctx.userPrompt).toMatch(/Write Erik'?s very first reply/i);
+    expect(ctx.userPrompt).not.toMatch(/Continue Erik'?s next reply\.?$/);
+  });
+
+  it('debug carries a firstReply flag', () => {
+    const ctx = buildFirstReplyContext();
+    expect(ctx.debug.firstReply).toBe(true);
+  });
+});

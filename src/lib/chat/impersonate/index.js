@@ -188,9 +188,11 @@ export async function impersonateUser(
   let finalized = await runOnce();
   if (!isStructurallyValid(finalized.text, userName, charName)) {
     console.info('[API] Impersonate retry: first stream produced invalid structure');
+    onToken(null, '');
     finalized = await runOnce();
   }
   if (!isStructurallyValid(finalized.text, userName, charName)) {
+    onToken(null, '');
     throw new Error('Failed to generate a usable draft');
   }
 

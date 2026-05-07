@@ -332,11 +332,20 @@ function buildSuggestionWriterRole(runtimeState) {
   ].filter(Boolean).join(' ');
 }
 
-function buildImpersonateLateSteering(runtimeState) {
+function buildImpersonateLateSteering(runtimeState, { isFirstReply = false } = {}) {
   const intensityLine = runtimeState.runtimeSteering.passionLevel > 15
     ? `Match the current scene intensity at ${runtimeState.runtimeSteering.passionLevel}/100. Do not soften it.`
     : '';
   const pronouns = runtimeState.userIdentity?.pronouns || 'he/him';
+
+  if (isFirstReply) {
+    return [
+      `This is ${runtimeState.userName}'s very first reply to ${runtimeState.characterName}. Write a short, natural opener — a greeting, an action, or a question — that fits ${runtimeState.characterName}'s opening message and the scene.`,
+      `Stay in first person (${pronouns}) and in the same language as the conversation. Keep it 1–2 sentences.`,
+      intensityLine
+    ].filter(Boolean).join('\n');
+  }
+
   return [
     `Continue in ${runtimeState.userName}'s voice and rhythm — match the user_voice_examples for sentence length, format, and energy.`,
     `${runtimeState.userName}'s reply takes a concrete action or response that fits the latest beat — not a question, not a meta comment.`,
@@ -354,7 +363,7 @@ function buildRecentUserVoiceExamples(runtimeState) {
   return card.examples;
 }
 
-function buildImpersonateUserPrompt(runtimeState, recentTail) {
+function buildImpersonateUserPrompt(runtimeState, recentTail, { isFirstReply = false } = {}) {
   const currentBeat = [
     runtimeState.activeScene.latest_character_action_or_reaction
       ? `${runtimeState.characterName}: ${runtimeState.activeScene.latest_character_action_or_reaction}`
@@ -367,10 +376,14 @@ function buildImpersonateUserPrompt(runtimeState, recentTail) {
     || currentBeat
     || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 220);
 
+  const closingCue = isFirstReply
+    ? `Write ${runtimeState.userName}'s very first reply to ${runtimeState.characterName}.`
+    : `Continue ${runtimeState.userName}'s next reply.`;
+
   return [
     `Current beat:\n${currentBeat || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 160)}`,
     `Recent conversation:\n${recentConversation}`,
-    `Continue ${runtimeState.userName}'s next reply.`
+    closingCue
   ].filter(Boolean).join('\n\n');
 }
 
@@ -623,6 +636,8 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
   }
 
   const recentTail = runtimeState.selectedRecentHistory.messages.slice(-6);
+  const userMsgCount = runtimeState.selectedRecentHistory.messages.filter((m) => m.role === 'user').length;
+  const isFirstReply = userMsgCount === 0;
   const minimalCharacterReference = clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore);
   const impersonateUserIdentity = runtimeState.userIdentity || {};
   const impersonateUserBlock = buildPlainTextBlock(
@@ -630,7 +645,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     `${impersonateUserIdentity.name || runtimeState.userName} (${impersonateUserIdentity.label || 'male'}, pronouns: ${impersonateUserIdentity.pronouns || 'he/him'})`
   );
   const userVoiceBlock = buildRecentUserVoiceExamples(runtimeState);
-  const userVoiceSection = userVoiceBlock ? buildPlainTextBlock('User Voice', userVoiceBlock) : '';
+  const userVoiceSection = (!isFirstReply && userVoiceBlock) ? buildPlainTextBlock('User Voice', userVoiceBlock) : '';
   const characterName = runtimeState.characterName || 'Character';
   const userName = runtimeState.userName || 'User';
   const profileSampler = runtimeState.runtimeSteering.resolvedProfile || null;
@@ -649,13 +664,13 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       : '',
     buildPlainTextBlock('Character Reference', minimalCharacterReference),
     userVoiceSection,
-    buildPlainTextBlock('Late Steering', clipToTokenTarget(buildImpersonateLateSteering(runtimeState), targets.lateSteering))
+    buildPlainTextBlock('Late Steering', clipToTokenTarget(buildImpersonateLateSteering(runtimeState, { isFirstReply }), targets.lateSteering))
   ].filter(Boolean).join('\n\n');
 
   debug.includedBlocks.push('Global Core', 'User', 'Active Scene', 'Character Reference', 'Late Steering');
   if (runtimeState.compiledRuntimeCard.personaAnchor) debug.includedBlocks.push('Persona Anchor');
   else debug.droppedBlocks.push('Persona Anchor');
-  if (userVoiceBlock) debug.includedBlocks.push('User Voice');
+  if (!isFirstReply && userVoiceBlock) debug.includedBlocks.push('User Voice');
   else debug.droppedBlocks.push('User Voice');
   debug.droppedBlocks.push('Example Seed');
 
@@ -680,13 +695,14 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
   return {
     profile,
     systemPrompt,
-    userPrompt: buildImpersonateUserPrompt(runtimeState, recentTail),
+    userPrompt: buildImpersonateUserPrompt(runtimeState, recentTail, { isFirstReply }),
     assistantPrefix: `${userName}: `,
     stopStrings,
     sampler,
     debug: {
       ...debug,
-      historyCountKept: recentTail.length
+      historyCountKept: recentTail.length,
+      firstReply: isFirstReply
     }
   };
 }

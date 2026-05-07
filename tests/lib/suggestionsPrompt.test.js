@@ -37,7 +37,8 @@ describe('buildSuggestionPrompt', () => {
     expect(out.systemPrompt).toContain('"role": "push"');
     expect(out.systemPrompt).toContain('Mirror');
     expect(out.systemPrompt).toContain('one concrete step bolder');
-    expect(out.systemPrompt).toContain('commit fully');
+    expect(out.systemPrompt).toContain('embodied physical action');
+    expect(out.systemPrompt).toContain('Stay rooted in the body');
 
     expect(out.userPrompt).toContain('Hey what are you doing later?');
     expect(out.userPrompt).toContain('Cleaning up.');

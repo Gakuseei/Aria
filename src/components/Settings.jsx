@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { CONTEXT_SIZE_OPTIONS, fetchOllamaModels, getRecommendedContextSizeForModel, normalizeContextSize, testOllamaConnection } from '../lib/ollama';
 import { getModelProfile, resolveProfile } from '../lib/modelProfiles';
 import { Globe, Zap, Moon, RefreshCw, Check, X, User, Image, Volume2, HelpCircle, FolderOpen, ArrowRight } from 'lucide-react';
@@ -145,6 +146,45 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const [availableVoiceModels, setAvailableVoiceModels] = useState([]);
   const [samplingModalOpen, setSamplingModalOpen] = useState(false);
   const [installedTags, setInstalledTags] = useState([]);
+  const [pullingTag, setPullingTag] = useState(null);
+
+  async function refreshInstalledTags() {
+    try {
+      const res = await fetch(`${settings.ollamaUrl || 'http://127.0.0.1:11434'}/api/tags`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setInstalledTags((data?.models || []).map((entry) => entry.name));
+    } catch {
+      // intentionally swallowed: ollama unreachable
+    }
+  }
+
+  async function handlePullTag(tag) {
+    if (!tag) return;
+    setPullingTag(tag);
+    const result = await window.electronAPI.ollamaPull({ tag, ollamaUrl: settings.ollamaUrl });
+    setPullingTag(null);
+    if (result?.success) {
+      await refreshInstalledTags();
+      toast.success(`Pulled ${tag}`);
+    } else {
+      toast.error(`Pull failed: ${result?.error || 'unknown'}`);
+    }
+  }
+
+  async function handleCheckTag(tag) {
+    if (!tag) return;
+    const result = await window.electronAPI.ollamaCheckTag({ tag });
+    if (!result?.success) {
+      toast.error('Could not verify');
+      return;
+    }
+    if (result.exists) {
+      toast.success('Tag exists on ollama.com');
+    } else {
+      toast.error('Tag not found on ollama.com');
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -1062,29 +1102,45 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                       {RECOMMENDED_SUGGESTION_MODELS.map((m) => {
                         const isSelected = settings.suggestionModel === m.tag;
                         const isInstalled = installedTags.includes(m.tag);
+                        const handleSelect = () => onSettingChange('suggestionModel', isSelected ? null : m.tag);
                         return (
-                          <button
+                          <div
                             key={m.tag}
-                            onClick={() => onSettingChange('suggestionModel', isSelected ? null : m.tag)}
-                            className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                            role="button"
+                            tabIndex={0}
+                            onClick={handleSelect}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(); } }}
+                            className={`w-full text-left p-3 rounded-lg border-2 transition-all cursor-pointer flex items-start gap-3 ${
                               isSelected
                                 ? 'border-rose-500 bg-rose-500/5'
                                 : 'border-transparent bg-zinc-800/40 hover:border-rose-500'
                             }`}
                           >
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <span className="font-mono text-xs text-zinc-100 break-all">{m.tag}</span>
-                              <span className="text-xs text-zinc-500">{m.sizeGB} GB</span>
-                              {m.badge === 'recommended' && <span className="badge-rose">{t.settings.suggestionModelBadgeRecommended}</span>}
-                              {m.badge === 'fastest' && <span className="badge-green">{t.settings.suggestionModelBadgeFastest}</span>}
-                              {m.badge === 'hardcore' && <span className="badge-purple">{t.settings.suggestionModelBadgeHardcore}</span>}
-                              <span className="badge-cyan">{t.settings.suggestionModelBadgeNoThink}</span>
-                              {m.badge === 'hardcore' && <span className="badge-orange">{t.settings.suggestionModelBadgeSfwWarn}</span>}
-                              <span className={isInstalled ? 'badge-green' : 'badge-amber'}>
-                                {isInstalled ? t.settings.suggestionModelInstalled : t.settings.suggestionModelNotInstalled}
-                              </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <span className="font-mono text-xs text-zinc-100 break-all">{m.tag}</span>
+                                <span className="text-xs text-zinc-500">{m.sizeGB} GB</span>
+                                {m.badge === 'recommended' && <span className="badge-rose">{t.settings.suggestionModelBadgeRecommended}</span>}
+                                {m.badge === 'fastest' && <span className="badge-green">{t.settings.suggestionModelBadgeFastest}</span>}
+                                {m.badge === 'hardcore' && <span className="badge-purple">{t.settings.suggestionModelBadgeHardcore}</span>}
+                                <span className="badge-cyan">{t.settings.suggestionModelBadgeNoThink}</span>
+                                {m.badge === 'hardcore' && <span className="badge-orange">{t.settings.suggestionModelBadgeSfwWarn}</span>}
+                                <span className={isInstalled ? 'badge-green' : 'badge-amber'}>
+                                  {isInstalled ? t.settings.suggestionModelInstalled : t.settings.suggestionModelNotInstalled}
+                                </span>
+                              </div>
                             </div>
-                          </button>
+                            {!isInstalled && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); handlePullTag(m.tag); }}
+                                disabled={pullingTag === m.tag}
+                                className="shrink-0 px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/30 text-xs hover:bg-rose-500/25 disabled:opacity-50"
+                              >
+                                {pullingTag === m.tag ? '…' : `${t.settings.suggestionModelPull} (${m.sizeGB} GB)`}
+                              </button>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
@@ -1100,6 +1156,24 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                           placeholder="user/model-name:tag"
                           className="flex-1 px-3 py-1.5 rounded bg-zinc-900 border border-white/10 text-xs font-mono text-zinc-100"
                         />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleCheckTag(settings.suggestionModel?.trim())}
+                          disabled={!settings.suggestionModel?.trim()}
+                          className="px-3 py-1.5 text-xs rounded bg-zinc-700/50 text-zinc-300 border border-zinc-600/40 hover:bg-zinc-700 disabled:opacity-50"
+                        >
+                          {t.settings.suggestionModelCheck}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePullTag(settings.suggestionModel?.trim())}
+                          disabled={!settings.suggestionModel?.trim() || pullingTag === settings.suggestionModel}
+                          className="px-3 py-1.5 text-xs rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 disabled:opacity-50"
+                        >
+                          {pullingTag === settings.suggestionModel ? '…' : t.settings.suggestionModelPull}
+                        </button>
                       </div>
                     </div>
 

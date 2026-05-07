@@ -71,6 +71,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ollamaUnload: (params) => ipcRenderer.invoke('ollama-unload', params),
   ollamaModels: (params) => ipcRenderer.invoke('ollama-models', params),
   ollamaModelInfo: (params) => ipcRenderer.invoke('ollama-model-info', params),
+  ollamaPull: (params) => ipcRenderer.invoke('ollama-pull', params),
+  ollamaCheckTag: (params) => ipcRenderer.invoke('ollama-check-tag', params),
   
   // Session Management
   saveSession: (sessionId, data) => ipcRenderer.invoke('save-session', { sessionId, data }),

@@ -2060,6 +2060,60 @@ ipcMain.handle('ollama-models', async (event, params = {}) => {
 });
 
 /**
+ * Pull a model from the Ollama registry (blocking, non-streamed).
+ * Params: { tag, ollamaUrl }
+ */
+ipcMain.handle('ollama-pull', async (event, params = {}) => {
+  if (!isTrustedIpcSender(event)) {
+    return blockUntrustedIpc(event, 'ollama-pull');
+  }
+
+  const { tag, ollamaUrl = OLLAMA_DEFAULT_URL } = params;
+  if (!tag || typeof tag !== 'string') return { success: false, error: 'Missing model tag' };
+  const trustedUrl = validateTrustedLocalServiceUrl('ollama', ollamaUrl);
+  if (!trustedUrl) return { success: false, error: 'Ollama URL must match the configured local service endpoint' };
+
+  try {
+    const response = await fetch(`${trustedUrl.origin}/api/pull`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: tag, stream: false })
+    });
+    if (!response.ok) {
+      return { success: false, error: `Ollama pull returned ${response.status}` };
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('[IPC] ollama-pull error:', error);
+    return { success: false, error: String(error?.message || error) };
+  }
+});
+
+/**
+ * Check whether a model tag exists on ollama.com via HEAD request.
+ * Params: { tag }
+ */
+ipcMain.handle('ollama-check-tag', async (event, params = {}) => {
+  if (!isTrustedIpcSender(event)) {
+    return blockUntrustedIpc(event, 'ollama-check-tag');
+  }
+
+  const { tag } = params;
+  if (!tag || typeof tag !== 'string') return { success: false, error: 'Missing model tag' };
+
+  try {
+    const response = await fetch(`https://ollama.com/library/${encodeURIComponent(tag)}`, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(5000)
+    });
+    return { success: true, exists: response.ok };
+  } catch (error) {
+    console.error('[IPC] ollama-check-tag error:', error);
+    return { success: false, error: String(error?.message || error) };
+  }
+});
+
+/**
  * Get model capabilities via /api/show (context length, parameter size).
  * Params: { ollamaUrl, model }
  */

@@ -139,4 +139,11 @@ describe('assembleRuntimeContext — impersonate first-reply branch', () => {
     expect(ctx.debug.includedBlocks).toEqual(expect.arrayContaining(['Role', 'User', 'Active Scene', 'Late Steering']));
     expect(ctx.debug.droppedBlocks).toEqual(expect.arrayContaining(['Persona Anchor', 'Character Reference']));
   });
+
+  it('first-reply Late Steering caps reply length to 1-2 sentences with positive framing', () => {
+    const ctx = buildFirstReplyContext();
+    expect(ctx.systemPrompt).toMatch(/1 or 2 sentences/);
+    expect(ctx.systemPrompt).toMatch(/no more than two sentences/);
+    expect(ctx.systemPrompt).not.toMatch(/NEVER/);
+  });
 });

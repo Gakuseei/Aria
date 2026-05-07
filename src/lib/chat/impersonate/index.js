@@ -8,6 +8,8 @@ import {
   isStructurallyValid
 } from './draftValidator.js';
 
+const FIRST_REPLY_NUM_PREDICT_CAP = 80;
+
 let activeRequestId = null;
 
 export function abortImpersonateCall() {
@@ -170,11 +172,15 @@ export async function impersonateUser(
   const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState });
   console.log('[API] Impersonate runtime:', ctx.debug);
 
+  const numPredictForRun = ctx.debug?.firstReply
+    ? Math.min(budgetConfig.impersonateFirstTokens, FIRST_REPLY_NUM_PREDICT_CAP)
+    : budgetConfig.impersonateFirstTokens;
+
   const runOnce = () => runStreamingDraft({
     ollamaUrl,
     model,
     numCtx: impersonateNumCtx,
-    numPredict: budgetConfig.impersonateFirstTokens,
+    numPredict: numPredictForRun,
     systemPrompt: ctx.systemPrompt,
     userPrompt: ctx.userPrompt,
     assistantPrefix: ctx.assistantPrefix,

@@ -341,8 +341,8 @@ function buildImpersonateLateSteering(runtimeState, { isFirstReply = false } = {
   if (isFirstReply) {
     return [
       `${runtimeState.userName} is the visitor. ${runtimeState.characterName} just spoke first, and ${runtimeState.userName} now replies.`,
-      `Write 1–2 short sentences as ${runtimeState.userName} would respond — a greeting, a brief action, or a question. Stay in first person (${pronouns}).`,
-      `Match the same language as the conversation. The reply is ${runtimeState.userName}'s words and actions only.`,
+      `Write a short, natural opener — 1 or 2 sentences as ${runtimeState.userName} would respond. End cleanly after the second sentence; no more than two sentences.`,
+      `Stay in first person (${pronouns}). Match the same language as the conversation. Output is ${runtimeState.userName}'s words and actions only.`,
       intensityLine
     ].filter(Boolean).join('\n');
   }

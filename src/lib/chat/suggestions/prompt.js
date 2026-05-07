@@ -24,12 +24,12 @@ If the latest ${characterName} message ends with a question, an invitation, or a
 
 Each pill is a different intensity step. The three pills must be clearly distinct from each other — different action, different words, different angle:
 - stay = the most natural immediate response that meets ${characterName} where they are
-- forward = one concrete step bolder. Favor a small physical move when the scene allows — a touch, a step closer, a shift in posture, an object the user picks up or sets down. Speech alone is fine when the scene cannot support a physical move.
-- push = an embodied physical action the user performs. Take her hand. Kiss her. Pull her in. Set the glass down and stand up. Walk out the door. Not just speech, not just intent — a concrete physical move that commits to the moment.
+- forward = one concrete step bolder. Favor a small physical move when the scene allows — a touch, a step closer, a shift in posture. Speech alone is fine when the scene cannot support a physical move.
+- push = an embodied physical action the user performs. Take her hand. Kiss her. Pull her in. Not just speech — a concrete physical move that commits.
 
 Stay rooted in the body. When the scene allows it, two of the three pills should describe what ${userName} does, not just what they say.
 
-Each pill is one short sendable line. Max 10 words. Similar length across the three.
+Each pill is short and tight. Max 8 words total per pill, including any *action* asterisks. Cut filler. Similar length across the three.
 
 Return only valid JSON:
 {

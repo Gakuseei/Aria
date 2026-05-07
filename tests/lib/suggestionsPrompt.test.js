@@ -7,9 +7,9 @@ const fixtureCharacter = {
 };
 
 const fixtureCompiledCard = {
-  characterCore: 'Sarah: snarky bartender, dry sardonic voice.',
-  activeScene: { open_thread: 'Sarah is waiting for a reply about the back room.' }
+  characterCore: 'Sarah: snarky bartender, dry sardonic voice.'
 };
+const fixtureOpenThread = 'Sarah is waiting for a reply about the back room.';
 
 const fixtureHistory = [
   { role: 'user',      content: 'Hey what are you doing later?' },
@@ -24,7 +24,8 @@ describe('buildSuggestionPrompt', () => {
       compiledCard: fixtureCompiledCard,
       history: fixtureHistory,
       characterName: 'Sarah',
-      userName: 'Erik'
+      userName: 'Erik',
+      openThread: fixtureOpenThread
     });
 
     expect(out.systemPrompt).toContain('Sarah');

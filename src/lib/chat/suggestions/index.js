@@ -5,11 +5,27 @@
  */
 
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, DEFAULT_SUGGESTION_PROFILE } from '../../defaults.js';
-import { compileCharacterRuntimeCard } from '../../chatRuntime/compiler.js';
+import { compileCharacterRuntimeCard, resolveRuntimeCardTemplates } from '../../chatRuntime/compiler.js';
 import { buildSuggestionPrompt } from './prompt.js';
 import { parseSuggestionJson } from './parse.js';
 import { applySanityFilters } from './sanity.js';
 import { isElectron } from '../platform.js';
+
+const OPEN_THREAD_MAX_CHARS = 280;
+
+/**
+ * Derive a cliff snippet from the latest assistant message for use as the
+ * per-turn open-thread anchor in the suggestion prompt.
+ * @param {Array<{role:string, content:string}>} history
+ * @returns {string}
+ */
+function deriveOpenThread(history) {
+  const lastChar = [...(history || [])].reverse().find((m) => m?.role === 'assistant');
+  if (!lastChar?.content) return '';
+  const text = String(lastChar.content).trim();
+  if (text.length <= OPEN_THREAD_MAX_CHARS) return text;
+  return '…' + text.slice(text.length - OPEN_THREAD_MAX_CHARS + 1);
+}
 
 const PILL_MAX_TOKENS = 120;
 const PILL_MAX_TOKENS_RETRY = 80;
@@ -63,7 +79,7 @@ function pickModel(settings) {
   const explicit = String(settings?.suggestionModel || '').trim();
   if (explicit) return explicit;
   if (settings?.suggestionFallbackToChat === false) return null;
-  return String(settings?.ollamaModel || DEFAULT_MODEL_NAME).trim() || null;
+  return String(settings?.ollamaModel || DEFAULT_MODEL_NAME).trim();
 }
 
 function pickProfile(model, settings) {
@@ -89,7 +105,6 @@ async function callOllama({ currentRequestId, model, profile, prompts, maxTokens
   };
 
   if (isElectron()) {
-    suggestionAbortController = null;
     const result = await window.electronAPI.aiChat(params);
     if (currentRequestId !== suggestionRequestId) return null;
     if (!result?.success) return null;
@@ -97,7 +112,9 @@ async function callOllama({ currentRequestId, model, profile, prompts, maxTokens
   }
 
   const controller = new AbortController();
-  suggestionAbortController = controller;
+  if (currentRequestId === suggestionRequestId) {
+    suggestionAbortController = controller;
+  }
   try {
     const response = await fetch(`${ollamaUrl}/api/chat`, {
       method: 'POST',
@@ -128,19 +145,33 @@ async function callOllama({ currentRequestId, model, profile, prompts, maxTokens
   } catch (err) {
     if (err?.name === 'AbortError') return null;
     return null;
+  } finally {
+    if (currentRequestId === suggestionRequestId && suggestionAbortController === controller) {
+      suggestionAbortController = null;
+    }
   }
 }
 
+/**
+ * Run one suggestion-generation attempt.
+ * @returns {string[]|null} string array on success or no-model skip (terminal),
+ *   null on retry-eligible failure (parse, sanity, ollama error).
+ */
 async function attemptOnce({ history, character, userName, settings, currentRequestId, maxTokens, previousPills }) {
   const model = pickModel(settings);
   if (!model) return [];
 
-  const compiledCard = compileCharacterRuntimeCard(character);
+  const characterName = character?.name || 'Character';
+  const resolvedUserName = userName || 'You';
+  const rawCard = compileCharacterRuntimeCard(character);
+  const compiledCard = resolveRuntimeCardTemplates(rawCard, characterName, resolvedUserName);
+  const openThread = deriveOpenThread(history);
   const prompts = buildSuggestionPrompt({
     compiledCard,
     history,
-    characterName: character?.name || 'Character',
-    userName: userName || 'You'
+    characterName,
+    userName: resolvedUserName,
+    openThread
   });
 
   const profile = pickProfile(model, settings);
@@ -163,12 +194,14 @@ async function attemptOnce({ history, character, userName, settings, currentRequ
  * @param {string} userName
  * @param {Object} settings
  * @param {(pills:string[]) => void} onResult
+ * @param {Object} [options]
+ * @param {string[]} [options.previousPills] - rolling-avoid history of recently-shown pill texts.
  * @returns {Promise<void>}
  */
-export async function generateSuggestionsBackground(history, character, userName, settings, onResult) {
+export async function generateSuggestionsBackground(history, character, userName, settings, onResult, options = {}) {
   suggestionRequestId += 1;
   const currentRequestId = suggestionRequestId;
-  const previousPills = Array.isArray(settings?.previousPills) ? settings.previousPills : [];
+  const previousPills = Array.isArray(options?.previousPills) ? options.previousPills : [];
 
   try {
     let result = await attemptOnce({

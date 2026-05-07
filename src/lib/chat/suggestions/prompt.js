@@ -47,22 +47,23 @@ function takeLast(messages, role, count) {
 /**
  * Builds system and user prompts for the Smart Suggestions feature.
  * @param {Object} options
- * @param {Object} options.compiledCard - Character runtime card with characterCore and activeScene.open_thread properties.
+ * @param {Object} options.compiledCard - Character runtime card with characterCore property.
  * @param {string} options.compiledCard.characterCore - Character's core personality and traits.
- * @param {string} options.compiledCard.activeScene.open_thread - Current scene context or opening line.
  * @param {Array<{role: string, content: string}>} options.history - Recent chat messages with role ('user'|'assistant') and content.
  * @param {string} options.characterName - Character's display name.
  * @param {string} options.userName - User's display name.
+ * @param {string} [options.openThread] - Cliff snippet from the latest character turn used as the per-turn anchor.
  * @returns {{systemPrompt: string, userPrompt: string}} Object containing formatted system and user prompts.
  */
 export function buildSuggestionPrompt({
   compiledCard,
   history,
   characterName,
-  userName
+  userName,
+  openThread
 }) {
   const characterCore = String(compiledCard?.characterCore || '').trim() || characterName;
-  const openThread = String(compiledCard?.activeScene?.open_thread || '').trim();
+  const openThreadText = String(openThread || '').trim();
 
   const recentUser = takeLast(history || [], 'user', SUGGESTION_PROMPT_CONSTANTS.recentUserCount);
   const recentChar = takeLast(history || [], 'assistant', SUGGESTION_PROMPT_CONSTANTS.recentCharCount);
@@ -79,7 +80,7 @@ export function buildSuggestionPrompt({
     ? '\n  (latest, closing line matters most)'
     : '';
 
-  const systemPrompt = SYSTEM_TEMPLATE(characterName, userName, characterCore, openThread);
+  const systemPrompt = SYSTEM_TEMPLATE(characterName, userName, characterCore, openThreadText);
 
   const userPrompt = [
     `Recent ${userName} messages (for voice and language):`,

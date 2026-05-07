@@ -8,7 +8,11 @@ const validResponse = JSON.stringify({
   ]
 });
 
-const fixtureCharacter = { name: 'Sarah', persona: 'Snarky bartender.' };
+const fixtureCharacter = {
+  name: 'Sarah',
+  systemPrompt: 'You are {{char}}.',
+  instructions: 'Snarky bartender, dry voice.'
+};
 const fixtureHistory = [
   { role: 'user',      content: 'hey' },
   { role: 'assistant', content: 'Cleaning up. The back room is quieter. Coming?' }
@@ -105,7 +109,7 @@ describe('generateSuggestionsBackground', () => {
     expect(onResult).toHaveBeenLastCalledWith([]);
   });
 
-  it('discards stale request when abortSuggestionCall is invoked mid-flight', async () => {
+  it('discards stale request via requestId guard when abortSuggestionCall fires mid-flight', async () => {
     let resolveCall;
     setupElectronApiMock(() => new Promise((resolve) => { resolveCall = () => resolve({ success: true, content: validResponse }); }));
     const { generateSuggestionsBackground, abortSuggestionCall } = await loadModule();
@@ -115,5 +119,65 @@ describe('generateSuggestionsBackground', () => {
     resolveCall();
     await promise;
     expect(onResult).not.toHaveBeenCalled();
+  });
+
+  it('passes resolved character core and derived open_thread into the system prompt', async () => {
+    const aiChat = vi.fn(async () => ({ success: true, content: validResponse }));
+    setupElectronApiMock(aiChat);
+    const { generateSuggestionsBackground } = await loadModule();
+
+    const character = {
+      name: 'Sarah',
+      systemPrompt: 'You are {{char}}, a snarky bartender talking to {{user}}.',
+      instructions: 'Stay sharp and dry.'
+    };
+    const history = [
+      { role: 'user',      content: 'Hey, what are you doing later?' },
+      { role: 'assistant', content: 'Cleaning up. The back room is quieter. Coming?' }
+    ];
+
+    await generateSuggestionsBackground(history, character, 'Erik', fixtureSettings, () => {}, { previousPills: [] });
+
+    const sysPrompt = aiChat.mock.calls[0][0].systemPrompt;
+    expect(sysPrompt).toContain('Sarah');
+    expect(sysPrompt).toContain('Erik');
+    expect(sysPrompt).not.toContain('{{char}}');
+    expect(sysPrompt).not.toContain('{{user}}');
+    expect(sysPrompt).toContain('back room is quieter');
+  });
+
+  it('rejects pill set when previousPills contains an exact duplicate, then retries', async () => {
+    let call = 0;
+    setupElectronApiMock(async () => {
+      call++;
+      if (call === 1) {
+        return { success: true, content: JSON.stringify({
+          pills: [
+            { role: 'stay',    text: 'Sure thing.' },
+            { role: 'forward', text: 'Lead the way.' },
+            { role: 'push',    text: 'Heading there.' }
+          ]
+        }) };
+      }
+      return { success: true, content: JSON.stringify({
+        pills: [
+          { role: 'stay',    text: 'A different reply.' },
+          { role: 'forward', text: 'A different forward.' },
+          { role: 'push',    text: 'A different push.' }
+        ]
+      }) };
+    });
+    const { generateSuggestionsBackground } = await loadModule();
+    const onResult = vi.fn();
+    await generateSuggestionsBackground(
+      fixtureHistory,
+      fixtureCharacter,
+      'Erik',
+      fixtureSettings,
+      onResult,
+      { previousPills: ['Sure thing.'] }
+    );
+    expect(call).toBe(2);
+    expect(onResult).toHaveBeenCalledWith(['A different reply.', 'A different forward.', 'A different push.']);
   });
 });

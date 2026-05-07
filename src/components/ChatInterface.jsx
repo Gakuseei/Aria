@@ -816,7 +816,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             return updated;
           });
         }
-      }, [], 0, greetingSceneMemory, isUnchainedMode);
+      }, { previousPills: suggestionsHistoryRef.current.slice(-5) });
     }
   };
 
@@ -1042,7 +1042,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         updated[lastIdx] = { ...updated[lastIdx], suggestions: result.length > 0 ? result : undefined, suggestTime: parseFloat(suggestTime) };
         return updated;
       });
-    }, rollingAvoid, currentPassionLevel ?? passionLevel, currentSceneMemory, isUnchainedMode);
+    }, { previousPills: rollingAvoid.slice(-5) });
   };
 
   const handleSend = async (messageText = input) => {

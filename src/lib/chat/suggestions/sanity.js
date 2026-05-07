@@ -13,7 +13,7 @@ function isNonEmptyText(value) {
 }
 
 function withinLength(value) {
-  return typeof value === 'string' && value.length <= SANITY_CONSTANTS.pillMaxChars;
+  return typeof value === 'string' && value.trim().length <= SANITY_CONSTANTS.pillMaxChars;
 }
 
 /**

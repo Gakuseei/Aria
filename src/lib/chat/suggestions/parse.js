@@ -31,7 +31,7 @@ export function parseSuggestionJson(raw) {
   }
 
   const pills = parsed?.pills;
-  if (!Array.isArray(pills) || pills.length < 3) return null;
+  if (!Array.isArray(pills) || pills.length !== 3) return null;
 
   const byRole = {};
   for (const entry of pills) {

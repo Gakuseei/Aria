@@ -22,12 +22,12 @@ Mirror ${userName}'s style. Use the same rhythm, format, and register as the mos
 
 If the latest ${characterName} message ends with a question, an invitation, or a clear cue, every pill answers or responds to it directly.
 
-Each pill is a different intensity step:
+Each pill is a different intensity step. The three pills must be clearly distinct from each other — different action, different words, different angle:
 - stay = the most natural immediate response that meets ${characterName} where they are
-- forward = the same response but one step bolder, one concrete move further
+- forward = the same beat but one concrete step bolder
 - push = commit fully, take the strongest fitting action, no hedging
 
-Keep all three pills sendable as a complete line. Similar length across the three. Max ~12 words each.
+Each pill is one short sendable line. Max 10 words. Similar length across the three.
 
 Return only valid JSON:
 {

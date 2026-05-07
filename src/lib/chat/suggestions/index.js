@@ -27,8 +27,8 @@ function deriveOpenThread(history) {
   return '…' + text.slice(text.length - OPEN_THREAD_MAX_CHARS + 1);
 }
 
-const PILL_MAX_TOKENS = 120;
-const PILL_MAX_TOKENS_RETRY = 80;
+const PILL_MAX_TOKENS = 220;
+const PILL_MAX_TOKENS_RETRY = 160;
 
 const SUGGESTION_JSON_SCHEMA = {
   type: 'object',

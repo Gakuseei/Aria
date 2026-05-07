@@ -1077,12 +1077,13 @@ describe('assembleRuntimeContext', () => {
     expect(suggestionContext.userPrompt).toContain('Current task:');
     expect(suggestionContext.userPrompt).toContain('Are you always this bossy?');
     expect(impersonateContext.systemPrompt).toContain('Character Reference:');
-    expect(impersonateContext.systemPrompt).toContain('FIRST PERSON (I/me/my)');
-    expect(impersonateContext.systemPrompt).toContain('NEVER narrate Erik from outside in second or third person.');
+    expect(impersonateContext.systemPrompt).toContain("Continue in Erik's voice and rhythm");
+    expect(impersonateContext.systemPrompt).not.toMatch(/NEVER/);
+    expect(impersonateContext.assistantPrefix).toBe('Erik: ');
+    expect(impersonateContext.stopStrings).toContain('Mei:');
     expect(impersonateContext.userPrompt).toContain('Current beat:');
-    expect(impersonateContext.userPrompt).toContain('Scene summary:');
     expect(impersonateContext.userPrompt).toContain('Recent conversation:');
-    expect(impersonateContext.userPrompt).toContain("Write Erik's next reply");
+    expect(impersonateContext.userPrompt).toMatch(/Continue Erik's next reply\.$/);
   });
 
   it('surfaces persisted scene-memory usage in debug output', () => {

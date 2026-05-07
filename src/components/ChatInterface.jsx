@@ -2020,44 +2020,48 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <div ref={messagesEndRef} />
         </div>
       </div>
-      <div className="theme-composer-dock fixed bottom-8 left-1/2 z-50 w-[92%] max-w-[70rem] -translate-x-1/2">
-        <div className={`theme-composer-dock-shell rounded-[2rem] px-3 py-2.5 transition-all duration-200 ${
-          isGoldMode ? 'border-amber-500/30' : ''
-        }`}>
-          {settings.smartSuggestionsEnabled && isGeneratingSuggestions && smartSuggestions.length === 0 && !isStreaming && !isImpersonating && (
-            <div className="theme-composer-suggestion-band mb-2 flex flex-row gap-2 overflow-x-auto px-3 py-2 scrollbar-hide [mask-image:linear-gradient(to_right,black_0%,black_calc(100%-32px),transparent_100%)]" aria-hidden="true">
-              {[100, 130, 110].map((w, i) => (
+      <div className="theme-composer-dock fixed bottom-8 left-1/2 z-50 w-[92%] max-w-[70rem] -translate-x-1/2 flex flex-col gap-2.5">
+        {settings.smartSuggestionsEnabled && (isGeneratingSuggestions || smartSuggestions.length > 0) && !isStreaming && !isImpersonating && (
+          <div
+            className={`flex flex-row gap-2 rounded-2xl px-3 py-2.5 bg-zinc-900/40 backdrop-blur-md border border-white/5 ${
+              isGoldMode ? 'border-amber-500/15 bg-amber-950/20' : ''
+            }`}
+            role={smartSuggestions.length > 0 ? 'group' : undefined}
+            aria-label={smartSuggestions.length > 0 ? (t.settings?.smartSuggestions || 'Suggestions') : undefined}
+            aria-hidden={smartSuggestions.length === 0 ? 'true' : undefined}
+          >
+            {smartSuggestions.length === 0 && isGeneratingSuggestions ? (
+              [0, 1, 2].map((i) => (
                 <div
                   key={`skeleton-${i}`}
-                  className={`theme-suggestion-skeleton suggestion-skeleton h-9 shrink-0 rounded-full ${
+                  className={`theme-suggestion-skeleton suggestion-skeleton flex-1 h-10 rounded-xl ${
                     isGoldMode ? 'border-amber-500/20 bg-amber-500/5' : ''
                   }`}
-                  style={{ animationDelay: `${i * 100}ms`, width: `${w}px` }}
+                  style={{ animationDelay: `${i * 100}ms` }}
                 />
-              ))}
-            </div>
-          )}
-          {settings.smartSuggestionsEnabled && smartSuggestions.length > 0 && !isStreaming && !isImpersonating && (
-            <div className="theme-composer-suggestion-band mb-2 flex flex-row gap-2 overflow-x-auto px-3 py-2 scrollbar-hide [mask-image:linear-gradient(to_right,black_0%,black_calc(100%-32px),transparent_100%)]" role="group" aria-label={t.settings?.smartSuggestions || 'Suggestions'}>
-              {smartSuggestions.map((suggestion, i) => (
+              ))
+            ) : (
+              smartSuggestions.map((suggestion, i) => (
                 <button
                   key={`suggestion-${suggestion.slice(0, 20)}-${i}`}
                   onClick={() => handleSuggestionClick(suggestion)}
                   disabled={isLoading}
                   title={suggestion}
-                  className={`theme-suggestion-pill suggestion-pill inline-flex items-center gap-1.5 shrink-0 rounded-full border px-3.5 py-2 text-[13px] leading-none whitespace-nowrap font-medium text-zinc-200 hover:text-zinc-50 border-white/8 bg-zinc-900/60 backdrop-blur-sm hover:border-rose-500/60 hover:bg-rose-500/8 transition-colors duration-200 disabled:opacity-50 ${
-                    isGoldMode
-                      ? 'border-amber-500/40 text-amber-100 hover:bg-amber-500/10 hover:border-amber-400'
-                      : ''
+                  className={`theme-suggestion-pill suggestion-pill group flex-1 min-w-0 inline-flex items-center gap-1.5 rounded-xl border-2 border-transparent px-3 py-2.5 text-[13px] leading-snug text-left font-medium text-zinc-200 bg-zinc-900/50 hover:bg-rose-500/8 hover:border-rose-500/70 hover:text-zinc-50 transition-colors duration-200 disabled:opacity-50 ${
+                    isGoldMode ? 'text-amber-100 hover:bg-amber-500/10 hover:border-amber-400/70' : ''
                   }`}
                   style={{ animationDelay: `${i * 75}ms` }}
                 >
-                  <Sparkles size={11} className={`shrink-0 ${isGoldMode ? 'text-amber-400/70' : 'theme-suggestion-pill-icon text-zinc-500 group-hover:text-rose-400'}`} />
-                  <span>{suggestion}</span>
+                  <Sparkles size={11} className={`shrink-0 mt-0.5 ${isGoldMode ? 'text-amber-400/70' : 'text-zinc-500 group-hover:text-rose-400'}`} />
+                  <span className="line-clamp-2 break-words flex-1 min-w-0">{suggestion}</span>
                 </button>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
+        )}
+        <div className={`theme-composer-dock-shell rounded-[2rem] px-3 py-2.5 transition-all duration-200 ${
+          isGoldMode ? 'border-amber-500/30' : ''
+        }`}>
           <div className={`theme-composer flex items-center gap-3 rounded-[1.5rem] px-4 py-3.5 transition-all duration-200 ${
             isGoldMode ? 'border-amber-500/30 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50' : ''
           }`}>

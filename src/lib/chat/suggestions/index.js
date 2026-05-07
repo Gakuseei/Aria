@@ -93,6 +93,7 @@ async function callOllama({ currentRequestId, model, profile, prompts, maxTokens
     messages: [{ role: 'user', content: prompts.userPrompt }],
     systemPrompt: prompts.systemPrompt,
     model,
+    isOllama: true,
     ollamaUrl,
     temperature: profile.temperature,
     maxTokens,
@@ -107,7 +108,10 @@ async function callOllama({ currentRequestId, model, profile, prompts, maxTokens
   if (isElectron()) {
     const result = await window.electronAPI.aiChat(params);
     if (currentRequestId !== suggestionRequestId) return null;
-    if (!result?.success) return null;
+    if (!result?.success) {
+      if (result?.error) console.warn('[suggestions] ai-chat failed:', result.error);
+      return null;
+    }
     return result.content || '';
   }
 

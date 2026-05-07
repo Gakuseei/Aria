@@ -26,6 +26,12 @@ function stripAssistantPrefix(fullText, userName) {
   return text;
 }
 
+function isPossiblePrefixPrefix(accumulated, userName) {
+  const withSpace = `${userName}: `;
+  if (accumulated.length >= withSpace.length) return false;
+  return withSpace.startsWith(accumulated);
+}
+
 async function runStreamingDraft({
   ollamaUrl,
   model,
@@ -41,7 +47,6 @@ async function runStreamingDraft({
   onToken
 }) {
   const requestId = `impersonate-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  activeRequestId = requestId;
 
   const messages = [
     { role: 'system', content: systemPrompt },
@@ -68,9 +73,11 @@ async function runStreamingDraft({
     unsubscribe = window.electronAPI.onOllamaStreamToken(({ requestId: incoming, token }) => {
       if (incoming !== requestId || typeof token !== 'string') return;
       accumulated += token;
+      if (isPossiblePrefixPrefix(accumulated, userName)) return;
       const visible = stripAssistantPrefix(accumulated, userName);
       onToken(token, visible);
     });
+    activeRequestId = requestId;
 
     try {
       const result = await window.electronAPI.ollamaChatStream({

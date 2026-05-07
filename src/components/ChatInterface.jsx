@@ -1698,7 +1698,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         <div className="theme-chat-toolbar relative z-50 flex items-center gap-1.5 pointer-events-auto">
           <button
             onClick={() => setShowImageModal(true)}
-            className={`theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 ${
+            className={`theme-icon-button rounded-3xl p-3 transition-all duration-200 active:scale-95 ${
               imageGenEnabled ? 'theme-icon-button-active' : ''
             }`}
             title={t.chat?.imageGeneration || 'Image Generation'}
@@ -1709,7 +1709,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <div className="relative z-[100] pointer-events-auto voice-settings-container">
             <button
               onClick={handleVoiceSettingsClick}
-              className={`theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 ${
+              className={`theme-icon-button rounded-3xl p-3 transition-all duration-200 active:scale-95 ${
                 voiceEnabled === true ? 'theme-icon-button-info' : ''
               }`}
               title={t.chat?.voiceSettings?.title || 'Voice Settings'}
@@ -1826,7 +1826,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 : (t.chat.enableUnchainedConfirm || '');
               setConfirmModal({ message: msg, onConfirm: () => setIsUnchainedMode(!isUnchainedMode) });
             }}
-            className={`theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 ${
+            className={`theme-icon-button rounded-3xl p-3 transition-all duration-200 active:scale-95 ${
               isUnchainedMode
                 ? 'theme-icon-button-active shadow-lg shadow-[0_18px_32px_-24px_rgb(var(--color-primary-rgb)/0.7)]'
                 : 'theme-icon-button-info'
@@ -1842,7 +1842,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <button
             onClick={regenerateLastResponse}
             disabled={isLoading || isStreaming || messages.length < 2}
-            className="theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+            className="theme-icon-button rounded-3xl p-3 transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
             title={t.chat.regenerateResponse}
             aria-label={t.chat.regenerateResponse}
           >
@@ -1851,7 +1851,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <div className="relative z-[100] pointer-events-auto chat-options-container">
             <button
               onClick={() => setShowChatOptions(!showChatOptions)}
-              className={`theme-icon-button rounded-xl p-3 transition-all duration-200 active:scale-95 ${
+              className={`theme-icon-button rounded-3xl p-3 transition-all duration-200 active:scale-95 ${
                 showChatOptions ? 'theme-icon-button-active' : ''
               }`}
               title={t.chat.chatOptions}
@@ -2023,7 +2023,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       <div className="theme-composer-dock fixed bottom-8 left-1/2 z-50 w-[92%] max-w-[70rem] -translate-x-1/2 flex flex-col gap-2.5">
         {settings.smartSuggestionsEnabled && (isGeneratingSuggestions || smartSuggestions.length > 0) && !isStreaming && !isImpersonating && (
           <div
-            className="flex flex-row gap-2 px-1"
+            className="flex flex-row gap-3 px-1"
             role={smartSuggestions.length > 0 ? 'group' : undefined}
             aria-label={smartSuggestions.length > 0 ? (t.settings?.smartSuggestions || 'Suggestions') : undefined}
             aria-hidden={smartSuggestions.length === 0 ? 'true' : undefined}
@@ -2032,7 +2032,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               [0, 1, 2].map((i) => (
                 <div
                   key={`skeleton-${i}`}
-                  className={`theme-suggestion-skeleton suggestion-skeleton flex-1 h-10 rounded-xl ${
+                  className={`theme-suggestion-skeleton suggestion-skeleton flex-1 h-10 rounded-3xl ${
                     isGoldMode ? 'border-amber-500/20 bg-amber-500/5' : ''
                   }`}
                   style={{ animationDelay: `${i * 100}ms` }}
@@ -2045,7 +2045,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                   onClick={() => handleSuggestionClick(suggestion)}
                   disabled={isLoading}
                   title={suggestion}
-                  className={`theme-suggestion-pill suggestion-pill group flex-1 min-w-0 inline-flex items-center gap-1.5 rounded-xl border-2 border-transparent px-3 py-2.5 text-[13px] leading-snug text-left font-medium text-zinc-200 bg-zinc-900/50 hover:bg-rose-500/8 hover:border-rose-500/70 hover:text-zinc-50 transition-colors duration-200 disabled:opacity-50 ${
+                  className={`theme-suggestion-pill suggestion-pill group flex-1 min-w-0 inline-flex items-center gap-1.5 rounded-3xl border-2 border-transparent px-3 py-2.5 text-[13px] leading-snug text-left font-medium text-zinc-200 bg-zinc-900/50 hover:bg-rose-500/8 hover:border-rose-500/70 hover:text-zinc-50 transition-colors duration-200 disabled:opacity-50 ${
                     isGoldMode ? 'text-amber-100 hover:bg-amber-500/10 hover:border-amber-400/70' : ''
                   }`}
                   style={{ animationDelay: `${i * 75}ms` }}

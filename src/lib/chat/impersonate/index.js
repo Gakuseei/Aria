@@ -283,7 +283,7 @@ export async function impersonateUser(
 
   const numPredictForRun = ctx.debug?.firstReply
     ? Math.min(budgetConfig.impersonateFirstTokens, FIRST_REPLY_NUM_PREDICT_CAP)
-    : budgetConfig.impersonateFirstTokens;
+    : budgetConfig.impersonateRetryTokens;
   const earlyStopMaxSentences = ctx.debug?.firstReply ? 2 : 0;
 
   const runOnce = (extraSystemHint = '') => runStreamingDraft({

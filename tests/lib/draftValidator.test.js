@@ -3,6 +3,7 @@ import {
   finalizeImpersonateDraft,
   isStructurallyValid,
   containsGenericPhrasing,
+  containsMetaLead,
   hasInvalidImpersonateLead
 } from '../../src/lib/chat/impersonate/draftValidator.js';
 
@@ -68,5 +69,18 @@ describe('hasInvalidImpersonateLead', () => {
 
   it('passes natural first-person', () => {
     expect(hasInvalidImpersonateLead('I look at her.', 'Erik', 'Mei')).toBe(false);
+  });
+});
+
+describe('containsMetaLead', () => {
+  it('flags meta-lead phrases', () => {
+    expect(containsMetaLead('Sure, here is the reply.')).toBe(true);
+    expect(containsMetaLead("Here's a reply you could send.")).toBe(true);
+    expect(containsMetaLead('Let me try this one.')).toBe(true);
+  });
+
+  it('passes natural in-character replies', () => {
+    expect(containsMetaLead('I lean back and watch her quietly.')).toBe(false);
+    expect(containsMetaLead('"You should rest." I take her hand.')).toBe(false);
   });
 });

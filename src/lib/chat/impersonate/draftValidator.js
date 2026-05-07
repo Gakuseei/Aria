@@ -74,6 +74,7 @@ export function finalizeImpersonateDraft(rawText, { charName = '', userName = 'U
   const metaCut = cleaned.search(/\n---|\n\n(?:I chose|I picked|This |The |Here |Note)/i);
   if (metaCut > 0) cleaned = cleaned.substring(0, metaCut);
 
+  // Pre-clean blank: cleanTranscriptArtifacts strips `${charName}:` lines, so a post-clean check would never fire on bare char-led drafts.
   if (charName && (cleaned.startsWith(`${charName}:`) || cleaned.startsWith(`${charName} :`))) {
     return { text: '', repaired: false, valid: false };
   }
@@ -119,10 +120,14 @@ export function finalizeImpersonateDraft(rawText, { charName = '', userName = 'U
 }
 
 /**
- * Cheap structural gate: non-empty + valid POV/lead.
+ * Structural-only gate for impersonate drafts. Verifies POV correctness and that
+ * the draft is non-trivially populated. Length threshold is intentionally low (4)
+ * — quality and length are governed by the prompt + sampler upstream, not by a
+ * post-hoc validator.
+ *
  * @param {string} text
  * @param {string} userName
- * @param {string} [charName]
+ * @param {string} charName
  * @returns {boolean}
  */
 export function isStructurallyValid(text, userName, charName) {

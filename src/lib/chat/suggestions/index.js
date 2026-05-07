@@ -184,8 +184,15 @@ async function attemptOnce({ history, character, userName, settings, currentRequ
   const raw = await callOllama({ currentRequestId, model, profile, prompts, maxTokens, ollamaUrl });
   if (raw === null) return null;
   const parsed = parseSuggestionJson(raw);
+  if (!parsed) {
+    console.warn('[suggestions] parse failed for raw:', String(raw).slice(0, 240));
+    return null;
+  }
   const filtered = applySanityFilters(parsed, { previousPills });
-  if (!filtered) return null;
+  if (!filtered) {
+    console.warn('[suggestions] sanity rejected pills:', parsed, 'previousPills:', previousPills);
+    return null;
+  }
   return [filtered.stay, filtered.forward, filtered.push];
 }
 

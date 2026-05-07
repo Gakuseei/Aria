@@ -26,7 +26,9 @@ const PROFILE_BUDGET_TARGETS = {
   impersonate: {
     characterCore: 90,
     activeScene: 110,
-    lateSteering: 70
+    lateSteering: 70,
+    globalCore: 60,
+    personaAnchor: 75
   }
 };
 
@@ -632,17 +634,18 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
   const characterName = runtimeState.characterName || 'Character';
   const userName = runtimeState.userName || 'User';
   const profileSampler = runtimeState.runtimeSteering.resolvedProfile || null;
+  // Drop the format-mandate line ("Actions go in *asterisks*. Dialogue stays in plain text.") that compiler.js bakes into globalCore for non-bot characters. Impersonate detects format from the user's voice card instead — both clauses must go together.
   const impersonateGlobalCore = String(runtimeState.compiledRuntimeCard.globalCore || '')
     .split('\n')
     .filter((line) => !/Actions go in \*asterisks\*/i.test(line))
     .join('\n');
 
   const systemPrompt = [
-    buildPlainTextBlock('Global Core', clipToTokenTarget(impersonateGlobalCore, 60)),
+    buildPlainTextBlock('Global Core', clipToTokenTarget(impersonateGlobalCore, targets.globalCore)),
     impersonateUserBlock,
     buildPlainTextBlock('Active Scene', clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene, 115)),
     runtimeState.compiledRuntimeCard.personaAnchor
-      ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, 75))
+      ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, targets.personaAnchor))
       : '',
     buildPlainTextBlock('Character Reference', minimalCharacterReference),
     userVoiceSection,

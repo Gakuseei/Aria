@@ -73,4 +73,22 @@ describe('assembleRuntimeContext - impersonate branch', () => {
     expect(ctx.sampler.temperature).toBeGreaterThan(0);
     expect(ctx.sampler).not.toHaveProperty('temperatureFloor');
   });
+
+  it('returns sampler === null when resolvedProfile is not provided', () => {
+    const runtimeState = buildRuntimeState({
+      character: CHARACTER,
+      history: HISTORY,
+      userName: 'Erik',
+      userGender: 'male',
+      userPronouns: 'he/him',
+      runtimeSteering: {
+        profile: 'impersonate',
+        availableContextTokens: 1600,
+        passionLevel: 30,
+        assistBudgetTier: 'default'
+      }
+    });
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState });
+    expect(ctx.sampler).toBeNull();
+  });
 });

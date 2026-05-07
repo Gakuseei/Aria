@@ -340,8 +340,9 @@ function buildImpersonateLateSteering(runtimeState, { isFirstReply = false } = {
 
   if (isFirstReply) {
     return [
-      `This is ${runtimeState.userName}'s very first reply to ${runtimeState.characterName}. Write a short, natural opener — a greeting, an action, or a question — that fits ${runtimeState.characterName}'s opening message and the scene.`,
-      `Stay in first person (${pronouns}) and in the same language as the conversation. Keep it 1–2 sentences.`,
+      `${runtimeState.userName} is the visitor. ${runtimeState.characterName} just spoke first, and ${runtimeState.userName} now replies.`,
+      `Write 1–2 short sentences as ${runtimeState.userName} would respond — a greeting, a brief action, or a question. Stay in first person (${pronouns}).`,
+      `Match the same language as the conversation. The reply is ${runtimeState.userName}'s words and actions only.`,
       intensityLine
     ].filter(Boolean).join('\n');
   }
@@ -655,23 +656,44 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     .filter((line) => !/Actions go in \*asterisks\*/i.test(line))
     .join('\n');
 
-  const systemPrompt = [
-    buildPlainTextBlock('Global Core', clipToTokenTarget(impersonateGlobalCore, targets.globalCore)),
-    impersonateUserBlock,
-    buildPlainTextBlock('Active Scene', clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene, 115)),
-    runtimeState.compiledRuntimeCard.personaAnchor
-      ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, targets.personaAnchor))
-      : '',
-    buildPlainTextBlock('Character Reference', minimalCharacterReference),
-    userVoiceSection,
-    buildPlainTextBlock('Late Steering', clipToTokenTarget(buildImpersonateLateSteering(runtimeState, { isFirstReply }), targets.lateSteering))
-  ].filter(Boolean).join('\n\n');
+  const roleDeclaration = isFirstReply
+    ? `Role: write as ${runtimeState.userName}. ${runtimeState.characterName} just spoke first; your output is ${runtimeState.userName}'s reply — ${runtimeState.userName}'s words and actions only, in first person.`
+    : '';
+  const roleBlock = roleDeclaration ? buildPlainTextBlock('Role', roleDeclaration) : '';
 
-  debug.includedBlocks.push('Global Core', 'User', 'Active Scene', 'Character Reference', 'Late Steering');
-  if (runtimeState.compiledRuntimeCard.personaAnchor) debug.includedBlocks.push('Persona Anchor');
-  else debug.droppedBlocks.push('Persona Anchor');
-  if (!isFirstReply && userVoiceBlock) debug.includedBlocks.push('User Voice');
-  else debug.droppedBlocks.push('User Voice');
+  const sceneBlock = buildPlainTextBlock('Active Scene', clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene, 115));
+  const lateSteeringBlock = buildPlainTextBlock('Late Steering', clipToTokenTarget(buildImpersonateLateSteering(runtimeState, { isFirstReply }), targets.lateSteering));
+
+  const systemPrompt = (isFirstReply
+    ? [
+        roleBlock,
+        impersonateUserBlock,
+        sceneBlock,
+        lateSteeringBlock
+      ]
+    : [
+        buildPlainTextBlock('Global Core', clipToTokenTarget(impersonateGlobalCore, targets.globalCore)),
+        impersonateUserBlock,
+        sceneBlock,
+        runtimeState.compiledRuntimeCard.personaAnchor
+          ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, targets.personaAnchor))
+          : '',
+        buildPlainTextBlock('Character Reference', minimalCharacterReference),
+        userVoiceSection,
+        lateSteeringBlock
+      ]
+  ).filter(Boolean).join('\n\n');
+
+  if (isFirstReply) {
+    debug.includedBlocks.push('Role', 'User', 'Active Scene', 'Late Steering');
+    debug.droppedBlocks.push('Global Core', 'Persona Anchor', 'Character Reference', 'User Voice');
+  } else {
+    debug.includedBlocks.push('Global Core', 'User', 'Active Scene', 'Character Reference', 'Late Steering');
+    if (runtimeState.compiledRuntimeCard.personaAnchor) debug.includedBlocks.push('Persona Anchor');
+    else debug.droppedBlocks.push('Persona Anchor');
+    if (userVoiceBlock) debug.includedBlocks.push('User Voice');
+    else debug.droppedBlocks.push('User Voice');
+  }
   debug.droppedBlocks.push('Example Seed');
 
   const stopStrings = [

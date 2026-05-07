@@ -114,20 +114,29 @@ describe('assembleRuntimeContext — impersonate first-reply branch', () => {
     return assembleRuntimeContext({ profile: 'impersonate', runtimeState });
   }
 
-  it('uses a first-reply PHI when no user messages are in history', () => {
+  it('uses a leaner system prompt without Persona Anchor or Character Reference on first reply', () => {
     const ctx = buildFirstReplyContext();
-    expect(ctx.systemPrompt).toMatch(/very first reply/i);
+    expect(ctx.systemPrompt).not.toContain('Persona Anchor');
+    expect(ctx.systemPrompt).not.toContain('Character Reference');
+    expect(ctx.systemPrompt).not.toContain('Global Core');
     expect(ctx.systemPrompt).not.toContain('user_voice_examples');
+  });
+
+  it('starts the system prompt with a Role declaration that disambiguates user vs character', () => {
+    const ctx = buildFirstReplyContext();
+    expect(ctx.systemPrompt).toMatch(/^Role:?/m);
+    expect(ctx.systemPrompt).toMatch(/Role:[\s\S]*write as Erik[\s\S]*Mei just spoke/);
   });
 
   it('changes the user-prompt closing cue for first-reply', () => {
     const ctx = buildFirstReplyContext();
     expect(ctx.userPrompt).toMatch(/Write Erik'?s very first reply/i);
-    expect(ctx.userPrompt).not.toMatch(/Continue Erik'?s next reply\.?$/);
   });
 
-  it('debug carries a firstReply flag', () => {
+  it('debug carries firstReply flag and lists Role/User/Active Scene/Late Steering as included', () => {
     const ctx = buildFirstReplyContext();
     expect(ctx.debug.firstReply).toBe(true);
+    expect(ctx.debug.includedBlocks).toEqual(expect.arrayContaining(['Role', 'User', 'Active Scene', 'Late Steering']));
+    expect(ctx.debug.droppedBlocks).toEqual(expect.arrayContaining(['Persona Anchor', 'Character Reference']));
   });
 });

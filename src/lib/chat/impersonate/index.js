@@ -115,6 +115,9 @@ function countCompletedUnits(text) {
     } else if (!inQuote && !inAction && (ch === '.' || ch === '!' || ch === '?')) {
       const prev = text[i - 1];
       if (prev === '.' || prev === '!' || prev === '?') continue;
+      let lookback = i - 1;
+      while (lookback >= 0 && /\s/.test(text[lookback])) lookback -= 1;
+      if (lookback >= 0 && text[lookback] === '"') continue;
       const next = text[i + 1];
       if (!next || /\s/.test(next)) count += 1;
     }

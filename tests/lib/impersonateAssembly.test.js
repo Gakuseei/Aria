@@ -91,6 +91,28 @@ describe('assembleRuntimeContext (impersonate, continue)', () => {
     expect(ctx.sampler.minP).toBe(0.02);
     expect(ctx.sampler.flags.dryPenaltyLastN).toBe(512);
   });
+
+  it('strips the "Actions go in *asterisks*" line from globalCore (impersonate-only filter)', () => {
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildState() });
+    expect(ctx.systemPrompt).not.toMatch(/Actions go in \*asterisks\*/i);
+  });
+
+  it('emits the new XML block tags in the system prompt', () => {
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildState() });
+    expect(ctx.systemPrompt).toMatch(/<character>/);
+    expect(ctx.systemPrompt).toMatch(/<\/character>/);
+    expect(ctx.systemPrompt).toMatch(/<user>/);
+    expect(ctx.systemPrompt).toMatch(/<\/user>/);
+    expect(ctx.systemPrompt).toMatch(/<scene>/);
+    expect(ctx.systemPrompt).toMatch(/<\/scene>/);
+    expect(ctx.systemPrompt).toMatch(/<global>/);
+    expect(ctx.systemPrompt).toMatch(/<\/global>/);
+  });
+
+  it('returns assistantPrefix matching the userName', () => {
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildState() });
+    expect(ctx.assistantPrefix).toBe('Erik: ');
+  });
 });
 
 describe('assembleRuntimeContext (impersonate, first reply)', () => {

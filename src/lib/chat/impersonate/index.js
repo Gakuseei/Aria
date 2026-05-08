@@ -9,6 +9,39 @@ import {
 } from './draftValidator.js';
 import { checkPhraseRepetition, checkGestureRepetition, REPETITION_RETRY_HINT } from '../repetitionGuard.js';
 
+/**
+ * Translate user voice features into a sentence-count target for impersonate drafts.
+ * First reply or thin history → 1 (short opener). Otherwise map avgWords:
+ *   <= 8 words → 1 sentence, <= 25 → 2, > 25 → 3.
+ *
+ * @param {{ avgWords: number, exampleCount: number } | null | undefined} voiceFeatures
+ * @param {boolean} isFirstReply
+ * @returns {1|2|3}
+ */
+export function computeSentenceTarget(voiceFeatures, isFirstReply) {
+  if (isFirstReply) return 1;
+  if (!voiceFeatures || (voiceFeatures.exampleCount ?? 0) < 2) return 1;
+  const avg = Number(voiceFeatures.avgWords) || 0;
+  if (avg <= 8) return 1;
+  if (avg <= 25) return 2;
+  return 3;
+}
+
+/**
+ * Compute Ollama num_predict for impersonate. Safety-net behind streaming early-stop.
+ * Formula: sentenceTarget * 50 + 30 (≈ Nemo sentence ≈ 35-50 tokens, +30 buffer).
+ * Clamped to [60, profileCap].
+ *
+ * @param {1|2|3} sentenceTarget
+ * @param {number} profileCap - typically budgetConfig.impersonateRetryTokens
+ * @returns {number}
+ */
+export function computeNumPredict(sentenceTarget, profileCap) {
+  const raw = sentenceTarget * 50 + 30;
+  const ceiling = Math.max(60, Math.min(profileCap, raw));
+  return ceiling;
+}
+
 const FIRST_REPLY_NUM_PREDICT_CAP = 120;
 
 let activeRequestId = null;

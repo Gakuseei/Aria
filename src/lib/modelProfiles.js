@@ -87,7 +87,16 @@ export const MODEL_PROFILES = {
     repeatPenalty: 1.0,
     repeatLastN: 0,
     penalizeNewline: false,
-    flags: { dry: true, dryMultiplier: 0.8, dryBase: 1.75, dryAllowedLength: 2 }
+    flags: { dry: true, dryMultiplier: 0.8, dryBase: 1.75, dryAllowedLength: 2 },
+    impersonate: {
+      temperature: 1.0,
+      minP: 0.02,
+      topP: 0.95,
+      topK: 40,
+      repeatPenalty: 1.0,
+      repeatLastN: 0,
+      flags: { dry: true, dryMultiplier: 0.8, dryBase: 1.75, dryAllowedLength: 2, dryPenaltyLastN: 512 }
+    }
   },
   generic: {
     label: 'Generic',
@@ -151,5 +160,23 @@ export function resolveProfile(modelName, customProfiles) {
     ...base,
     ...override,
     flags: { ...(base.flags || {}), ...(override.flags || {}) }
+  };
+}
+
+/**
+ * Resolve effective sampler for impersonate path: base profile + per-family `impersonate` override + customProfiles override.
+ * @param {string} modelName
+ * @param {Record<string, Record<string, unknown>>} [customProfiles]
+ * @returns {ReturnType<typeof getModelProfile>}
+ */
+export function resolveImpersonateSampler(modelName, customProfiles) {
+  const base = getModelProfile(modelName);
+  const impersonate = MODEL_PROFILES[base.family]?.impersonate || null;
+  const custom = (customProfiles && typeof customProfiles === 'object' && customProfiles[modelName]) || {};
+  return {
+    ...base,
+    ...(impersonate || {}),
+    ...custom,
+    flags: { ...(base.flags || {}), ...((impersonate && impersonate.flags) || {}), ...(custom.flags || {}) }
   };
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectModelFamily, getModelProfile, resolveProfile, MODEL_PROFILES } from '../../src/lib/modelProfiles.js';
+import { detectModelFamily, getModelProfile, resolveProfile, resolveImpersonateSampler, MODEL_PROFILES } from '../../src/lib/modelProfiles.js';
 
 describe('detectModelFamily', () => {
   it('detects qwen family', () => {
@@ -141,5 +141,45 @@ describe('resolveProfile', () => {
     expect(resolved.family).toBe('generic');
     expect(resolved.temperature).toBe(1.0);
     expect(resolved.minP).toBe(MODEL_PROFILES.generic.minP);
+  });
+});
+
+describe('resolveImpersonateSampler', () => {
+  it('returns base profile when no impersonate override defined', () => {
+    const sampler = resolveImpersonateSampler('qwen2.5:7b');
+    const base = MODEL_PROFILES.qwen;
+    expect(sampler.temperature).toBe(base.temperature);
+    expect(sampler.topP).toBe(base.topP);
+    expect(sampler.flags).toEqual(base.flags);
+  });
+
+  it('merges impersonate override on top of magmell base', () => {
+    const sampler = resolveImpersonateSampler('HammerAI/mn-mag-mell-r1:12b-q4_K_M');
+    expect(sampler.temperature).toBe(1.0);
+    expect(sampler.minP).toBe(0.02);
+    expect(sampler.topP).toBe(0.95);
+    expect(sampler.topK).toBe(40);
+    expect(sampler.repeatPenalty).toBe(1.0);
+    expect(sampler.repeatLastN).toBe(0);
+    expect(sampler.flags.dry).toBe(true);
+    expect(sampler.flags.dryMultiplier).toBe(0.8);
+    expect(sampler.flags.dryAllowedLength).toBe(2);
+    expect(sampler.flags.dryPenaltyLastN).toBe(512);
+  });
+
+  it('lets customProfiles override impersonate sampler too', () => {
+    const sampler = resolveImpersonateSampler('HammerAI/mn-mag-mell-r1:12b-q4_K_M', {
+      'HammerAI/mn-mag-mell-r1:12b-q4_K_M': { temperature: 0.85 }
+    });
+    expect(sampler.temperature).toBe(0.85);
+    expect(sampler.minP).toBe(0.02);
+  });
+
+  it('deep-merges flags so partial flag overrides preserve other flags', () => {
+    const sampler = resolveImpersonateSampler('HammerAI/mn-mag-mell-r1:12b-q4_K_M', {
+      'HammerAI/mn-mag-mell-r1:12b-q4_K_M': { flags: { dry: false } }
+    });
+    expect(sampler.flags.dry).toBe(false);
+    expect(sampler.flags.dryMultiplier).toBe(0.8);
   });
 });

@@ -1180,7 +1180,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   </button>
                 </div>
 
-                {settings.smartSuggestionsEnabled && (
+                {settings.smartSuggestionsEnabled && isGoldMode && (
                   <div className="theme-card-subtle p-4 rounded-lg space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-zinc-200">{t.settings.suggestionModelTitle}</span>

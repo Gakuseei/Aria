@@ -10,7 +10,7 @@ import { saveSession, generateSessionId, deleteSession } from '../lib/storage/se
 import { unloadOllamaModel } from '../lib/ollama';
 import { resolveTemplates } from '../lib/chat/common';
 import { sendMessage } from '../lib/chat/reply';
-import { generateSuggestionsBackground, abortSuggestionCall, normalizeSuggestionDisplayValue } from '../lib/chat/suggestions';
+import { generateSuggestions, abortSuggestionCall, normalizeSuggestionDisplayValue } from '../lib/chat/suggestions';
 import { impersonateUser, abortImpersonateCall } from '../lib/chat/impersonate';
 import { passionManager, getTierKey, PASSION_TIERS } from '../lib/chat/passion';
 import { isCommand, executeCommand } from '../lib/commandHandler';
@@ -785,39 +785,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     setMessages([greetingMsg]);
     const greetingSceneMemory = buildSceneMemory([greetingMsg], null);
     setSceneMemory(greetingSceneMemory);
-
-    if (settings.smartSuggestionsEnabled) {
-      const sourceAssistantTimestamp = greetingMsg.timestamp;
-      setIsGeneratingSuggestions(true);
-      generateSuggestionsBackground([greetingMsg], character, userName, settings, (suggestions) => {
-        const result = normalizeSuggestionList((suggestions && suggestions.length > 0) ? suggestions : []);
-        const latestAssistant = [...messagesRef.current].reverse().find((message) => message.role === 'assistant') || null;
-        const latestAssistantTimestamp = latestAssistant?.timestamp ?? sourceAssistantTimestamp;
-        const sameGreetingReplay = Boolean(latestAssistant)
-          && latestAssistant.content === greetingMsg.content
-          && !messagesRef.current.some((message) => message.role === 'user');
-        if (latestAssistantTimestamp !== sourceAssistantTimestamp && !sameGreetingReplay) {
-          console.log('[ChatInterface] Discarded stale greeting suggestions');
-          setIsGeneratingSuggestions(false);
-          return;
-        }
-        if (result.length === 0 && sameGreetingReplay && Array.isArray(latestAssistant?.suggestions) && latestAssistant.suggestions.length > 0) {
-          setIsGeneratingSuggestions(false);
-          return;
-        }
-        setSmartSuggestions(result);
-        setIsGeneratingSuggestions(false);
-        if (result.length > 0) {
-          setMessages(prev => {
-            const updated = [...prev];
-            if (updated.length > 0 && updated[0].role === 'assistant') {
-              updated[0] = { ...updated[0], suggestions: result };
-            }
-            return updated;
-          });
-        }
-      }, { previousPills: suggestionsHistoryRef.current.slice(-5) });
-    }
   };
 
   // ============================================================================
@@ -1011,40 +978,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   // MESSAGE SENDING
   // ============================================================================
 
-  const triggerSuggestions = (updatedMessages, currentPassionLevel, currentSceneMemory = sceneMemoryRef.current) => {
-    if (!settings.smartSuggestionsEnabled) return;
-    const rollingAvoid = suggestionsHistoryRef.current.slice(-30);
-    const sourceAssistantTimestamp = [...updatedMessages].reverse().find((message) => message.role === 'assistant')?.timestamp ?? null;
-    const suggestStart = Date.now();
-    setIsGeneratingSuggestions(true);
-    generateSuggestionsBackground(updatedMessages, character, userName, settings, (suggestions) => {
-      const suggestTime = ((Date.now() - suggestStart) / 1000).toFixed(1);
-      if (!mountedRef.current) return;
-      setIsGeneratingSuggestions(false);
-      const result = normalizeSuggestionList((suggestions && suggestions.length > 0) ? suggestions : []);
-      const latestAssistantTimestamp = [...messagesRef.current].reverse().find((message) => message.role === 'assistant')?.timestamp ?? sourceAssistantTimestamp;
-      if (sourceAssistantTimestamp && latestAssistantTimestamp !== sourceAssistantTimestamp) {
-        console.log('[ChatInterface] Discarded stale suggestions');
-        return;
-      }
-      console.log(`[API] Suggestions ready: ${result.length} in ${suggestTime}s`);
-      setSmartSuggestions(result);
-      if (result.length > 0) {
-        suggestionsHistoryRef.current = [...suggestionsHistoryRef.current, ...result].slice(-50);
-      }
-      setMessages(prev => {
-        let lastIdx = -1;
-        for (let i = prev.length - 1; i >= 0; i--) {
-          if (prev[i].role === 'assistant') { lastIdx = i; break; }
-        }
-        if (lastIdx === -1) return prev;
-        const updated = [...prev];
-        updated[lastIdx] = { ...updated[lastIdx], suggestions: result.length > 0 ? result : undefined, suggestTime: parseFloat(suggestTime) };
-        return updated;
-      });
-    }, { previousPills: rollingAvoid.slice(-5) });
-  };
-
   const handleSend = async (messageText = input) => {
     const safeMessageText = (messageText || '').trim();
     if (!safeMessageText || isLoading || isStreaming) return;
@@ -1153,7 +1086,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       if (isForegroundRequestObsolete(activeAbortHandle)) return;
 
       const newPassion = response.passionLevel ?? passionLevel;
-      triggerSuggestions(updatedMessages, newPassion, nextSceneMemory);
 
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
@@ -1483,7 +1415,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       if (isForegroundRequestObsolete(activeAbortHandle)) return;
 
       const newPassion = response.passionLevel ?? passionLevel;
-      triggerSuggestions(updatedMessages, newPassion, nextSceneMemory);
 
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);

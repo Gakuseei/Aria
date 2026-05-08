@@ -1,64 +1,27 @@
 /**
- * Smart Suggestions orchestrator.
- * Uses the configured small suggestion model (or chat-model fallback) to
- * generate three role-locked reply pills per character turn.
+ * Smart Suggestions orchestrator (v2 — beat-adaptive, on-demand).
+ *
+ * Public API:
+ *   abortSuggestionCall()
+ *   normalizeSuggestionDisplayValue(text)
+ *   generateSuggestions(history, character, userName, settings, options) -> Promise<string[]>
  */
 
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, DEFAULT_SUGGESTION_PROFILE } from '../../defaults.js';
-import { compileCharacterRuntimeCard, resolveRuntimeCardTemplates } from '../../chatRuntime/compiler.js';
+import { compileCharacterRuntimeCard } from '../../chatRuntime/compiler.js';
 import { buildSuggestionPrompt } from './prompt.js';
+import { buildSuggestionSchema } from './schema.js';
 import { parseSuggestionJson } from './parse.js';
 import { applySanityFilters } from './sanity.js';
+import { APP_LANG_NAME_BY_LOCALE } from './language.js';
 import { isElectron } from '../platform.js';
-import { checkPhraseRepetition } from '../repetitionGuard.js';
-
-const OPEN_THREAD_MAX_CHARS = 280;
-
-/**
- * Derive a cliff snippet from the latest assistant message for use as the
- * per-turn open-thread anchor in the suggestion prompt.
- * @param {Array<{role:string, content:string}>} history
- * @returns {string}
- */
-function deriveOpenThread(history) {
-  const lastChar = [...(history || [])].reverse().find((m) => m?.role === 'assistant');
-  if (!lastChar?.content) return '';
-  const text = String(lastChar.content).trim();
-  if (text.length <= OPEN_THREAD_MAX_CHARS) return text;
-  return '…' + text.slice(text.length - OPEN_THREAD_MAX_CHARS + 1);
-}
 
 const PILL_MAX_TOKENS = 220;
 const PILL_MAX_TOKENS_RETRY = 160;
 
-const SUGGESTION_JSON_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  properties: {
-    pills: {
-      type: 'array',
-      minItems: 3,
-      maxItems: 3,
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
-          role: { type: 'string', enum: ['stay', 'forward', 'push'] },
-          text: { type: 'string', maxLength: 200 }
-        },
-        required: ['role', 'text']
-      }
-    }
-  },
-  required: ['pills']
-};
-
 let suggestionRequestId = 0;
 let suggestionAbortController = null;
 
-/**
- * Aborts any in-flight suggestion request and invalidates the request id.
- */
 export function abortSuggestionCall() {
   suggestionRequestId += 1;
   if (suggestionAbortController) {
@@ -67,204 +30,125 @@ export function abortSuggestionCall() {
   }
 }
 
-/**
- * Normalize a suggestion text for display.
- * @param {string} value
- * @returns {string}
- */
 export function normalizeSuggestionDisplayValue(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
 }
 
-function pickModel(settings) {
-  const explicit = String(settings?.suggestionModel || '').trim();
-  if (explicit) return explicit;
-  if (settings?.suggestionFallbackToChat === false) return null;
+function pickModel(settings, isGoldMode) {
+  if (isGoldMode) {
+    const explicit = String(settings?.suggestionModel || '').trim();
+    if (explicit) return explicit;
+  }
   return String(settings?.ollamaModel || DEFAULT_MODEL_NAME).trim();
 }
 
-function pickProfile(model, settings) {
+function pickProfile(model, settings, isGoldMode) {
+  if (!isGoldMode) return { ...DEFAULT_SUGGESTION_PROFILE };
   const customProfiles = settings?.customProfiles || {};
   const override = (model && customProfiles[model]) || {};
   return { ...DEFAULT_SUGGESTION_PROFILE, ...override };
 }
 
-async function callOllama({ currentRequestId, model, profile, prompts, maxTokens, ollamaUrl }) {
+async function callOllama({ currentRequestId, model, profile, prompts, schema, maxTokens, ollamaUrl }) {
   const params = {
-    messages: [{ role: 'user', content: prompts.userPrompt }],
-    systemPrompt: prompts.systemPrompt,
+    messages: [
+      { role: 'system', content: prompts.systemPrompt },
+      { role: 'user', content: prompts.userPrompt }
+    ],
     model,
-    isOllama: true,
+    options: {
+      temperature: profile.temperature,
+      top_p: profile.topP,
+      top_k: profile.topK,
+      min_p: profile.minP,
+      repeat_penalty: profile.repeatPenalty,
+      num_predict: maxTokens
+    },
+    format: schema,
+    stream: false,
     ollamaUrl,
-    temperature: profile.temperature,
-    maxTokens,
-    top_k: profile.topK,
-    top_p: profile.topP,
-    min_p: profile.minP,
-    repeat_penalty: profile.repeatPenalty,
-    format: SUGGESTION_JSON_SCHEMA,
-    tag: 'suggestions'
+    isOllama: true
   };
 
-  if (isElectron()) {
-    const result = await window.electronAPI.aiChat(params);
-    if (currentRequestId !== suggestionRequestId) return null;
-    if (!result?.success) {
-      if (result?.error) console.warn('[suggestions] ai-chat failed:', result.error);
-      return null;
-    }
-    return result.content || '';
-  }
-
-  const controller = new AbortController();
-  if (currentRequestId === suggestionRequestId) {
-    suggestionAbortController = controller;
-  }
+  if (!isElectron()) return null;
+  const ctrl = new AbortController();
+  suggestionAbortController = ctrl;
   try {
-    const response = await fetch(`${ollamaUrl}/api/chat`, {
-      method: 'POST',
-      signal: controller.signal,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: prompts.systemPrompt },
-          { role: 'user',   content: prompts.userPrompt }
-        ],
-        stream: false,
-        format: SUGGESTION_JSON_SCHEMA,
-        options: {
-          temperature: params.temperature,
-          num_predict: maxTokens,
-          top_k: params.top_k,
-          top_p: params.top_p,
-          min_p: params.min_p,
-          repeat_penalty: params.repeat_penalty
-        }
-      })
-    });
+    const result = await window.electronAPI.aiChat(params, { signal: ctrl.signal });
     if (currentRequestId !== suggestionRequestId) return null;
-    if (!response.ok) return null;
-    const json = await response.json();
-    return json?.message?.content || '';
+    if (!result?.success) return null;
+    return String(result.content || '').trim();
   } catch (err) {
     if (err?.name === 'AbortError') return null;
+    console.warn('[suggestions] callOllama error:', err);
     return null;
   } finally {
-    if (currentRequestId === suggestionRequestId && suggestionAbortController === controller) {
-      suggestionAbortController = null;
-    }
+    if (suggestionAbortController === ctrl) suggestionAbortController = null;
   }
 }
 
-/**
- * Run one suggestion-generation attempt.
- * @returns {string[]|null} string array on success or no-model skip (terminal),
- *   null on retry-eligible failure (parse, sanity, ollama error).
- */
-async function attemptOnce({ history, character, userName, settings, currentRequestId, maxTokens, previousPills, enforceRepetitionGuard = true }) {
-  const model = pickModel(settings);
-  if (!model) return [];
-
-  const characterName = character?.name || 'Character';
-  const resolvedUserName = userName || 'You';
-  const rawCard = compileCharacterRuntimeCard(character);
-  const compiledCard = resolveRuntimeCardTemplates(rawCard, characterName, resolvedUserName);
-  const openThread = deriveOpenThread(history);
-  const prompts = buildSuggestionPrompt({
-    compiledCard,
-    history,
-    characterName,
-    userName: resolvedUserName,
-    openThread
-  });
-
-  const profile = pickProfile(model, settings);
+async function attemptOnce({ currentRequestId, history, character, userName, settings, isGoldMode, locale, previousPills, maxTokens, retryHint }) {
+  const compiled = await compileCharacterRuntimeCard({ character, settings });
+  const characterName = String(character?.name || compiled?.characterName || 'Character').trim();
+  const appLanguageName = APP_LANG_NAME_BY_LOCALE[locale] || 'English';
+  const model = pickModel(settings, isGoldMode);
+  const profile = pickProfile(model, settings, isGoldMode);
   const ollamaUrl = settings?.ollamaUrl || OLLAMA_DEFAULT_URL;
+  const schema = buildSuggestionSchema(appLanguageName);
+  const prompts = buildSuggestionPrompt({ history, characterName, userName, appLanguageName });
+  if (retryHint) prompts.systemPrompt += `\n\n${retryHint}`;
 
-  const raw = await callOllama({ currentRequestId, model, profile, prompts, maxTokens, ollamaUrl });
+  const raw = await callOllama({ currentRequestId, model, profile, prompts, schema, maxTokens, ollamaUrl });
   if (raw === null) return null;
   const parsed = parseSuggestionJson(raw);
   if (!parsed) {
     console.warn('[suggestions] parse failed for raw:', String(raw).slice(0, 240));
     return null;
   }
-  const filtered = applySanityFilters(parsed, { previousPills });
-  if (!filtered) {
-    console.warn('[suggestions] sanity rejected pills:', parsed, 'previousPills:', previousPills);
+  const accepted = applySanityFilters(parsed, { characterName, locale, previousPills: previousPills || [] });
+  if (!accepted) {
+    console.warn('[suggestions] sanity rejected pills:', parsed);
     return null;
   }
-  const pills = [filtered.stay, filtered.forward, filtered.push];
-  if (enforceRepetitionGuard) {
-    const repetitionPool = Array.isArray(previousPills) ? previousPills : [];
-    for (let i = 0; i < pills.length; i += 1) {
-      const others = pills.filter((_, idx) => idx !== i);
-      const phrase = checkPhraseRepetition(pills[i], [...others, ...repetitionPool], {
-        charName: characterName,
-        userName: resolvedUserName
-      });
-      if (phrase.banned) {
-        console.warn(`[suggestions] pill repetition guard — ${phrase.source}: "${phrase.phrase}"`);
-        return null;
-      }
-    }
-  }
-  return pills;
+  return accepted.pills.map((p) => p.text);
 }
 
 /**
- * Generate three role-locked pills for the latest character turn.
- * Calls onResult([stay, forward, push]) on success or onResult([]) on failure / fallback-disabled.
- *
+ * On-demand entry. Generates 3 pills.
  * @param {Array<{role:string, content:string}>} history
- * @param {Object} character
+ * @param {object} character
  * @param {string} userName
- * @param {Object} settings
- * @param {(pills:string[]) => void} onResult
- * @param {Object} [options]
- * @param {string[]} [options.previousPills] - rolling-avoid history of recently-shown pill texts.
- * @returns {Promise<void>}
+ * @param {object} settings
+ * @param {object} [options]
+ * @param {string[]} [options.previousPills]
+ * @param {string} [options.locale='en']
+ * @param {boolean} [options.isGoldMode=false]
+ * @returns {Promise<string[]>}
  */
-export async function generateSuggestionsBackground(history, character, userName, settings, onResult, options = {}) {
+export async function generateSuggestions(history, character, userName, settings, options = {}) {
   suggestionRequestId += 1;
   const currentRequestId = suggestionRequestId;
-  const previousPills = Array.isArray(options?.previousPills) ? options.previousPills : [];
+  const previousPills = Array.isArray(options.previousPills) ? options.previousPills : [];
+  const locale = String(options.locale || 'en').toLowerCase();
+  const isGoldMode = Boolean(options.isGoldMode);
 
   try {
     let result = await attemptOnce({
-      history, character, userName, settings,
-      currentRequestId,
-      maxTokens: PILL_MAX_TOKENS,
-      previousPills
+      currentRequestId, history, character, userName, settings, isGoldMode, locale, previousPills,
+      maxTokens: PILL_MAX_TOKENS
     });
-
-    if (currentRequestId !== suggestionRequestId) return;
-
-    if (result === null) {
+    if (currentRequestId !== suggestionRequestId) return [];
+    if (!result) {
       result = await attemptOnce({
-        history, character, userName, settings,
-        currentRequestId,
+        currentRequestId, history, character, userName, settings, isGoldMode, locale, previousPills,
         maxTokens: PILL_MAX_TOKENS_RETRY,
-        previousPills,
-        enforceRepetitionGuard: false
+        retryHint: `Previous attempt was rejected. Pills MUST be in target language, from ${userName}'s perspective, distinct from each other.`
       });
-      if (currentRequestId !== suggestionRequestId) return;
+      if (currentRequestId !== suggestionRequestId) return [];
     }
-
-    onResult(result || []);
+    return result || [];
   } catch (err) {
-    if (currentRequestId !== suggestionRequestId) return;
-    if (err?.name === 'AbortError') return;
-    onResult([]);
-  } finally {
-    if (currentRequestId === suggestionRequestId) {
-      suggestionAbortController = null;
-    }
+    console.warn('[suggestions] generateSuggestions error:', err);
+    return [];
   }
 }
-
-/**
- * Legacy export alias maintained for callers that still import the old name.
- * Prefer `parseSuggestionJson` from `./parse.js` directly.
- */
-export { parseSuggestionJson as parseSuggestionResponse } from './parse.js';

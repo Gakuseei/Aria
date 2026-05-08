@@ -404,6 +404,28 @@ describe('buildRuntimeState', () => {
     expect(runtimeState.assistMode).toBe('bot_conversation');
     expect(runtimeState.assistModeDebug.reason).toBe('bot_override');
   });
+
+  it('attaches voiceFeatures to runtimeState (avgWords + exampleCount)', () => {
+    const history = [
+      { role: 'assistant', content: 'Hi there.' },
+      { role: 'user', content: 'Hey, how are you doing today?' },
+      { role: 'assistant', content: 'Good, thanks.' },
+      { role: 'user', content: 'I want to come over later.' },
+      { role: 'assistant', content: 'Sure.' },
+      { role: 'user', content: 'See you then.' }
+    ];
+    const state = buildRuntimeState({
+      character: { name: 'Test', persona: 'Test persona.' },
+      history,
+      userName: 'Erik',
+      userGender: 'male',
+      userPronouns: 'he/him',
+      runtimeSteering: { profile: 'impersonate', availableContextTokens: 2000, passionLevel: 10, unchainedMode: false }
+    });
+    expect(state.voiceFeatures).toBeDefined();
+    expect(typeof state.voiceFeatures.avgWords).toBe('number');
+    expect(state.voiceFeatures.exampleCount).toBe(3);
+  });
 });
 
 describe('sceneMemory', () => {

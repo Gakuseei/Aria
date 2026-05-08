@@ -8,6 +8,7 @@ import {
   trimPromptSnippet,
   truncateMiddle
 } from './text.js';
+import { extractVoiceFeatures } from '../chat/impersonate/voiceAdapter.js';
 
 const PROFILE_HISTORY_SHARE = {
   reply: 0.4,
@@ -1308,6 +1309,15 @@ export function buildRuntimeState({ character, history, userName = 'User', userG
     compiledRuntimeCard.exampleSeed = resolveTemplates(intimateExamplePick, charName, userName);
   }
 
+  const userMessageCount = selectedRecentHistory.messages
+    .filter((message) => message.role === 'user').length;
+  const voiceFeaturesRaw = extractVoiceFeatures(
+    selectedRecentHistory.messages,
+    userName,
+    userIdentity
+  );
+  const voiceFeatures = { ...voiceFeaturesRaw, exampleCount: userMessageCount };
+
   return {
     compiledRuntimeCard,
     sceneState,
@@ -1326,7 +1336,8 @@ export function buildRuntimeState({ character, history, userName = 'User', userG
       profile,
       assistMode: assistMode.value
     }),
-    voicePinResolution
+    voicePinResolution,
+    voiceFeatures
   };
 }
 

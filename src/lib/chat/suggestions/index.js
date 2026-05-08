@@ -8,7 +8,6 @@
  */
 
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, DEFAULT_SUGGESTION_PROFILE } from '../../defaults.js';
-import { compileCharacterRuntimeCard } from '../../chatRuntime/compiler.js';
 import { buildSuggestionPrompt } from './prompt.js';
 import { buildSuggestionSchema } from './schema.js';
 import { parseSuggestionJson } from './parse.js';
@@ -88,8 +87,7 @@ async function callOllama({ currentRequestId, model, profile, prompts, schema, m
 }
 
 async function attemptOnce({ currentRequestId, history, character, userName, settings, isGoldMode, locale, previousPills, maxTokens, retryHint }) {
-  const compiled = await compileCharacterRuntimeCard({ character, settings });
-  const characterName = String(character?.name || compiled?.characterName || 'Character').trim();
+  const characterName = String(character?.name || 'Character').trim();
   const appLanguageName = APP_LANG_NAME_BY_LOCALE[locale] || 'English';
   const model = pickModel(settings, isGoldMode);
   const profile = pickProfile(model, settings, isGoldMode);

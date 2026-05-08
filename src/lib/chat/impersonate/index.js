@@ -1,4 +1,4 @@
-import { resolveProfile } from '../../modelProfiles.js';
+import { resolveProfile, resolveImpersonateSampler } from '../../modelProfiles.js';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from '../../defaults.js';
 import { assembleRuntimeContext, buildRuntimeState } from '../../chatRuntime/index.js';
 import { ASSIST_BUDGET_CONFIG, deriveAssistBudgetTier, getModelCtx, getModelCapabilities } from '../../ollama/index.js';
@@ -41,8 +41,6 @@ export function computeNumPredict(sentenceTarget, profileCap) {
   const ceiling = Math.max(60, Math.min(profileCap, raw));
   return ceiling;
 }
-
-const FIRST_REPLY_NUM_PREDICT_CAP = 120;
 
 let activeRequestId = null;
 
@@ -314,10 +312,21 @@ export async function impersonateUser(
   const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState });
   console.log('[API] Impersonate runtime:', ctx.debug);
 
-  const numPredictForRun = ctx.debug?.firstReply
-    ? Math.min(budgetConfig.impersonateFirstTokens, FIRST_REPLY_NUM_PREDICT_CAP)
-    : budgetConfig.impersonateRetryTokens;
-  const earlyStopMaxSentences = ctx.debug?.firstReply ? 2 : 0;
+  const sentenceTarget = ctx.debug?.sentenceTarget || 1;
+  const profileCap = budgetConfig.impersonateRetryTokens;
+  const numPredictForRun = computeNumPredict(sentenceTarget, profileCap);
+  const earlyStopMaxSentences = sentenceTarget;
+  const impersonateSampler = resolveImpersonateSampler(model, settings.customProfiles);
+  const effectiveSampler = {
+    temperature: impersonateSampler.temperature,
+    topK: impersonateSampler.topK,
+    topP: impersonateSampler.topP,
+    minP: impersonateSampler.minP,
+    repeatPenalty: impersonateSampler.repeatPenalty,
+    repeatLastN: impersonateSampler.repeatLastN,
+    penalizeNewline: impersonateSampler.penalizeNewline,
+    flags: impersonateSampler.flags || {}
+  };
 
   const runOnce = (extraSystemHint = '') => runStreamingDraft({
     ollamaUrl,
@@ -328,7 +337,7 @@ export async function impersonateUser(
     userPrompt: ctx.userPrompt,
     assistantPrefix: ctx.assistantPrefix,
     stopStrings: ctx.stopStrings,
-    sampler: ctx.sampler,
+    sampler: effectiveSampler,
     earlyStopMaxSentences,
     userName,
     charName,
@@ -336,15 +345,15 @@ export async function impersonateUser(
   });
 
   let finalized = await runOnce();
-  if (ctx.debug?.firstReply && finalized.text) {
-    finalized = { ...finalized, text: trimToCompleteSentences(finalized.text, 2) };
+  if (finalized.text) {
+    finalized = { ...finalized, text: trimToCompleteSentences(finalized.text, sentenceTarget) };
   }
   if (!isStructurallyValid(finalized.text, userName, charName)) {
     console.info('[API] Impersonate retry: first stream produced invalid structure');
     onToken(null, '');
     finalized = await runOnce();
-    if (ctx.debug?.firstReply && finalized.text) {
-      finalized = { ...finalized, text: trimToCompleteSentences(finalized.text, 2) };
+    if (finalized.text) {
+      finalized = { ...finalized, text: trimToCompleteSentences(finalized.text, sentenceTarget) };
     }
   }
   if (!isStructurallyValid(finalized.text, userName, charName)) {
@@ -368,8 +377,8 @@ export async function impersonateUser(
     console.warn(`[API] Impersonate repetition guard — ${initialImpersonateRepetition.source}: "${initialImpersonateRepetition.phrase}", retrying`);
     onToken(null, '');
     let retryFinalized = await runOnce(REPETITION_RETRY_HINT);
-    if (ctx.debug?.firstReply && retryFinalized.text) {
-      retryFinalized = { ...retryFinalized, text: trimToCompleteSentences(retryFinalized.text, 2) };
+    if (retryFinalized.text) {
+      retryFinalized = { ...retryFinalized, text: trimToCompleteSentences(retryFinalized.text, sentenceTarget) };
     }
     if (isStructurallyValid(retryFinalized.text, userName, charName)) {
       const retryRepetition = evaluateImpersonateRepetition(retryFinalized.text);

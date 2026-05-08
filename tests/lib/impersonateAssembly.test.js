@@ -1,151 +1,130 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { assembleRuntimeContext, buildRuntimeState } from '../../src/lib/chatRuntime/index.js';
-import { resolveProfile } from '../../src/lib/modelProfiles.js';
 
-const CHARACTER = {
-  id: 'mei',
-  name: 'Mei',
-  persona: 'A grounded, witty woman.',
-  scenario: 'Cafe afternoon.',
-  firstMes: 'Hey, you came.',
-  exampleDialogues: ''
+const character = {
+  name: 'Aria',
+  persona: 'A composed, observant woman who watches before speaking.',
+  scenario: 'In a quiet room.',
+  category: 'sfw'
 };
 
-const HISTORY = [
-  { role: 'assistant', content: 'She watches you over the rim of her mug.' },
-  { role: 'user', content: 'I lean back and let the silence sit between us for a beat.' },
-  { role: 'assistant', content: 'Her mouth quirks. Cute.' },
-  { role: 'user', content: '"Cute, huh?" I keep my voice flat.' },
-  { role: 'assistant', content: 'She laughs and leans in.' }
-];
-
-function buildContext() {
-  const runtimeState = buildRuntimeState({
-    character: CHARACTER,
-    history: HISTORY,
+function buildState({ historyExtra = [], passionLevel = 10 } = {}) {
+  const history = [
+    { role: 'assistant', content: 'You take a seat across from me.' },
+    { role: 'user', content: 'I lean back and watch.' },
+    { role: 'assistant', content: 'I tilt my head, considering.' },
+    { role: 'user', content: 'Tell me what you want.' },
+    ...historyExtra
+  ];
+  return buildRuntimeState({
+    character,
+    history,
     userName: 'Erik',
     userGender: 'male',
     userPronouns: 'he/him',
     runtimeSteering: {
       profile: 'impersonate',
-      availableContextTokens: 1600,
-      passionLevel: 30,
+      availableContextTokens: 2000,
+      passionLevel,
+      unchainedMode: false,
       assistBudgetTier: 'default'
     }
   });
-  runtimeState.runtimeSteering.resolvedProfile = resolveProfile('mag-mell', null);
-  return assembleRuntimeContext({ profile: 'impersonate', runtimeState });
 }
 
-describe('assembleRuntimeContext - impersonate branch', () => {
-  it('returns assistantPrefix in the form `${userName}: `', () => {
-    const ctx = buildContext();
-    expect(ctx.assistantPrefix).toBe('Erik: ');
+describe('assembleRuntimeContext (impersonate, continue)', () => {
+  it('returns a sentenceTarget in ctx.debug', () => {
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildState() });
+    expect([1, 2, 3]).toContain(ctx.debug.sentenceTarget);
   });
 
-  it('returns stopStrings that include the character POV markers and end token', () => {
-    const ctx = buildContext();
-    expect(ctx.stopStrings).toContain('\nMei:');
-    expect(ctx.stopStrings).toContain('Mei:');
+  it('includes numbered constraints in the system prompt', () => {
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildState() });
+    expect(ctx.systemPrompt).toMatch(/Constraints:/);
+    expect(ctx.systemPrompt).toMatch(/1\. Write only Erik's reply/);
+    expect(ctx.systemPrompt).toMatch(/2\. \d+ sentence/);
+    expect(ctx.systemPrompt).toMatch(/3\. Do not write Aria's/);
+  });
+
+  it('omits the legacy "Late Steering" block label', () => {
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildState() });
+    expect(ctx.systemPrompt).not.toMatch(/Late Steering:/);
+  });
+
+  it('appends scene-intensity constraint when passionLevel > 15', () => {
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildState({ passionLevel: 40 }) });
+    expect(ctx.systemPrompt).toMatch(/Match scene intensity 40\/100/);
+  });
+
+  it('omits scene-intensity constraint when passionLevel <= 15', () => {
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildState({ passionLevel: 10 }) });
+    expect(ctx.systemPrompt).not.toMatch(/Match scene intensity/);
+  });
+
+  it('emits new stop-strings (action lead-in and bare-action variant)', () => {
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildState() });
+    expect(ctx.stopStrings).toContain('\n*Aria ');
+    expect(ctx.stopStrings).toContain('\nAria ');
+    expect(ctx.stopStrings).toContain('\nAria:');
     expect(ctx.stopStrings).toContain('<|im_end|>');
   });
 
-  it('omits all NEVER directives and asterisk-format mandates from the system prompt', () => {
-    const ctx = buildContext();
-    expect(ctx.systemPrompt).not.toMatch(/NEVER/);
-    expect(ctx.systemPrompt).not.toMatch(/Actions go in \*asterisks\*/i);
+  it('does NOT include the bare "Aria:" stop-string (without leading newline)', () => {
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildState() });
+    expect(ctx.stopStrings).not.toContain('Aria:');
   });
 
-  it('includes the user voice card block when user history is non-empty', () => {
-    const ctx = buildContext();
-    expect(ctx.systemPrompt).toContain('<user_voice_examples');
-    expect(ctx.systemPrompt).toContain('I lean back and let the silence sit between us');
-  });
-
-  it('user prompt ends with a continuation cue to the user (not a NEVER rule)', () => {
-    const ctx = buildContext();
-    expect(ctx.userPrompt).toMatch(/Continue Erik'?s next reply\.?$/);
-  });
-
-  it('returns sampler with profile temperature unmodified (no floor clamp)', () => {
-    const ctx = buildContext();
-    expect(typeof ctx.sampler.temperature).toBe('number');
-    expect(ctx.sampler.temperature).toBeGreaterThan(0);
-    expect(ctx.sampler).not.toHaveProperty('temperatureFloor');
-  });
-
-  it('returns sampler === null when resolvedProfile is not provided', () => {
-    const runtimeState = buildRuntimeState({
-      character: CHARACTER,
-      history: HISTORY,
-      userName: 'Erik',
-      userGender: 'male',
-      userPronouns: 'he/him',
-      runtimeSteering: {
-        profile: 'impersonate',
-        availableContextTokens: 1600,
-        passionLevel: 30,
-        assistBudgetTier: 'default'
-      }
-    });
-    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState });
-    expect(ctx.sampler).toBeNull();
+  it('uses the impersonate sampler from resolvedProfile when present', () => {
+    const state = buildState();
+    state.runtimeSteering.resolvedProfile = {
+      family: 'magmell',
+      temperature: 1.0,
+      minP: 0.02,
+      topP: 0.95,
+      topK: 40,
+      repeatPenalty: 1.0,
+      repeatLastN: 0,
+      flags: { dry: true, dryMultiplier: 0.8, dryBase: 1.75, dryAllowedLength: 2, dryPenaltyLastN: 512 }
+    };
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: state });
+    expect(ctx.sampler.temperature).toBe(1.0);
+    expect(ctx.sampler.minP).toBe(0.02);
+    expect(ctx.sampler.flags.dryPenaltyLastN).toBe(512);
   });
 });
 
-describe('assembleRuntimeContext — impersonate first-reply branch', () => {
-  function buildFirstReplyContext() {
-    const runtimeState = buildRuntimeState({
-      character: CHARACTER,
-      history: [
-        { role: 'assistant', content: 'Hey, you came.' }
-      ],
+describe('assembleRuntimeContext (impersonate, first reply)', () => {
+  function buildFirstReplyState() {
+    return buildRuntimeState({
+      character,
+      history: [{ role: 'assistant', content: 'You step inside and I look up.' }],
       userName: 'Erik',
       userGender: 'male',
       userPronouns: 'he/him',
       runtimeSteering: {
         profile: 'impersonate',
-        availableContextTokens: 1600,
+        availableContextTokens: 2000,
         passionLevel: 0,
+        unchainedMode: false,
         assistBudgetTier: 'default'
       }
     });
-    runtimeState.runtimeSteering.resolvedProfile = resolveProfile('mag-mell', null);
-    return assembleRuntimeContext({ profile: 'impersonate', runtimeState });
   }
 
-  it('uses a leaner system prompt without Persona Anchor or Character Reference on first reply', () => {
-    const ctx = buildFirstReplyContext();
-    expect(ctx.systemPrompt).not.toContain('Persona Anchor');
-    expect(ctx.systemPrompt).not.toContain('Character Reference');
-    expect(ctx.systemPrompt).not.toContain('Global Core');
-    expect(ctx.systemPrompt).not.toContain('user_voice_examples');
-  });
-
-  it('starts the system prompt with a Role declaration that disambiguates user vs character', () => {
-    const ctx = buildFirstReplyContext();
-    expect(ctx.systemPrompt).toMatch(/^Role:?/m);
-    expect(ctx.systemPrompt).toMatch(/Role:[\s\S]*write as Erik[\s\S]*Mei just spoke/);
-  });
-
-  it('changes the user-prompt closing cue for first-reply', () => {
-    const ctx = buildFirstReplyContext();
-    expect(ctx.userPrompt).toMatch(/Write Erik'?s very first reply/i);
-  });
-
-  it('debug carries firstReply flag and lists Role/User/Active Scene/Late Steering as included', () => {
-    const ctx = buildFirstReplyContext();
+  it('uses sentenceTarget = 1', () => {
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildFirstReplyState() });
+    expect(ctx.debug.sentenceTarget).toBe(1);
     expect(ctx.debug.firstReply).toBe(true);
-    expect(ctx.debug.includedBlocks).toEqual(expect.arrayContaining(['Role', 'User', 'Active Scene', 'Late Steering']));
-    expect(ctx.debug.droppedBlocks).toEqual(expect.arrayContaining(['Persona Anchor', 'Character Reference']));
   });
 
-  it('first-reply Late Steering caps reply length to 1-2 sentences and locks first-person POV', () => {
-    const ctx = buildFirstReplyContext();
-    expect(ctx.systemPrompt).toMatch(/1 or 2 sentences/);
-    expect(ctx.systemPrompt).toMatch(/no more than two sentences/);
-    expect(ctx.systemPrompt).toMatch(/I\/me\/my for Erik/);
-    expect(ctx.systemPrompt).toMatch(/Never refer to Erik as he\/she\/his\/her/);
-    expect(ctx.systemPrompt).not.toMatch(/NEVER (write|narrate|use)/);
+  it('omits user_voice_examples block (no history yet)', () => {
+    const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildFirstReplyState() });
+    expect(ctx.systemPrompt).not.toMatch(/<user_voice_examples/);
+  });
+
+  it('first-reply prompt is shorter than continue prompt', () => {
+    const firstCtx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildFirstReplyState() });
+    const contCtx = assembleRuntimeContext({ profile: 'impersonate', runtimeState: buildState() });
+    expect(firstCtx.systemPrompt.length).toBeLessThan(contCtx.systemPrompt.length);
   });
 });

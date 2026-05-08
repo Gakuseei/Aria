@@ -1,6 +1,7 @@
 import { getDepthInstruction } from '../chat/passion/index.js';
 import { getResponseModeConfig } from '../responseModes.js';
 import { buildVoiceCard } from '../chat/impersonate/voiceAdapter.js';
+import { computeSentenceTarget } from '../chat/impersonate/index.js';
 import { buildPlainTextBlock, buildVoicePinBlock, clipToTokenTarget, estimateTokens, trimPromptSnippet } from './text.js';
 import { renderActiveScene } from './runtimeState.js';
 
@@ -124,37 +125,30 @@ function buildReplyLateSteering(runtimeState) {
   ].filter(Boolean).join('\n');
 }
 
-function buildImpersonateLateSteering(runtimeState, { isFirstReply = false } = {}) {
-  const intensityLine = runtimeState.runtimeSteering.passionLevel > 15
-    ? `Match the current scene intensity at ${runtimeState.runtimeSteering.passionLevel}/100. Do not soften it.`
-    : '';
-  const pronouns = runtimeState.userIdentity?.pronouns || 'he/him';
-
+function buildImpersonateConstraints(runtimeState, sentenceTarget, isFirstReply) {
+  const charName = runtimeState.characterName || 'Character';
+  const userName = runtimeState.userName || 'User';
+  const sentenceWord = sentenceTarget === 1 ? 'sentence' : 'sentences';
   if (isFirstReply) {
     return [
-      `${runtimeState.userName} is the visitor. ${runtimeState.characterName} just spoke first, and ${runtimeState.userName} now replies.`,
-      `Write a short, natural opener — 1 or 2 sentences as ${runtimeState.userName} would respond. End cleanly after the second sentence; no more than two sentences.`,
-      `Stay in first person throughout — use I/me/my for ${runtimeState.userName}, including inside *action* asterisks. Never refer to ${runtimeState.userName} as he/she/his/her. Match the same language as the conversation.`,
-      intensityLine
-    ].filter(Boolean).join('\n');
+      'Constraints:',
+      `1. Write only ${userName}'s reply, in first person.`,
+      `2. One ${sentenceWord}, short and natural. Stop cleanly.`,
+      `3. Do not write ${charName}'s next message.`,
+      `4. Same language as ${charName}'s greeting.`
+    ].join('\n');
   }
-
-  return [
-    `Continue in ${runtimeState.userName}'s voice and rhythm — match the user_voice_examples for sentence length, format, and energy.`,
-    `${runtimeState.userName}'s reply takes a concrete action or response that fits the latest beat — not a question, not a meta comment.`,
-    `If ${runtimeState.characterName}'s last message contains a direct request or instruction (e.g. "kiss me", "show me", "take me there"), ${runtimeState.userName}'s reply carries it out as a concrete physical action — no tease, no counter-question, no slowing the beat.`,
-    `Reply stays in first person (${pronouns}) and in the same language as the conversation.`,
-    intensityLine
-  ].filter(Boolean).join('\n');
-}
-
-function buildRecentUserVoiceExamples(runtimeState) {
-  const card = buildVoiceCard(
-    runtimeState.selectedRecentHistory.messages,
-    runtimeState.userName,
-    runtimeState.userIdentity
-  );
-  return card.examples;
+  const passion = Number(runtimeState.runtimeSteering?.passionLevel) || 0;
+  const lines = [
+    'Constraints:',
+    `1. Write only ${userName}'s reply, in first person.`,
+    `2. ${sentenceTarget} ${sentenceWord} only. Stop cleanly.`,
+    `3. Do not write ${charName}'s dialogue, actions, or thoughts.`,
+    '4. Same language as the conversation.',
+    `5. If ${charName}'s last message asks for a physical action, take it.`
+  ];
+  if (passion > 15) lines.push(`6. Match scene intensity ${passion}/100.`);
+  return lines.join('\n');
 }
 
 function buildImpersonateUserPrompt(runtimeState, recentTail, { isFirstReply = false } = {}) {
@@ -308,67 +302,56 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
   const recentTail = runtimeState.selectedRecentHistory.messages.slice(-6);
   const userMsgCount = runtimeState.selectedRecentHistory.messages.filter((m) => m.role === 'user').length;
   const isFirstReply = userMsgCount === 0;
+  const sentenceTarget = computeSentenceTarget(runtimeState.voiceFeatures, isFirstReply);
   const minimalCharacterReference = clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore);
   const impersonateUserIdentity = runtimeState.userIdentity || {};
-  const impersonateUserBlock = buildPlainTextBlock(
-    'User',
-    `${impersonateUserIdentity.name || runtimeState.userName} (${impersonateUserIdentity.label || 'male'}, pronouns: ${impersonateUserIdentity.pronouns || 'he/him'})`
-  );
-  const userVoiceBlock = buildRecentUserVoiceExamples(runtimeState);
-  const userVoiceSection = (!isFirstReply && userVoiceBlock) ? buildPlainTextBlock('User Voice', userVoiceBlock) : '';
-  const characterName = runtimeState.characterName || 'Character';
   const userName = runtimeState.userName || 'User';
+  const characterName = runtimeState.characterName || 'Character';
+  const userInline = `${impersonateUserIdentity.name || userName} (${impersonateUserIdentity.label || 'male'}, pronouns: ${impersonateUserIdentity.pronouns || 'he/him'})`;
+  const sceneText = clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene, 115);
   const profileSampler = runtimeState.runtimeSteering.resolvedProfile || null;
-  // Drop the format-mandate line ("Actions go in *asterisks*. Dialogue stays in plain text.") that compiler.js bakes into globalCore for non-bot characters. Impersonate detects format from the user's voice card instead — both clauses must go together.
+
+  let voiceExamplesBlock = '';
+  if (!isFirstReply) {
+    const card = buildVoiceCard(runtimeState.selectedRecentHistory.messages, userName, impersonateUserIdentity);
+    voiceExamplesBlock = card.examples || '';
+  }
+
+  const opening = isFirstReply
+    ? `Write ${userName}'s first reply to ${characterName}. One sentence, first person.`
+    : `You are continuing a fictional chat. Your task: write ${userName}'s next reply.`;
+
   const impersonateGlobalCore = String(runtimeState.compiledRuntimeCard.globalCore || '')
     .split('\n')
     .filter((line) => !/Actions go in \*asterisks\*/i.test(line))
     .join('\n');
 
-  const roleDeclaration = isFirstReply
-    ? `Role: write as ${runtimeState.userName}. ${runtimeState.characterName} just spoke first; your output is ${runtimeState.userName}'s reply — ${runtimeState.userName}'s words and actions only, in first person.`
-    : '';
-  const roleBlock = roleDeclaration ? buildPlainTextBlock('Role', roleDeclaration) : '';
+  const blocks = [
+    opening,
+    isFirstReply ? '' : `<global>\n${clipToTokenTarget(impersonateGlobalCore, targets.globalCore)}\n</global>`,
+    `<character>\n${minimalCharacterReference}\n</character>`,
+    `<user>${userInline}${isFirstReply ? '. New visitor.' : '.'}</user>`,
+    `<scene>\n${sceneText}\n</scene>`,
+    voiceExamplesBlock,
+    buildImpersonateConstraints(runtimeState, sentenceTarget, isFirstReply)
+  ].filter(Boolean);
 
-  const sceneBlock = buildPlainTextBlock('Active Scene', clipStructuredSceneText(renderActiveScene(runtimeState.activeScene, { compact: true }), targets.activeScene, 115));
-  const lateSteeringBlock = buildPlainTextBlock('Late Steering', clipToTokenTarget(buildImpersonateLateSteering(runtimeState, { isFirstReply }), targets.lateSteering));
-
-  const systemPrompt = (isFirstReply
-    ? [
-        roleBlock,
-        impersonateUserBlock,
-        sceneBlock,
-        lateSteeringBlock
-      ]
-    : [
-        buildPlainTextBlock('Global Core', clipToTokenTarget(impersonateGlobalCore, targets.globalCore)),
-        impersonateUserBlock,
-        sceneBlock,
-        runtimeState.compiledRuntimeCard.personaAnchor
-          ? buildPlainTextBlock('Persona Anchor', clipToTokenTarget(runtimeState.compiledRuntimeCard.personaAnchor, targets.personaAnchor))
-          : '',
-        buildPlainTextBlock('Character Reference', minimalCharacterReference),
-        userVoiceSection,
-        lateSteeringBlock
-      ]
-  ).filter(Boolean).join('\n\n');
+  const systemPrompt = blocks.join('\n\n');
 
   if (isFirstReply) {
-    debug.includedBlocks.push('Role', 'User', 'Active Scene', 'Late Steering');
-    debug.droppedBlocks.push('Global Core', 'Persona Anchor', 'Character Reference', 'User Voice');
+    debug.includedBlocks.push('opening', 'character', 'user', 'scene', 'constraints');
+    debug.droppedBlocks.push('global', 'user_voice_examples');
   } else {
-    debug.includedBlocks.push('Global Core', 'User', 'Active Scene', 'Character Reference', 'Late Steering');
-    if (runtimeState.compiledRuntimeCard.personaAnchor) debug.includedBlocks.push('Persona Anchor');
-    else debug.droppedBlocks.push('Persona Anchor');
-    if (userVoiceBlock) debug.includedBlocks.push('User Voice');
-    else debug.droppedBlocks.push('User Voice');
+    debug.includedBlocks.push('opening', 'global', 'character', 'user', 'scene', 'constraints');
+    if (voiceExamplesBlock) debug.includedBlocks.push('user_voice_examples');
+    else debug.droppedBlocks.push('user_voice_examples');
   }
-  debug.droppedBlocks.push('Example Seed');
 
   const stopStrings = [
     `\n${characterName}:`,
     `\n${characterName} :`,
-    `${characterName}:`,
+    `\n*${characterName} `,
+    `\n${characterName} `,
     '<|im_end|>',
     '\n***'
   ];
@@ -394,7 +377,8 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     debug: {
       ...debug,
       historyCountKept: recentTail.length,
-      firstReply: isFirstReply
+      firstReply: isFirstReply,
+      sentenceTarget
     }
   };
 }

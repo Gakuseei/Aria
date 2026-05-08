@@ -1,52 +1,42 @@
 /**
- * Pure parser for the Smart Suggestions feature output.
- * Returns { stay, forward, push } on success, null on any failure.
+ * Pure JSON parser for Smart Suggestions v2 output.
+ * Accepts beat-first schema: { beat: enum, pills: [ {tone, text} x3 ] }.
  */
 
-const REQUIRED_ROLES = ['stay', 'forward', 'push'];
-const FENCE_PATTERN = /^```(?:json)?\s*([\s\S]*?)\s*```\s*$/i;
+const VALID_BEATS = new Set(['refusal', 'invitation', 'uncertain']);
+const VALID_TONES = new Set(['hold', 'move', 'press']);
 
-function unfence(raw) {
-  const text = String(raw || '').trim();
-  const match = text.match(FENCE_PATTERN);
-  return match ? match[1].trim() : text;
+function stripFences(raw) {
+  const t = String(raw || '').trim();
+  const fenced = t.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fenced) return fenced[1].trim();
+  return t;
 }
 
 /**
- * Parse a Smart Suggestions LLM response.
- *
- * @param {string|null|undefined} raw - the raw LLM output, optionally fenced.
- * @returns {{ stay: string, forward: string, push: string }|null}
- *   the three pill texts on success, null if parsing or schema validation fails.
+ * Parses raw model output into a validated suggestion payload.
+ * @param {string} raw
+ * @returns {{beat:string, pills:Array<{tone:string, text:string}>}|null}
  */
 export function parseSuggestionJson(raw) {
-  const text = unfence(raw);
-  if (!text) return null;
-
-  let parsed;
+  const inner = stripFences(raw);
+  if (!inner) return null;
+  let obj;
   try {
-    parsed = JSON.parse(text);
+    obj = JSON.parse(inner);
   } catch {
     return null;
   }
-
-  const pills = parsed?.pills;
-  if (!Array.isArray(pills) || pills.length !== 3) return null;
-
-  const byRole = {};
-  for (const entry of pills) {
-    if (!entry || typeof entry !== 'object') return null;
-    const role = String(entry.role || '').trim().toLowerCase();
-    const pillText = String(entry.text || '').trim();
-    if (!REQUIRED_ROLES.includes(role)) return null;
-    if (!pillText) return null;
-    if (byRole[role]) continue;
-    byRole[role] = pillText;
+  if (!obj || typeof obj !== 'object') return null;
+  if (!VALID_BEATS.has(obj.beat)) return null;
+  if (!Array.isArray(obj.pills) || obj.pills.length !== 3) return null;
+  const pills = [];
+  for (const p of obj.pills) {
+    if (!p || typeof p !== 'object') return null;
+    if (!VALID_TONES.has(p.tone)) return null;
+    const text = String(p.text || '').trim();
+    if (!text) return null;
+    pills.push({ tone: p.tone, text });
   }
-
-  for (const role of REQUIRED_ROLES) {
-    if (!byRole[role]) return null;
-  }
-
-  return { stay: byRole.stay, forward: byRole.forward, push: byRole.push };
+  return { beat: obj.beat, pills };
 }

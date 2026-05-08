@@ -1,48 +1,115 @@
 /**
- * Four sanity filters for parsed suggestion output.
- * Returns the input pills if all pass, null on any failure.
+ * Post-LLM validation pipeline for Smart Suggestions:
+ * - 3-gram Jaccard repetition (cross-pill + against previous-pill memory)
+ * - POV-bleed regex (leading char-name or char-pronoun + verb)
+ * - Wrong-language heuristic (delegates to language.js)
  */
 
-export const SANITY_CONSTANTS = Object.freeze({
-  pillMaxChars: 120,
-  dedupeAgainst: 5
-});
+import { CHAR_PRONOUNS_BY_LOCALE, looksLikeWrongLanguage } from './language.js';
 
-function isNonEmptyText(value) {
-  return typeof value === 'string' && value.trim().length > 0;
+const JACCARD_THRESHOLD = 0.4;
+const PREVIOUS_PILLS_WINDOW = 6;
+
+function normalize(s) {
+  return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-function withinLength(value) {
-  return typeof value === 'string' && value.trim().length <= SANITY_CONSTANTS.pillMaxChars;
+function escapeRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
- * Apply minimal sanity filters to parsed suggestion pills.
- *
- * @param {{ stay: string, forward: string, push: string }|null} pills - parsed pills.
- * @param {Object} [options]
- * @param {string[]} [options.previousPills] - recent prior pills to dedupe against.
- * @returns {{ stay: string, forward: string, push: string }|null}
- *   trimmed pills on pass, null if any filter rejects.
+ * @param {string} s
+ * @returns {Set<string>}
  */
-export function applySanityFilters(pills, options = {}) {
-  if (!pills || typeof pills !== 'object') return null;
-  const { stay, forward, push } = pills;
-  const triplet = [stay, forward, push];
+export function trigrams(s) {
+  const text = normalize(s);
+  const out = new Set();
+  if (text.length < 3) {
+    if (text.length > 0) out.add(text);
+    return out;
+  }
+  for (let i = 0; i <= text.length - 3; i += 1) out.add(text.slice(i, i + 3));
+  return out;
+}
 
-  if (!triplet.every(isNonEmptyText)) return null;
-  if (!triplet.every(withinLength)) return null;
+/**
+ * @param {Set<string>} a
+ * @param {Set<string>} b
+ * @returns {number}
+ */
+export function jaccard(a, b) {
+  if (a.size === 0 && b.size === 0) return 0;
+  let intersection = 0;
+  for (const t of a) if (b.has(t)) intersection += 1;
+  const union = a.size + b.size - intersection;
+  return union === 0 ? 0 : intersection / union;
+}
 
-  const lower = triplet.map((t) => t.trim().toLowerCase());
-  if (new Set(lower).size === 1) return null;
+/**
+ * @param {string} pill
+ * @param {{characterName:string, locale:string}} ctx
+ * @returns {boolean}
+ */
+export function hasPovBleed(pill, { characterName, locale }) {
+  const text = String(pill || '').trim();
+  if (!text) return false;
+  const lower = text.toLowerCase();
 
-  const previous = (Array.isArray(options.previousPills) ? options.previousPills : [])
-    .slice(-SANITY_CONSTANTS.dedupeAgainst)
-    .map((t) => String(t || '').trim().toLowerCase());
-
-  for (const pillLower of lower) {
-    if (previous.includes(pillLower)) return null;
+  if (characterName) {
+    const charPattern = new RegExp(`^${escapeRegex(characterName)}\\b`, 'i');
+    if (charPattern.test(text)) return true;
   }
 
-  return { stay: stay.trim(), forward: forward.trim(), push: push.trim() };
+  const pronouns = CHAR_PRONOUNS_BY_LOCALE[locale] || [];
+  for (const p of pronouns) {
+    const re = new RegExp(`^${escapeRegex(p)}\\s+\\S`, 'i');
+    if (re.test(lower)) return true;
+  }
+  return false;
+}
+
+/**
+ * @param {string} pill
+ * @param {string[]} previousPills
+ * @returns {boolean}
+ */
+export function isRepetitive(pill, previousPills) {
+  const window = (previousPills || []).slice(-PREVIOUS_PILLS_WINDOW);
+  const target = trigrams(pill);
+  for (const old of window) {
+    if (normalize(old) === normalize(pill)) return true;
+    if (jaccard(target, trigrams(old)) >= JACCARD_THRESHOLD) return true;
+  }
+  return false;
+}
+
+/**
+ * Applies all sanity filters. Returns the parsed payload on success, null on any reject.
+ *
+ * @param {{beat:string, pills:Array<{tone:string, text:string}>}|null} parsed
+ * @param {{characterName:string, locale:string, previousPills:string[]}} ctx
+ * @returns {{beat:string, pills:Array<{tone:string, text:string}>}|null}
+ */
+export function applySanityFilters(parsed, ctx) {
+  if (!parsed || !Array.isArray(parsed.pills)) return null;
+  const { characterName, locale, previousPills } = ctx;
+  const texts = parsed.pills.map((p) => p.text);
+
+  for (const pill of parsed.pills) {
+    if (hasPovBleed(pill.text, { characterName, locale })) return null;
+  }
+
+  for (let i = 0; i < texts.length; i += 1) {
+    const others = texts.filter((_, idx) => idx !== i);
+    const target = trigrams(texts[i]);
+    for (const sib of others) {
+      if (jaccard(target, trigrams(sib)) >= JACCARD_THRESHOLD) return null;
+    }
+    if (isRepetitive(texts[i], previousPills)) return null;
+  }
+
+  if (looksLikeWrongLanguage(texts, locale)) return null;
+
+  return parsed;
 }

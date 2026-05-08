@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
-import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X } from 'lucide-react';
+import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { autoDetectAndSetModel } from '../lib/ollama';
 import { saveSession, generateSessionId, deleteSession } from '../lib/storage/sessions';
@@ -306,7 +306,7 @@ className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
 // ============================================================================
 
 export default function ChatInterface({ character, loadedSession, onBack, onOpenSettings, settings: parentSettings }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -376,6 +376,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   // v0.2.5: Smart Suggestions
   const [smartSuggestions, setSmartSuggestions] = useState([]);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
+  const [previousPills, setPreviousPills] = useState([]);
   const [sendFailure, setSendFailure] = useState(null);
   const suggestionsHistoryRef = useRef([]);
   const chatMessages = useMemo(() => messages.filter(m => !m.isTierEvent), [messages]);
@@ -731,6 +732,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     let cancelled = false;
 
     const initializeChat = async () => {
+      setPreviousPills([]);
       // Check if we're restoring a saved session
       if (loadedSession && loadedSession.messages && loadedSession.messages.length > 0) {
         if (cancelled) return;
@@ -897,6 +899,23 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     handleSend(suggestion);
   };
 
+  const onSuggestClick = useCallback(async () => {
+    if (!settings.smartSuggestionsEnabled) return;
+    if (isGeneratingSuggestions) return;
+    setIsGeneratingSuggestions(true);
+    setSmartSuggestions([]);
+    try {
+      const result = await generateSuggestions(chatMessages, character, userName, settings, {
+        previousPills,
+        locale: language,
+        isGoldMode
+      });
+      setSmartSuggestions(Array.isArray(result) ? result : []);
+    } finally {
+      setIsGeneratingSuggestions(false);
+    }
+  }, [settings, isGeneratingSuggestions, chatMessages, character, userName, previousPills, language, isGoldMode]);
+
   const handleImpersonate = async () => {
     if (isLoading || isStreaming || isImpersonating) return;
     clearSuggestionsState();
@@ -992,6 +1011,9 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       return;
     }
 
+    if (smartSuggestions.length > 0) {
+      setPreviousPills((prev) => [...prev, ...smartSuggestions].slice(-6));
+    }
     clearSuggestionsState();
     setSendFailure(null);
     abortImpersonateCall();
@@ -1991,6 +2013,21 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         <div className={`theme-composer flex items-center gap-3 rounded-[1.75rem] px-4 py-3.5 transition-all duration-200 ${
           isGoldMode ? 'border-amber-500/30 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50' : ''
         }`}>
+            {settings.smartSuggestionsEnabled && (
+              <button
+                type="button"
+                onClick={onSuggestClick}
+                disabled={isGeneratingSuggestions || isStreaming || isImpersonating}
+                aria-label={t.chat.suggestButton}
+                title={isGeneratingSuggestions ? t.chat.suggestLoading : t.chat.suggestButton}
+                className="theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30 border-2 border-transparent hover:border-rose-500"
+              >
+                {isGeneratingSuggestions
+                  ? <Loader2 size={18} strokeWidth={1.5} className="animate-spin" />
+                  : <Sparkles size={18} strokeWidth={1.5} className={smartSuggestions.length > 0 ? 'text-rose-400' : ''} />
+                }
+              </button>
+            )}
             <textarea
               ref={inputRef}
               value={input}

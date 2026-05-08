@@ -1,103 +1,79 @@
 /**
- * Pure prompt builder for the Smart Suggestions feature.
- * Inputs: compiled runtime card, recent history slice, character name, user name.
- * Output: { systemPrompt, userPrompt }.
+ * Pure prompt builder for Smart Suggestions v2 (beat-adaptive).
+ * Single positive POV constraint, closing-line block, few-shot mirror.
  */
 
-export const SUGGESTION_PROMPT_CONSTANTS = Object.freeze({
-  userMsgTrimChars: 280,
-  charMsgTrimChars: 600,
-  recentUserCount: 3,
-  recentCharCount: 2
-});
+const CLOSING_LINE_MAX_CHARS = 600;
+const USER_MIRROR_MAX_CHARS = 280;
 
-const SYSTEM_TEMPLATE = (characterName, userName, characterCore, openThread) => `
-You write three short reply pills for ${userName} in an ongoing scene with ${characterName}.
-
-${characterName}: ${characterCore}
-
-Open thread right now: ${openThread || '(scene just started)'}
-
-Mirror ${userName}'s style. Use the same rhythm, format, and register as the most recent ${userName} messages. If they use *asterisk actions*, use them too. If they speak in plain dialogue, do the same. Match the language of the latest ${userName} messages.
-
-If the latest ${characterName} message ends with a question, an invitation, or a clear cue, every pill answers or responds to it directly.
-
-Each pill is a different intensity step. The three pills must be clearly distinct from each other — different action, different words, different angle:
-- stay = the most natural immediate response that meets ${characterName} where they are
-- forward = one concrete step bolder. Favor a small physical move when the scene allows — a touch, a step closer, a shift in posture. Speech alone is fine when the scene cannot support a physical move.
-- push = an embodied physical action the user performs. Take her hand. Kiss her. Pull her in. Not just speech — a concrete physical move that commits.
-
-Stay rooted in the body. When the scene allows it, two of the three pills should describe what ${userName} does, not just what they say.
-
-Each pill is short and tight. Max 6 words total per pill. Cut filler. Asterisk actions count toward the 6 words. Similar length across the three.
-
-Return only valid JSON:
-{
-  "pills": [
-    { "role": "stay",    "text": "" },
-    { "role": "forward", "text": "" },
-    { "role": "push",    "text": "" }
-  ]
-}
-`.trim();
-
-function trimText(value, cap) {
-  const text = String(value || '').trim();
-  if (text.length <= cap) return text;
-  return text.slice(0, cap - 1).trimEnd() + '…';
+/**
+ * @param {string} text
+ * @returns {string}
+ */
+export function deriveClosingLine(text) {
+  const t = String(text || '').trim();
+  if (!t) return '';
+  const sentences = (t.match(/[^.!?…]+[.!?…]+["')\]]*|[^.!?…]+$/g) || [t]).map((s) => s.trim()).filter(Boolean);
+  const last3 = sentences.slice(-3).join(' ').trim();
+  if (last3.length <= CLOSING_LINE_MAX_CHARS) return last3;
+  return last3.slice(last3.length - CLOSING_LINE_MAX_CHARS).trim();
 }
 
-function takeLast(messages, role, count) {
-  return messages.filter((m) => m?.role === role).slice(-count);
+function lastUserMessage(history) {
+  const reversed = [...(history || [])].reverse();
+  const found = reversed.find((m) => m?.role === 'user' && String(m.content || '').trim());
+  if (!found) return '';
+  const t = String(found.content).trim();
+  if (t.length <= USER_MIRROR_MAX_CHARS) return t;
+  return t.slice(0, USER_MIRROR_MAX_CHARS - 1).trimEnd() + '…';
+}
+
+function lastCharMessage(history) {
+  const reversed = [...(history || [])].reverse();
+  const found = reversed.find((m) => m?.role === 'assistant' && String(m.content || '').trim());
+  return found ? String(found.content).trim() : '';
 }
 
 /**
- * Builds system and user prompts for the Smart Suggestions feature.
- * @param {Object} options
- * @param {Object} options.compiledCard - Character runtime card with characterCore property.
- * @param {string} options.compiledCard.characterCore - Character's core personality and traits.
- * @param {Array<{role: string, content: string}>} options.history - Recent chat messages with role ('user'|'assistant') and content.
- * @param {string} options.characterName - Character's display name.
- * @param {string} options.userName - User's display name.
- * @param {string} [options.openThread] - Cliff snippet from the latest character turn used as the per-turn anchor.
- * @returns {{systemPrompt: string, userPrompt: string}} Object containing formatted system and user prompts.
+ * Builds system + user prompts for Smart Suggestions v2.
+ *
+ * @param {object} args
+ * @param {Array<{role:string,content:string}>} args.history
+ * @param {string} args.characterName
+ * @param {string} args.userName
+ * @param {string} args.appLanguageName - Display name like "German".
+ * @returns {{systemPrompt:string, userPrompt:string}}
  */
-export function buildSuggestionPrompt({
-  compiledCard,
-  history,
-  characterName,
-  userName,
-  openThread
-}) {
-  const characterCore = String(compiledCard?.characterCore || '').trim() || characterName;
-  const openThreadText = String(openThread || '').trim();
+export function buildSuggestionPrompt({ history, characterName, userName, appLanguageName }) {
+  const lang = String(appLanguageName || '').trim() || 'English';
+  const closing = deriveClosingLine(lastCharMessage(history));
+  const mirror = lastUserMessage(history);
 
-  const recentUser = takeLast(history || [], 'user', SUGGESTION_PROMPT_CONSTANTS.recentUserCount);
-  const recentChar = takeLast(history || [], 'assistant', SUGGESTION_PROMPT_CONSTANTS.recentCharCount);
+  const closingBlock = closing
+    ? `Closing line of ${characterName}'s last message (read this most carefully):\n> ${closing}`
+    : `(scene just started)`;
 
-  const userBlock = recentUser.length === 0
-    ? '(no prior user messages yet)'
-    : recentUser.map((m) => `- ${trimText(m.content, SUGGESTION_PROMPT_CONSTANTS.userMsgTrimChars)}`).join('\n');
+  const mirrorBlock = mirror
+    ? `Recent ${userName} voice (mirror style + language):\n> ${mirror}`
+    : `(no prior ${userName} messages yet)`;
 
-  const charBlock = recentChar.length === 0
-    ? '(no prior character messages yet)'
-    : recentChar.map((m) => `- ${trimText(m.content, SUGGESTION_PROMPT_CONSTANTS.charMsgTrimChars)}`).join('\n');
-
-  const charCliffNote = recentChar.length > 0
-    ? '\n  (latest, closing line matters most)'
-    : '';
-
-  const systemPrompt = SYSTEM_TEMPLATE(characterName, userName, characterCore, openThreadText);
-
-  const userPrompt = [
-    `Recent ${userName} messages (for voice and language):`,
-    userBlock,
+  const systemPrompt = [
+    `You write three pills for ${userName} replying to ${characterName} in an ongoing scene.`,
     '',
-    `Recent ${characterName} messages:${charCliffNote}`,
-    charBlock,
+    `${userName}'s speech and movement are ONLY defined by ${userName} input.`,
     '',
-    'Generate the three pills now.'
+    closingBlock,
+    '',
+    mirrorBlock,
+    '',
+    'Steps:',
+    `1. Classify beat: refusal | invitation | uncertain`,
+    `2. Generate three pills mapped to beat tones (hold, move, press)`,
+    `3. Each pill is at most 8 words, in ${lang}, and distinct from each other`,
+    '',
+    'Output JSON matching the schema.'
   ].join('\n');
 
+  const userPrompt = 'Generate the JSON now.';
   return { systemPrompt, userPrompt };
 }

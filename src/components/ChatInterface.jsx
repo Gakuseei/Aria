@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
-import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Loader2 } from 'lucide-react';
+import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { autoDetectAndSetModel } from '../lib/ollama';
 import { saveSession, generateSessionId, deleteSession } from '../lib/storage/sessions';
@@ -218,12 +218,43 @@ function createStreamAbortHandle() {
   };
 }
 
-const MessageBubble = memo(function MessageBubble({ message, isUser, character, userName, onCopy, onSpeak, voiceEnabled, fontSize = 'base', isGoldMode = false, t = {} }) {
+const MessageBubble = memo(function MessageBubble({
+  message,
+  messageIndex,
+  isUser,
+  character,
+  userName,
+  onCopy,
+  onSpeak,
+  voiceEnabled,
+  fontSize = 'base',
+  isGoldMode = false,
+  t = {},
+  isLastUserMessage = false,
+  isEditing = false,
+  editDraft = '',
+  onEditStart,
+  onEditChange,
+  onEditCancel,
+  onEditSave,
+}) {
   const formattedParts = useMemo(
     () => formatMessageText(getDisplayMessageText(message.content || '', isUser, isGoldMode && !isUser), isGoldMode && !isUser),
     [message.content, isGoldMode, isUser]
   );
 
+  const fontSizeClass = { xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base';
+  const editRows = Math.min(8, Math.max(2, (editDraft || '').split('\n').length));
+
+  const handleEditKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      onEditSave?.();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      onEditCancel?.();
+    }
+  };
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} group mb-5 message-slide-in`}>
@@ -256,44 +287,87 @@ const MessageBubble = memo(function MessageBubble({ message, isUser, character, 
           />
         )}
 
-        <div className={`whitespace-pre-wrap break-words leading-relaxed ${{ xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base'}`}>
-          {formattedParts.map((part, i) => {
-            if (part.type === 'action') {
-              return <span key={i} className="theme-message-meta italic">{part.text}</span>;
-            } else if (part.type === 'dialogue') {
-              return <span key={i} className="text-[color:var(--color-text)] font-normal">{part.text}</span>;
-            } else if (part.type === 'bold' && isGoldMode && !isUser) {
-              return <span key={i} className="text-amber-400 font-bold drop-shadow-sm">{part.text}</span>;
-            } else {
-              return <span key={i} className="theme-message-body">{part.text}</span>;
-            }
-          })}
-        </div>
+        {isEditing ? (
+          <textarea
+            value={editDraft}
+            onChange={(e) => onEditChange?.(e.target.value)}
+            onKeyDown={handleEditKeyDown}
+            spellCheck={false}
+            autoCorrect="off"
+            autoFocus
+            rows={editRows}
+            className={`w-full bg-transparent outline-none resize-none border-2 border-transparent focus:border-rose-500 rounded-lg px-2 py-1 whitespace-pre-wrap break-words leading-relaxed ${fontSizeClass}`}
+          />
+        ) : (
+          <div className={`whitespace-pre-wrap break-words leading-relaxed ${fontSizeClass}`}>
+            {formattedParts.map((part, i) => {
+              if (part.type === 'action') {
+                return <span key={i} className="theme-message-meta italic">{part.text}</span>;
+              } else if (part.type === 'dialogue') {
+                return <span key={i} className="text-[color:var(--color-text)] font-normal">{part.text}</span>;
+              } else if (part.type === 'bold' && isGoldMode && !isUser) {
+                return <span key={i} className="text-amber-400 font-bold drop-shadow-sm">{part.text}</span>;
+              } else {
+                return <span key={i} className="theme-message-body">{part.text}</span>;
+              }
+            })}
+          </div>
+        )}
 
-        {message.timestamp && (
+        {message.timestamp && !isEditing && (
           <div className="theme-message-meta theme-message-timestamp text-xs mt-3">
             {formatTimestamp(message.timestamp)}
           </div>
         )}
-        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-          {!isUser && voiceEnabled === true && onSpeak && (
-            <button
-              onClick={() => onSpeak(message.content || '')}
-className="theme-message-action theme-message-action-info rounded-lg p-1.5 transition-all duration-200"
-              title={t.chat?.playAudio || 'Play Audio'}
-            >
-              <Volume2 size={14} strokeWidth={1.5} />
-            </button>
+        <div className={`absolute top-2 right-2 flex gap-1 transition-all duration-200 ${isEditing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+          {isEditing ? (
+            <>
+              <button
+                onClick={() => onEditSave?.()}
+                className="theme-message-action border-2 border-transparent hover:border-rose-500 rounded-lg p-1.5 transition-all duration-200"
+                title={t.chat?.editSave || 'Save'}
+              >
+                <Check size={14} strokeWidth={1.5} />
+              </button>
+              <button
+                onClick={() => onEditCancel?.()}
+                className="theme-message-action border-2 border-transparent hover:border-rose-500 rounded-lg p-1.5 transition-all duration-200"
+                title={t.chat?.editCancel || 'Cancel'}
+              >
+                <X size={14} strokeWidth={1.5} />
+              </button>
+            </>
+          ) : (
+            <>
+              {isUser && isLastUserMessage && onEditStart && (
+                <button
+                  onClick={() => onEditStart(messageIndex, message.content || '')}
+                  className="theme-message-action border-2 border-transparent hover:border-rose-500 rounded-lg p-1.5 transition-all duration-200"
+                  title={t.chat?.editMessage || 'Edit message'}
+                >
+                  <PenLine size={14} strokeWidth={1.5} />
+                </button>
+              )}
+              {!isUser && voiceEnabled === true && onSpeak && (
+                <button
+                  onClick={() => onSpeak(message.content || '')}
+                  className="theme-message-action theme-message-action-info rounded-lg p-1.5 transition-all duration-200"
+                  title={t.chat?.playAudio || 'Play Audio'}
+                >
+                  <Volume2 size={14} strokeWidth={1.5} />
+                </button>
+              )}
+              <button
+                onClick={() => onCopy(message.content || '')}
+                className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
+                title={t.chat?.copy || 'Copy'}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                </svg>
+              </button>
+            </>
           )}
-          <button
-            onClick={() => onCopy(message.content || '')}
-className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
-            title={t.chat?.copy || 'Copy'}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
-            </svg>
-          </button>
         </div>
       </div>
 
@@ -380,6 +454,16 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   const [sendFailure, setSendFailure] = useState(null);
   const suggestionsHistoryRef = useRef([]);
   const chatMessages = useMemo(() => messages.filter(m => !m.isTierEvent), [messages]);
+
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editDraft, setEditDraft] = useState('');
+
+  const lastUserIdx = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') return i;
+    }
+    return -1;
+  }, [messages]);
 
   const clearSuggestionsState = useCallback(() => {
     abortSuggestionCall();
@@ -1075,6 +1159,44 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput('');
+
+    await runGeneration(newMessages);
+  };
+
+  const handleEditStart = useCallback((index, content) => {
+    setEditingIndex(index);
+    setEditDraft(content || '');
+  }, []);
+
+  const handleEditCancel = useCallback(() => {
+    setEditingIndex(null);
+    setEditDraft('');
+  }, []);
+
+  const handleEditSave = async () => {
+    if (editingIndex == null) return;
+    const trimmed = (editDraft || '').trim();
+    if (!trimmed) {
+      handleEditCancel();
+      return;
+    }
+
+    clearSuggestionsState();
+    abortImpersonateCall();
+    setIsImpersonating(false);
+    setSendFailure(null);
+
+    const editedUserMsg = { ...messages[editingIndex], content: trimmed, timestamp: Date.now() };
+    const newMessages = [...messages.slice(0, editingIndex), editedUserMsg];
+
+    if (sessionId) {
+      passionManager.revertLastScore(sessionId);
+      setPassionLevel(passionManager.getPassionLevel(sessionId));
+    }
+
+    setMessages(newMessages);
+    setEditingIndex(null);
+    setEditDraft('');
 
     await runGeneration(newMessages);
   };
@@ -1843,6 +1965,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               <MessageBubble
                 key={`${message.timestamp || index}-${message.role}`}
                 message={message}
+                messageIndex={index}
                 isUser={message.role === 'user'}
                 character={character}
                 userName={userName}
@@ -1852,6 +1975,13 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 fontSize={fontSize}
                 isGoldMode={isGoldMode}
                 t={t}
+                isLastUserMessage={index === lastUserIdx && !isStreaming && !isLoading}
+                isEditing={editingIndex === index}
+                editDraft={editDraft}
+                onEditStart={handleEditStart}
+                onEditChange={setEditDraft}
+                onEditCancel={handleEditCancel}
+                onEditSave={handleEditSave}
               />
             )
           ))}

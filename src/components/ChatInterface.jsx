@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
-import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2 } from 'lucide-react';
+import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2, Undo2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { autoDetectAndSetModel } from '../lib/ollama';
 import { saveSession, generateSessionId, deleteSession } from '../lib/storage/sessions';
@@ -1202,6 +1202,30 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     await runGeneration(newMessages);
   }, [editingIndex, editDraft, messages, sessionId, runGeneration, handleEditCancel, clearSuggestionsState]);
 
+  const handleRevert = useCallback(() => {
+    if (lastUserIdx < 0) return;
+    if (isLoading || isStreaming || isImpersonating) return;
+
+    const userMsg = messages[lastUserIdx];
+    setInput(userMsg.content || '');
+
+    if (sessionId) {
+      passionManager.revertLastScore(sessionId);
+      setPassionLevel(passionManager.getPassionLevel(sessionId));
+    }
+
+    setMessages(prev => prev.slice(0, lastUserIdx));
+    clearSuggestionsState();
+    setEditingIndex(null);
+    setEditDraft('');
+
+    inputRef.current?.focus();
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 120) + 'px';
+    }
+  }, [lastUserIdx, isLoading, isStreaming, isImpersonating, messages, sessionId, clearSuggestionsState]);
+
   // ============================================================================
   // VOICE/TTS PLAYBACK - RENDERER PROCESS (Windows Volume Mixer Support)
   // ============================================================================
@@ -2057,6 +2081,16 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         <div className={`theme-composer flex items-center gap-3 rounded-[1.75rem] px-4 py-3.5 transition-all duration-200 ${
           isGoldMode ? 'border-amber-500/30 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50' : ''
         }`}>
+            <button
+              type="button"
+              onClick={handleRevert}
+              disabled={lastUserIdx < 0 || isLoading || isStreaming || isImpersonating}
+              aria-label={t.chat?.revertTurn || 'Revert last turn'}
+              title={t.chat?.revertTurn || 'Revert last turn'}
+              className="theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30 border-2 border-transparent hover:border-rose-500"
+            >
+              <Undo2 size={18} strokeWidth={1.5} />
+            </button>
             {settings.smartSuggestionsEnabled && (
               <button
                 type="button"

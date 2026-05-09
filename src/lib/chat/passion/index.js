@@ -285,9 +285,9 @@ class PassionManager {
   revertLastScore(sessionId) {
     const historyKey = `${sessionId}_history`;
     const history = this.passionData[historyKey];
-    if (!Array.isArray(history) || history.length < 2) return;
-    const previousLevel = history[history.length - 2];
+    if (!Array.isArray(history) || history.length < 1) return;
     history.pop();
+    const previousLevel = history.length > 0 ? history[history.length - 1] : 0;
     this.passionData[sessionId] = previousLevel;
     this.savePassionData();
   }

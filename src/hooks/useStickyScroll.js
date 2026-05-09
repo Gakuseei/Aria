@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Sticky-scroll hook for chat-style message lists.
@@ -41,12 +41,12 @@ export default function useStickyScroll() {
     return () => observer.disconnect();
   }, []);
 
-  const scrollToBottom = ({ smooth = false } = {}) => {
+  const scrollToBottom = useCallback(({ smooth = false } = {}) => {
     sentinelRef.current?.scrollIntoView({
       block: 'end',
       behavior: smooth ? 'smooth' : 'auto',
     });
-  };
+  }, []);
 
   return { scrollContainerRef, sentinelRef, isSticky, scrollToBottom };
 }

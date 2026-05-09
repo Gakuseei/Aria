@@ -42,8 +42,10 @@ export default function useStickyScroll() {
   }, []);
 
   const scrollToBottom = useCallback(({ smooth = false } = {}) => {
-    sentinelRef.current?.scrollIntoView({
-      block: 'end',
+    const root = scrollContainerRef.current;
+    if (!root) return;
+    root.scrollTo({
+      top: root.scrollHeight,
       behavior: smooth ? 'smooth' : 'auto',
     });
   }, []);

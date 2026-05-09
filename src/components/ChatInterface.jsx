@@ -247,6 +247,7 @@ const MessageBubble = memo(function MessageBubble({
   const editRows = Math.min(8, Math.max(2, (editDraft || '').split('\n').length));
 
   const handleEditKeyDown = (e) => {
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       onEditSave?.();
@@ -1977,7 +1978,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 t={t}
                 isLastUserMessage={index === lastUserIdx && !isStreaming && !isLoading}
                 isEditing={editingIndex === index}
-                editDraft={editDraft}
+                editDraft={editingIndex === index ? editDraft : ''}
                 onEditStart={handleEditStart}
                 onEditChange={setEditDraft}
                 onEditCancel={handleEditCancel}

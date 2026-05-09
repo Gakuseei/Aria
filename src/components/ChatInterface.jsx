@@ -1173,7 +1173,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     setEditDraft('');
   }, []);
 
-  const handleEditSave = async () => {
+  const handleEditSave = useCallback(async () => {
     if (editingIndex == null) return;
     const trimmed = (editDraft || '').trim();
     if (!trimmed) {
@@ -1199,7 +1199,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     setEditDraft('');
 
     await runGeneration(newMessages);
-  };
+  }, [editingIndex, editDraft, messages, sessionId, runGeneration, handleEditCancel, clearSuggestionsState]);
 
   // ============================================================================
   // VOICE/TTS PLAYBACK - RENDERER PROCESS (Windows Volume Mixer Support)

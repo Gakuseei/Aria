@@ -21,8 +21,8 @@ import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
+import useStickyScroll from '../hooks/useStickyScroll';
 import downloadBlob from '../utils/downloadBlob';
-import { getChatAutoScrollBehavior, getScrollBottomTarget, isNearScrollBottom } from '../lib/chatViewState';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from '../lib/defaults';
 import { resolveSessionSceneMemory } from '../lib/chatRuntime';
 import CustomDropdown from './CustomDropdown';
@@ -409,12 +409,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
   const [confirmModal, setConfirmModal] = useState(null);
 
-  const messagesEndRef = useRef(null);
-  const messagesContainerRef = useRef(null);
-  const userScrolledUpRef = useRef(false);
-  const previousMessageCountRef = useRef(0);
-  const scrollRafRef = useRef(null);
-  const scrollStateRafRef = useRef(null);
+  const { scrollContainerRef, sentinelRef, isSticky, scrollToBottom } = useStickyScroll();
   const inputRef = useRef(null);
   const importFileRef = useRef(null);
   const audioRef = useRef(null);
@@ -469,14 +464,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
-      if (scrollRafRef.current) {
-        cancelAnimationFrame(scrollRafRef.current);
-        scrollRafRef.current = null;
-      }
-      if (scrollStateRafRef.current) {
-        cancelAnimationFrame(scrollStateRafRef.current);
-        scrollStateRafRef.current = null;
-      }
       if (passionTimerRef.current) {
         clearTimeout(passionTimerRef.current);
         passionTimerRef.current = null;
@@ -499,14 +486,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
-    }
-    if (scrollRafRef.current) {
-      cancelAnimationFrame(scrollRafRef.current);
-      scrollRafRef.current = null;
-    }
-    if (scrollStateRafRef.current) {
-      cancelAnimationFrame(scrollStateRafRef.current);
-      scrollStateRafRef.current = null;
     }
     if (passionTimerRef.current) {
       clearTimeout(passionTimerRef.current);
@@ -827,72 +806,14 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     }
   };
 
-  // ============================================================================
-  // SCROLLING - AUTO-SCROLL TO BOTTOM
-  // ============================================================================
-
-  const scheduleScrollToBottom = useCallback(({ force = false, preferSmooth = false } = {}) => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-    if (!force && userScrolledUpRef.current) return;
-
-    if (scrollRafRef.current) {
-      cancelAnimationFrame(scrollRafRef.current);
-    }
-
-    scrollRafRef.current = requestAnimationFrame(() => {
-      scrollRafRef.current = null;
-      const nextContainer = messagesContainerRef.current;
-      if (!nextContainer) return;
-
-      const top = getScrollBottomTarget({
-        scrollHeight: nextContainer.scrollHeight,
-        clientHeight: nextContainer.clientHeight,
-      });
-      const behavior = getChatAutoScrollBehavior({
-        animationsEnabled: settings.animationsEnabled !== false,
-        isStreaming,
-        preferSmooth,
-      });
-
-      if (typeof nextContainer.scrollTo === 'function') {
-        nextContainer.scrollTo({ top, behavior });
-      } else {
-        nextContainer.scrollTop = top;
-      }
-      userScrolledUpRef.current = false;
-    });
-  }, [isStreaming, settings.animationsEnabled]);
+  useEffect(() => {
+    if (isSticky) scrollToBottom({ smooth: settings.animationsEnabled !== false });
+  }, [messages.length, isSticky, scrollToBottom, settings.animationsEnabled]);
 
   useEffect(() => {
-    const previousCount = previousMessageCountRef.current;
-    const appendedCount = Math.max(0, messages.length - previousCount);
-    const preferSmooth = previousCount > 0 && appendedCount > 0 && appendedCount <= 2;
-
-    scheduleScrollToBottom({ preferSmooth });
-    previousMessageCountRef.current = messages.length;
-  }, [messages, scheduleScrollToBottom]);
-
-  useEffect(() => {
-    if (!isStreaming || userScrolledUpRef.current) return;
-    scheduleScrollToBottom();
-  }, [streamingContent, isStreaming, scheduleScrollToBottom]);
-
-  const handleMessagesScroll = useCallback(() => {
-    if (scrollStateRafRef.current) return;
-
-    scrollStateRafRef.current = requestAnimationFrame(() => {
-      scrollStateRafRef.current = null;
-      const container = messagesContainerRef.current;
-      if (!container) return;
-
-      userScrolledUpRef.current = !isNearScrollBottom({
-        scrollHeight: container.scrollHeight,
-        scrollTop: container.scrollTop,
-        clientHeight: container.clientHeight,
-      });
-    });
-  }, []);
+    if (!isStreaming) return;
+    if (isSticky) scrollToBottom({ smooth: false });
+  }, [streamingContent, isStreaming, isSticky, scrollToBottom]);
 
   const handleSuggestionClick = (suggestion) => {
     const display = normalizeSuggestionDisplayValue(suggestion);
@@ -1132,7 +1053,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     if (isCommand(safeMessageText)) {
       const result = executeCommand(safeMessageText, { messages, t, settings, character, passionLevel });
       if (result.handled && result.message) {
-        userScrolledUpRef.current = false;
         setMessages(prev => [...prev, result.message]);
       }
       setInput('');
@@ -1153,7 +1073,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       timestamp: Date.now()
     };
     const newMessages = [...messages, userMessage];
-    userScrolledUpRef.current = false;
     setMessages(newMessages);
     setInput('');
 
@@ -1310,7 +1229,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       }
 
       // Import the chat
-      userScrolledUpRef.current = false;
       setMessages(importData.messages);
       setSceneMemory(buildSceneMemory(importData.messages, importData.sceneMemory || null));
       setSmartSuggestions(getRestoredSuggestions(importData.messages));
@@ -1896,8 +1814,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         </div>
       )}
       <div
-        ref={messagesContainerRef}
-        onScroll={handleMessagesScroll}
+        ref={scrollContainerRef}
         className={`theme-chat-scroll-region flex-1 min-h-0 overflow-y-auto px-4 py-5 pb-64 ${
           isGoldMode ? 'scrollbar-gold' : ''
         }`}
@@ -1978,7 +1895,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             </div>
           )}
           
-          <div ref={messagesEndRef} />
+          <div ref={sentinelRef} aria-hidden="true" />
         </div>
       </div>
       <div className="theme-composer-dock fixed bottom-8 left-1/2 z-50 w-[92%] max-w-[70rem] -translate-x-1/2 flex flex-col gap-2.5">

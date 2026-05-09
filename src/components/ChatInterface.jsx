@@ -1190,7 +1190,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     const editedUserMsg = { ...messages[editingIndex], content: trimmed, timestamp: Date.now() };
     const newMessages = [...messages.slice(0, editingIndex), editedUserMsg];
 
-    if (sessionId) {
+    const hadAssistantTurn = messages.slice(editingIndex + 1).some(m => m.role === 'assistant');
+    if (sessionId && hadAssistantTurn) {
       passionManager.revertLastScore(sessionId);
       setPassionLevel(passionManager.getPassionLevel(sessionId));
     }
@@ -1209,7 +1210,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     const userMsg = messages[lastUserIdx];
     setInput(userMsg.content || '');
 
-    if (sessionId) {
+    const hadAssistantTurn = messages.slice(lastUserIdx + 1).some(m => m.role === 'assistant');
+    if (sessionId && hadAssistantTurn) {
       passionManager.revertLastScore(sessionId);
       setPassionLevel(passionManager.getPassionLevel(sessionId));
     }

@@ -998,42 +998,14 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   // MESSAGE SENDING
   // ============================================================================
 
-  const handleSend = async (messageText = input) => {
-    const safeMessageText = (messageText || '').trim();
-    if (!safeMessageText || isLoading || isStreaming) return;
-
-    if (isCommand(safeMessageText)) {
-      const result = executeCommand(safeMessageText, { messages, t, settings, character, passionLevel });
-      if (result.handled && result.message) {
-        userScrolledUpRef.current = false;
-        setMessages(prev => [...prev, result.message]);
-      }
-      setInput('');
-      return;
-    }
-
-    if (smartSuggestions.length > 0) {
-      setPreviousPills((prev) => [...prev, ...smartSuggestions].slice(-6));
-    }
-    clearSuggestionsState();
-    setSendFailure(null);
-    abortImpersonateCall();
-    setIsImpersonating(false);
+  const runGeneration = async (messagesForGeneration) => {
+    const userMessage = messagesForGeneration[messagesForGeneration.length - 1];
+    const safeMessageText = (userMessage?.content || '').trim();
+    const runtimeSceneMemory = buildSceneMemory(messagesForGeneration);
 
     if (abortRef.current) abortRef.current.abort();
     const activeAbortHandle = createStreamAbortHandle();
     abortRef.current = activeAbortHandle;
-
-    const userMessage = {
-      role: 'user',
-      content: safeMessageText,
-      timestamp: Date.now()
-    };
-    const newMessages = [...messages, userMessage];
-    const runtimeSceneMemory = buildSceneMemory(newMessages);
-    userScrolledUpRef.current = false;
-    setMessages(newMessages);
-    setInput('');
     setIsLoading(true);
 
     try {
@@ -1065,7 +1037,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         }
       };
 
-      const historyForApi = [...chatMessages, userMessage];
+      const historyForApi = messagesForGeneration.filter(m => !m.isTierEvent);
       const response = await sendMessage(
         safeMessageText,
         character,
@@ -1097,7 +1069,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         timestamp: Date.now(),
         ...(response.stats && { stats: response.stats })
       };
-      const updatedMessages = [...newMessages, assistantMessage];
+      const updatedMessages = [...messagesForGeneration, assistantMessage];
       const nextSceneMemory = buildSceneMemory(updatedMessages, runtimeSceneMemory);
 
       // Set final message BEFORE clearing streaming → no flash
@@ -1151,6 +1123,41 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       setStreamingContent('');
       inputRef.current?.focus();
     }
+  };
+
+  const handleSend = async (messageText = input) => {
+    const safeMessageText = (messageText || '').trim();
+    if (!safeMessageText || isLoading || isStreaming) return;
+
+    if (isCommand(safeMessageText)) {
+      const result = executeCommand(safeMessageText, { messages, t, settings, character, passionLevel });
+      if (result.handled && result.message) {
+        userScrolledUpRef.current = false;
+        setMessages(prev => [...prev, result.message]);
+      }
+      setInput('');
+      return;
+    }
+
+    if (smartSuggestions.length > 0) {
+      setPreviousPills((prev) => [...prev, ...smartSuggestions].slice(-6));
+    }
+    clearSuggestionsState();
+    setSendFailure(null);
+    abortImpersonateCall();
+    setIsImpersonating(false);
+
+    const userMessage = {
+      role: 'user',
+      content: safeMessageText,
+      timestamp: Date.now()
+    };
+    const newMessages = [...messages, userMessage];
+    userScrolledUpRef.current = false;
+    setMessages(newMessages);
+    setInput('');
+
+    await runGeneration(newMessages);
   };
 
   // ============================================================================

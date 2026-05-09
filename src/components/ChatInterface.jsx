@@ -1220,10 +1220,12 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     setEditDraft('');
 
     inputRef.current?.focus();
-    if (inputRef.current) {
-      inputRef.current.style.height = 'auto';
-      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 120) + 'px';
-    }
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    });
   }, [lastUserIdx, isLoading, isStreaming, isImpersonating, messages, sessionId, clearSuggestionsState]);
 
   // ============================================================================

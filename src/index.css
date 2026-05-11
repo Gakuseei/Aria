@@ -1941,6 +1941,10 @@ body.oled-mode .character-avatar-stack > * {
 }
 
 /* VERSION 5.7: Enhanced tooltips - OLED friendly */
+[data-tooltip] {
+  position: relative;
+}
+
 [data-tooltip]:hover::after {
   content: attr(data-tooltip);
   position: absolute;

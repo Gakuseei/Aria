@@ -494,7 +494,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
   const [confirmModal, setConfirmModal] = useState(null);
 
-  const { scrollContainerRef, sentinelRef, isSticky, scrollToBottom } = useStickyScroll();
+  const { scrollContainerRef, sentinelRef, isSticky, scrollToBottom, resetSticky } = useStickyScroll();
   const inputRef = useRef(null);
   const importFileRef = useRef(null);
   const audioRef = useRef(null);
@@ -798,7 +798,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
     const initializeChat = async () => {
       setPreviousPills([]);
-      // Check if we're restoring a saved session
+      resetSticky();
       if (loadedSession && loadedSession.messages && loadedSession.messages.length > 0) {
         if (cancelled) return;
         const restoredSessionId = loadedSession.sessionId || generateSessionId();
@@ -836,7 +836,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     initializeChat();
 
     return () => { cancelled = true; };
-  }, [buildSceneMemory, character, loadedSession]);
+  }, [buildSceneMemory, character, loadedSession, resetSticky]);
 
   const initializeGreeting = () => {
     let greeting;

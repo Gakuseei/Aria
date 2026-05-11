@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * mis-flip the stickiness flag.
  *
  * Usage:
- *   const { scrollContainerRef, sentinelRef, isSticky, scrollToBottom } = useStickyScroll();
+ *   const { scrollContainerRef, sentinelRef, isSticky, scrollToBottom, resetSticky } = useStickyScroll();
  *   <div ref={scrollContainerRef}>...<div ref={sentinelRef} aria-hidden="true" /></div>
  *
  * @returns {{
@@ -17,12 +17,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  *   sentinelRef: import('react').RefObject<HTMLElement>,
  *   isSticky: boolean,
  *   scrollToBottom: (options?: { smooth?: boolean }) => void,
+ *   resetSticky: () => void,
  * }}
  */
 export default function useStickyScroll() {
   const scrollContainerRef = useRef(null);
   const sentinelRef = useRef(null);
   const [isSticky, setIsSticky] = useState(true);
+  const isStickyRef = useRef(true);
+
+  useEffect(() => {
+    isStickyRef.current = isSticky;
+  }, [isSticky]);
 
   useEffect(() => {
     const root = scrollContainerRef.current;
@@ -50,5 +56,15 @@ export default function useStickyScroll() {
     });
   }, []);
 
-  return { scrollContainerRef, sentinelRef, isSticky, scrollToBottom };
+  const resetSticky = useCallback(() => {
+    isStickyRef.current = true;
+    setIsSticky(true);
+    requestAnimationFrame(() => {
+      const root = scrollContainerRef.current;
+      if (!root) return;
+      root.scrollTo({ top: root.scrollHeight, behavior: 'auto' });
+    });
+  }, []);
+
+  return { scrollContainerRef, sentinelRef, isSticky, scrollToBottom, resetSticky };
 }

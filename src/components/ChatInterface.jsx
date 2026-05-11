@@ -1212,9 +1212,10 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     setMessages(newMessages);
     setEditingIndex(null);
     setEditDraft('');
+    requestAnimationFrame(() => scrollToBottom({ smooth: false }));
 
     await runGeneration(newMessages);
-  }, [editingIndex, editDraft, messages, sessionId, isLoading, isStreaming, isImpersonating, runGeneration, handleEditCancel, clearSuggestionsState]);
+  }, [editingIndex, editDraft, messages, sessionId, isLoading, isStreaming, isImpersonating, runGeneration, handleEditCancel, clearSuggestionsState, scrollToBottom]);
 
   const handleRevert = useCallback(() => {
     if (lastUserIdx < 0) return;

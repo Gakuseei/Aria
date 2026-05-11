@@ -69,7 +69,7 @@ export default function OledToggleButton({ themeMode, onToggle, currentView }) {
           isVisible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-4 scale-95 opacity-0'
         } ${isPressed ? 'scale-90' : ''}`
       }
-      title={buttonTitle}
+      data-tooltip={buttonTitle}
       aria-label={buttonTitle}
     >
       <div className={`absolute inset-0 bg-gradient-to-br transition-opacity duration-300 ${activeTheme.accentClassName}`} />

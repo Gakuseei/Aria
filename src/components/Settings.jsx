@@ -943,7 +943,7 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                           }
                         }}
                         className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-white/10 rounded transition-all"
-                        title={t.settings.browseForPiper}
+                        data-tooltip={t.settings.browseForPiper}
                       >
                         <FolderOpen size={16} className="text-zinc-400" />
                       </button>

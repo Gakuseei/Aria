@@ -419,7 +419,7 @@ export default function VoiceSetup({ onClose, onVerified }) {
                       <button
                          onClick={handleCancelInstall}
                          className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all flex items-center gap-2"
-                         title="Cancel Installation"
+                         data-tooltip="Cancel Installation"
                       >
                          <XCircle size={18} />
                          <span className="text-sm font-medium">Cancel</span>
@@ -515,7 +515,7 @@ export default function VoiceSetup({ onClose, onVerified }) {
                       onClick={testZonosConnection}
                       disabled={zonosInstallStatus === 'installing'}
                       className="px-4 py-3 bg-zinc-800 text-zinc-300 rounded-lg font-medium border border-white/10 hover:bg-zinc-700 transition-all"
-                      title="Check Connection"
+                      data-tooltip="Check Connection"
                    >
                       <RefreshCw size={18} />
                    </button>

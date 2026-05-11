@@ -171,7 +171,7 @@ export default function OllamaSetup({ onClose, isOnboarding = false, onComplete 
                        <button
                           onClick={() => window.electronAPI?.openToolsFolder?.()}
                           className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-zinc-300 transition-all border border-white/5 hover:border-white/10"
-                          title={t.tutorials.openFolder}
+                          data-tooltip={t.tutorials.openFolder}
                        >
                           📂
                        </button>

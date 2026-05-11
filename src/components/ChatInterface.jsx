@@ -326,14 +326,14 @@ const MessageBubble = memo(function MessageBubble({
               <button
                 onClick={() => onEditSave?.()}
                 className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
-                title={t.chat?.editSave || 'Save'}
+                data-tooltip={t.chat?.editSave || 'Save'}
               >
                 <Check size={14} strokeWidth={1.5} />
               </button>
               <button
                 onClick={() => onEditCancel?.()}
                 className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
-                title={t.chat?.editCancel || 'Cancel'}
+                data-tooltip={t.chat?.editCancel || 'Cancel'}
               >
                 <X size={14} strokeWidth={1.5} />
               </button>
@@ -344,7 +344,7 @@ const MessageBubble = memo(function MessageBubble({
                 <button
                   onClick={() => onEditStart(messageIndex, message.content || '')}
                   className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
-                  title={t.chat?.editMessage || 'Edit message'}
+                  data-tooltip={t.chat?.editMessage || 'Edit message'}
                 >
                   <PenLine size={14} strokeWidth={1.5} />
                 </button>
@@ -353,7 +353,7 @@ const MessageBubble = memo(function MessageBubble({
                 <button
                   onClick={() => onSpeak(message.content || '')}
                   className="theme-message-action theme-message-action-info rounded-lg p-1.5 transition-all duration-200"
-                  title={t.chat?.playAudio || 'Play Audio'}
+                  data-tooltip={t.chat?.playAudio || 'Play Audio'}
                 >
                   <Volume2 size={14} strokeWidth={1.5} />
                 </button>
@@ -361,7 +361,7 @@ const MessageBubble = memo(function MessageBubble({
               <button
                 onClick={() => onCopy(message.content || '')}
                 className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
-                title={t.chat?.copy || 'Copy'}
+                data-tooltip={t.chat?.copy || 'Copy'}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
@@ -1646,7 +1646,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <button
             onClick={handleBackNavigation}
             className="theme-chat-back-button theme-icon-button rounded-xl p-3 transition-all duration-200"
-            title={t.chat.back}
+            data-tooltip={t.chat.back}
             aria-label={t.chat.back}
           >
             <ArrowLeft size={22} strokeWidth={1.5} />
@@ -1672,7 +1672,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               <button
                 onClick={() => setShowBioModal(true)}
                 className="theme-chat-info-button theme-icon-button rounded-lg p-2 transition-all"
-                title={t.chat.viewBio}
+                data-tooltip={t.chat.viewBio}
                 aria-label={t.chat.viewBio}
               >
                 <Info size={18} strokeWidth={1.5} />
@@ -1749,7 +1749,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             className={`theme-icon-button rounded-3xl p-3 transition-all duration-200 active:scale-95 ${
               imageGenEnabled ? 'theme-icon-button-active' : ''
             }`}
-            title={t.chat?.imageGeneration || 'Image Generation'}
+            data-tooltip={t.chat?.imageGeneration || 'Image Generation'}
             aria-label={t.chat?.imageGeneration || 'Image Generation'}
           >
             <ImageIcon size={22} strokeWidth={1.5} />
@@ -1760,7 +1760,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               className={`theme-icon-button rounded-3xl p-3 transition-all duration-200 active:scale-95 ${
                 voiceEnabled === true ? 'theme-icon-button-info' : ''
               }`}
-              title={t.chat?.voiceSettings?.title || 'Voice Settings'}
+              data-tooltip={t.chat?.voiceSettings?.title || 'Voice Settings'}
               aria-label={t.chat?.voiceSettings?.title || 'Voice Settings'}
             >
               <Volume2 size={22} strokeWidth={1.5} />
@@ -1879,7 +1879,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 ? 'theme-icon-button-active shadow-lg shadow-[0_18px_32px_-24px_rgb(var(--color-primary-rgb)/0.7)]'
                 : 'theme-icon-button-info'
             }`}
-            title={!isUnchainedMode ? t.chat.enableUnchained : t.chat.unchainedActive}
+            data-tooltip={!isUnchainedMode ? t.chat.enableUnchained : t.chat.unchainedActive}
             aria-label={!isUnchainedMode ? t.chat.enableUnchained : t.chat.unchainedActive}
           >
             <Sparkles size={22} strokeWidth={1.5} />
@@ -1891,7 +1891,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             onClick={regenerateLastResponse}
             disabled={isLoading || isStreaming || messages.length < 2}
             className="theme-icon-button rounded-3xl p-3 transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
-            title={t.chat.regenerateResponse}
+            data-tooltip={t.chat.regenerateResponse}
             aria-label={t.chat.regenerateResponse}
           >
             <RotateCcw size={22} strokeWidth={1.5} />
@@ -1902,7 +1902,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               className={`theme-icon-button rounded-3xl p-3 transition-all duration-200 active:scale-95 ${
                 showChatOptions ? 'theme-icon-button-active' : ''
               }`}
-              title={t.chat.chatOptions}
+              data-tooltip={t.chat.chatOptions}
               aria-label={t.chat.chatOptions}
             >
               <SettingsIcon size={22} strokeWidth={1.5} />
@@ -2088,7 +2088,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 type="button"
                 onClick={() => handleSuggestionClick(suggestion)}
                 disabled={isLoading}
-                title={suggestion}
+                data-tooltip={suggestion}
                 className={`theme-suggestion-pill suggestion-pill group flex-1 min-w-0 inline-flex items-center gap-1.5 rounded-3xl border-2 border-transparent px-3 py-2.5 text-[13px] leading-snug text-left font-medium text-zinc-200 bg-zinc-900/50 hover:bg-rose-500/8 hover:border-rose-500/70 hover:text-zinc-50 transition-colors duration-200 disabled:opacity-50 ${
                   isGoldMode ? 'text-amber-100 hover:bg-amber-500/10 hover:border-amber-400/70' : ''
                 }`}
@@ -2108,7 +2108,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               onClick={handleRevert}
               disabled={lastUserIdx < 0 || isLoading || isStreaming || isImpersonating}
               aria-label={t.chat?.revertTurn || 'Revert last turn'}
-              title={t.chat?.revertTurn || 'Revert last turn'}
+              data-tooltip={t.chat?.revertTurn || 'Revert last turn'}
               className="theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30"
             >
               <Undo2 size={18} strokeWidth={1.5} />
@@ -2119,7 +2119,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 onClick={onSuggestClick}
                 disabled={isGeneratingSuggestions || isStreaming || isImpersonating}
                 aria-label={t.chat.suggestButton}
-                title={isGeneratingSuggestions ? t.chat.suggestLoading : t.chat.suggestButton}
+                data-tooltip={isGeneratingSuggestions ? t.chat.suggestLoading : t.chat.suggestButton}
                 className="theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30"
               >
                 {isGeneratingSuggestions
@@ -2166,7 +2166,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                     ? 'text-amber-300'
                     : ''
               }`}
-              title={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
+              data-tooltip={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
               aria-label={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
             >
               {isImpersonating ? <X size={16} /> : <PenLine size={16} />}
@@ -2175,7 +2175,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               onClick={() => handleSend()}
               disabled={isLoading || isStreaming || isImpersonating || !input.trim()}
               className="theme-composer-primary flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 shadow-lg disabled:opacity-30"
-              title={t.chat.send}
+              data-tooltip={t.chat.send}
               aria-label={t.chat.send}
             >
               <Send size={18} strokeWidth={1.5} />
@@ -2320,7 +2320,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               <button
                 onClick={() => setShowBioModal(false)}
                 className="theme-icon-button rounded-lg p-2 transition-all"
-                title={t.common?.close || 'Close'}
+                data-tooltip={t.common?.close || 'Close'}
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

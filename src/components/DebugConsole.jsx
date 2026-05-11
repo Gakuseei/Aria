@@ -444,7 +444,7 @@ export default function DebugConsole({
               <button
                 onClick={onClose}
                 className="rounded-lg border-2 border-transparent p-2 text-zinc-400 transition-colors hover:border-rose-500 hover:bg-white/5 hover:text-white"
-                title={t.debugConsole.clear}
+                data-tooltip={t.debugConsole.clear}
               >
                 <X size={20} />
               </button>
@@ -761,7 +761,7 @@ export default function DebugConsole({
                           <div className="flex flex-wrap gap-2">
                             <button
                               onClick={() => setSeverityFilter('all')}
-                              title={t.debugConsole.clear}
+                              data-tooltip={t.debugConsole.clear}
                               className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
                                 severityFilter === 'all'
                                   ? 'border-white/20 bg-white/10 text-white'
@@ -851,7 +851,7 @@ export default function DebugConsole({
                               <button
                                 onClick={() => copyError(error)}
                                 className="rounded-lg border-2 border-transparent p-2 text-zinc-400 transition-colors hover:border-rose-500 hover:bg-white/5 hover:text-rose-200"
-                                title={t.debugConsole.copyError}
+                                data-tooltip={t.debugConsole.copyError}
                               >
                                 <Copy size={16} />
                               </button>

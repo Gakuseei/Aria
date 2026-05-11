@@ -20,7 +20,7 @@ function RegenerateButton({ field, regeneratingField, onRegenerate, t }) {
           ? 'bg-violet-500/10 text-violet-400'
           : 'text-zinc-500 hover:text-violet-400 hover:bg-violet-500/10'
       }`}
-      title={t.aiCharacterBuilder?.regenerate || 'Regenerate'}
+      data-tooltip={t.aiCharacterBuilder?.regenerate || 'Regenerate'}
     >
       {regeneratingField === field ? (
         <div className="w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />

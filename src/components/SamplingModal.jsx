@@ -108,7 +108,7 @@ function FieldRow({
             disabled={!isOverridden}
             tabIndex={isOverridden ? 0 : -1}
             aria-label={resetLabel}
-            title={resetLabel}
+            data-tooltip={resetLabel}
             className="sm-reset"
             style={{
               background: 'transparent',

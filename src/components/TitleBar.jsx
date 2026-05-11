@@ -37,7 +37,7 @@ function TitleBar() {
         <button
           onClick={handleMinimize}
           className="theme-titlebar-control"
-          title={t.common?.minimize || 'Minimize'}
+          data-tooltip={t.common?.minimize || 'Minimize'}
           aria-label={t.common?.minimize || 'Minimize'}
         >
           <Minus size={14} strokeWidth={1.75} />
@@ -45,7 +45,7 @@ function TitleBar() {
         <button
           onClick={handleMaximize}
           className="theme-titlebar-control"
-          title={t.common?.maximize || 'Maximize'}
+          data-tooltip={t.common?.maximize || 'Maximize'}
           aria-label={t.common?.maximize || 'Maximize'}
         >
           <Square size={12} strokeWidth={1.75} />
@@ -53,7 +53,7 @@ function TitleBar() {
         <button
           onClick={handleClose}
           className="theme-titlebar-control theme-titlebar-control-close"
-          title={t.common?.close || 'Close'}
+          data-tooltip={t.common?.close || 'Close'}
           aria-label={t.common?.close || 'Close'}
         >
           <X size={14} strokeWidth={1.75} />

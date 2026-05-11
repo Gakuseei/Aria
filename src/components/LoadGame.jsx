@@ -283,7 +283,7 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
                     <button
                       onClick={(e) => handleDelete(session.id, e)}
                       className="p-2 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 transition-all z-10"
-                      title={t.loadGame.deleteSave}
+                      data-tooltip={t.loadGame.deleteSave}
                       aria-label={t.loadGame.deleteSave}
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

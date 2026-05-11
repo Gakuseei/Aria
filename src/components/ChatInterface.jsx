@@ -1187,6 +1187,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
   const handleEditSave = useCallback(async () => {
     if (editingIndex == null) return;
+    if (isLoading || isStreaming || isImpersonating) return;
     const trimmed = (editDraft || '').trim();
     if (!trimmed) {
       handleEditCancel();
@@ -1212,7 +1213,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     setEditDraft('');
 
     await runGeneration(newMessages);
-  }, [editingIndex, editDraft, messages, sessionId, runGeneration, handleEditCancel, clearSuggestionsState]);
+  }, [editingIndex, editDraft, messages, sessionId, isLoading, isStreaming, isImpersonating, runGeneration, handleEditCancel, clearSuggestionsState]);
 
   const handleRevert = useCallback(() => {
     if (lastUserIdx < 0) return;

@@ -1184,9 +1184,9 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
                   type="button"
                   onClick={() => setCardScaleIndex((currentIndex) => Math.max(0, currentIndex - 1))}
                   disabled={cardScaleIndex === 0}
-                  data-tooltip={commonText.zoomOut}
                   aria-label={commonText.zoomOut}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-300 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:text-zinc-600 border-2 border-transparent hover:border-rose-500"
+                  data-tooltip={commonText.zoomOut}
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-300 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:text-zinc-600"
                 >
                   <Minus className="h-4 w-4" />
                 </button>
@@ -1194,9 +1194,9 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
                   type="button"
                   onClick={() => setCardScaleIndex((currentIndex) => Math.min(CARD_SCALE_OPTIONS.length - 1, currentIndex + 1))}
                   disabled={cardScaleIndex === CARD_SCALE_OPTIONS.length - 1}
-                  data-tooltip={commonText.zoomIn}
                   aria-label={commonText.zoomIn}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-300 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:text-zinc-600 border-2 border-transparent hover:border-rose-500"
+                  data-tooltip={commonText.zoomIn}
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-300 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:text-zinc-600"
                 >
                   <Plus className="h-4 w-4" />
                 </button>

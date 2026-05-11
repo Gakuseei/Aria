@@ -326,6 +326,7 @@ const MessageBubble = memo(function MessageBubble({
               <button
                 onClick={() => onEditSave?.()}
                 className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
+                aria-label={t.chat?.editSave || 'Save'}
                 data-tooltip={t.chat?.editSave || 'Save'}
               >
                 <Check size={14} strokeWidth={1.5} />
@@ -333,6 +334,7 @@ const MessageBubble = memo(function MessageBubble({
               <button
                 onClick={() => onEditCancel?.()}
                 className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
+                aria-label={t.chat?.editCancel || 'Cancel'}
                 data-tooltip={t.chat?.editCancel || 'Cancel'}
               >
                 <X size={14} strokeWidth={1.5} />
@@ -344,6 +346,7 @@ const MessageBubble = memo(function MessageBubble({
                 <button
                   onClick={() => onEditStart(messageIndex, message.content || '')}
                   className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
+                  aria-label={t.chat?.editMessage || 'Edit message'}
                   data-tooltip={t.chat?.editMessage || 'Edit message'}
                 >
                   <PenLine size={14} strokeWidth={1.5} />
@@ -353,6 +356,7 @@ const MessageBubble = memo(function MessageBubble({
                 <button
                   onClick={() => onSpeak(message.content || '')}
                   className="theme-message-action theme-message-action-info rounded-lg p-1.5 transition-all duration-200"
+                  aria-label={t.chat?.playAudio || 'Play Audio'}
                   data-tooltip={t.chat?.playAudio || 'Play Audio'}
                 >
                   <Volume2 size={14} strokeWidth={1.5} />
@@ -361,6 +365,7 @@ const MessageBubble = memo(function MessageBubble({
               <button
                 onClick={() => onCopy(message.content || '')}
                 className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
+                aria-label={t.chat?.copy || 'Copy'}
                 data-tooltip={t.chat?.copy || 'Copy'}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -2088,6 +2093,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 type="button"
                 onClick={() => handleSuggestionClick(suggestion)}
                 disabled={isLoading}
+                aria-label={suggestion}
                 data-tooltip={suggestion}
                 className={`theme-suggestion-pill suggestion-pill group flex-1 min-w-0 inline-flex items-center gap-1.5 rounded-3xl border-2 border-transparent px-3 py-2.5 text-[13px] leading-snug text-left font-medium text-zinc-200 bg-zinc-900/50 hover:bg-rose-500/8 hover:border-rose-500/70 hover:text-zinc-50 transition-colors duration-200 disabled:opacity-50 ${
                   isGoldMode ? 'text-amber-100 hover:bg-amber-500/10 hover:border-amber-400/70' : ''
@@ -2320,6 +2326,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               <button
                 onClick={() => setShowBioModal(false)}
                 className="theme-icon-button rounded-lg p-2 transition-all"
+                aria-label={t.common?.close || 'Close'}
                 data-tooltip={t.common?.close || 'Close'}
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

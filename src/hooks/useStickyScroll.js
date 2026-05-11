@@ -47,6 +47,48 @@ export default function useStickyScroll() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const root = scrollContainerRef.current;
+    if (!root || typeof ResizeObserver === 'undefined') return undefined;
+
+    const pin = () => {
+      if (!isStickyRef.current) return;
+      root.scrollTo({ top: root.scrollHeight, behavior: 'auto' });
+    };
+
+    const resizeObserver = new ResizeObserver(pin);
+    const observed = new Set();
+
+    const observeChildren = () => {
+      for (const child of root.children) {
+        if (child instanceof Element && !observed.has(child)) {
+          resizeObserver.observe(child);
+          observed.add(child);
+        }
+      }
+    };
+
+    observeChildren();
+
+    const mutationObserver = new MutationObserver((mutations) => {
+      let added = false;
+      for (const mutation of mutations) {
+        if (mutation.addedNodes.length > 0) {
+          added = true;
+          break;
+        }
+      }
+      if (added) observeChildren();
+    });
+    mutationObserver.observe(root, { childList: true });
+
+    return () => {
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+      observed.clear();
+    };
+  }, []);
+
   const scrollToBottom = useCallback(({ smooth = false } = {}) => {
     const root = scrollContainerRef.current;
     if (!root) return;

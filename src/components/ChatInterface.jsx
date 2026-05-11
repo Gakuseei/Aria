@@ -507,6 +507,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   const mountedRef = useRef(true);
   const messagesRef = useRef([]);
   const sceneMemoryRef = useRef(null);
+  const handleSpeakRef = useRef(null);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -1004,7 +1005,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   // MESSAGE SENDING
   // ============================================================================
 
-  const runGeneration = async (messagesForGeneration) => {
+  const runGeneration = useCallback(async (messagesForGeneration) => {
     const userMessage = messagesForGeneration[messagesForGeneration.length - 1];
     const safeMessageText = (userMessage?.content || '').trim();
     const runtimeSceneMemory = buildSceneMemory(messagesForGeneration);
@@ -1100,9 +1101,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         }, 300);
       }
 
-      // Voice output (if enabled and auto-read enabled)
-      if (voiceEnabled === true && autoReadEnabled) {
-        handleSpeak(safeResponse);
+      if (voiceEnabled === true && autoReadEnabled && typeof handleSpeakRef.current === 'function') {
+        handleSpeakRef.current(safeResponse);
       }
     } catch (error) {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -1129,7 +1129,18 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       setStreamingContent('');
       inputRef.current?.focus();
     }
-  };
+  }, [
+    buildSceneMemory,
+    isForegroundRequestObsolete,
+    character,
+    sessionId,
+    isUnchainedMode,
+    settings,
+    passionLevel,
+    voiceEnabled,
+    autoReadEnabled,
+    t,
+  ]);
 
   const handleSend = async (messageText = input) => {
     const safeMessageText = (messageText || '').trim();
@@ -1291,6 +1302,10 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       console.error("Audio Generation Error:", err);
     }
   }, [playAudio, settings.modelPath, settings.piperPath, settings.voiceTier]);
+
+  useEffect(() => {
+    handleSpeakRef.current = handleSpeak;
+  }, [handleSpeak]);
 
   // ============================================================================
   // CHAT ACTIONS WITH HARD RESET

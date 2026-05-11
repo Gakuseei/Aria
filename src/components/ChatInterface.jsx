@@ -1171,6 +1171,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput('');
+    resetSticky();
 
     await runGeneration(newMessages);
   };

@@ -325,14 +325,14 @@ const MessageBubble = memo(function MessageBubble({
             <>
               <button
                 onClick={() => onEditSave?.()}
-                className="theme-message-action border-2 border-transparent hover:border-rose-500 rounded-lg p-1.5 transition-all duration-200"
+                className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
                 title={t.chat?.editSave || 'Save'}
               >
                 <Check size={14} strokeWidth={1.5} />
               </button>
               <button
                 onClick={() => onEditCancel?.()}
-                className="theme-message-action border-2 border-transparent hover:border-rose-500 rounded-lg p-1.5 transition-all duration-200"
+                className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
                 title={t.chat?.editCancel || 'Cancel'}
               >
                 <X size={14} strokeWidth={1.5} />
@@ -343,7 +343,7 @@ const MessageBubble = memo(function MessageBubble({
               {isUser && isLastUserMessage && onEditStart && (
                 <button
                   onClick={() => onEditStart(messageIndex, message.content || '')}
-                  className="theme-message-action border-2 border-transparent hover:border-rose-500 rounded-lg p-1.5 transition-all duration-200"
+                  className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
                   title={t.chat?.editMessage || 'Edit message'}
                 >
                   <PenLine size={14} strokeWidth={1.5} />
@@ -2109,7 +2109,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               disabled={lastUserIdx < 0 || isLoading || isStreaming || isImpersonating}
               aria-label={t.chat?.revertTurn || 'Revert last turn'}
               title={t.chat?.revertTurn || 'Revert last turn'}
-              className="theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30 border-2 border-transparent hover:border-rose-500"
+              className="theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30"
             >
               <Undo2 size={18} strokeWidth={1.5} />
             </button>
@@ -2120,7 +2120,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 disabled={isGeneratingSuggestions || isStreaming || isImpersonating}
                 aria-label={t.chat.suggestButton}
                 title={isGeneratingSuggestions ? t.chat.suggestLoading : t.chat.suggestButton}
-                className="theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30 border-2 border-transparent hover:border-rose-500"
+                className="theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30"
               >
                 {isGeneratingSuggestions
                   ? <Loader2 size={18} strokeWidth={1.5} className="animate-spin" />

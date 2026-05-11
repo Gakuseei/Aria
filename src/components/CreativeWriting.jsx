@@ -439,6 +439,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
             onClick={handleExport}
             disabled={!hasStory}
             className="p-2 hover:bg-white/5 rounded-xl transition-all duration-200 disabled:opacity-30 text-zinc-500 hover:text-white"
+            aria-label={t.creative.export}
             data-tooltip={t.creative.export}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -448,6 +449,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
           <button
             onClick={handleImportClick}
             className="p-2 hover:bg-white/5 rounded-xl transition-all duration-200 text-zinc-500 hover:text-white"
+            aria-label={t.creative.import}
             data-tooltip={t.creative.import}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -661,6 +663,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
               <button
                 onClick={() => { navigator.clipboard.writeText(story).catch(() => {}); }}
                 className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 transition-colors"
+                aria-label={t.creative.copyToClipboard}
                 data-tooltip={t.creative.copyToClipboard}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

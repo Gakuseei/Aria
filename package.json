@@ -1,7 +1,7 @@
 {
   "name": "aria-chatbot",
   "productName": "Aria ChatBot",
-  "version": "0.2.5",
+  "version": "0.3.0-alpha.0",
   "description": "High-End Interactive Fiction & Storytelling Suite",
   "main": "main.js",
   "scripts": {

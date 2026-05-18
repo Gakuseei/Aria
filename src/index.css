@@ -2207,6 +2207,7 @@ body:not(.oled-mode) .passion-glow-high {
 .ollama-modal-logo img {
   width: 56px;
   height: 56px;
+  object-fit: contain;
   filter: invert(94%) brightness(1.05);
 }
 .ollama-modal-title {

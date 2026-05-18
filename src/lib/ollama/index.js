@@ -278,7 +278,7 @@ function mapElectronError(result) {
   if (msg.includes('ENOTFOUND') || msg.includes('getaddrinfo')) {
     return { success: false, errorCode: 'dns', message: '❌ Address unreachable — typo in URL?' };
   }
-  if (msg.toLowerCase().includes('timeout') || msg.includes('AbortError')) {
+  if (msg.toLowerCase().includes('timeout')) {
     return { success: false, errorCode: 'timeout', message: '❌ Timeout — wrong URL or service stuck.' };
   }
   if (typeof result?.status === 'number' && result.status >= 400) {

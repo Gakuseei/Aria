@@ -56,5 +56,13 @@ describe('testOllamaConnection error mapping', () => {
     const res = await testOllamaConnection('http://127.0.0.1:11434');
     expect(res.success).toBe(true);
     expect(res.errorCode).toBeUndefined();
+    expect(res.models).toEqual([{ name: 'mag-mell' }]);
+  });
+
+  it('returns errorCode "refused" on browser-style "Failed to fetch"', async () => {
+    global.fetch = vi.fn(() => Promise.reject(new TypeError('Failed to fetch')));
+    const res = await testOllamaConnection('http://127.0.0.1:11434');
+    expect(res.success).toBe(false);
+    expect(res.errorCode).toBe('refused');
   });
 });

@@ -3,6 +3,7 @@ import TitleBar from './components/TitleBar';
 import MainMenu from './components/MainMenu';
 import ModeSelection from './components/ModeSelection';
 import OledToggleButton from './components/OledToggleButton';
+import OllamaNotRunningModal from './components/OllamaNotRunningModal';
 import { useLanguage } from './context/LanguageContext';
 import { buildManualCharacterSelectionState, buildManualModeSelectionState } from './lib/chatViewState';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from './lib/defaults';
@@ -22,7 +23,6 @@ const Settings = lazy(() => import('./components/Settings'));
 const CharacterCreator = lazy(() => import('./components/CharacterCreator'));
 const AICharacterBuilder = lazy(() => import('./components/AICharacterBuilder'));
 const DebugConsole = lazy(() => import('./components/DebugConsole'));
-const OllamaSetup = lazy(() => import('./components/tutorials/OllamaSetup'));
 
 const VIEWS = {
   MAIN_MENU: 'main_menu',
@@ -45,7 +45,7 @@ function shouldUseSystemTitleBar() {
 }
 
 function App() {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const useSystemTitleBar = shouldUseSystemTitleBar();
   const startupTimersRef = useRef(new Set());
   const performanceProfileRef = useRef(getPerformanceProfile());
@@ -55,8 +55,10 @@ function App() {
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [loadedSession, setLoadedSession] = useState(null);
 
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [ollamaReady, setOllamaReady] = useState(false);
+  const [modelsAvailable, setModelsAvailable] = useState(false);
+  const [ollamaErrorCode, setOllamaErrorCode] = useState(null);
+  const [ollamaErrorStatus, setOllamaErrorStatus] = useState(null);
 
   const [themeModeActive, setThemeModeActive] = useState(INITIAL_THEME_MODE);
   const [oledModeActive, setOledModeActive] = useState(INITIAL_THEME_MODE === 'oled');
@@ -184,8 +186,11 @@ function App() {
         const ollamaTest = await testOllamaConnection();
 
         if (ollamaTest.success) {
+          const count = Array.isArray(ollamaTest.models) ? ollamaTest.models.length : 0;
           setOllamaReady(true);
-          setShowOnboarding(false);
+          setModelsAvailable(count > 0);
+          setOllamaErrorCode(null);
+          setOllamaErrorStatus(null);
 
           const autoDetectResult = await autoDetectAndSetModel();
 
@@ -198,12 +203,16 @@ function App() {
           }
         } else {
           setOllamaReady(false);
-          setShowOnboarding(true);
+          setModelsAvailable(false);
+          setOllamaErrorCode(ollamaTest.errorCode ?? 'unknown');
+          setOllamaErrorStatus(ollamaTest.status ?? null);
         }
       } catch (error) {
         console.error('[v8.1 Startup] Ollama check failed:', error);
         setOllamaReady(false);
-        setShowOnboarding(true);
+        setModelsAvailable(false);
+        setOllamaErrorCode('unknown');
+        setOllamaErrorStatus(null);
       }
       endDebugTimer('[Startup] Ollama check');
       endDebugTimer('[Startup] Total init');
@@ -356,11 +365,27 @@ function App() {
   }, [animationsActive]);
 
   const handleRetryOllama = async () => {
-    const ollamaTest = await testOllamaConnection();
+    try {
+      const ollamaTest = await testOllamaConnection(settings.ollamaUrl);
 
-    if (ollamaTest.success) {
-      setOllamaReady(true);
-      setShowOnboarding(false);
+      if (ollamaTest.success) {
+        const count = Array.isArray(ollamaTest.models) ? ollamaTest.models.length : 0;
+        setOllamaReady(true);
+        setModelsAvailable(count > 0);
+        setOllamaErrorCode(null);
+        setOllamaErrorStatus(null);
+      } else {
+        setOllamaReady(false);
+        setModelsAvailable(false);
+        setOllamaErrorCode(ollamaTest.errorCode ?? 'unknown');
+        setOllamaErrorStatus(ollamaTest.status ?? null);
+      }
+    } catch (error) {
+      console.error('[Retry] Ollama check failed:', error);
+      setOllamaReady(false);
+      setModelsAvailable(false);
+      setOllamaErrorCode('unknown');
+      setOllamaErrorStatus(null);
     }
   };
 
@@ -586,34 +611,34 @@ function App() {
 
   return (
     <div dir={RTL_LANGUAGES.has(language) ? 'rtl' : 'ltr'} className="app-container app-theme-shell h-screen w-screen overflow-hidden">
-      {showOnboarding && (
-        <Suspense fallback={null}>
-          <OllamaSetup
-            isOnboarding={true}
-            onComplete={handleRetryOllama}
-          />
-        </Suspense>
+      {(!ollamaReady || !modelsAvailable) && currentView !== VIEWS.SETTINGS && (
+        <OllamaNotRunningModal
+          state={!ollamaReady ? 'unreachable' : 'no-model'}
+          errorCode={ollamaErrorCode}
+          errorStatus={ollamaErrorStatus}
+          onRetry={handleRetryOllama}
+          onOpenSettings={() => openSettings(VIEWS.MAIN_MENU)}
+          t={t}
+        />
       )}
 
       {!useSystemTitleBar && <TitleBar />}
-      
-      {ollamaReady && (
-        <main className={`${useSystemTitleBar ? 'h-screen' : 'h-[calc(100vh-32px)]'} w-full overflow-hidden`}>
-          <div className="fixed inset-0 pointer-events-none overflow-hidden">
-            <div className="theme-app-backdrop absolute inset-0" />
-            <div className="cyber-grid absolute inset-0 theme-app-grid" />
-            <div className="theme-app-glow theme-app-glow-primary absolute top-[-20%] left-[-10%] h-[500px] w-[500px] rounded-full blur-[120px]" />
-            <div className="theme-app-glow theme-app-glow-secondary absolute bottom-[-20%] right-[-10%] h-[600px] w-[600px] rounded-full blur-[150px]" />
-            <div className="theme-app-glow theme-app-glow-center absolute top-[50%] left-[50%] h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 transform rounded-full blur-[100px]" />
-          </div>
 
-          <div className="relative z-10 h-full w-full">
-            <Suspense fallback={null}>
-              {renderView()}
-            </Suspense>
-          </div>
-        </main>
-      )}
+      <main className={`${useSystemTitleBar ? 'h-screen' : 'h-[calc(100vh-32px)]'} w-full overflow-hidden`}>
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="theme-app-backdrop absolute inset-0" />
+          <div className="cyber-grid absolute inset-0 theme-app-grid" />
+          <div className="theme-app-glow theme-app-glow-primary absolute top-[-20%] left-[-10%] h-[500px] w-[500px] rounded-full blur-[120px]" />
+          <div className="theme-app-glow theme-app-glow-secondary absolute bottom-[-20%] right-[-10%] h-[600px] w-[600px] rounded-full blur-[150px]" />
+          <div className="theme-app-glow theme-app-glow-center absolute top-[50%] left-[50%] h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 transform rounded-full blur-[100px]" />
+        </div>
+
+        <div className="relative z-10 h-full w-full">
+          <Suspense fallback={null}>
+            {renderView()}
+          </Suspense>
+        </div>
+      </main>
 
       <OledToggleButton
         themeMode={themeModeActive}

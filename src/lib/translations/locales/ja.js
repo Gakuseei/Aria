@@ -281,11 +281,6 @@ const locale = {
     "unknownCommand": "不明なコマンド：{cmd}。/help で利用可能なコマンドを確認。"
   },
   "tutorials": {
-    "download": "DL",
-    "next": "次へ",
-    "previous": "前へ",
-    "close": "閉じる",
-    "testConnection": "テスト中",
     "voice": {
       "title": "音声設定",
       "subtitle": "Piper TTS ローカル",
@@ -381,13 +376,6 @@ const locale = {
       "connectionSuccess": "接続成功！",
       "testConnectionBtn": "接続テスト"
     },
-    "status": "ステータス",
-    "progress": "進捗",
-    "connected": "接続済み",
-    "disconnected": "未接続",
-    "storage": "ストレージ",
-    "vram": "VRAM",
-    "helpFooter": "問題がありますか？各ステップを正確に実行してください。質問: github.com/ollama/ollama"
   },
   "gender": {
     "male": "男性",

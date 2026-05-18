@@ -297,11 +297,6 @@ const locale = {
     "unknownCommand": "Unknown command: {cmd}. Type /help for available commands."
   },
   "tutorials": {
-    "download": "Download",
-    "next": "Next",
-    "previous": "Previous",
-    "close": "Close",
-    "testConnection": "Testing",
     "voice": {
       "title": "Voice/TTS Setup",
       "subtitle": "Piper TTS - Local Voice Generation",
@@ -396,14 +391,7 @@ const locale = {
       "fluxStep4Desc": "1. Model Browser -> Search 'flux1-dev-bnb-nf4' -> Download.\n2. Launch Forge -> Wait for browser.",
       "connectionSuccess": "Connected!",
       "testConnectionBtn": "Test Connection"
-    },
-    "status": "Status",
-    "progress": "Progress",
-    "connected": "Connected",
-    "disconnected": "Disconnected",
-    "storage": "Storage",
-    "vram": "VRAM",
-    "helpFooter": "Problems? Make sure to follow each step exactly. For questions: github.com/ollama/ollama"
+    }
   },
   "gender": {
     "male": "Male",

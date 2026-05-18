@@ -281,11 +281,6 @@ const locale = {
     "unknownCommand": "अज्ञात कमांड: {cmd}। उपलब्ध कमांड देखने के लिए /help टाइप करें।"
   },
   "tutorials": {
-    "download": "डाउनलोड",
-    "next": "अगला",
-    "previous": "पिछला",
-    "close": "बंद करें",
-    "testConnection": "जांच रहे हैं",
     "voice": {
       "title": "वॉइस/TTS सेटअप",
       "subtitle": "Piper TTS - स्थानीय आवाज़ निर्माण",
@@ -381,13 +376,6 @@ const locale = {
       "connectionSuccess": "जुड़ गया!",
       "testConnectionBtn": "कनेक्शन जांचें"
     },
-    "status": "स्थिति",
-    "progress": "प्रगति",
-    "connected": "कनेक्टेड",
-    "disconnected": "डिस्कनेक्टेड",
-    "storage": "स्टोरेज",
-    "vram": "VRAM",
-    "helpFooter": "समस्याएं? सुनिश्चित करें कि आप प्रत्येक चरण का सही ढंग से पालन करें। प्रश्न: github.com/ollama/ollama"
   },
   "gender": {
     "male": "पुरुष",

@@ -281,11 +281,6 @@ const locale = {
     "unknownCommand": "Неизвестная команда: {cmd}. Введите /help для списка команд."
   },
   "tutorials": {
-    "download": "Скачать",
-    "next": "Далее",
-    "previous": "Назад",
-    "close": "Закрыть",
-    "testConnection": "Тестирование",
     "voice": {
       "title": "Настройка Голоса",
       "subtitle": "Piper TTS Локально",
@@ -381,13 +376,6 @@ const locale = {
       "connectionSuccess": "Подключено!",
       "testConnectionBtn": "Проверить соединение"
     },
-    "status": "Статус",
-    "progress": "Прогресс",
-    "connected": "Подключено",
-    "disconnected": "Отключено",
-    "storage": "Хранилище",
-    "vram": "VRAM",
-    "helpFooter": "Проблемы? Убедитесь, что вы точно следуете каждому шагу. Вопросы: github.com/ollama/ollama"
   },
   "gender": {
     "male": "Мужской",

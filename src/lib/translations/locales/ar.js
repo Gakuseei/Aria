@@ -281,11 +281,6 @@ const locale = {
     "unknownCommand": "أمر غير معروف: {cmd}. اكتب /help لعرض الأوامر المتاحة."
   },
   "tutorials": {
-    "download": "تحميل",
-    "next": "التالي",
-    "previous": "السابق",
-    "close": "إغلاق",
-    "testConnection": "جاري الاختبار",
     "voice": {
       "title": "إعداد الصوت",
       "subtitle": "Piper TTS محلي",
@@ -381,13 +376,6 @@ const locale = {
       "connectionSuccess": "متصل!",
       "testConnectionBtn": "اختبار الاتصال"
     },
-    "status": "الحالة",
-    "progress": "التقدم",
-    "connected": "متصل",
-    "disconnected": "غير متصل",
-    "storage": "التخزين",
-    "vram": "VRAM",
-    "helpFooter": "هل تواجه مشاكل؟ تأكد من اتباع كل خطوة بدقة. للأسئلة: github.com/ollama/ollama"
   },
   "gender": {
     "male": "ذكر",

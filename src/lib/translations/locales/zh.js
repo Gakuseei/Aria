@@ -281,11 +281,6 @@ const locale = {
     "unknownCommand": "未知命令：{cmd}。输入 /help 查看可用命令。"
   },
   "tutorials": {
-    "download": "下载",
-    "next": "下一步",
-    "previous": "上一步",
-    "close": "关闭",
-    "testConnection": "测试中",
     "voice": {
       "title": "语音设置",
       "subtitle": "Piper TTS 本地",
@@ -381,13 +376,6 @@ const locale = {
       "connectionSuccess": "已连接！",
       "testConnectionBtn": "测试连接"
     },
-    "status": "状态",
-    "progress": "进度",
-    "connected": "已连接",
-    "disconnected": "未连接",
-    "storage": "存储",
-    "vram": "VRAM",
-    "helpFooter": "遇到问题？请确保严格按照每个步骤操作。如有疑问：github.com/ollama/ollama"
   },
   "gender": {
     "male": "男性",

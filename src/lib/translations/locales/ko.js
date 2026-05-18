@@ -281,11 +281,6 @@ const locale = {
     "unknownCommand": "알 수 없는 명령어: {cmd}. /help를 입력하여 명령어를 확인하세요."
   },
   "tutorials": {
-    "download": "다운로드",
-    "next": "다음",
-    "previous": "이전",
-    "close": "닫기",
-    "testConnection": "테스트 중",
     "voice": {
       "title": "음성 설정",
       "subtitle": "Piper TTS 로컬",
@@ -381,13 +376,6 @@ const locale = {
       "connectionSuccess": "연결됨!",
       "testConnectionBtn": "연결 테스트"
     },
-    "status": "상태",
-    "progress": "진행률",
-    "connected": "연결됨",
-    "disconnected": "연결 안 됨",
-    "storage": "저장소",
-    "vram": "VRAM",
-    "helpFooter": "문제가 있나요? 각 단계를 정확히 따르세요. 질문: github.com/ollama/ollama"
   },
   "gender": {
     "male": "남성",

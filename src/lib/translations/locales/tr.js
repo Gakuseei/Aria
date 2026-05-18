@@ -281,11 +281,6 @@ const locale = {
     "unknownCommand": "Bilinmeyen komut: {cmd}. Komutları görmek için /help yazın."
   },
   "tutorials": {
-    "download": "İndir",
-    "next": "İleri",
-    "previous": "Geri",
-    "close": "Kapat",
-    "testConnection": "Test ediliyor",
     "voice": {
       "title": "Ses/TTS Kurulumu",
       "subtitle": "Piper TTS - Yerel Ses Oluşturma",
@@ -381,13 +376,6 @@ const locale = {
       "connectionSuccess": "Bağlandı!",
       "testConnectionBtn": "Bağlantıyı Test Et"
     },
-    "status": "Durum",
-    "progress": "İlerleme",
-    "connected": "Bağlandı",
-    "disconnected": "Bağlantı Kesildi",
-    "storage": "Depolama",
-    "vram": "VRAM",
-    "helpFooter": "Sorun mu var? Her adımı doğru takip ettiğinizden emin olun. Sorular: github.com/ollama/ollama"
   },
   "gender": {
     "male": "Erkek",

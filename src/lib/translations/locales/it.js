@@ -281,11 +281,6 @@ const locale = {
     "unknownCommand": "Comando sconosciuto: {cmd}. Digita /help per i comandi disponibili."
   },
   "tutorials": {
-    "download": "Scarica",
-    "next": "Avanti",
-    "previous": "Indietro",
-    "close": "Chiudi",
-    "testConnection": "Test in corso",
     "voice": {
       "title": "Setup Voce",
       "subtitle": "Piper TTS Locale",
@@ -381,13 +376,6 @@ const locale = {
       "connectionSuccess": "Connesso!",
       "testConnectionBtn": "Test Connessione"
     },
-    "status": "Stato",
-    "progress": "Progresso",
-    "connected": "Connesso",
-    "disconnected": "Disconnesso",
-    "storage": "Archiviazione",
-    "vram": "VRAM",
-    "helpFooter": "Problemi? Assicurati di seguire ogni passaggio esattamente. Per domande: github.com/ollama/ollama"
   },
   "gender": {
     "male": "Maschio",

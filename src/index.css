@@ -2226,7 +2226,7 @@ body:not(.oled-mode) .passion-glow-high {
 .ollama-modal-primary {
   margin-top: 6px;
   background: var(--color-primary);
-  color: var(--color-surface);
+  color: #1a1010;
   border: none;
   padding: 11px 22px;
   border-radius: 12px;
@@ -2248,8 +2248,30 @@ body:not(.oled-mode) .passion-glow-high {
   cursor: progress;
   opacity: 0.85;
 }
+.ollama-modal-secondary {
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  padding: 11px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  text-decoration: none;
+}
+.ollama-modal-secondary:hover {
+  border-color: var(--color-primary);
+  background: var(--theme-accent-muted, rgba(181, 123, 135, 0.08));
+}
 .ollama-modal-link {
-  color: var(--color-text-soft);
+  color: var(--color-text-muted);
   font-size: 12px;
   text-decoration: none;
   cursor: pointer;
@@ -2260,14 +2282,11 @@ body:not(.oled-mode) .passion-glow-high {
   border-radius: 6px;
   transition: color 0.15s ease;
 }
-.ollama-modal-link:hover {
-  color: var(--color-text-muted);
-}
 .ollama-modal-spinner {
   width: 14px;
   height: 14px;
   border: 1.5px solid transparent;
-  border-top-color: var(--color-surface);
+  border-top-color: #1a1010;
   border-radius: 50%;
   animation: ollama-modal-spin 0.6s linear infinite;
 }

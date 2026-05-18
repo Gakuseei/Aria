@@ -59,6 +59,7 @@ function App() {
   const [modelsAvailable, setModelsAvailable] = useState(false);
   const [ollamaErrorCode, setOllamaErrorCode] = useState(null);
   const [ollamaErrorStatus, setOllamaErrorStatus] = useState(null);
+  const [hasCheckedOllama, setHasCheckedOllama] = useState(false);
 
   const [themeModeActive, setThemeModeActive] = useState(INITIAL_THEME_MODE);
   const [oledModeActive, setOledModeActive] = useState(INITIAL_THEME_MODE === 'oled');
@@ -122,10 +123,27 @@ function App() {
     setEventLog(prev => [newEvent, ...prev].slice(0, DEBUG_CONSOLE_EVENT_LIMIT));
   };
 
+  const applyOllamaTestResult = (ollamaTest) => {
+    if (ollamaTest?.success) {
+      const count = Array.isArray(ollamaTest.models) ? ollamaTest.models.length : 0;
+      setOllamaReady(true);
+      setModelsAvailable(count > 0);
+      setOllamaErrorCode(null);
+      setOllamaErrorStatus(null);
+      return { ready: true, hasModels: count > 0 };
+    }
+    setOllamaReady(false);
+    setModelsAvailable(false);
+    setOllamaErrorCode(ollamaTest?.errorCode ?? 'unknown');
+    setOllamaErrorStatus(ollamaTest?.status ?? null);
+    return { ready: false, hasModels: false };
+  };
+
   useEffect(() => {
     async function initializeApp() {
       startDebugTimer('[Startup] Total init');
       startDebugTimer('[Startup] Settings load');
+      let effectiveOllamaUrl = OLLAMA_DEFAULT_URL;
       try {
         const loadedSettings = await loadSettings();
         if (loadedSettings && typeof loadedSettings === 'object') {
@@ -161,6 +179,7 @@ function App() {
 
           localStorage.setItem('settings', JSON.stringify(mergedSettings));
           setSettings(mergedSettings);
+          effectiveOllamaUrl = mergedSettings.ollamaUrl || OLLAMA_DEFAULT_URL;
           applyUIScale(mergedSettings.fontSize);
           setThemeModeActive(mergedSettings.themeMode);
           setOledModeActive(mergedSettings.oledMode);
@@ -183,17 +202,11 @@ function App() {
 
       startDebugTimer('[Startup] Ollama check');
       try {
-        const ollamaTest = await testOllamaConnection();
+        const ollamaTest = await testOllamaConnection(effectiveOllamaUrl);
+        const { ready } = applyOllamaTestResult(ollamaTest);
 
-        if (ollamaTest.success) {
-          const count = Array.isArray(ollamaTest.models) ? ollamaTest.models.length : 0;
-          setOllamaReady(true);
-          setModelsAvailable(count > 0);
-          setOllamaErrorCode(null);
-          setOllamaErrorStatus(null);
-
-          const autoDetectResult = await autoDetectAndSetModel();
-
+        if (ready) {
+          const autoDetectResult = await autoDetectAndSetModel(effectiveOllamaUrl);
           if (autoDetectResult.success) {
             if (autoDetectResult.changed) {
               setSettings(prev => ({ ...prev, ollamaModel: autoDetectResult.model }));
@@ -201,18 +214,12 @@ function App() {
           } else {
             console.warn('[v8.2 Startup] ⚠️ No models found. User needs to install a model.');
           }
-        } else {
-          setOllamaReady(false);
-          setModelsAvailable(false);
-          setOllamaErrorCode(ollamaTest.errorCode ?? 'unknown');
-          setOllamaErrorStatus(ollamaTest.status ?? null);
         }
       } catch (error) {
         console.error('[v8.1 Startup] Ollama check failed:', error);
-        setOllamaReady(false);
-        setModelsAvailable(false);
-        setOllamaErrorCode('unknown');
-        setOllamaErrorStatus(null);
+        applyOllamaTestResult({ success: false, errorCode: 'unknown' });
+      } finally {
+        setHasCheckedOllama(true);
       }
       endDebugTimer('[Startup] Ollama check');
       endDebugTimer('[Startup] Total init');
@@ -367,25 +374,29 @@ function App() {
   const handleRetryOllama = async () => {
     try {
       const ollamaTest = await testOllamaConnection(settings.ollamaUrl);
-
-      if (ollamaTest.success) {
-        const count = Array.isArray(ollamaTest.models) ? ollamaTest.models.length : 0;
-        setOllamaReady(true);
-        setModelsAvailable(count > 0);
-        setOllamaErrorCode(null);
-        setOllamaErrorStatus(null);
-      } else {
-        setOllamaReady(false);
-        setModelsAvailable(false);
-        setOllamaErrorCode(ollamaTest.errorCode ?? 'unknown');
-        setOllamaErrorStatus(ollamaTest.status ?? null);
-      }
+      applyOllamaTestResult(ollamaTest);
     } catch (error) {
       console.error('[Retry] Ollama check failed:', error);
-      setOllamaReady(false);
-      setModelsAvailable(false);
-      setOllamaErrorCode('unknown');
-      setOllamaErrorStatus(null);
+      applyOllamaTestResult({ success: false, errorCode: 'unknown' });
+    }
+  };
+
+  const prevViewRef = useRef(currentView);
+  useEffect(() => {
+    if (prevViewRef.current === VIEWS.SETTINGS && currentView !== VIEWS.SETTINGS && !ollamaReady) {
+      handleRetryOllama();
+    }
+    prevViewRef.current = currentView;
+  }, [currentView, ollamaReady]);
+
+  const handleDownloadOllama = () => {
+    const url = 'https://ollama.com/download';
+    if (typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.openExternal === 'function') {
+      window.electronAPI.openExternal(url);
+      return;
+    }
+    if (typeof window !== 'undefined' && typeof window.open === 'function') {
+      window.open(url, '_blank');
     }
   };
 
@@ -611,13 +622,14 @@ function App() {
 
   return (
     <div dir={RTL_LANGUAGES.has(language) ? 'rtl' : 'ltr'} className="app-container app-theme-shell h-screen w-screen overflow-hidden">
-      {(!ollamaReady || !modelsAvailable) && currentView !== VIEWS.SETTINGS && (
+      {hasCheckedOllama && (!ollamaReady || !modelsAvailable) && currentView !== VIEWS.SETTINGS && (
         <OllamaNotRunningModal
           state={!ollamaReady ? 'unreachable' : 'no-model'}
           errorCode={ollamaErrorCode}
           errorStatus={ollamaErrorStatus}
           onRetry={handleRetryOllama}
           onOpenSettings={() => openSettings(VIEWS.MAIN_MENU)}
+          onDownloadOllama={handleDownloadOllama}
           t={t}
         />
       )}

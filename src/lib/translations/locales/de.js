@@ -888,16 +888,17 @@ const locale = {
     }
   },
   "ollamaModal": {
-    "titleUnreachable": "Ollama nicht gestartet",
-    "titleNoModel": "Kein Modell installiert",
-    "subDefault": "Bitte öffne Ollama, damit Aria starten kann.",
-    "subTimeout": "Ollama antwortet nicht. URL falsch oder Service hängt.",
-    "subRefused": "Ollama läuft nicht (oder falscher Port).",
-    "subDns": "Adresse nicht erreichbar — Schreibfehler in der URL?",
-    "subHttp": "Ollama erreichbar, aber Fehler {status}.",
-    "subNoModel": "Bitte lade Mag-Mell über den Aria-Installer.",
+    "titleUnreachable": "Aria braucht Ollama",
+    "titleNoModel": "Letzter Schritt zur Einrichtung",
+    "subDefault": "Aria läuft komplett offline mit Ollama. Bitte starte Ollama und klicke auf Erneut prüfen.",
+    "subTimeout": "Ollama antwortet nicht. Starte Ollama neu und klicke auf Erneut prüfen.",
+    "subRefused": "Aria kann Ollama nicht erreichen. Falls du es gerade installiert hast, öffne es einmal.",
+    "subDns": "Aria findet Ollama nicht unter der eingestellten Adresse. Bitte prüfe die Adresse in den Einstellungen.",
+    "subHttp": "Verbindung zu Ollama steht, aber es gab einen Fehler (Code {status}). Bitte starte Ollama neu.",
+    "subNoModel": "Aria muss noch das KI-Modell herunterladen. Bitte öffne den Aria-Installer, um die Einrichtung abzuschließen.",
     "retry": "Erneut prüfen",
-    "settings": "Einstellungen"
+    "settings": "Erweiterte Einstellungen",
+    "downloadOllama": "Ollama herunterladen (kostenlos)"
   }
 };
 

@@ -879,16 +879,17 @@ const locale = {
     }
   },
   "ollamaModal": {
-    "titleUnreachable": "Ollama is not running",
-    "titleNoModel": "No model installed",
-    "subDefault": "Please open Ollama so Aria can start.",
-    "subTimeout": "Ollama is not responding. Wrong URL or service stuck.",
-    "subRefused": "Ollama is not running (or wrong port).",
-    "subDns": "Address unreachable — typo in URL?",
-    "subHttp": "Ollama reachable, but error {status}.",
-    "subNoModel": "Please install Mag-Mell via the Aria installer.",
+    "titleUnreachable": "Aria needs Ollama",
+    "titleNoModel": "One last download to finish setup",
+    "subDefault": "Aria runs fully offline with Ollama. Open Ollama, then click Check again.",
+    "subTimeout": "Ollama isn't responding. Try restarting it, then click Check again.",
+    "subRefused": "Aria can't reach Ollama. If you just installed it, open it once so it starts.",
+    "subDns": "Aria can't find Ollama at the address in Settings. Check that the address is correct.",
+    "subHttp": "Connected to Ollama, but it returned an error (code {status}). Try restarting Ollama.",
+    "subNoModel": "Aria still needs to download its AI model. Open the Aria Installer to finish setup.",
     "retry": "Check again",
-    "settings": "Settings"
+    "settings": "Advanced settings",
+    "downloadOllama": "Download Ollama (free)"
   }
 };
 

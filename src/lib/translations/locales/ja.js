@@ -286,57 +286,6 @@ const locale = {
     "previous": "前へ",
     "close": "閉じる",
     "testConnection": "テスト中",
-    "setupGuide": "セットアップガイド",
-    "ollama": {
-      "title": "Ollama設定",
-      "subtitle": "ローカルAIエンジン - 5分",
-      "step1": "OllamaをDL",
-      "step2": "インストールして起動",
-      "step3": "実行: ollama pull hermes3",
-      "status": "状態",
-      "models": {
-        "chooseModel": "AIモデルを選択",
-        "chooseModelDesc": "ハードウェアに基づいて選択",
-        "copyCommand": "コマンドをコピー",
-        "copied": "コピーしました！",
-        "lowEnd": {
-          "name": "Gemma 3B Uncensored",
-          "tier": "💚 エコノミー",
-          "vram": "~3 GB VRAM",
-          "desc": "古いハードウェアや限られたVRAM向け。良好なNSFW処理。",
-          "command": "ollama pull gemma-3b"
-        },
-        "midEnd": {
-          "name": "Nous Hermes 3 8B",
-          "tier": "💙 おすすめ",
-          "vram": "~5.5 GB VRAM",
-          "desc": "ロールプレイとストーリーテリングに最適。128kコンテキスト。",
-          "command": "ollama pull hermes3"
-        },
-        "highEnd": {
-          "name": "Qwen3 30B A3B",
-          "tier": "💛 プレミアム",
-          "vram": "~18 GB VRAM",
-          "desc": "最先端のMOEアーキテクチャ。RTX 4080+ユーザー向け。",
-          "command": "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
-        }
-      }
-    },
-    "ollamaStep1Title": "📥 Ollamaをダウンロード",
-    "ollamaStep1Desc": "ollama.comにアкセスして、お使いのOS用のOllamaをダウンロードしてください。",
-    "ollamaStep1Button": "Ollamaダウンロードページを開く",
-    "ollamaStep2Title": "💾 インストール",
-    "ollamaStep2Desc": "ダウンロードしたファイルを実行し、インストールウィザードに従ってください。Ollamaはシステムサービスとして自動設定されます。",
-    "ollamaStep3Title": "🤖 モデルをダウンロード",
-    "ollamaStep3Desc": "ターミナルを開いて、このコマンドを実行してください：",
-    "ollamaStep3Note": "モデルは約4GBです。ダウンロードには3-5分かかります。",
-    "ollamaStep4Title": "✅ 接続テスト",
-    "ollamaStep4Desc": "Ollamaが実行中でアクセス可能か確認してください。",
-    "ollamaStep4Button": "接続テスト",
-    "ollamaTesting": "テスト中...",
-    "ollamaConnected": "接続済み",
-    "ollamaError": "エラー",
-    "ollamaDisconnected": "未接続",
     "voice": {
       "title": "音声設定",
       "subtitle": "Piper TTS ローカル",
@@ -438,8 +387,6 @@ const locale = {
     "disconnected": "未接続",
     "storage": "ストレージ",
     "vram": "VRAM",
-    "installScript": "インストーラーを実行",
-    "openFolder": "ツールフォルダを開く",
     "helpFooter": "問題がありますか？各ステップを正確に実行してください。質問: github.com/ollama/ollama"
   },
   "gender": {
@@ -943,7 +890,6 @@ const locale = {
       "greeting": "*ドアのチャイムが鳴ると、カウンターの向こうから顔を上げ、すでにカップに手を伸ばしている* *雨が窓を叩き、カフェは暖かく静かで、角のスピーカーからジャズが柔らかくパチパチと流れている* 「来ると思った。」*聞かずにいつものを準備し始める、動きは正確で手慣れている* 「雨の日はいつも来るもんね。」*カウンターにカップを置く、湯気が立ち上る* *その隣に小皿を滑らせる——まだ温かいペストリー* 「聞かれる前に言うけど——作りすぎたの。あなた専用じゃないから。」*エプロンで手を拭き、老眼鏡越しにちらっと見る* 「疲れてるね。」*質問ではない* *振り向いて棚のカップを整える* 「どこでも好きなとこに座って。角の席が空いてるよ。」*声にかすかな温かみ* 「いつものが冷めるよ。」"
     }
   },
-  // FIXME: machine-translate ollamaModal — currently EN placeholder
   "ollamaModal": {
     "titleUnreachable": "Ollama is not running",
     "titleNoModel": "No model installed",

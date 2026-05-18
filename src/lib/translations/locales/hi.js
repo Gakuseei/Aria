@@ -286,57 +286,6 @@ const locale = {
     "previous": "पिछला",
     "close": "बंद करें",
     "testConnection": "जांच रहे हैं",
-    "setupGuide": "सेटअप गाइड",
-    "ollama": {
-      "title": "Ollama सेटअप",
-      "subtitle": "स्थानीय AI इंजन - 5 मिनट",
-      "step1": "ollama.com से Ollama डाउनलोड करें",
-      "step2": "Ollama इंस्टॉल और लॉन्च करें",
-      "step3": "चलाएं: ollama pull hermes3",
-      "status": "कनेक्शन स्थिति",
-      "models": {
-        "chooseModel": "अपना AI मॉडल चुनें",
-        "chooseModelDesc": "अपने हार्डवेयर के अनुसार चुनें",
-        "copyCommand": "कमांड कॉपी करें",
-        "copied": "कॉपी किया!",
-        "lowEnd": {
-          "name": "Gemma 3B Uncensored",
-          "tier": "💚 बजट",
-          "vram": "~3 GB VRAM",
-          "desc": "पुराने हार्डवेयर या सीमित VRAM के लिए। अच्छी NSFW हैंडलिंग।",
-          "command": "ollama pull gemma-3b"
-        },
-        "midEnd": {
-          "name": "Nous Hermes 3 8B",
-          "tier": "💙 अनुशंसित",
-          "vram": "~5.5 GB VRAM",
-          "desc": "रोलप्ले और स्टोरीटेलिंग के लिए सर्वश्रेष्ठ। 128k कॉन्टेक्स्ट।",
-          "command": "ollama pull hermes3"
-        },
-        "highEnd": {
-          "name": "Qwen3 30B A3B",
-          "tier": "💛 प्रीमियम",
-          "vram": "~18 GB VRAM",
-          "desc": "अत्याधुनिक MOE आर्किटेक्चर। RTX 4080+ उपयोगकर्ताओं के लिए।",
-          "command": "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
-        }
-      }
-    },
-    "ollamaStep1Title": "📥 Ollama डाउनलोड करें",
-    "ollamaStep1Desc": "ollama.com पर जाएं और अपने ऑपरेटिंग सिस्टम के लिए Ollama डाउनलोड करें।",
-    "ollamaStep1Button": "Ollama डाउनलोड पेज खोलें",
-    "ollamaStep2Title": "💾 इंस्टॉल करें",
-    "ollamaStep2Desc": "डाउनलोड की गई फ़ाइल चलाएं और इंस्टॉलेशन विज़ार्ड का पालन करें।",
-    "ollamaStep3Title": "🤖 मॉडल डाउनलोड करें",
-    "ollamaStep3Desc": "एक टर्मिनल खोलें और यह कमांड चलाएं:",
-    "ollamaStep3Note": "मॉडल लगभग 4GB है। डाउनलोड में 3-5 मिनट लगते हैं।",
-    "ollamaStep4Title": "✅ कनेक्शन जांचें",
-    "ollamaStep4Desc": "जांचें कि Ollama चल रहा है और पहुंच योग्य है।",
-    "ollamaStep4Button": "कनेक्शन जांचें",
-    "ollamaTesting": "जांच रहे हैं...",
-    "ollamaConnected": "कनेक्टेड",
-    "ollamaError": "त्रुटि",
-    "ollamaDisconnected": "डिस्कनेक्टेड",
     "voice": {
       "title": "वॉइस/TTS सेटअप",
       "subtitle": "Piper TTS - स्थानीय आवाज़ निर्माण",
@@ -438,8 +387,6 @@ const locale = {
     "disconnected": "डिस्कनेक्टेड",
     "storage": "स्टोरेज",
     "vram": "VRAM",
-    "installScript": "इंस्टॉलर चलाएं",
-    "openFolder": "टूल्स फोल्डर खोलें",
     "helpFooter": "समस्याएं? सुनिश्चित करें कि आप प्रत्येक चरण का सही ढंग से पालन करें। प्रश्न: github.com/ollama/ollama"
   },
   "gender": {
@@ -945,7 +892,6 @@ const locale = {
       "greeting": "*दरवाज़े की घंटी बजने पर काउंटर के पीछे से ऊपर देखती है, पहले से कप की ओर हाथ बढ़ा रही है* *बारिश खिड़कियों पर टपकती है, कैफे गर्म और शांत है, कोने के स्पीकर से हल्की जैज़ बज रही है* \"सोचा था तुम आओगे।\" *बिना पूछे उनका हमेशा वाला बनाने लगती है, हरकतें सटीक और अभ्यस्त* \"बारिश के दिन तुम्हें हमेशा ले आते हैं।\" *काउंटर पर कप रखती है, भाप उठती है* *बगल में एक छोटी प्लेट खिसकाती है — एक पेस्ट्री, अभी गर्म* \"पूछने से पहले — ज़्यादा बन गई थीं। खासतौर पर तुम्हारे लिए नहीं है।\" *एप्रन से हाथ पोंछती है, रीडिंग ग्लासेस के ऊपर से देखती है* \"थके हुए लग रहे हो।\" *यह सवाल नहीं है* *मुड़कर शेल्फ पर कप सीधे करती है* \"कहीं भी बैठ जाओ। कोने की सीट खाली है।\" *उसकी आवाज़ में सबसे हल्का गर्मजोशी का स्पर्श* \"तुम्हारा रोज़ का ठंडा हो रहा है।\""
     }
   },
-  // FIXME: machine-translate ollamaModal — currently EN placeholder
   "ollamaModal": {
     "titleUnreachable": "Ollama is not running",
     "titleNoModel": "No model installed",

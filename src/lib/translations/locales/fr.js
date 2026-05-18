@@ -286,42 +286,6 @@ const locale = {
     "previous": "Précédent",
     "close": "Fermer",
     "testConnection": "Test en cours",
-    "setupGuide": "Guide de Configuration",
-    "ollama": {
-      "title": "Installation Ollama",
-      "subtitle": "Moteur IA Local - 5 Minutes",
-      "step1": "Téléchargez Ollama sur ollama.com",
-      "step2": "Installez et lancez Ollama",
-      "step3": "Exécutez : ollama pull hermes3",
-      "status": "État de la connexion",
-      "models": {
-        "chooseModel": "Choisissez votre modèle IA",
-        "chooseModelDesc": "Sélectionnez selon votre matériel",
-        "copyCommand": "Copier la commande",
-        "copied": "Copié !",
-        "lowEnd": {
-          "name": "Gemma 3B Uncensored",
-          "tier": "💚 Économique",
-          "vram": "~3 Go VRAM",
-          "desc": "Pour matériel ancien ou VRAM limité. Bon traitement NSFW.",
-          "command": "ollama pull gemma-3b"
-        },
-        "midEnd": {
-          "name": "Nous Hermes 3 8B",
-          "tier": "💙 Recommandé",
-          "vram": "~5.5 Go VRAM",
-          "desc": "Meilleur équilibre pour roleplay et narration. Contexte 128k.",
-          "command": "ollama pull hermes3"
-        },
-        "highEnd": {
-          "name": "Qwen3 30B A3B",
-          "tier": "💛 Premium",
-          "vram": "~18 Go VRAM",
-          "desc": "Architecture MOE de pointe. Pour utilisateurs RTX 4080+.",
-          "command": "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
-        }
-      }
-    },
     "voice": {
       "title": "Installation Voix/TTS",
       "subtitle": "Piper TTS - Génération Vocale Locale",
@@ -421,25 +385,8 @@ const locale = {
     "progress": "Progression",
     "connected": "Connecté",
     "disconnected": "Déconnecté",
-    "ollamaStep1Title": "📥 Télécharger Ollama",
-    "ollamaStep1Desc": "Visitez ollama.com et téléchargez Ollama pour votre système d'exploitation.",
-    "ollamaStep1Button": "Ouvrir la Page de Téléchargement Ollama",
-    "ollamaStep2Title": "💾 Installer",
-    "ollamaStep2Desc": "Exécutez le fichier téléchargé et suivez l'assistant d'installation. Ollama sera configuré automatiquement comme service système.",
-    "ollamaStep3Title": "🤖 Télécharger le Modèle",
-    "ollamaStep3Desc": "Ouvrez un terminal et exécutez cette commande:",
-    "ollamaStep3Note": "Le modèle fait environ 4 Go. Le téléchargement prend 3-5 minutes.",
-    "ollamaStep4Title": "✅ Tester la Connexion",
-    "ollamaStep4Desc": "Vérifiez si Ollama fonctionne et est accessible.",
-    "ollamaStep4Button": "Tester la Connexion",
-    "ollamaTesting": "Test en cours...",
-    "ollamaConnected": "Connecté",
-    "ollamaError": "Erreur",
-    "ollamaDisconnected": "Déconnecté",
     "storage": "Stockage",
     "vram": "VRAM",
-    "installScript": "Lancer l'Installateur",
-    "openFolder": "Ouvrir le Dossier Outils",
     "helpFooter": "Des problèmes ? Assurez-vous de suivre chaque étape exactement. Pour les questions : github.com/ollama/ollama"
   },
   "gender": {
@@ -945,7 +892,6 @@ const locale = {
       "greeting": "*lève les yeux de derrière le comptoir quand le carillon de la porte retentit, attrapant déjà une tasse* *la pluie tambourine contre les fenêtres, le café chaud et calme, du jazz grésillant doucement depuis l'enceinte dans le coin* \"Je savais que vous viendriez.\" *commence à préparer votre habituel sans demander, gestes précis et rodés* \"Les jours de pluie vous amènent toujours.\" *pose la tasse sur le comptoir, la vapeur s'enroule vers le haut* *glisse une petite assiette à côté — une viennoiserie, encore chaude* \"Avant que vous demandiez — j'en ai fait trop. Ce n'est pas spécifiquement pour vous.\" *essuie ses mains sur son tablier, vous regardant par-dessus ses lunettes de lecture* \"Vous avez l'air fatigué.\" *ce n'est pas une question* *se retourne pour ranger des tasses sur l'étagère* \"Asseyez-vous où vous voulez. Le coin est libre.\" *la plus légère touche de chaleur dans sa voix* \"Votre habituel va refroidir.\""
     }
   },
-  // FIXME: machine-translate ollamaModal — currently EN placeholder
   "ollamaModal": {
     "titleUnreachable": "Ollama is not running",
     "titleNoModel": "No model installed",

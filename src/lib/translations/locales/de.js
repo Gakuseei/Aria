@@ -286,57 +286,6 @@ const locale = {
     "previous": "Zurück",
     "close": "Schließen",
     "testConnection": "Teste",
-    "setupGuide": "Setup-Anleitung",
-    "ollama": {
-      "title": "Ollama Einrichtung",
-      "subtitle": "Lokale KI-Engine - 5 Minuten Setup",
-      "step1": "Ollama von ollama.com herunterladen",
-      "step2": "Ollama installieren und starten",
-      "step3": "Ausführen: ollama pull hermes3",
-      "status": "Verbindungsstatus",
-      "models": {
-        "chooseModel": "Wähle dein KI-Modell",
-        "chooseModelDesc": "Basierend auf deiner Hardware auswählen",
-        "copyCommand": "Befehl kopieren",
-        "copied": "Kopiert!",
-        "lowEnd": {
-          "name": "Gemma 3B Uncensored",
-          "tier": "💚 Budget",
-          "vram": "~3 GB VRAM",
-          "desc": "Für ältere Hardware oder begrenztes VRAM. Gutes NSFW-Handling.",
-          "command": "ollama pull gemma-3b"
-        },
-        "midEnd": {
-          "name": "Nous Hermes 3 8B",
-          "tier": "💙 Empfohlen",
-          "vram": "~5.5 GB VRAM",
-          "desc": "Beste Balance für Roleplay & Storytelling. 128k Kontextfenster.",
-          "command": "ollama pull hermes3"
-        },
-        "highEnd": {
-          "name": "Qwen3 30B A3B",
-          "tier": "💛 Premium",
-          "vram": "~18 GB VRAM",
-          "desc": "State-of-the-Art MOE-Architektur. Für RTX 4080+ Nutzer.",
-          "command": "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
-        }
-      }
-    },
-    "ollamaStep1Title": "🚀 Installer starten",
-    "ollamaStep1Desc": "Wir haben einen automatischen Installer erstellt. Öffne den 'tools'-Ordner und starte ihn.",
-    "ollamaStep1Button": "📂 Tools-Ordner öffnen",
-    "ollamaStep2Title": "⚙️ Skript ausführen",
-    "ollamaStep2Desc": "Doppelklick auf 'install_ollama.bat'. Es lädt und installiert Ollama automatisch.",
-    "ollamaStep3Title": "🧠 Auto-Modell Setup",
-    "ollamaStep3Desc": "Der Installer fragt nach der Modell-Installation. Falls nötig, nutze diesen Befehl:",
-    "ollamaStep3Note": "Warte bis das Installationsfenster schließt.",
-    "ollamaStep4Title": "✅ Verbindung testen",
-    "ollamaStep4Desc": "Prüfe, ob Ollama läuft.",
-    "ollamaStep4Button": "Verbindung testen",
-    "ollamaTesting": "Teste...",
-    "ollamaConnected": "Verbunden",
-    "ollamaError": "Fehler",
-    "ollamaDisconnected": "Getrennt",
     "voice": {
       "title": "Sprach-Setup",
       "subtitle": "Piper TTS - Lokale Sprachgenerierung",
@@ -438,8 +387,6 @@ const locale = {
     "disconnected": "Getrennt",
     "storage": "Speicher",
     "vram": "VRAM",
-    "installScript": "Installer starten",
-    "openFolder": "Tools-Ordner öffnen",
     "helpFooter": "Probleme? Stelle sicher, dass du jeden Schritt genau befolgst. Bei Fragen: github.com/ollama/ollama"
   },
   "gender": {

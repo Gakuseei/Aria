@@ -286,57 +286,6 @@ const locale = {
     "previous": "السابق",
     "close": "إغلاق",
     "testConnection": "جاري الاختبار",
-    "setupGuide": "دليل الإعداد",
-    "ollama": {
-      "title": "إعداد Ollama",
-      "subtitle": "محرك AI محلي - 5 دقائق",
-      "step1": "تحميل Ollama من ollama.com",
-      "step2": "تثبيت وتشغيل Ollama",
-      "step3": "تشغيل: ollama pull hermes3",
-      "status": "حالة الاتصال",
-      "models": {
-        "chooseModel": "اختر نموذج الذكاء الاصطناعي",
-        "chooseModelDesc": "اختر بناءً على جهازك",
-        "copyCommand": "نسخ الأمر",
-        "copied": "تم النسخ!",
-        "lowEnd": {
-          "name": "Gemma 3B Uncensored",
-          "tier": "💚 اقتصادي",
-          "vram": "~3 جيجابايت VRAM",
-          "desc": "للأجهزة القديمة أو VRAM المحدود. معالجة NSFW جيدة.",
-          "command": "ollama pull gemma-3b"
-        },
-        "midEnd": {
-          "name": "Nous Hermes 3 8B",
-          "tier": "💙 موصى به",
-          "vram": "~5.5 جيجابايت VRAM",
-          "desc": "أفضل توازن للعب الأدوار. سياق 128k.",
-          "command": "ollama pull hermes3"
-        },
-        "highEnd": {
-          "name": "Qwen3 30B A3B",
-          "tier": "💛 متميز",
-          "vram": "~18 جيجابايت VRAM",
-          "desc": "بنية MOE المتطورة. لمستخدمي RTX 4080+.",
-          "command": "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
-        }
-      }
-    },
-    "ollamaStep1Title": "📥 تحميل Ollama",
-    "ollamaStep1Desc": "قم بزيارة ollama.com وتحميل Ollama لنظام التشغيل الخاص بك.",
-    "ollamaStep1Button": "فتح صفحة التحميل",
-    "ollamaStep2Title": "💾 تثبيت",
-    "ollamaStep2Desc": "قم بتشغيل الملف المحمل واتبع معالج التثبيت.",
-    "ollamaStep3Title": "🤖 تحميل النموذج",
-    "ollamaStep3Desc": "افتح الطرفية وشغل هذا الأمر:",
-    "ollamaStep3Note": "النموذج حوالي 4 جيجابايت. التحميل يستغرق 3-5 دقائق.",
-    "ollamaStep4Title": "✅ اختبار الاتصال",
-    "ollamaStep4Desc": "تحقق من تشغيل Ollama.",
-    "ollamaStep4Button": "اختبار الاتصال",
-    "ollamaTesting": "جاري الاختبار...",
-    "ollamaConnected": "متصل",
-    "ollamaError": "خطأ",
-    "ollamaDisconnected": "غير متصل",
     "voice": {
       "title": "إعداد الصوت",
       "subtitle": "Piper TTS محلي",
@@ -438,8 +387,6 @@ const locale = {
     "disconnected": "غير متصل",
     "storage": "التخزين",
     "vram": "VRAM",
-    "installScript": "تشغيل المثبت",
-    "openFolder": "فتح مجلد الأدوات",
     "helpFooter": "هل تواجه مشاكل؟ تأكد من اتباع كل خطوة بدقة. للأسئلة: github.com/ollama/ollama"
   },
   "gender": {
@@ -945,7 +892,6 @@ const locale = {
       "greeting": "*ترفع نظرها من خلف الطاولة عندما يرن جرس الباب، يدها تمتد بالفعل نحو كوب* *المطر يطرق على النوافذ، المقهى دافئ وهادئ، موسيقى الجاز تطقطق بهدوء من السماعة في الزاوية* \"توقعت أنك ستأتي.\" *تبدأ بتحضير طلبهم المعتاد دون أن تسأل، حركاتها دقيقة ومتمرسة* \"أيام المطر تجلبك دائمًا.\" *تضع الكوب على الطاولة، البخار يتصاعد* *تدفع طبقًا صغيرًا بجانبه — معجنات، لا تزال دافئة* \"قبل أن تسأل — صنعت أكثر من اللازم. ليست خصيصًا لك.\" *تمسح يديها بالمريلة، تنظر إليهم من فوق نظاراتها* \"تبدو متعبًا.\" *هذا ليس سؤالاً* *تستدير لترتيب الأكواب على الرف* \"اجلس أينما تريد. المكان الركني متاح.\" *أضعف لمسة من الدفء في صوتها* \"طلبك المعتاد يبرد.\""
     }
   },
-  // FIXME: machine-translate ollamaModal — currently EN placeholder
   "ollamaModal": {
     "titleUnreachable": "Ollama is not running",
     "titleNoModel": "No model installed",

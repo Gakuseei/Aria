@@ -286,57 +286,6 @@ const locale = {
     "previous": "上一步",
     "close": "关闭",
     "testConnection": "测试中",
-    "setupGuide": "设置指南",
-    "ollama": {
-      "title": "Ollama设置",
-      "subtitle": "本地AI引擎 - 5分钟设置",
-      "step1": "下载Ollama",
-      "step2": "安装并启动",
-      "step3": "运行: ollama pull hermes3",
-      "status": "连接状态",
-      "models": {
-        "chooseModel": "选择您的AI模型",
-        "chooseModelDesc": "根据您的硬件选择",
-        "copyCommand": "复制命令",
-        "copied": "已复制！",
-        "lowEnd": {
-          "name": "Gemma 3B Uncensored",
-          "tier": "💚 经济型",
-          "vram": "~3 GB VRAM",
-          "desc": "适用于旧硬件或有限VRAM。良好的NSFW处理。",
-          "command": "ollama pull gemma-3b"
-        },
-        "midEnd": {
-          "name": "Nous Hermes 3 8B",
-          "tier": "💙 推荐",
-          "vram": "~5.5 GB VRAM",
-          "desc": "角色扮演和故事叙述的最佳平衡。128k上下文窗口。",
-          "command": "ollama pull hermes3"
-        },
-        "highEnd": {
-          "name": "Qwen3 30B A3B",
-          "tier": "💛 高端",
-          "vram": "~18 GB VRAM",
-          "desc": "最先进的MOE架构。适用于RTX 4080+用户。",
-          "command": "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
-        }
-      }
-    },
-    "ollamaStep1Title": "📥 下载 Ollama",
-    "ollamaStep1Desc": "访问 ollama.com 并下载适合你操作系统的 Ollama。",
-    "ollamaStep1Button": "打开 Ollama 下载页面",
-    "ollamaStep2Title": "💾 安装",
-    "ollamaStep2Desc": "运行下载的文件并按照安装向导操作。Ollama 将自动设置为系统服务。",
-    "ollamaStep3Title": "🤖 下载模型",
-    "ollamaStep3Desc": "打开终端并运行此命令：",
-    "ollamaStep3Note": "模型大约 4GB。下载需要 3-5 分钟。",
-    "ollamaStep4Title": "✅ 测试连接",
-    "ollamaStep4Desc": "检查 Ollama 是否正在运行并可访问。",
-    "ollamaStep4Button": "测试连接",
-    "ollamaTesting": "测试中...",
-    "ollamaConnected": "已连接",
-    "ollamaError": "错误",
-    "ollamaDisconnected": "未连接",
     "voice": {
       "title": "语音设置",
       "subtitle": "Piper TTS 本地",
@@ -438,8 +387,6 @@ const locale = {
     "disconnected": "未连接",
     "storage": "存储",
     "vram": "VRAM",
-    "installScript": "运行安装程序",
-    "openFolder": "打开工具文件夹",
     "helpFooter": "遇到问题？请确保严格按照每个步骤操作。如有疑问：github.com/ollama/ollama"
   },
   "gender": {
@@ -943,7 +890,6 @@ const locale = {
       "greeting": "*门铃响起时从柜台后抬头看，手已经伸向杯子了* *雨滴敲打着窗户，咖啡馆温暖而安静，角落的音箱里轻轻播放着爵士乐* \"就知道你会来。\" *不问就开始准备他们的常点，动作精准而熟练* \"雨天总会把你带来。\" *把杯子放在柜台上，热气袅袅升起* *在旁边放了一个小盘子——一块糕点，还是热的* \"你别问——我做多了。不是特意给你的。\" *用围裙擦了擦手，透过老花镜看了他们一眼* \"你看起来很累。\" *这不是一个问题* *转身去整理架子上的杯子* \"随便坐。角落的位子空着。\" *她声音里最淡的一丝温暖* \"你的常点要凉了。\""
     }
   },
-  // FIXME: machine-translate ollamaModal — currently EN placeholder
   "ollamaModal": {
     "titleUnreachable": "Ollama is not running",
     "titleNoModel": "No model installed",

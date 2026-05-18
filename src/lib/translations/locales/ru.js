@@ -286,57 +286,6 @@ const locale = {
     "previous": "Назад",
     "close": "Закрыть",
     "testConnection": "Тестирование",
-    "setupGuide": "Руководство по настройке",
-    "ollama": {
-      "title": "Настройка Ollama",
-      "subtitle": "Локальный ИИ - 5 Минут",
-      "step1": "Скачать Ollama",
-      "step2": "Установить и запустить",
-      "step3": "Выполнить: ollama pull hermes3",
-      "status": "Статус",
-      "models": {
-        "chooseModel": "Выберите модель ИИ",
-        "chooseModelDesc": "Выберите на основе вашего оборудования",
-        "copyCommand": "Копировать команду",
-        "copied": "Скопировано!",
-        "lowEnd": {
-          "name": "Gemma 3B Uncensored",
-          "tier": "💚 Бюджет",
-          "vram": "~3 ГБ VRAM",
-          "desc": "Для старого оборудования или ограниченной VRAM. Хорошая обработка NSFW.",
-          "command": "ollama pull gemma-3b"
-        },
-        "midEnd": {
-          "name": "Nous Hermes 3 8B",
-          "tier": "💙 Рекомендуем",
-          "vram": "~5.5 ГБ VRAM",
-          "desc": "Лучший баланс для ролевых игр и сторителлинга. Контекст 128k.",
-          "command": "ollama pull hermes3"
-        },
-        "highEnd": {
-          "name": "Qwen3 30B A3B",
-          "tier": "💛 Премиум",
-          "vram": "~18 ГБ VRAM",
-          "desc": "Современная архитектура MOE. Для пользователей RTX 4080+.",
-          "command": "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
-        }
-      }
-    },
-    "ollamaStep1Title": "📥 Скачать Ollama",
-    "ollamaStep1Desc": "Посетите ollama.com и скачайте Ollama для вашей операционной системы.",
-    "ollamaStep1Button": "Открыть страницу загрузки Ollama",
-    "ollamaStep2Title": "💾 Установить",
-    "ollamaStep2Desc": "Запустите загруженный файл и следуйте мастеру установки. Ollama будет настроен автоматически как системная служба.",
-    "ollamaStep3Title": "🤖 Скачать модель",
-    "ollamaStep3Desc": "Откройте терминал и выполните эту команду:",
-    "ollamaStep3Note": "Модель около 4ГБ. Загрузка занимает 3-5 минут.",
-    "ollamaStep4Title": "✅ Тест соединения",
-    "ollamaStep4Desc": "Проверьте, работает ли Ollama и доступен ли он.",
-    "ollamaStep4Button": "Тест соединения",
-    "ollamaTesting": "Тестирование...",
-    "ollamaConnected": "Подключено",
-    "ollamaError": "Ошибка",
-    "ollamaDisconnected": "Отключено",
     "voice": {
       "title": "Настройка Голоса",
       "subtitle": "Piper TTS Локально",
@@ -438,8 +387,6 @@ const locale = {
     "disconnected": "Отключено",
     "storage": "Хранилище",
     "vram": "VRAM",
-    "installScript": "Запустить Установщик",
-    "openFolder": "Открыть Папку Инструментов",
     "helpFooter": "Проблемы? Убедитесь, что вы точно следуете каждому шагу. Вопросы: github.com/ollama/ollama"
   },
   "gender": {
@@ -943,7 +890,6 @@ const locale = {
       "greeting": "*поднимает взгляд из-за стойки, когда звенит колокольчик на двери, уже тянется за чашкой* *дождь стучит по окнам, кафе тёплое и тихое, джаз тихо потрескивает из динамика в углу* \"Так и знала, что придёшь.\" *начинает готовить обычный заказ, не спрашивая, движения точные и привычные* \"В дождливые дни ты всегда приходишь.\" *ставит чашку на стойку, пар поднимается вверх* *пододвигает маленькую тарелочку — выпечка, ещё тёплая* \"Не спрашивай — я слишком много напекла. Это не специально для тебя.\" *вытирает руки о фартук, глядя поверх очков для чтения* \"Ты выглядишь устало.\" *это не вопрос* *поворачивается поправить чашки на полке* \"Садись где хочешь. Угловое место свободно.\" *едва уловимая теплота в её голосе* \"Твой обычный остывает.\""
     }
   },
-  // FIXME: machine-translate ollamaModal — currently EN placeholder
   "ollamaModal": {
     "titleUnreachable": "Ollama is not running",
     "titleNoModel": "No model installed",

@@ -286,57 +286,6 @@ const locale = {
     "previous": "Geri",
     "close": "Kapat",
     "testConnection": "Test ediliyor",
-    "setupGuide": "Kurulum Kılavuzu",
-    "ollama": {
-      "title": "Ollama Kurulumu",
-      "subtitle": "Yerel AI Motoru - 5 Dakika",
-      "step1": "ollama.com'dan Ollama'yı indirin",
-      "step2": "Ollama'yı kurun ve başlatın",
-      "step3": "Çalıştır: ollama pull hermes3",
-      "status": "Bağlantı Durumu",
-      "models": {
-        "chooseModel": "AI Modelinizi Seçin",
-        "chooseModelDesc": "Donanımınıza göre seçin",
-        "copyCommand": "Komutu Kopyala",
-        "copied": "Kopyalandı!",
-        "lowEnd": {
-          "name": "Gemma 3B Uncensored",
-          "tier": "💚 Ekonomik",
-          "vram": "~3 GB VRAM",
-          "desc": "Eski donanım veya sınırlı VRAM için. İyi NSFW işleme.",
-          "command": "ollama pull gemma-3b"
-        },
-        "midEnd": {
-          "name": "Nous Hermes 3 8B",
-          "tier": "💙 Önerilen",
-          "vram": "~5.5 GB VRAM",
-          "desc": "Rol yapma ve hikaye anlatımı için en iyi denge. 128k bağlam.",
-          "command": "ollama pull hermes3"
-        },
-        "highEnd": {
-          "name": "Qwen3 30B A3B",
-          "tier": "💛 Premium",
-          "vram": "~18 GB VRAM",
-          "desc": "En son teknoloji MOE mimarisi. RTX 4080+ kullanıcıları için.",
-          "command": "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
-        }
-      }
-    },
-    "ollamaStep1Title": "📥 Ollama'yı İndir",
-    "ollamaStep1Desc": "ollama.com'u ziyaret edin ve işletim sisteminiz için Ollama'yı indirin.",
-    "ollamaStep1Button": "Ollama İndirme Sayfasını Aç",
-    "ollamaStep2Title": "💾 Kur",
-    "ollamaStep2Desc": "İndirilen dosyayı çalıştırın ve kurulum sihirbazını takip edin.",
-    "ollamaStep3Title": "🤖 Modeli İndir",
-    "ollamaStep3Desc": "Bir terminal açın ve bu komutu çalıştırın:",
-    "ollamaStep3Note": "Model yaklaşık 4GB. İndirme 3-5 dakika sürer.",
-    "ollamaStep4Title": "✅ Bağlantıyı Test Et",
-    "ollamaStep4Desc": "Ollama'nın çalışıp çalışmadığını kontrol edin.",
-    "ollamaStep4Button": "Bağlantıyı Test Et",
-    "ollamaTesting": "Test ediliyor...",
-    "ollamaConnected": "Bağlandı",
-    "ollamaError": "Hata",
-    "ollamaDisconnected": "Bağlantı Kesildi",
     "voice": {
       "title": "Ses/TTS Kurulumu",
       "subtitle": "Piper TTS - Yerel Ses Oluşturma",
@@ -438,8 +387,6 @@ const locale = {
     "disconnected": "Bağlantı Kesildi",
     "storage": "Depolama",
     "vram": "VRAM",
-    "installScript": "Kurulum Programını Çalıştır",
-    "openFolder": "Araçlar Klasörünü Aç",
     "helpFooter": "Sorun mu var? Her adımı doğru takip ettiğinizden emin olun. Sorular: github.com/ollama/ollama"
   },
   "gender": {
@@ -945,7 +892,6 @@ const locale = {
       "greeting": "*kapı zili çaldığında tezgahın arkasından başını kaldırır, çoktan bir fincana uzanıyor* *yağmur camlara vuruyor, kafe sıcak ve sessiz, köşedeki hoparlörden caz hafifçe çıtırdıyor* \"Geleceğini biliyordum.\" *sormadan her zamanki siparişi hazırlamaya başlar, hareketleri kesin ve deneyimli* \"Yağmurlu günler seni hep getirir.\" *fincanı tezgaha koyar, buhar yükselir* *yanına küçük bir tabak kaydırır — bir hamur işi, hâlâ sıcak* \"Sormadan söyleyeyim — çok fazla yaptım. Özellikle senin için değil.\" *ellerini önlüğüne siler, okuma gözlüklerinin üzerinden bakar* \"Yorgun görünüyorsun.\" *bu bir soru değil* *dönüp raftaki fincanları düzeltir* \"İstediğin yere otur. Köşe yer boş.\" *sesinde en hafif sıcaklık dokunuşu* \"Siparişin soğuyor.\""
     }
   },
-  // FIXME: machine-translate ollamaModal — currently EN placeholder
   "ollamaModal": {
     "titleUnreachable": "Ollama is not running",
     "titleNoModel": "No model installed",

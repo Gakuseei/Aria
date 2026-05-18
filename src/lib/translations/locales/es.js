@@ -286,57 +286,6 @@ const locale = {
     "previous": "Anterior",
     "close": "Cerrar",
     "testConnection": "Probando",
-    "setupGuide": "Guía de Configuración",
-    "ollama": {
-      "title": "Configuración de Ollama",
-      "subtitle": "Motor de IA Local - 5 Minutos",
-      "step1": "Descargar Ollama desde ollama.com",
-      "step2": "Instalar e iniciar Ollama",
-      "step3": "Ejecutar: ollama pull hermes3",
-      "status": "Estado de Conexión",
-      "models": {
-        "chooseModel": "Elige tu Modelo de IA",
-        "chooseModelDesc": "Selecciona según tu hardware",
-        "copyCommand": "Copiar Comando",
-        "copied": "¡Copiado!",
-        "lowEnd": {
-          "name": "Gemma 3B Uncensored",
-          "tier": "💚 Económico",
-          "vram": "~3 GB VRAM",
-          "desc": "Para hardware antiguo o VRAM limitada. Buen manejo NSFW.",
-          "command": "ollama pull gemma-3b"
-        },
-        "midEnd": {
-          "name": "Nous Hermes 3 8B",
-          "tier": "💙 Recomendado",
-          "vram": "~5.5 GB VRAM",
-          "desc": "Mejor balance para roleplay y narrativa. Contexto de 128k.",
-          "command": "ollama pull hermes3"
-        },
-        "highEnd": {
-          "name": "Qwen3 30B A3B",
-          "tier": "💛 Premium",
-          "vram": "~18 GB VRAM",
-          "desc": "Arquitectura MOE de última generación. Para RTX 4080+.",
-          "command": "ollama run hf.co/bartowski/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M"
-        }
-      }
-    },
-    "ollamaStep1Title": "📥 Descargar Ollama",
-    "ollamaStep1Desc": "Visita ollama.com y descarga Ollama para tu sistema operativo.",
-    "ollamaStep1Button": "Abrir Página de Descarga de Ollama",
-    "ollamaStep2Title": "💾 Instalar",
-    "ollamaStep2Desc": "Ejecuta el archivo descargado y sigue el asistente de instalación. Ollama se configurará automáticamente como servicio del sistema.",
-    "ollamaStep3Title": "🤖 Descargar Modelo",
-    "ollamaStep3Desc": "Abre una terminal y ejecuta este comando:",
-    "ollamaStep3Note": "El modelo tiene aproximadamente 4GB. La descarga toma 3-5 minutos.",
-    "ollamaStep4Title": "✅ Probar Conexión",
-    "ollamaStep4Desc": "Verifica si Ollama está corriendo y accesible.",
-    "ollamaStep4Button": "Probar Conexión",
-    "ollamaTesting": "Probando...",
-    "ollamaConnected": "Conectado",
-    "ollamaError": "Error",
-    "ollamaDisconnected": "Desconectado",
     "voice": {
       "title": "Configuración de Voz",
       "subtitle": "Piper TTS - Generación de Voz Local",
@@ -438,8 +387,6 @@ const locale = {
     "disconnected": "Desconectado",
     "storage": "Almacenamiento",
     "vram": "VRAM",
-    "installScript": "Ejecutar Instalador",
-    "openFolder": "Abrir Carpeta de Herramientas",
     "helpFooter": "¿Problemas? Asegúrate de seguir cada paso exactamente. Para preguntas: github.com/ollama/ollama"
   },
   "gender": {
@@ -943,7 +890,6 @@ const locale = {
       "greeting": "*levanta la vista desde detrás del mostrador cuando suena la campana de la puerta, ya alcanzando una taza* *la lluvia golpea contra las ventanas, el café cálido y tranquilo, jazz crepitando suavemente desde el altavoz en la esquina* \"Sabía que vendrías.\" *comienza a preparar lo de siempre sin preguntar, movimientos precisos y practicados* \"Los días de lluvia siempre te traen.\" *coloca la taza en el mostrador, el vapor se eleva* *desliza un platito al lado — un pastelito, aún caliente* \"Antes de que preguntes — hice demasiados. No es específicamente para ti.\" *se limpia las manos en el delantal, mirándote sobre sus gafas de lectura* \"Te ves cansado.\" *no es una pregunta* *se da vuelta para acomodar tazas en la estantería* \"Siéntate donde quieras. El rincón está libre.\" *el más leve toque de calidez en su voz* \"Tu pedido se enfría.\""
     }
   },
-  // FIXME: machine-translate ollamaModal — currently EN placeholder
   "ollamaModal": {
     "titleUnreachable": "Ollama is not running",
     "titleNoModel": "No model installed",

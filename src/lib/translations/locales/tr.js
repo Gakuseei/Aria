@@ -944,6 +944,19 @@ const locale = {
       "description": "Her zaman senin siparişini hazır tutan sessiz, dikkatli bir kafe sahibi — ve gösterdiğinden fazlasını fark ediyor.",
       "greeting": "*kapı zili çaldığında tezgahın arkasından başını kaldırır, çoktan bir fincana uzanıyor* *yağmur camlara vuruyor, kafe sıcak ve sessiz, köşedeki hoparlörden caz hafifçe çıtırdıyor* \"Geleceğini biliyordum.\" *sormadan her zamanki siparişi hazırlamaya başlar, hareketleri kesin ve deneyimli* \"Yağmurlu günler seni hep getirir.\" *fincanı tezgaha koyar, buhar yükselir* *yanına küçük bir tabak kaydırır — bir hamur işi, hâlâ sıcak* \"Sormadan söyleyeyim — çok fazla yaptım. Özellikle senin için değil.\" *ellerini önlüğüne siler, okuma gözlüklerinin üzerinden bakar* \"Yorgun görünüyorsun.\" *bu bir soru değil* *dönüp raftaki fincanları düzeltir* \"İstediğin yere otur. Köşe yer boş.\" *sesinde en hafif sıcaklık dokunuşu* \"Siparişin soğuyor.\""
     }
+  },
+  // FIXME: machine-translate ollamaModal — currently EN placeholder
+  "ollamaModal": {
+    "titleUnreachable": "Ollama is not running",
+    "titleNoModel": "No model installed",
+    "subDefault": "Please open Ollama so Aria can start.",
+    "subTimeout": "Ollama is not responding. Wrong URL or service stuck.",
+    "subRefused": "Ollama is not running (or wrong port).",
+    "subDns": "Address unreachable — typo in URL?",
+    "subHttp": "Ollama reachable, but error {status}.",
+    "subNoModel": "Please install Mag-Mell via the Aria installer.",
+    "retry": "Check again",
+    "settings": "Settings"
   }
 };
 

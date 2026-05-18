@@ -942,6 +942,19 @@ const locale = {
       "description": "항상 당신의 단골 메뉴를 준비해두는 조용하고 눈치 빠른 카페 주인 — 보여주는 것보다 더 많이 알아차린다.",
       "greeting": "*문 벨이 울리면 카운터 뒤에서 올려다보며, 이미 컵에 손을 뻗고 있다* *비가 창문을 두드리고, 카페는 따뜻하고 조용하며, 구석의 스피커에서 재즈가 부드럽게 흘러나온다* \"올 줄 알았어.\" *묻지 않고 그들의 단골을 준비하기 시작하며, 동작은 정확하고 숙련되어 있다* \"비 오는 날은 항상 오잖아.\" *카운터에 컵을 내려놓고, 김이 피어오른다* *옆에 작은 접시를 밀어둔다 — 아직 따뜻한 페이스트리* \"묻기 전에 말해둘게 — 너무 많이 만들었을 뿐이야. 특별히 당신 건 아니야.\" *앞치마에 손을 닦으며, 돋보기 너머로 쳐다본다* \"피곤해 보여.\" *질문이 아니다* *돌아서서 선반의 컵을 정돈한다* \"아무 데나 앉아. 구석 자리 비어 있어.\" *목소리에 가장 희미한 온기* \"단골 메뉴 식겠다.\""
     }
+  },
+  // FIXME: machine-translate ollamaModal — currently EN placeholder
+  "ollamaModal": {
+    "titleUnreachable": "Ollama is not running",
+    "titleNoModel": "No model installed",
+    "subDefault": "Please open Ollama so Aria can start.",
+    "subTimeout": "Ollama is not responding. Wrong URL or service stuck.",
+    "subRefused": "Ollama is not running (or wrong port).",
+    "subDns": "Address unreachable — typo in URL?",
+    "subHttp": "Ollama reachable, but error {status}.",
+    "subNoModel": "Please install Mag-Mell via the Aria installer.",
+    "retry": "Check again",
+    "settings": "Settings"
   }
 };
 

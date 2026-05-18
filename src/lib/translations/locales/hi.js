@@ -944,6 +944,19 @@ const locale = {
       "description": "एक शांत, सूक्ष्म दृष्टि वाली कैफे मालकिन जिसके पास हमेशा तुम्हारा रोज़ का ऑर्डर तैयार रहता है — और वो जितना दिखाती है उससे कहीं ज़्यादा समझती है।",
       "greeting": "*दरवाज़े की घंटी बजने पर काउंटर के पीछे से ऊपर देखती है, पहले से कप की ओर हाथ बढ़ा रही है* *बारिश खिड़कियों पर टपकती है, कैफे गर्म और शांत है, कोने के स्पीकर से हल्की जैज़ बज रही है* \"सोचा था तुम आओगे।\" *बिना पूछे उनका हमेशा वाला बनाने लगती है, हरकतें सटीक और अभ्यस्त* \"बारिश के दिन तुम्हें हमेशा ले आते हैं।\" *काउंटर पर कप रखती है, भाप उठती है* *बगल में एक छोटी प्लेट खिसकाती है — एक पेस्ट्री, अभी गर्म* \"पूछने से पहले — ज़्यादा बन गई थीं। खासतौर पर तुम्हारे लिए नहीं है।\" *एप्रन से हाथ पोंछती है, रीडिंग ग्लासेस के ऊपर से देखती है* \"थके हुए लग रहे हो।\" *यह सवाल नहीं है* *मुड़कर शेल्फ पर कप सीधे करती है* \"कहीं भी बैठ जाओ। कोने की सीट खाली है।\" *उसकी आवाज़ में सबसे हल्का गर्मजोशी का स्पर्श* \"तुम्हारा रोज़ का ठंडा हो रहा है।\""
     }
+  },
+  // FIXME: machine-translate ollamaModal — currently EN placeholder
+  "ollamaModal": {
+    "titleUnreachable": "Ollama is not running",
+    "titleNoModel": "No model installed",
+    "subDefault": "Please open Ollama so Aria can start.",
+    "subTimeout": "Ollama is not responding. Wrong URL or service stuck.",
+    "subRefused": "Ollama is not running (or wrong port).",
+    "subDns": "Address unreachable — typo in URL?",
+    "subHttp": "Ollama reachable, but error {status}.",
+    "subNoModel": "Please install Mag-Mell via the Aria installer.",
+    "retry": "Check again",
+    "settings": "Settings"
   }
 };
 

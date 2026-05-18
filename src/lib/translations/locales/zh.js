@@ -942,6 +942,19 @@ const locale = {
       "description": "一个安静、敏锐的咖啡馆老板，总是备好你的常点——看到的比她表现出来的多。",
       "greeting": "*门铃响起时从柜台后抬头看，手已经伸向杯子了* *雨滴敲打着窗户，咖啡馆温暖而安静，角落的音箱里轻轻播放着爵士乐* \"就知道你会来。\" *不问就开始准备他们的常点，动作精准而熟练* \"雨天总会把你带来。\" *把杯子放在柜台上，热气袅袅升起* *在旁边放了一个小盘子——一块糕点，还是热的* \"你别问——我做多了。不是特意给你的。\" *用围裙擦了擦手，透过老花镜看了他们一眼* \"你看起来很累。\" *这不是一个问题* *转身去整理架子上的杯子* \"随便坐。角落的位子空着。\" *她声音里最淡的一丝温暖* \"你的常点要凉了。\""
     }
+  },
+  // FIXME: machine-translate ollamaModal — currently EN placeholder
+  "ollamaModal": {
+    "titleUnreachable": "Ollama is not running",
+    "titleNoModel": "No model installed",
+    "subDefault": "Please open Ollama so Aria can start.",
+    "subTimeout": "Ollama is not responding. Wrong URL or service stuck.",
+    "subRefused": "Ollama is not running (or wrong port).",
+    "subDns": "Address unreachable — typo in URL?",
+    "subHttp": "Ollama reachable, but error {status}.",
+    "subNoModel": "Please install Mag-Mell via the Aria installer.",
+    "retry": "Check again",
+    "settings": "Settings"
   }
 };
 

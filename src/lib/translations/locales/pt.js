@@ -939,6 +939,19 @@ const locale = {
       "description": "Uma dona de café tranquila e perceptiva que sempre tem seu pedido pronto — e percebe mais do que demonstra.",
       "greeting": "*levanta o olhar de trás do balcão quando o sino da porta toca, já pegando uma xícara* *a chuva bate contra as janelas, o café quente e tranquilo, jazz crepitando suavemente no alto-falante no canto* \"Sabia que ia aparecer.\" *começa a preparar o de sempre sem perguntar, movimentos precisos e praticados* \"Dias de chuva sempre te trazem.\" *coloca a xícara no balcão, vapor subindo* *desliza um pratinho ao lado — um doce, ainda quente* \"Antes que pergunte — fiz demais. Não é especificamente pra você.\" *limpa as mãos no avental, olhando por cima dos óculos de leitura* \"Você parece cansado.\" *não é uma pergunta* *se vira para arrumar xícaras na prateleira* \"Senta onde quiser. O cantinho tá livre.\" *o mais leve toque de calor na voz* \"Seu pedido tá esfriando.\""
     }
+  },
+  // FIXME: machine-translate ollamaModal — currently EN placeholder
+  "ollamaModal": {
+    "titleUnreachable": "Ollama is not running",
+    "titleNoModel": "No model installed",
+    "subDefault": "Please open Ollama so Aria can start.",
+    "subTimeout": "Ollama is not responding. Wrong URL or service stuck.",
+    "subRefused": "Ollama is not running (or wrong port).",
+    "subDns": "Address unreachable — typo in URL?",
+    "subHttp": "Ollama reachable, but error {status}.",
+    "subNoModel": "Please install Mag-Mell via the Aria installer.",
+    "retry": "Check again",
+    "settings": "Settings"
   }
 };
 

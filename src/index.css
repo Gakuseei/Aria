@@ -2172,3 +2172,107 @@ body:not(.oled-mode) .passion-glow-high {
   animation: shimmer 2.4s infinite linear;
 }
 
+.ollama-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(14, 16, 19, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ollama-modal-card {
+  width: 320px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 28px 28px 22px;
+  color: var(--color-text);
+  font-family: 'Geist', 'Inter', sans-serif;
+  text-align: center;
+  box-shadow: 0 24px 60px -16px rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.ollama-modal-logo {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ollama-modal-logo img {
+  width: 56px;
+  height: 56px;
+  filter: invert(94%) brightness(1.05);
+}
+.ollama-modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+.ollama-modal-sub {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 240px;
+}
+.ollama-modal-primary {
+  margin-top: 6px;
+  background: var(--color-primary);
+  color: var(--color-surface);
+  border: none;
+  padding: 11px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+}
+.ollama-modal-primary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+.ollama-modal-primary:disabled {
+  cursor: progress;
+  opacity: 0.85;
+}
+.ollama-modal-link {
+  color: var(--color-text-soft);
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  font-family: inherit;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+}
+.ollama-modal-link:hover {
+  color: var(--color-text-muted);
+}
+.ollama-modal-spinner {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid transparent;
+  border-top-color: var(--color-surface);
+  border-radius: 50%;
+  animation: ollama-modal-spin 0.6s linear infinite;
+}
+@keyframes ollama-modal-spin {
+  to { transform: rotate(360deg); }
+}
+

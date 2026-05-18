@@ -876,7 +876,7 @@ const locale = {
     }
   },
   "ollamaModal": {
-    "titleUnreachable": "Aria needs Ollama",
+    "titleUnreachable": "Open Ollama",
     "titleNoModel": "One last download to finish setup",
     "subDefault": "Aria runs fully offline with Ollama. Open Ollama, then click Check again.",
     "subTimeout": "Ollama isn't responding. Try restarting it, then click Check again.",
@@ -885,8 +885,7 @@ const locale = {
     "subHttp": "Connected to Ollama, but it returned an error (code {status}). Try restarting Ollama.",
     "subNoModel": "Aria still needs to download its AI model. Open the Aria Installer to finish setup.",
     "retry": "Check again",
-    "settings": "Advanced settings",
-    "downloadOllama": "Download Ollama (free)"
+    "settings": "Advanced settings"
   }
 };
 

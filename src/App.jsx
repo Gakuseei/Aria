@@ -389,17 +389,6 @@ function App() {
     prevViewRef.current = currentView;
   }, [currentView, ollamaReady]);
 
-  const handleDownloadOllama = () => {
-    const url = 'https://ollama.com/download';
-    if (typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.openExternal === 'function') {
-      window.electronAPI.openExternal(url);
-      return;
-    }
-    if (typeof window !== 'undefined' && typeof window.open === 'function') {
-      window.open(url, '_blank');
-    }
-  };
-
   const navigate = (view) => {
     setCurrentView(view);
   };
@@ -629,7 +618,6 @@ function App() {
           errorStatus={ollamaErrorStatus}
           onRetry={handleRetryOllama}
           onOpenSettings={() => openSettings(VIEWS.MAIN_MENU)}
-          onDownloadOllama={handleDownloadOllama}
           t={t}
         />
       )}

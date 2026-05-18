@@ -11,7 +11,6 @@ import ollamaLogo from '../lib/assets/ollama-logo.png';
  * @param {number} [props.errorStatus]
  * @param {() => Promise<void>} props.onRetry
  * @param {() => void} props.onOpenSettings
- * @param {() => void} props.onDownloadOllama
  * @param {object} props.t - Active translations object.
  */
 export default function OllamaNotRunningModal({
@@ -20,7 +19,6 @@ export default function OllamaNotRunningModal({
   errorStatus,
   onRetry,
   onOpenSettings,
-  onDownloadOllama,
   t,
 }) {
   const [isChecking, setIsChecking] = useState(false);
@@ -46,9 +44,6 @@ export default function OllamaNotRunningModal({
 
   const subText = pickSubText(state, errorCode, errorStatus, t);
 
-  const showDownloadCta = state === 'unreachable'
-    && (errorCode === 'refused' || errorCode === null || errorCode === undefined || errorCode === 'unknown');
-
   return (
     <div className="ollama-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="ollama-modal-title">
       <div className="ollama-modal-card">
@@ -58,15 +53,6 @@ export default function OllamaNotRunningModal({
         </div>
         <h2 id="ollama-modal-title" className="ollama-modal-title">{title}</h2>
         <p className="ollama-modal-sub">{subText}</p>
-        {showDownloadCta && (
-          <button
-            type="button"
-            className="ollama-modal-secondary"
-            onClick={onDownloadOllama}
-          >
-            {t.ollamaModal.downloadOllama}
-          </button>
-        )}
         <button
           ref={primaryRef}
           type="button"

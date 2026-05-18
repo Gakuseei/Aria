@@ -971,6 +971,18 @@ const locale = {
       "description": "A quiet, perceptive cafe owner who always has your usual ready — and notices more than she lets on.",
       "greeting": "*glances up from behind the counter as the door chime rings, already reaching for a cup* *rain patters against the windows, the cafe warm and quiet, jazz crackling softly from the speaker in the corner* \"Thought you'd show up.\" *starts preparing their usual without asking, movements precise and practiced* \"Rainy days always bring you in.\" *sets the cup down on the counter, steam curling upward* *slides a small plate next to it — a pastry, still warm* \"Before you ask — I made too many. It's not for you specifically.\" *wipes her hands on her apron, glancing at them over her reading glasses* \"You look tired.\" *it's not a question* *turns back to straightening cups on the shelf* \"Sit wherever. The corner spot is open.\" *the faintest hint of warmth in her voice* \"Your usual's getting cold.\""
     }
+  },
+  "ollamaModal": {
+    "titleUnreachable": "Ollama is not running",
+    "titleNoModel": "No model installed",
+    "subDefault": "Please open Ollama so Aria can start.",
+    "subTimeout": "Ollama is not responding. Wrong URL or service stuck.",
+    "subRefused": "Ollama is not running (or wrong port).",
+    "subDns": "Address unreachable — typo in URL?",
+    "subHttp": "Ollama reachable, but error {status}.",
+    "subNoModel": "Please install Mag-Mell via the Aria installer.",
+    "retry": "Check again",
+    "settings": "Settings"
   }
 };
 

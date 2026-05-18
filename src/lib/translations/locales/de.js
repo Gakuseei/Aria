@@ -951,6 +951,18 @@ const locale = {
       "description": "Eine ruhige, aufmerksame Cafébesitzerin, die dein Übliches immer bereit hat — und mehr bemerkt, als sie zeigt.",
       "greeting": "*schaut hinter dem Tresen auf, als die Türglocke klingelt, greift schon nach einer Tasse* *Regen prasselt gegen die Fenster, das Café warm und ruhig, Jazz knistert leise aus dem Lautsprecher in der Ecke* \"Hab mir gedacht, dass du auftauchst.\" *beginnt das Übliche zuzubereiten, ohne zu fragen, Bewegungen präzise und geübt* \"Regentage bringen dich immer her.\" *stellt die Tasse auf den Tresen, Dampf steigt auf* *schiebt einen kleinen Teller daneben — ein Gebäck, noch warm* \"Bevor du fragst — ich hab zu viele gemacht. Es ist nicht speziell für dich.\" *wischt sich die Hände an der Schürze ab, schaut über ihre Lesebrille* \"Du siehst müde aus.\" *es ist keine Frage* *dreht sich um, stellt Tassen im Regal gerade* \"Setz dich, wohin du willst. Der Eckplatz ist frei.\" *der leiseste Hauch von Wärme in ihrer Stimme* \"Dein Übliches wird kalt.\""
     }
+  },
+  "ollamaModal": {
+    "titleUnreachable": "Ollama nicht gestartet",
+    "titleNoModel": "Kein Modell installiert",
+    "subDefault": "Bitte öffne Ollama, damit Aria starten kann.",
+    "subTimeout": "Ollama antwortet nicht. URL falsch oder Service hängt.",
+    "subRefused": "Ollama läuft nicht (oder falscher Port).",
+    "subDns": "Adresse nicht erreichbar — Schreibfehler in der URL?",
+    "subHttp": "Ollama erreichbar, aber Fehler {status}.",
+    "subNoModel": "Bitte lade Mag-Mell über den Aria-Installer.",
+    "retry": "Erneut prüfen",
+    "settings": "Einstellungen"
   }
 };
 

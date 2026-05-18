@@ -204,17 +204,21 @@ export async function getModelCapabilities(ollamaUrl, modelName) {
 
 export const testOllamaConnection = async (url = OLLAMA_DEFAULT_URL) => {
   if (isElectron()) {
-    const result = await window.electronAPI.ollamaModels({ ollamaUrl: url });
-    if (result?.success) {
-      const models = Array.isArray(result.models) ? result.models : [];
-      const count = typeof result.totalCount === 'number' ? result.totalCount : models.length;
-      return {
-        success: true,
-        message: `✅ Connected! Found ${count} models.`,
-        models,
-      };
+    try {
+      const result = await window.electronAPI.ollamaModels({ ollamaUrl: url });
+      if (result?.success) {
+        const models = Array.isArray(result.models) ? result.models : [];
+        const count = typeof result.totalCount === 'number' ? result.totalCount : models.length;
+        return {
+          success: true,
+          message: `✅ Connected! Found ${count} models.`,
+          models,
+        };
+      }
+      return mapElectronError(result);
+    } catch (err) {
+      return mapFetchError(err);
     }
-    return mapElectronError(result);
   }
 
   const controller = new AbortController();

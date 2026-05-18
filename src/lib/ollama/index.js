@@ -203,38 +203,89 @@ export async function getModelCapabilities(ollamaUrl, modelName) {
 }
 
 export const testOllamaConnection = async (url = OLLAMA_DEFAULT_URL) => {
-  try {
-    if (isElectron()) {
-      const result = await window.electronAPI.ollamaModels({ ollamaUrl: url });
-      if (result.success) {
-        return { success: true, message: `✅ Connected! Found ${result.totalCount} models.` };
-      }
-      return { success: false, message: `❌ Connection failed: ${result.error}` };
+  if (isElectron()) {
+    const result = await window.electronAPI.ollamaModels({ ollamaUrl: url });
+    if (result?.success) {
+      const models = Array.isArray(result.models) ? result.models : [];
+      const count = typeof result.totalCount === 'number' ? result.totalCount : models.length;
+      return {
+        success: true,
+        message: `✅ Connected! Found ${count} models.`,
+        models,
+      };
     }
+    return mapElectronError(result);
+  }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3000);
+  try {
     const response = await fetch(`${url}/api/tags`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal
+      signal: controller.signal,
     });
     clearTimeout(timeout);
 
-    if (response.ok) {
-      const data = await response.json();
-      const modelCount = data.models ? data.models.length : 0;
+    if (!response.ok) {
       return {
-        success: true,
-        message: `✅ Connected! Found ${modelCount} models.`
+        success: false,
+        errorCode: 'http',
+        status: response.status,
+        message: `❌ Ollama reachable, but error ${response.status}.`,
       };
-    } else {
-      return { success: false, message: `❌ Connection failed: ${response.status}` };
     }
-  } catch (error) {
-    return { success: false, message: `❌ Connection failed: ${error.message}` };
+    const data = await response.json();
+    const models = Array.isArray(data.models) ? data.models : [];
+    return {
+      success: true,
+      message: `✅ Connected! Found ${models.length} models.`,
+      models,
+    };
+  } catch (err) {
+    clearTimeout(timeout);
+    return mapFetchError(err);
   }
 };
+
+/**
+ * @param {Error} err
+ * @returns {{ success: false, errorCode: string, message: string }}
+ */
+function mapFetchError(err) {
+  const msg = (err && err.message) || '';
+  if (err?.name === 'AbortError') {
+    return { success: false, errorCode: 'timeout', message: '❌ Timeout — wrong URL or service stuck.' };
+  }
+  if (msg.includes('ENOTFOUND') || msg.includes('getaddrinfo')) {
+    return { success: false, errorCode: 'dns', message: '❌ Address unreachable — typo in URL?' };
+  }
+  if (msg.includes('ECONNREFUSED') || msg.includes('fetch failed') || msg.includes('Failed to fetch')) {
+    return { success: false, errorCode: 'refused', message: '❌ Ollama is not running (or wrong port).' };
+  }
+  return { success: false, errorCode: 'unknown', message: `❌ Connection failed: ${msg || 'unknown error'}` };
+}
+
+/**
+ * @param {{ error?: string, message?: string, status?: number }} result
+ * @returns {{ success: false, errorCode: string, message: string, status?: number }}
+ */
+function mapElectronError(result) {
+  const msg = result?.error || result?.message || '';
+  if (msg.includes('ECONNREFUSED')) {
+    return { success: false, errorCode: 'refused', message: '❌ Ollama is not running (or wrong port).' };
+  }
+  if (msg.includes('ENOTFOUND') || msg.includes('getaddrinfo')) {
+    return { success: false, errorCode: 'dns', message: '❌ Address unreachable — typo in URL?' };
+  }
+  if (msg.toLowerCase().includes('timeout') || msg.includes('AbortError')) {
+    return { success: false, errorCode: 'timeout', message: '❌ Timeout — wrong URL or service stuck.' };
+  }
+  if (typeof result?.status === 'number' && result.status >= 400) {
+    return { success: false, errorCode: 'http', status: result.status, message: `❌ Ollama reachable, but error ${result.status}.` };
+  }
+  return { success: false, errorCode: 'unknown', message: `❌ Connection failed: ${msg || 'unknown error'}` };
+}
 
 /**
  * Fetch available Ollama models

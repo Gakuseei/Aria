@@ -24,7 +24,8 @@ const DEFAULT_SETTINGS = {
   userPronouns: 'he/him',
   maxResponseTokens: 256,
   suggestionModel: null,
-  suggestionFallbackToChat: true
+  suggestionFallbackToChat: true,
+  write4meEnabled: false
 };
 
 const LEGACY_SAMPLING_FIELDS = [

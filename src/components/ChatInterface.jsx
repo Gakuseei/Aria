@@ -1785,21 +1785,23 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               disabled={isLoading}
               className="chat-input theme-composer-input flex-1 min-w-0 resize-none overflow-y-auto border-none bg-transparent px-2 text-[15px] md:text-base outline-none ring-0 focus:outline-none focus:ring-0 disabled:opacity-50"
             />
-            <button
-              onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}
-              disabled={isLoading || isStreaming}
-              className={`theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30 ${
-                isImpersonating
-                  ? `${!input.trim() ? (isGoldMode ? 'impersonate-pulse-gold' : 'impersonate-pulse') : ''} text-[var(--color-text)]`
-                  : isGoldMode
-                    ? 'text-amber-300'
-                    : ''
-              }`}
-              data-tooltip={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
-              aria-label={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
-            >
-              {isImpersonating ? <X size={16} /> : <PenLine size={16} />}
-            </button>
+            {settings.write4meEnabled && (
+              <button
+                onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}
+                disabled={isLoading || isStreaming}
+                className={`theme-composer-secondary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 disabled:opacity-30 ${
+                  isImpersonating
+                    ? `${!input.trim() ? (isGoldMode ? 'impersonate-pulse-gold' : 'impersonate-pulse') : ''} text-[var(--color-text)]`
+                    : isGoldMode
+                      ? 'text-amber-300'
+                      : ''
+                }`}
+                data-tooltip={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
+                aria-label={isImpersonating ? (t.common?.cancel || 'Cancel') : (t.chat.impersonate || 'Write for me')}
+              >
+                {isImpersonating ? <X size={16} /> : <PenLine size={16} />}
+              </button>
+            )}
             <button
               onClick={() => handleSend()}
               disabled={isLoading || isStreaming || isImpersonating || !input.trim()}

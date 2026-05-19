@@ -1026,6 +1026,34 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
           </section>
 
+          <section className="glass rounded-2xl p-6">
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-white">{t.settings.experimental}</h2>
+                <p className="text-xs theme-text-soft mt-1 leading-relaxed">{t.settings.experimentalDisclaimer}</p>
+              </div>
+              <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
+                <div className="flex flex-col">
+                  <span className="text-sm text-zinc-300">{t.settings.write4meExperimental}</span>
+                  <span className="text-xs theme-text-soft mt-0.5">{t.settings.write4meExperimentalHelp}</span>
+                </div>
+                <button
+                  onClick={() => onSettingChange('write4meEnabled', !settings.write4meEnabled)}
+                  role="switch"
+                  aria-checked={settings.write4meEnabled}
+                  aria-label={t.settings.write4meExperimental}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                    settings.write4meEnabled
+                      ? (isGoldMode ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30')
+                      : 'bg-zinc-700/50 text-zinc-400 border border-zinc-600/30'
+                  }`}
+                >
+                  {settings.write4meEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+            </div>
+          </section>
+
           <div className="glass rounded-2xl p-4 border border-emerald-500/20">
             <div className="flex items-center gap-3 text-emerald-300">
               <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">

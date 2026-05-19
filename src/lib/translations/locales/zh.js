@@ -47,6 +47,7 @@ const locale = {
     "experimentalDisclaimer": "测试中的功能 — 结果可能不一致。请反馈问题以帮助改进。",
     "write4meExperimental": "代我书写 (实验性)",
     "write4meExperimentalHelp": "通过模仿您的写作风格从您的视角生成消息草稿。质量参差。默认关闭。",
+    "smartSuggestionsExperimentalHelp": "为您的下一条消息生成快捷建议。节奏感知。非英语模型质量参差。默认关闭。",
     "passionSystem": "激情系统",
     "save": "保存",
     "cancel": "取消",

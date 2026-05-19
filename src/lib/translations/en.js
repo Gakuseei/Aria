@@ -47,6 +47,7 @@ const locale = {
     "experimentalDisclaimer": "Features in testing — may produce inconsistent results. Help us improve by reporting issues.",
     "write4meExperimental": "Write for Me (experimental)",
     "write4meExperimentalHelp": "Generates a draft message from your perspective using user-voice mirroring. Quality varies. Default off.",
+    "smartSuggestionsExperimentalHelp": "Generates pill suggestions for your next message. Beat-aware. Quality varies on non-English models. Default off.",
     "passionSystem": "Passion System",
     "save": "Save",
     "cancel": "Cancel",

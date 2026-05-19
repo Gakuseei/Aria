@@ -807,181 +807,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                 </div>
 
                 <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
-                  <div className="flex flex-col">
-                    <span className="text-sm text-zinc-300">{t.settings.smartSuggestions}</span>
-                    <span className="text-xs theme-text-soft mt-0.5">{t.settings.aiGeneratedQuickReplies}</span>
-                  </div>
-                  <button
-                    onClick={() => onSettingChange('smartSuggestionsEnabled', !settings.smartSuggestionsEnabled)}
-                    role="switch"
-                    aria-checked={settings.smartSuggestionsEnabled}
-                    aria-label={t.settings.smartSuggestions}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                      settings.smartSuggestionsEnabled
-                        ? (isGoldMode ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30')
-                        : 'bg-zinc-700/50 text-zinc-400 border border-zinc-600/30'
-                    }`}
-                  >
-                    {settings.smartSuggestionsEnabled ? 'ON' : 'OFF'}
-                  </button>
-                </div>
-
-                {settings.smartSuggestionsEnabled && isGoldMode && (
-                  <div className="theme-card-subtle p-4 rounded-lg space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-zinc-200">{t.settings.suggestionModelTitle}</span>
-                    </div>
-                    <p className="text-xs theme-text-soft leading-relaxed">{t.settings.suggestionModelDesc}</p>
-
-                    <div className="space-y-2">
-                      {RECOMMENDED_SUGGESTION_MODELS.map((m) => {
-                        const isSelected = settings.suggestionModel === m.tag;
-                        const isInstalled = installedTags.includes(m.tag);
-                        const handleSelect = () => onSettingChange('suggestionModel', isSelected ? null : m.tag);
-                        return (
-                          <div
-                            key={m.tag}
-                            role="button"
-                            tabIndex={0}
-                            onClick={handleSelect}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(); } }}
-                            className={`w-full text-left p-3 rounded-lg border-2 transition-all cursor-pointer flex items-start gap-3 ${
-                              isSelected
-                                ? 'border-rose-500 bg-rose-500/5'
-                                : 'border-transparent bg-zinc-800/40 hover:border-rose-500'
-                            }`}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <span className="font-mono text-xs text-zinc-100 break-all">{m.tag}</span>
-                                {isInstalled && <Check size={14} className="text-emerald-400 shrink-0" aria-hidden="true" />}
-                                <span className="text-xs text-zinc-500">{m.sizeGB} GB</span>
-                                {m.badge === 'recommended' && <span className="badge-rose">{t.settings.suggestionModelBadgeRecommended}</span>}
-                                {m.badge === 'fastest' && <span className="badge-green">{t.settings.suggestionModelBadgeFastest}</span>}
-                                {m.badge === 'hardcore' && <span className="badge-purple">{t.settings.suggestionModelBadgeHardcore}</span>}
-                                {m.badge === 'hardcore' && <span className="badge-orange">{t.settings.suggestionModelBadgeSfwWarn}</span>}
-                              </div>
-                            </div>
-                            {pullProgress[m.tag] ? (
-                              <div className="shrink-0 w-full sm:w-72 flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
-                                <div className="flex items-baseline justify-between gap-3">
-                                  <span className="text-[11px] uppercase tracking-wider text-zinc-400 truncate">
-                                    {mapOllamaStatus(pullProgress[m.tag].status, t) || (t.settings.suggestionModelPullStarting || 'starting')}
-                                  </span>
-                                  <span className="text-xs font-mono tabular-nums text-rose-300">{formatPercent(pullProgress[m.tag])}</span>
-                                </div>
-                                <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-                                  <div
-                                    className="h-full pull-progress-fill transition-all duration-300 ease-out"
-                                    style={{ width: `${percentFor(pullProgress[m.tag])}%` }}
-                                  />
-                                </div>
-                                <div className="flex items-center justify-between gap-3 text-[11px] tabular-nums text-zinc-500">
-                                  <span className="font-mono">{formatBytes(pullProgress[m.tag].completed)} / {formatBytes(pullProgress[m.tag].total)}</span>
-                                  <span>{formatEta(pullProgress[m.tag], t)}</span>
-                                </div>
-                              </div>
-                            ) : !isInstalled ? (
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); handlePullTag(m.tag); }}
-                                className="shrink-0 px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/30 text-xs hover:bg-rose-500/25"
-                              >
-                                {`${t.settings.suggestionModelPull} (${m.sizeGB} GB)`}
-                              </button>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="border border-dashed border-white/10 rounded-lg p-3 space-y-2">
-                      <div className="text-xs text-zinc-300">{t.settings.suggestionModelCustom}</div>
-                      <p className="text-xs theme-text-soft">{t.settings.suggestionModelCustomHint}</p>
-                      <div className="flex gap-2 items-center">
-                        <input
-                          type="text"
-                          value={settings.suggestionModel && !RECOMMENDED_SUGGESTION_MODELS.find((m) => m.tag === settings.suggestionModel) ? settings.suggestionModel : ''}
-                          onChange={(e) => onSettingChange('suggestionModel', e.target.value || null)}
-                          placeholder="user/model-name:tag"
-                          className="flex-1 px-3 py-1.5 rounded bg-zinc-900 border border-white/10 text-xs font-mono text-zinc-100"
-                        />
-                      </div>
-                      <div className="flex gap-2 items-center">
-                        <button
-                          type="button"
-                          onClick={() => handleCheckTag(settings.suggestionModel?.trim())}
-                          disabled={!settings.suggestionModel?.trim()}
-                          className="px-3 py-1.5 text-xs rounded bg-zinc-700/50 text-zinc-300 border border-zinc-600/40 hover:bg-zinc-700 disabled:opacity-50"
-                        >
-                          {t.settings.suggestionModelCheck}
-                        </button>
-                        {pullProgress[settings.suggestionModel] ? (
-                          <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-                            <div className="flex items-baseline justify-between gap-3">
-                              <span className="text-[11px] uppercase tracking-wider text-zinc-400 truncate">
-                                {mapOllamaStatus(pullProgress[settings.suggestionModel].status, t) || (t.settings.suggestionModelPullStarting || 'starting')}
-                              </span>
-                              <span className="text-xs font-mono tabular-nums text-rose-300">{formatPercent(pullProgress[settings.suggestionModel])}</span>
-                            </div>
-                            <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-                              <div
-                                className="h-full pull-progress-fill transition-all duration-300 ease-out"
-                                style={{ width: `${percentFor(pullProgress[settings.suggestionModel])}%` }}
-                              />
-                            </div>
-                            <div className="flex items-center justify-between gap-3 text-[11px] tabular-nums text-zinc-500">
-                              <span className="font-mono">{formatBytes(pullProgress[settings.suggestionModel].completed)} / {formatBytes(pullProgress[settings.suggestionModel].total)}</span>
-                              <span>{formatEta(pullProgress[settings.suggestionModel], t)}</span>
-                            </div>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handlePullTag(settings.suggestionModel?.trim())}
-                            disabled={!settings.suggestionModel?.trim()}
-                            className="px-3 py-1.5 text-xs rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 disabled:opacity-50"
-                          >
-                            {t.settings.suggestionModelPull}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                      <div>
-                        <div className="text-sm text-zinc-300">{t.settings.suggestionModelFallbackTitle}</div>
-                        <div className="text-xs theme-text-soft mt-0.5">{t.settings.suggestionModelFallbackDesc}</div>
-                      </div>
-                      <button
-                        onClick={() => onSettingChange('suggestionFallbackToChat', !settings.suggestionFallbackToChat)}
-                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                          settings.suggestionFallbackToChat
-                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                            : 'bg-zinc-700/50 text-zinc-400 border border-zinc-600/30'
-                        }`}
-                      >
-                        {settings.suggestionFallbackToChat ? 'ON' : 'OFF'}
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                      <div>
-                        <div className="text-sm text-zinc-300">{t.settings.suggestionModelEditProfile}</div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowSuggestionSamplingModal(true)}
-                        disabled={!settings.suggestionModel}
-                        className="px-3 py-1 rounded-lg text-xs font-medium bg-zinc-700/50 text-zinc-300 border border-zinc-600/30 hover:bg-zinc-700/70 disabled:opacity-40"
-                      >
-                        EDIT
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
                   <span className="text-sm text-zinc-300">{t.settings.animations}</span>
                   <button
                     onClick={() => onSettingChange('animationsEnabled', !settings.animationsEnabled)}
@@ -1051,6 +876,180 @@ export default function Settings({ settings, onSettingChange, onClose }) {
                   {settings.write4meEnabled ? 'ON' : 'OFF'}
                 </button>
               </div>
+              <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
+                <div className="flex flex-col">
+                  <span className="text-sm text-zinc-300">{t.settings.smartSuggestions}</span>
+                  <span className="text-xs theme-text-soft mt-0.5">{t.settings.smartSuggestionsExperimentalHelp}</span>
+                </div>
+                <button
+                  onClick={() => onSettingChange('smartSuggestionsEnabled', !settings.smartSuggestionsEnabled)}
+                  role="switch"
+                  aria-checked={settings.smartSuggestionsEnabled}
+                  aria-label={t.settings.smartSuggestions}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                    settings.smartSuggestionsEnabled
+                      ? (isGoldMode ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30')
+                      : 'bg-zinc-700/50 text-zinc-400 border border-zinc-600/30'
+                  }`}
+                >
+                  {settings.smartSuggestionsEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+
+              {settings.smartSuggestionsEnabled && isGoldMode && (
+                <div className="theme-card-subtle p-4 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-zinc-200">{t.settings.suggestionModelTitle}</span>
+                  </div>
+                  <p className="text-xs theme-text-soft leading-relaxed">{t.settings.suggestionModelDesc}</p>
+
+                  <div className="space-y-2">
+                    {RECOMMENDED_SUGGESTION_MODELS.map((m) => {
+                      const isSelected = settings.suggestionModel === m.tag;
+                      const isInstalled = installedTags.includes(m.tag);
+                      const handleSelect = () => onSettingChange('suggestionModel', isSelected ? null : m.tag);
+                      return (
+                        <div
+                          key={m.tag}
+                          role="button"
+                          tabIndex={0}
+                          onClick={handleSelect}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(); } }}
+                          className={`w-full text-left p-3 rounded-lg border-2 transition-all cursor-pointer flex items-start gap-3 ${
+                            isSelected
+                              ? 'border-rose-500 bg-rose-500/5'
+                              : 'border-transparent bg-zinc-800/40 hover:border-rose-500'
+                          }`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className="font-mono text-xs text-zinc-100 break-all">{m.tag}</span>
+                              {isInstalled && <Check size={14} className="text-emerald-400 shrink-0" aria-hidden="true" />}
+                              <span className="text-xs text-zinc-500">{m.sizeGB} GB</span>
+                              {m.badge === 'recommended' && <span className="badge-rose">{t.settings.suggestionModelBadgeRecommended}</span>}
+                              {m.badge === 'fastest' && <span className="badge-green">{t.settings.suggestionModelBadgeFastest}</span>}
+                              {m.badge === 'hardcore' && <span className="badge-purple">{t.settings.suggestionModelBadgeHardcore}</span>}
+                              {m.badge === 'hardcore' && <span className="badge-orange">{t.settings.suggestionModelBadgeSfwWarn}</span>}
+                            </div>
+                          </div>
+                          {pullProgress[m.tag] ? (
+                            <div className="shrink-0 w-full sm:w-72 flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-baseline justify-between gap-3">
+                                <span className="text-[11px] uppercase tracking-wider text-zinc-400 truncate">
+                                  {mapOllamaStatus(pullProgress[m.tag].status, t) || (t.settings.suggestionModelPullStarting || 'starting')}
+                                </span>
+                                <span className="text-xs font-mono tabular-nums text-rose-300">{formatPercent(pullProgress[m.tag])}</span>
+                              </div>
+                              <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                                <div
+                                  className="h-full pull-progress-fill transition-all duration-300 ease-out"
+                                  style={{ width: `${percentFor(pullProgress[m.tag])}%` }}
+                                />
+                              </div>
+                              <div className="flex items-center justify-between gap-3 text-[11px] tabular-nums text-zinc-500">
+                                <span className="font-mono">{formatBytes(pullProgress[m.tag].completed)} / {formatBytes(pullProgress[m.tag].total)}</span>
+                                <span>{formatEta(pullProgress[m.tag], t)}</span>
+                              </div>
+                            </div>
+                          ) : !isInstalled ? (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handlePullTag(m.tag); }}
+                              className="shrink-0 px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/30 text-xs hover:bg-rose-500/25"
+                            >
+                              {`${t.settings.suggestionModelPull} (${m.sizeGB} GB)`}
+                            </button>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="border border-dashed border-white/10 rounded-lg p-3 space-y-2">
+                    <div className="text-xs text-zinc-300">{t.settings.suggestionModelCustom}</div>
+                    <p className="text-xs theme-text-soft">{t.settings.suggestionModelCustomHint}</p>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={settings.suggestionModel && !RECOMMENDED_SUGGESTION_MODELS.find((m) => m.tag === settings.suggestionModel) ? settings.suggestionModel : ''}
+                        onChange={(e) => onSettingChange('suggestionModel', e.target.value || null)}
+                        placeholder="user/model-name:tag"
+                        className="flex-1 px-3 py-1.5 rounded bg-zinc-900 border border-white/10 text-xs font-mono text-zinc-100"
+                      />
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <button
+                        type="button"
+                        onClick={() => handleCheckTag(settings.suggestionModel?.trim())}
+                        disabled={!settings.suggestionModel?.trim()}
+                        className="px-3 py-1.5 text-xs rounded bg-zinc-700/50 text-zinc-300 border border-zinc-600/40 hover:bg-zinc-700 disabled:opacity-50"
+                      >
+                        {t.settings.suggestionModelCheck}
+                      </button>
+                      {pullProgress[settings.suggestionModel] ? (
+                        <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                          <div className="flex items-baseline justify-between gap-3">
+                            <span className="text-[11px] uppercase tracking-wider text-zinc-400 truncate">
+                              {mapOllamaStatus(pullProgress[settings.suggestionModel].status, t) || (t.settings.suggestionModelPullStarting || 'starting')}
+                            </span>
+                            <span className="text-xs font-mono tabular-nums text-rose-300">{formatPercent(pullProgress[settings.suggestionModel])}</span>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                            <div
+                              className="h-full pull-progress-fill transition-all duration-300 ease-out"
+                              style={{ width: `${percentFor(pullProgress[settings.suggestionModel])}%` }}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between gap-3 text-[11px] tabular-nums text-zinc-500">
+                            <span className="font-mono">{formatBytes(pullProgress[settings.suggestionModel].completed)} / {formatBytes(pullProgress[settings.suggestionModel].total)}</span>
+                            <span>{formatEta(pullProgress[settings.suggestionModel], t)}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handlePullTag(settings.suggestionModel?.trim())}
+                          disabled={!settings.suggestionModel?.trim()}
+                          className="px-3 py-1.5 text-xs rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 disabled:opacity-50"
+                        >
+                          {t.settings.suggestionModelPull}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                    <div>
+                      <div className="text-sm text-zinc-300">{t.settings.suggestionModelFallbackTitle}</div>
+                      <div className="text-xs theme-text-soft mt-0.5">{t.settings.suggestionModelFallbackDesc}</div>
+                    </div>
+                    <button
+                      onClick={() => onSettingChange('suggestionFallbackToChat', !settings.suggestionFallbackToChat)}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                        settings.suggestionFallbackToChat
+                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          : 'bg-zinc-700/50 text-zinc-400 border border-zinc-600/30'
+                      }`}
+                    >
+                      {settings.suggestionFallbackToChat ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                    <div>
+                      <div className="text-sm text-zinc-300">{t.settings.suggestionModelEditProfile}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowSuggestionSamplingModal(true)}
+                      disabled={!settings.suggestionModel}
+                      className="px-3 py-1 rounded-lg text-xs font-medium bg-zinc-700/50 text-zinc-300 border border-zinc-600/30 hover:bg-zinc-700/70 disabled:opacity-40"
+                    >
+                      EDIT
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 

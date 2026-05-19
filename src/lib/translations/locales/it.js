@@ -47,6 +47,7 @@ const locale = {
     "experimentalDisclaimer": "Funzioni in test — possono produrre risultati incoerenti. Aiutaci segnalando i problemi.",
     "write4meExperimental": "Scrivi per Me (sperimentale)",
     "write4meExperimentalHelp": "Genera una bozza dal tuo punto di vista imitando il tuo stile di scrittura. La qualità varia. Disattivato di default.",
+    "smartSuggestionsExperimentalHelp": "Genera suggerimenti rapidi per il tuo prossimo messaggio. Sensibile al ritmo. La qualità varia su modelli non inglesi. Disattivato di default.",
     "passionSystem": "Sistema Passione",
     "save": "Salva",
     "cancel": "Annulla",

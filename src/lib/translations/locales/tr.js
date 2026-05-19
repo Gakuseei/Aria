@@ -47,6 +47,7 @@ const locale = {
     "experimentalDisclaimer": "Test aşamasındaki özellikler — tutarsız sonuçlar verebilir. Sorunları bildirerek geliştirmemize yardımcı olun.",
     "write4meExperimental": "Benim İçin Yaz (deneysel)",
     "write4meExperimentalHelp": "Yazı stilinizi taklit ederek bakış açınızdan bir mesaj taslağı oluşturur. Kalite değişkendir. Varsayılan kapalı.",
+    "smartSuggestionsExperimentalHelp": "Bir sonraki mesajınız için hızlı öneriler oluşturur. Ritim duyarlı. İngilizce olmayan modellerde kalite değişkendir. Varsayılan kapalı.",
     "passionSystem": "Tutku Sistemi",
     "save": "Kaydet",
     "cancel": "İptal",

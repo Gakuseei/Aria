@@ -47,6 +47,7 @@ const locale = {
     "experimentalDisclaimer": "Fonctionnalités en test — peuvent produire des résultats incohérents. Aidez-nous en signalant les problèmes.",
     "write4meExperimental": "Écrire pour Moi (expérimental)",
     "write4meExperimentalHelp": "Génère un brouillon de message à votre place en imitant votre style d'écriture. La qualité varie. Désactivé par défaut.",
+    "smartSuggestionsExperimentalHelp": "Génère des suggestions rapides pour votre prochain message. Sensible au rythme. La qualité varie sur les modèles non anglophones. Désactivé par défaut.",
     "passionSystem": "Système de Passion",
     "save": "Enregistrer",
     "cancel": "Annuler",

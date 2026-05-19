@@ -25,7 +25,8 @@ const DEFAULT_SETTINGS = {
   maxResponseTokens: 256,
   suggestionModel: null,
   suggestionFallbackToChat: true,
-  write4meEnabled: false
+  write4meEnabled: false,
+  smartSuggestionsEnabled: false
 };
 
 const LEGACY_SAMPLING_FIELDS = [

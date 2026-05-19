@@ -47,6 +47,7 @@ const locale = {
     "experimentalDisclaimer": "Funktionen im Test — können zu inkonsistenten Ergebnissen führen. Hilf uns durch Feedback.",
     "write4meExperimental": "Schreib für Mich (experimentell)",
     "write4meExperimentalHelp": "Erzeugt einen Nachrichtenentwurf aus deiner Sicht durch Imitation deines Schreibstils. Qualität variiert. Standardmäßig aus.",
+    "smartSuggestionsExperimentalHelp": "Erzeugt Pill-Vorschläge für deine nächste Nachricht. Beat-bewusst. Qualität schwankt bei nicht-englischen Modellen. Standardmäßig aus.",
     "passionSystem": "Leidenschaftssystem",
     "save": "Speichern",
     "cancel": "Abbrechen",

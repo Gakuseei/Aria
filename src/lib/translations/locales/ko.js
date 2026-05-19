@@ -47,6 +47,7 @@ const locale = {
     "experimentalDisclaimer": "테스트 중인 기능 — 일관되지 않은 결과가 나올 수 있습니다. 문제를 보고하여 개선에 도움을 주세요.",
     "write4meExperimental": "대신 작성 (실험적)",
     "write4meExperimentalHelp": "사용자의 문체를 모방하여 사용자 관점에서 메시지 초안을 생성합니다. 품질은 다양합니다. 기본값은 꺼짐.",
+    "smartSuggestionsExperimentalHelp": "다음 메시지를 위한 빠른 제안을 생성합니다. 비트 인식. 비영어 모델에서 품질이 다를 수 있습니다. 기본값은 꺼짐.",
     "passionSystem": "열정 시스템",
     "save": "저장",
     "cancel": "취소",

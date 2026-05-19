@@ -82,8 +82,7 @@
       "main.js",
       "preload.js",
       "dist/**/*",
-      "lib/**/*",
-      "tools/zonos_api_server.py"
+      "lib/**/*"
     ],
     "electronFuses": {
       "runAsNode": false,

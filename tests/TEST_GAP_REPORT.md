@@ -9,8 +9,6 @@
 | `lib/platform.js` | `tests/lib/platform.test.js` | `isWindows`, `isLinux`, `isMac`, `getPythonCommand`, `getVenvBinDir`, `getBinaryName`, `isPortInUse` |
 | `lib/toolManager.js` | `tests/lib/toolManager.test.js` | Core exports |
 | `lib/tools/ollama.js` | `tests/lib/tools/ollama.test.js` | Tool definition, download URLs, `detect()` |
-| `lib/tools/piper.js` | `tests/lib/tools/piper.test.js` | Tool definition, download URLs, `detect()` |
-| `lib/tools/zonos.js` | `tests/lib/tools/zonos.test.js` | Tool definition, server exports, `detect()` |
 | `src/lib/modelProfiles.js` | `tests/lib/modelProfiles.test.js` | `detectModelFamily()`, `getModelProfile()` |
 | `src/lib/PassionManager.js` | `tests/lib/PassionManager.test.js` | `getTierKey()`, `getDepthInstruction()`, `getSpeedMultiplier()`, `PASSION_TIERS` |
 | `src/lib/commandHandler.js` | `tests/lib/commandHandler.test.js` | `isCommand()`, `executeCommand()` |

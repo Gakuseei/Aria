@@ -31,7 +31,7 @@
 - 🔐 **100% Offline** — Runs on [Ollama](https://ollama.ai). Nothing leaves your device. Ever.
 - 🎭 **Custom Characters** — Build your own with passion speed control, or use the 5 built-in personas.
 - 🌍 **13 Languages** — EN, DE, ES, ZH, FR, IT, PT, RU, JA, KO, AR, HI, TR
-- 🎙️ **Voice & Image** — Piper TTS, Zonos voice synthesis, Stable Diffusion image generation.
+- 🎙️ **Voice** — Piper TTS + Zonos voice synthesis.
 
 <br/>
 

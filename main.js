@@ -1,5 +1,5 @@
 // Electron Main Process - v0.2.5
-// Deep Immersion with Passion Manager, Image Generation & Voice/TTS
+// Deep Immersion with Passion Manager & Voice/TTS
 // AGGRESSIVE CSP: Only 'self', '127.0.0.1', 'localhost'
 
 const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');

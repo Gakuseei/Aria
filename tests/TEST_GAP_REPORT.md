@@ -10,7 +10,6 @@
 | `lib/toolManager.js` | `tests/lib/toolManager.test.js` | Core exports |
 | `lib/tools/ollama.js` | `tests/lib/tools/ollama.test.js` | Tool definition, download URLs, `detect()` |
 | `lib/tools/piper.js` | `tests/lib/tools/piper.test.js` | Tool definition, download URLs, `detect()` |
-| `lib/tools/stability.js` | `tests/lib/tools/stability.test.js` | Tool definition, download URLs, `detect()` |
 | `lib/tools/zonos.js` | `tests/lib/tools/zonos.test.js` | Tool definition, server exports, `detect()` |
 | `src/lib/modelProfiles.js` | `tests/lib/modelProfiles.test.js` | `detectModelFamily()`, `getModelProfile()` |
 | `src/lib/PassionManager.js` | `tests/lib/PassionManager.test.js` | `getTierKey()`, `getDepthInstruction()`, `getSpeedMultiplier()`, `PASSION_TIERS` |
@@ -30,7 +29,6 @@
 | `src/lib/api.js` (private) | `buildSystemPrompt`, `parseSuggestions` | Not exported, internal only |
 | `src/lib/PassionManager.js` (class) | `PassionManager` instance methods (`applyScore`, `revertLastScore`, `resetPassion`) | Requires `localStorage` mock (jsdom) |
 | `src/lib/StoryEngine.js` | Creative writing generation | Requires Ollama fetch mocking |
-| `src/lib/imageGen.js` | Image generation API calls | Requires fetch mocking |
 | `src/lib/slowBurn.js` | Slow burn narrative logic | Needs review for pure functions |
 
 ### React Components — Untested

@@ -92,14 +92,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Voice status change listener
   onVoiceStatusChanged: createIpcListener('voice-status-changed'),
 
-  // Settings updated listener (used by ChatInterface for voice/imageGen sync)
+  // Settings updated listener (used by ChatInterface for voice sync)
   onSettingsUpdated: createIpcListener('settings-updated'),
 
   // v0.2.5: Multimedia IPC handlers
-  imageGenModels: (params) => ipcRenderer.invoke('image-gen-models', params),
-  testImageGen: (params) => ipcRenderer.invoke('test-image-gen', params),
   testVoice: (params) => ipcRenderer.invoke('test-voice', params),
-  generateImage: (params) => ipcRenderer.invoke('generate-image', params),
   generateSpeech: (params) => ipcRenderer.invoke('generate-speech', params),
 
   // File dialog

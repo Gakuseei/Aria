@@ -6,7 +6,7 @@ import OledToggleButton from './components/OledToggleButton';
 import OllamaNotRunningModal from './components/OllamaNotRunningModal';
 import { useLanguage } from './context/LanguageContext';
 import { buildManualCharacterSelectionState, buildManualModeSelectionState } from './lib/chatViewState';
-import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from './lib/defaults';
+import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, VOICE_DEFAULT_URL } from './lib/defaults';
 import { DEBUG_CONSOLE_EVENT_LIMIT } from './lib/debugConsole';
 import { GAME_MODES } from './lib/gameModes';
 import { testOllamaConnection, autoDetectAndSetModel, normalizeContextSize } from './lib/ollama';
@@ -83,9 +83,6 @@ function App() {
     userName: 'User',
     userGender: 'male',
     userPronouns: 'he/him',
-    imageGenEnabled: false,
-    imageGenUrl: IMAGE_GEN_DEFAULT_URL,
-    imageGenTier: 'standard',
     voiceEnabled: false,
     voiceUrl: VOICE_DEFAULT_URL,
     voiceTier: 'standard',
@@ -156,9 +153,6 @@ function App() {
             userName: loadedSettings.userName || 'User',
             userGender: loadedSettings.userGender || 'male',
             userPronouns: loadedSettings.userPronouns || 'he/him',
-            imageGenEnabled: loadedSettings.imageGenEnabled ?? false,
-            imageGenUrl: loadedSettings.imageGenUrl || IMAGE_GEN_DEFAULT_URL,
-            imageGenTier: loadedSettings.imageGenTier || 'standard',
             voiceEnabled: loadedSettings.voiceEnabled ?? false,
             voiceUrl: loadedSettings.voiceUrl || VOICE_DEFAULT_URL,
             voiceTier: loadedSettings.voiceTier || 'standard',

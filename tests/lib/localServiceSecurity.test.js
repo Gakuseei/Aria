@@ -87,15 +87,9 @@ describe('localServiceSecurity', () => {
       expect(security.validateLocalServiceUrl('ollama', 'http://127.0.0.1:33445', settings)).toBeNull();
     });
 
-    it('uses the configured image generation port instead of any localhost port', () => {
-      const settings = { imageGenUrl: 'http://127.0.0.1:9999' };
-      expect(security.validateLocalServiceUrl('imageGen', 'http://localhost:9999', settings)?.origin).toBe('http://localhost:9999');
-      expect(security.validateLocalServiceUrl('imageGen', 'http://127.0.0.1:7860', settings)).toBeNull();
-    });
-
     it('rejects urls with paths for base service validation', () => {
-      const settings = { imageGenUrl: 'http://127.0.0.1:7860' };
-      expect(security.validateLocalServiceUrl('imageGen', 'http://127.0.0.1:7860/sdapi/v1/options', settings)).toBeNull();
+      const settings = { voiceUrl: 'http://127.0.0.1:5000' };
+      expect(security.validateLocalServiceUrl('voice', 'http://127.0.0.1:5000/api/tts', settings)).toBeNull();
     });
 
     it('restricts path-bearing local service urls to explicit allowed prefixes', () => {
@@ -174,8 +168,8 @@ describe('localServiceSecurity', () => {
     });
 
     it('keeps configured service ports specific instead of trusting any loopback port', () => {
-      const settings = { imageGenUrl: 'http://127.0.0.1:9999' };
-      expect(security.getTrustedLoopbackConnectSrcOriginsForService('imageGen', settings)).toEqual([
+      const settings = { voiceUrl: 'http://127.0.0.1:9999' };
+      expect(security.getTrustedLoopbackConnectSrcOriginsForService('voice', settings)).toEqual([
         'http://localhost:9999',
         'http://127.0.0.1:9999',
         'ws://localhost:9999',
@@ -225,7 +219,7 @@ describe('localServiceSecurity', () => {
     });
 
     it('keeps renderer connect-src scoped to renderer-relevant services only', () => {
-      expect(mainSource).toContain("const LOCAL_CONNECT_SRC_SERVICES = Object.freeze(['ollama', 'imageGen']);");
+      expect(mainSource).toContain("const LOCAL_CONNECT_SRC_SERVICES = Object.freeze(['ollama']);");
     });
 
     it('tries zonos across trusted loopback http origins', () => {

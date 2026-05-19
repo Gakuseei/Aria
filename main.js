@@ -432,7 +432,7 @@ async function resolveDevServerUrl() {
 
 // v0.2.5: AGGRESSIVE Content Security Policy
 // CRITICAL: Only allow trusted loopback service ports for renderer connections
-const LOCAL_CONNECT_SRC_SERVICES = Object.freeze(['ollama', 'imageGen']);
+const LOCAL_CONNECT_SRC_SERVICES = Object.freeze(['ollama']);
 const CSP_DIRECTIVES = [
   "default-src 'self'",
   "script-src 'self'",
@@ -780,87 +780,6 @@ app.on('activate', () => {
 // ===========================================
 
 /**
- * Test Image Generation API connection
- * v1.0 FIX: Direct URL parameter (no nested object)
- */
-ipcMain.handle('test-image-gen', async (event, url) => {
-  if (!isTrustedIpcSender(event)) {
-    return blockUntrustedIpc(event, 'test-image-gen');
-  }
-
-  try {
-    const trustedUrl = validateTrustedLocalServiceUrl('imageGen', url);
-    if (!trustedUrl) {
-      return { success: false, error: 'Image generation URL must match the configured local service endpoint' };
-    }
-    const testUrl = `${trustedUrl.origin}/sdapi/v1/options`;
-    
-    const response = await fetch(testUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      signal: AbortSignal.timeout(5000),
-    });
-    
-    if (response.ok) {
-      return {
-        success: true,
-      };
-    } else {
-      return {
-        success: false,
-        error: `API responded with status ${response.status}`,
-      };
-    }
-  } catch (error) {
-    console.error('[V1.0 ImageGen Test] Error:', error);
-    
-    let errorMessage = 'Connection failed.\n\n';
-
-    if (error.name === 'AbortError' || error.message.includes('timeout')) {
-      errorMessage += 'Timeout - The API is not responding.\n\n';
-      errorMessage += 'Check:\n• Is Stability Matrix running?\n• Is the WebUI started (Launch Button)?\n• Wait 30 seconds after starting!';
-    } else if (error.message.includes('Failed to fetch') || error.message.includes('ECONNREFUSED')) {
-      errorMessage += 'Cannot connect.\n\n';
-      errorMessage += 'Check:\n• Is Stability Matrix open?\n• Is the WebUI started?\n• Can you see the WebUI in the browser (http://127.0.0.1:7860)?';
-    } else {
-      errorMessage += error.message;
-    }
-    
-    return {
-      success: false,
-      error: errorMessage,
-    };
-  }
-});
-
-/**
- * List available Stable Diffusion models (for Flux detection).
- */
-ipcMain.handle('image-gen-models', async (event, params = {}) => {
-  if (!isTrustedIpcSender(event)) {
-    return blockUntrustedIpc(event, 'image-gen-models');
-  }
-
-  const { url = 'http://127.0.0.1:7860' } = params;
-  try {
-    const trustedUrl = validateTrustedLocalServiceUrl('imageGen', url);
-    if (!trustedUrl) {
-      return { success: false, error: 'Image generation URL must match the configured local service endpoint' };
-    }
-    const response = await fetch(`${trustedUrl.origin}/sdapi/v1/sd-models`, {
-      signal: AbortSignal.timeout(5000)
-    });
-    if (!response.ok) return { success: false, error: `Status ${response.status}` };
-    const models = await response.json();
-    return { success: true, models: models.map(m => m.title || m.model_name || '') };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-/**
  * Test Voice/TTS - CLI check with model validation
  * CRITICAL FIX: Validate both Piper executable and model JSON config
  */
@@ -951,75 +870,6 @@ ipcMain.handle('get-local-voice-models', async (event) => {
   } catch (error) {
     console.error('[Voice Models] Error:', error);
     return { success: false, error: error.message, models: [] };
-  }
-});
-
-/**
- * Generate image using local API (StabilityMatrix/AUTOMATIC1111)
- */
-ipcMain.handle('generate-image', async (event, params) => {
-  if (!isTrustedIpcSender(event)) {
-    return blockUntrustedIpc(event, 'generate-image');
-  }
-
-  const { prompt, url, width, height, steps, imageGenTier } = params;
-
-  try {
-    const trustedUrl = validateTrustedLocalServiceUrl('imageGen', url);
-    if (!trustedUrl) {
-      return { success: false, error: 'Image generation URL must match the configured local service endpoint' };
-    }
-    const isPremium = imageGenTier === 'premium';
-    const apiUrl = `${trustedUrl.origin}/sdapi/v1/txt2img`;
-    
-    // FLUX-specific settings for premium mode
-    const requestBody = {
-      prompt: prompt,
-      negative_prompt: isPremium 
-        ? 'blurry, low quality, distorted' 
-        : 'blurry, low quality, distorted, ugly, bad anatomy',
-      steps: isPremium ? (steps || 28) : (steps || 20),
-      width: width || (isPremium ? 1024 : 512),
-      height: height || (isPremium ? 1024 : 512),
-      cfg_scale: isPremium ? 3.5 : 7,
-      sampler_name: isPremium ? 'Euler' : 'Euler a',
-    };
-    
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      return {
-        success: false,
-        error: `Image generation failed (${response.status}): ${errorText}`,
-      };
-    }
-    
-    const data = await response.json();
-    
-    if (data.images && data.images.length > 0) {
-      return {
-        success: true,
-        imageBase64: `data:image/png;base64,${data.images[0]}`,
-      };
-    } else {
-      return {
-        success: false,
-        error: 'No image data returned from API',
-      };
-    }
-  } catch (error) {
-    console.error('[V5.5 ImageGen] Error:', error);
-    return {
-      success: false,
-      error: error.message,
-    };
   }
 });
 

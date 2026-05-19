@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
-import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Image as ImageIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2, Undo2 } from 'lucide-react';
+import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2, Undo2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { autoDetectAndSetModel } from '../lib/ollama';
 import { saveSession, generateSessionId, deleteSession } from '../lib/storage/sessions';
@@ -15,7 +15,6 @@ import { impersonateUser, abortImpersonateCall } from '../lib/chat/impersonate';
 import { passionManager, getTierKey, PASSION_TIERS } from '../lib/chat/passion';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { resolveProfile } from '../lib/modelProfiles';
-import { loadImageGenModule } from '../lib/loadImageGenModule';
 import TutorialModal from './tutorials/TutorialModal';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
@@ -23,7 +22,7 @@ import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
 import useStickyScroll from '../hooks/useStickyScroll';
 import downloadBlob from '../utils/downloadBlob';
-import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, IMAGE_GEN_DEFAULT_URL, VOICE_DEFAULT_URL } from '../lib/defaults';
+import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, VOICE_DEFAULT_URL } from '../lib/defaults';
 import { resolveSessionSceneMemory } from '../lib/chatRuntime';
 import CustomDropdown from './CustomDropdown';
 
@@ -409,13 +408,11 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   
   // v0.2.5 RESTORED: Feature states from localStorage
   const [userName, setUserName] = useState('User');
-  const [imageGenEnabled, setImageGenEnabled] = useState(false);
   // STEP 2 FIX: Initialize voiceEnabled as null to distinguish "not loaded" from "false"
   const [voiceEnabled, setVoiceEnabled] = useState(null);
 
   // v0.2.5 FIX: Settings come from parent (App.jsx), merged with localStorage for backward compatibility
   const [localSettings, setLocalSettings] = useState({
-    imageGenUrl: IMAGE_GEN_DEFAULT_URL,
     voiceUrl: VOICE_DEFAULT_URL,
     ollamaUrl: OLLAMA_DEFAULT_URL,
     piperPath: '',
@@ -488,11 +485,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 120) + 'px';
     }
   }, [input]);
-
-  // v0.2.5: Image Generation Modal
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [imagePrompt, setImagePrompt] = useState('');
-  const [generatingImage, setGeneratingImage] = useState(false);
 
   // v0.2.5: Tutorial Modal
   const [showTutorial, setShowTutorial] = useState(null);
@@ -654,7 +646,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
         // BLOCK 8.2: Store full settings object (including ollamaModel)
         setLocalSettings({
-          imageGenUrl: loadedSettings.imageGenUrl || IMAGE_GEN_DEFAULT_URL,
           voiceUrl: loadedSettings.voiceUrl || VOICE_DEFAULT_URL,
           ollamaUrl: loadedSettings.ollamaUrl || OLLAMA_DEFAULT_URL,
           ollamaModel: loadedSettings.ollamaModel || DEFAULT_MODEL_NAME,
@@ -666,7 +657,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         });
 
         setUserName(loadedSettings.userName || 'User');
-        setImageGenEnabled(loadedSettings.imageGenEnabled || false);
         // STEP 2 FIX: Use voiceEnabled from IPC/backend settings (explicit boolean check)
         const savedVoiceEnabled = loadedSettings.voiceEnabled === true;
         setVoiceEnabled(savedVoiceEnabled);
@@ -730,12 +720,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       if (newSettings.voiceEnabled !== undefined) {
         setVoiceEnabled(prev => newSettings.voiceEnabled !== prev ? newSettings.voiceEnabled : prev);
       }
-      if (newSettings.imageGenEnabled !== undefined) {
-        setImageGenEnabled(prev => newSettings.imageGenEnabled !== prev ? newSettings.imageGenEnabled : prev);
-      }
       setLocalSettings(prev => {
         const patch = {};
-        if (newSettings.imageGenUrl !== undefined) patch.imageGenUrl = newSettings.imageGenUrl;
         if (newSettings.modelPath !== undefined) patch.modelPath = newSettings.modelPath;
         if (newSettings.piperPath !== undefined) patch.piperPath = newSettings.piperPath;
         return Object.keys(patch).length > 0 ? { ...prev, ...patch } : prev;
@@ -962,48 +948,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   const handleCancelImpersonate = () => {
     abortImpersonateCall();
     setIsImpersonating(false);
-  };
-
-  // ============================================================================
-  // v0.2.5: IMAGE GENERATION (AUTO & MANUAL)
-  // ============================================================================
-
-  const handleManualImageGen = async () => {
-    if (!imagePrompt.trim()) return;
-
-    setGeneratingImage(true);
-    try {
-      const { generateImage } = await loadImageGenModule();
-      const base64Image = await generateImage(imagePrompt, settings.imageGenUrl, settings.imageGenTier || 'standard');
-
-      const imageMessage = {
-        role: 'assistant',
-        content: '[Image Generated]',
-        image: `data:image/png;base64,${base64Image}`,
-        timestamp: Date.now()
-      };
-
-      setMessages(prev => [...prev, imageMessage]);
-      setImagePrompt('');
-      setShowImageModal(false);
-
-    } catch (error) {
-      console.error('[BLOCK 8.1 Image Gen] ❌ Error:', error);
-      toast.error((t.chat.imageGenFailed || '').replace('{error}', error.message));
-    } finally {
-      setGeneratingImage(false);
-    }
-  };
-
-  const handleUseConversationContext = async () => {
-    try {
-      const { extractConversationContext } = await loadImageGenModule();
-      const cleanedContext = extractConversationContext(messages, character);
-      setImagePrompt(cleanedContext);
-    } catch (error) {
-      console.error('[BLOCK 8.1 Image Gen] ❌ Error:', error);
-      toast.error((t.chat.imageGenFailed || '').replace('{error}', error.message));
-    }
   };
 
   // ============================================================================
@@ -1586,20 +1530,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   };
 
   // v0.2.5: Tutorial Test Handlers
-  const handleTestImageGen = async (url) => {
-    try {
-      const result = await window.electronAPI?.testImageGen?.(url);
-      if (result?.success) {
-        toast.success(t.chat.imageGenTestSuccess);
-      } else {
-        toast.error(t.chat.imageGenTestFailed);
-      }
-    } catch (error) {
-      console.error('[Chat] Image gen test error:', error);
-      toast.error(t.chat.testError);
-    }
-  };
-
   const handleTestVoice = async (url) => {
     try {
       const result = await window.electronAPI?.testVoice?.(url);
@@ -1749,16 +1679,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           </div>
         </div>
         <div className="theme-chat-toolbar relative z-50 flex items-center gap-1.5 pointer-events-auto">
-          <button
-            onClick={() => setShowImageModal(true)}
-            className={`theme-icon-button rounded-3xl p-3 transition-all duration-200 active:scale-95 ${
-              imageGenEnabled ? 'theme-icon-button-active' : ''
-            }`}
-            data-tooltip={t.chat?.imageGeneration || 'Image Generation'}
-            aria-label={t.chat?.imageGeneration || 'Image Generation'}
-          >
-            <ImageIcon size={22} strokeWidth={1.5} />
-          </button>
           <div className="relative z-[100] pointer-events-auto voice-settings-container">
             <button
               onClick={handleVoiceSettingsClick}
@@ -2189,97 +2109,11 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         </div>
       </div>
 
-      {showImageModal && (
-        <div
-          className="theme-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={() => setShowImageModal(false)}
-        >
-          <div
-            className="theme-modal-shell max-w-md w-full rounded-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="theme-modal-header theme-modal-divider border-b px-6 py-4">
-              <h2 className="theme-modal-title text-xl font-bold">{t.chat.generateImage}</h2>
-              <p className="theme-modal-subtitle mt-1 text-sm">{t.chat.customNsfwPrompt}</p>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {!imageGenEnabled ? (
-                <div className="theme-modal-danger-panel space-y-4 rounded-lg p-4">
-                  <p className="text-sm text-[var(--color-text)]">
-                    {t.chat.imageGenDisabled}
-                  </p>
-                  <button
-                    onClick={async () => {
-                      setImageGenEnabled(true);
-                      let currentSettings = {};
-                      try { currentSettings = JSON.parse(localStorage.getItem('settings') || '{}'); } catch { /* corrupted */ }
-                      currentSettings.imageGenEnabled = true;
-                      localStorage.setItem('settings', JSON.stringify(currentSettings));
-                      await window.electronAPI?.saveSettings?.(currentSettings);
-                    }}
-                    className="theme-modal-accent-button flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 font-medium transition-all"
-                  >
-                    <ImageIcon size={16} />
-                    {t.settings.enableImageGen || 'Enable Image Generation'}
-                  </button>
-
-                  <button
-                    onClick={() => setShowTutorial('imageGen')}
-                    className="theme-button-secondary w-full rounded-lg px-4 py-2 text-sm transition-all"
-                  >
-                    {t.chat.showSetupTutorial}
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <label className="theme-label mb-2 block text-sm font-medium">{t.chat.imagePrompt}</label>
-                    <textarea
-                      value={imagePrompt}
-                      spellCheck={false}
-                      autoCorrect="off"
-                      onChange={(e) => setImagePrompt(e.target.value)}
-                      className="theme-control-lg resize-none"
-                      rows={4}
-                      placeholder={t.chat.nsfwIntimateScene}
-                    />
-                  </div>
-
-                  <button
-                    onClick={handleManualImageGen}
-                    disabled={!imagePrompt.trim() || generatingImage}
-                    className="theme-modal-accent-button w-full rounded-lg px-4 py-2 font-medium transition-all disabled:opacity-50"
-                  >
-                    {generatingImage ? t.common.loading : t.chat.generate}
-                  </button>
-
-                  <button
-                    onClick={handleUseConversationContext}
-                    className="theme-button-secondary w-full rounded-lg px-4 py-2 text-sm transition-all"
-                  >
-                    {t.chat.useConversationContext}
-                  </button>
-                </>
-              )}
-            </div>
-
-            <div className="theme-modal-footer theme-modal-divider border-t px-6 py-4">
-              <button
-                onClick={() => setShowImageModal(false)}
-                className="theme-modal-info-button w-full rounded-lg px-4 py-2 font-medium transition-all"
-              >
-                {t.common.back}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {showTutorial && (
         <TutorialModal
           type={showTutorial}
           onClose={() => setShowTutorial(null)}
-          onTest={showTutorial === 'imageGen' ? handleTestImageGen : handleTestVoice}
+          onTest={handleTestVoice}
         />
       )}
 

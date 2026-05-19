@@ -2,10 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { CONTEXT_SIZE_OPTIONS, fetchOllamaModels, getRecommendedContextSizeForModel, normalizeContextSize, testOllamaConnection } from '../lib/ollama';
 import { getModelProfile, resolveProfile } from '../lib/modelProfiles';
-import { Globe, Zap, Moon, RefreshCw, Check, X, User, Image, Volume2, HelpCircle, FolderOpen, ArrowRight } from 'lucide-react';
+import { Globe, Zap, Moon, RefreshCw, Check, X, User, Volume2, HelpCircle, FolderOpen, ArrowRight } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import SamplingModal from './SamplingModal';
-import ImageGenSetup from './tutorials/ImageGenSetup';
 import VoiceSetup from './tutorials/VoiceSetup';
 import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
@@ -743,100 +742,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
           <section className="glass rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                isGoldMode ? 'bg-amber-500/20' : 'bg-purple-500/20'
-              }`}>
-                <Image size={18} className={isGoldMode ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]' : 'text-purple-400'} />
-              </div>
-              <h2 className="text-lg font-semibold text-white">{t.settings.imageGen}</h2>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
-                <div>
-                  <span className="text-sm text-zinc-300">{t.settings.enableImageGen}</span>
-                  {!settings.imageGenEnabled && (
-                    <p className="text-xs text-rose-400 mt-0.5">{t.settings.clickOffForTutorial}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => {
-                    const newValue = !settings.imageGenEnabled;
-                    onSettingChange('imageGenEnabled', newValue);
-                  }}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                    settings.imageGenEnabled
-                      ? (isGoldMode ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30')
-                      : 'bg-zinc-700/50 text-zinc-400 border border-zinc-600/30 hover:border-purple-500/50'
-                  }`}
-                >
-                  {settings.imageGenEnabled ? 'ON' : 'OFF'}
-                </button>
-              </div>
-
-              {settings.imageGenEnabled && (
-                <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
-                  <div>
-                    <span className="text-sm text-zinc-300">{t.settings?.imageQualityTier || 'Quality Tier'}</span>
-                    <p className="text-xs theme-text-soft mt-0.5">
-                      {settings.imageGenTier === 'premium' ? (t.settings?.imageFlux || 'FLUX.1 (12GB+ VRAM)') : (t.settings?.imageSdxl || 'SDXL (4-8GB VRAM)')}
-                    </p>
-                  </div>
-                  <div className="flex bg-zinc-900/50 p-1 rounded-lg border border-white/10">
-                    <button
-                      onClick={() => onSettingChange('imageGenTier', 'standard')}
-                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                        settings.imageGenTier !== 'premium'
-                          ? 'bg-pink-500 text-white shadow-lg'
-                          : 'text-zinc-500 hover:text-zinc-300'
-                      }`}
-                    >
-                      {t.settings?.imageStandard || 'Standard'}
-                    </button>
-                    <button
-                      onClick={() => onSettingChange('imageGenTier', 'premium')}
-                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                        settings.imageGenTier === 'premium'
-                          ? 'bg-purple-600 text-white shadow-lg'
-                          : 'text-zinc-500 hover:text-zinc-300'
-                      }`}
-                    >
-                      {t.settings?.imagePremium || 'Premium'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <button
-                onClick={() => setShowTutorial('imageGen')}
-                className="w-full px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-lg text-sm text-purple-300 transition-all flex items-center justify-center gap-2"
-              >
-                <HelpCircle size={16} />
-                <span>{t.settings.openSetupTutorial}</span>
-              </button>
-
-              {settings.imageGenEnabled && (
-                <div>
-                  <label className="block text-sm font-medium theme-text-muted mb-2">
-                    {t.settings.imageGenApiUrl}
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.imageGenUrl}
-                    onChange={(e) => onSettingChange('imageGenUrl', e.target.value)}
-                    className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                    placeholder="http://127.0.0.1:7860"
-                  />
-                  <p className="text-xs theme-text-soft mt-1">
-                    {t.settings.automatic1111Endpoint}
-                  </p>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className="glass rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
                 isGoldMode ? 'bg-amber-500/20' : 'bg-cyan-500/20'
               }`}>
                 <Volume2 size={18} className={isGoldMode ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]' : 'text-cyan-400'} />
@@ -1392,15 +1297,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
           </div>
         </div>
-
-        {showTutorial === 'imageGen' && (
-          <ImageGenSetup
-            onClose={() => setShowTutorial(null)}
-            onVerified={() => {
-               onSettingChange('imageGenEnabled', true);
-            }}
-          />
-        )}
 
         {showTutorial === 'voice' && (
           <VoiceSetup

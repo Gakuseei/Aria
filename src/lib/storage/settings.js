@@ -1,4 +1,4 @@
-import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, VOICE_DEFAULT_URL, DATA_VERSION } from '../defaults.js';
+import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, DATA_VERSION } from '../defaults.js';
 import { normalizeContextSize } from '../ollama/index.js';
 import { isElectron } from '../chat/platform.js';
 
@@ -22,8 +22,6 @@ const DEFAULT_SETTINGS = {
   userName: 'User',
   userGender: 'male',
   userPronouns: 'he/him',
-  voiceEnabled: false,
-  voiceUrl: VOICE_DEFAULT_URL,
   maxResponseTokens: 256,
   suggestionModel: null,
   suggestionFallbackToChat: true

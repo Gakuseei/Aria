@@ -88,56 +88,8 @@ describe('localServiceSecurity', () => {
     });
 
     it('rejects urls with paths for base service validation', () => {
-      const settings = { voiceUrl: 'http://127.0.0.1:5000' };
-      expect(security.validateLocalServiceUrl('voice', 'http://127.0.0.1:5000/api/tts', settings)).toBeNull();
-    });
-
-    it('restricts path-bearing local service urls to explicit allowed prefixes', () => {
-      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=tmp/audio.wav', {}, allowed)?.pathname).toBe('/file=tmp/audio.wav');
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/gradio_api/file=tmp/audio.wav', {}, allowed)?.pathname).toBe('/gradio_api/file=tmp/audio.wav');
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/internal/admin/export', {}, allowed)).toBeNull();
-    });
-
-    it('rejects traversal payloads even under allowed download prefixes', () => {
-      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=../../secret.wav', {}, allowed)).toBeNull();
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/gradio_api/file=%2E%2E/%2E%2E/secret.wav', {}, allowed)).toBeNull();
-    });
-
-    it('rejects drive-relative traversal payloads under allowed download prefixes', () => {
-      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=C:../secret.wav', {}, allowed)).toBeNull();
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=C:..\\secret.wav', {}, allowed)).toBeNull();
-    });
-
-    it('allows absolute gradio file payloads under allowed download prefixes', () => {
-      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/gradio_api/file=/tmp/gradio/audio.wav', {}, allowed)?.pathname).toBe('/gradio_api/file=/tmp/gradio/audio.wav');
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=C:/Users/Alice/AppData/Local/Temp/gradio/audio.wav', {}, allowed)?.pathname).toBe('/file=C:/Users/Alice/AppData/Local/Temp/gradio/audio.wav');
-    });
-
-    it('rejects non-gradio absolute file payloads under allowed download prefixes', () => {
-      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=/etc/passwd', {}, allowed)).toBeNull();
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=C:/Windows/System32/drivers/etc/hosts', {}, allowed)).toBeNull();
-    });
-
-    it('allows percent-encoded literal percent characters in gradio file payloads', () => {
-      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=/tmp/gradio/100%25real.wav', {}, allowed)?.pathname).toBe('/file=/tmp/gradio/100%25real.wav');
-    });
-
-    it('rejects UNC and network-share payloads under allowed download prefixes', () => {
-      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=//server/share/audio.wav', {}, allowed)).toBeNull();
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=%2F%2Fserver/share/audio.wav', {}, allowed)).toBeNull();
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=%5C%5Cserver%5Cshare%5Caudio.wav', {}, allowed)).toBeNull();
-    });
-
-    it('rejects over-encoded traversal payloads under allowed download prefixes', () => {
-      const allowed = { allowPath: true, allowedPathPrefixes: ['/file=', '/gradio_api/file='] };
-      expect(security.validateLocalServiceUrl('zonos', 'http://127.0.0.1:7860/file=%2525252E%2525252E/secret.wav', {}, allowed)).toBeNull();
+      const settings = { ollamaUrl: 'http://127.0.0.1:11434' };
+      expect(security.validateLocalServiceUrl('ollama', 'http://127.0.0.1:11434/api/tags', settings)).toBeNull();
     });
   });
 
@@ -167,15 +119,6 @@ describe('localServiceSecurity', () => {
       ]);
     });
 
-    it('keeps configured service ports specific instead of trusting any loopback port', () => {
-      const settings = { voiceUrl: 'http://127.0.0.1:9999' };
-      expect(security.getTrustedLoopbackConnectSrcOriginsForService('voice', settings)).toEqual([
-        'http://localhost:9999',
-        'http://127.0.0.1:9999',
-        'ws://localhost:9999',
-        'ws://127.0.0.1:9999',
-      ]);
-    });
   });
 
   describe('getTrustedLoopbackHttpOrigins', () => {
@@ -196,19 +139,9 @@ describe('localServiceSecurity', () => {
     });
   });
 
-  describe('getTrustedLoopbackHttpOriginsForService', () => {
-    it('expands zonos defaults across loopback http aliases', () => {
-      expect(security.getTrustedLoopbackHttpOriginsForService('zonos', {})).toEqual([
-        'http://localhost:7860',
-        'http://127.0.0.1:7860',
-        'http://[::1]:7860',
-      ]);
-    });
-  });
-
   describe('main-process regressions', () => {
     it('imports the shared loopback helpers into main.js', () => {
-      expect(mainSource).toMatch(/const \{[\s\S]*?CONTROL_CHAR_REGEX[\s\S]*?getTrustedLoopbackConnectSrcOriginsForService[\s\S]*?getTrustedLoopbackHttpOriginsForService[\s\S]*?\} = require\('\.\/lib\/localServiceSecurity'\);/);
+      expect(mainSource).toMatch(/const \{[\s\S]*?getTrustedLoopbackConnectSrcOriginsForService[\s\S]*?\} = require\('\.\/lib\/localServiceSecurity'\);/);
     });
 
     it('tracks the resolved dev server origin instead of trusting every loopback alias', () => {
@@ -222,27 +155,6 @@ describe('localServiceSecurity', () => {
       expect(mainSource).toContain("const LOCAL_CONNECT_SRC_SERVICES = Object.freeze(['ollama']);");
     });
 
-    it('tries zonos across trusted loopback http origins', () => {
-      expect(mainSource).toContain("const zonosOrigins = getTrustedLoopbackHttpOriginsForService('zonos', loadSettingsSync());");
-      expect(mainSource).toContain('for (const baseUrl of zonosOrigins)');
-    });
-
-    it('accepts zonos audio downloads from alias-equivalent trusted loopback origins', () => {
-      expect(mainSource).toContain("validateTrustedLocalServiceUrl('zonos', audioUrl, {");
-      expect(mainSource).toContain('extraUrls: [baseUrl]');
-    });
-
-    it('restricts zonos audio downloads to explicit file path prefixes', () => {
-      expect(mainSource).toContain("allowedPathPrefixes: ['/file=', '/gradio_api/file=']");
-    });
-
-    it('uses bounded timeouts for zonos loopback requests', () => {
-      expect(mainSource).toMatch(/const response = await fetch\(callUrl, \{[\s\S]*?signal: AbortSignal\.timeout\(10000\)/);
-      expect(mainSource).toMatch(/const responseFallback = await fetch\(`\$\{baseUrl\}\/call\/generate_audio`, \{[\s\S]*?signal: AbortSignal\.timeout\(10000\)/);
-      expect(mainSource).toMatch(/const pollResponse = await fetch\(pollUrl, \{[\s\S]*?signal: AbortSignal\.timeout\(5000\)/);
-      expect(mainSource).toMatch(/const audioResponse = await fetch\(trustedAudioUrl\.toString\(\), \{[\s\S]*?signal: AbortSignal\.timeout\(10000\)/);
-    });
-
     it('keeps packaged file-build connect-src on explicit browser-valid default loopback ports', () => {
       [
         'http://localhost:*',
@@ -253,13 +165,10 @@ describe('localServiceSecurity', () => {
         'ws://[::1]:*',
         'http://[::1]:11434',
         'ws://[::1]:11434',
-        'http://[::1]:7860',
-        'ws://[::1]:7860',
       ].forEach((snippet) => {
         expect(indexSource).not.toContain(snippet);
       });
       expect(indexSource).toContain('http://127.0.0.1:11434');
-      expect(indexSource).toContain('http://127.0.0.1:7860');
     });
 
     it('does not leave generic loopback connect-src wildcards in main.js', () => {

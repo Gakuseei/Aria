@@ -731,12 +731,6 @@ export default function DebugConsole({
                       <span className="text-zinc-500">{t.debugConsole.language}</span>
                       <span className="font-mono text-blue-300">{settings?.preferredLanguage || 'en'}</span>
                     </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-zinc-500">{t.debugConsole.voiceTts}</span>
-                      <span className={`font-mono ${settings?.voiceEnabled ? 'text-emerald-300' : 'text-zinc-400'}`}>
-                        {settings?.voiceEnabled ? t.debugConsole.on : t.debugConsole.off}
-                      </span>
-                    </div>
                   </div>
                 </div>
               </div>

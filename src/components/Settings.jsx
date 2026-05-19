@@ -2,10 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { CONTEXT_SIZE_OPTIONS, fetchOllamaModels, getRecommendedContextSizeForModel, normalizeContextSize, testOllamaConnection } from '../lib/ollama';
 import { getModelProfile, resolveProfile } from '../lib/modelProfiles';
-import { Globe, Zap, Moon, RefreshCw, Check, X, User, Volume2, HelpCircle, FolderOpen, ArrowRight } from 'lucide-react';
+import { Globe, Zap, Moon, RefreshCw, Check, X, User, ArrowRight } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import SamplingModal from './SamplingModal';
-import VoiceSetup from './tutorials/VoiceSetup';
 import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
 
@@ -191,8 +190,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   const [loadingModels, setLoadingModels] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState(null);
-  const [showTutorial, setShowTutorial] = useState(null);
-  const [availableVoiceModels, setAvailableVoiceModels] = useState([]);
   const [samplingModalOpen, setSamplingModalOpen] = useState(false);
   const [showSuggestionSamplingModal, setShowSuggestionSamplingModal] = useState(false);
   const [installedTags, setInstalledTags] = useState([]);
@@ -294,31 +291,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
   useEffect(() => {
     localStorage.setItem('settings', JSON.stringify(settings));
   }, [settings]);
-
-  useEffect(() => {
-    const cleanup = window.electronAPI?.onVoiceStatusChanged?.((newValue) => {
-      if (settingsRef.current.voiceEnabled !== newValue) {
-        const updatedSettings = { ...settingsRef.current, voiceEnabled: newValue };
-        localStorage.setItem('settings', JSON.stringify(updatedSettings));
-        onSettingChangeRef.current('voiceEnabled', newValue);
-      }
-    });
-    return () => { if (typeof cleanup === 'function') cleanup(); };
-  }, []);
-
-  useEffect(() => {
-    const loadVoiceModels = async () => {
-      try {
-        const result = await window.electronAPI?.getLocalVoiceModels?.();
-        if (result?.success && result?.models) {
-          setAvailableVoiceModels(result.models);
-        }
-      } catch (error) {
-        console.error('[Settings] Error loading voice models:', error);
-      }
-    };
-    loadVoiceModels();
-  }, []);
 
   useEffect(() => {
     handleLoadModels();
@@ -742,238 +714,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
           <section className="glass rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                isGoldMode ? 'bg-amber-500/20' : 'bg-cyan-500/20'
-              }`}>
-                <Volume2 size={18} className={isGoldMode ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]' : 'text-cyan-400'} />
-              </div>
-              <h2 className="text-lg font-semibold text-white">{t.settings.voice}</h2>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
-                  <div>
-                    <span className="text-sm text-zinc-300">{t.settings.enableVoice}</span>
-                    {!settings.voiceEnabled && (
-                      <p className="text-xs text-zinc-400 mt-0.5">{t.settings.clickOnToConfigure}</p>
-                    )}
-                  </div>
-                  <button
-                    onClick={async () => {
-                      const newValue = !settings.voiceEnabled;
-                      const updatedSettings = { ...settings, voiceEnabled: newValue };
-                      localStorage.setItem('settings', JSON.stringify(updatedSettings));
-                      await window.electronAPI?.saveSettings?.(updatedSettings);
-                      onSettingChange('voiceEnabled', newValue);
-                    }}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                      settings.voiceEnabled
-                        ? (isGoldMode ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30')
-                        : 'bg-zinc-700/50 text-zinc-400 border border-zinc-600/30 hover:border-blue-500/50'
-                    }`}
-                  >
-                    {settings.voiceEnabled ? 'ON' : 'OFF'}
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => setShowTutorial('voice')}
-                  className="w-full px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 rounded-lg text-sm text-cyan-300 transition-all flex items-center justify-center gap-2"
-                >
-                  <HelpCircle size={16} />
-                  <span>{t.settings.openSetupTutorial}</span>
-                </button>
-
-                {settings.voiceEnabled && (
-                  <div className="flex items-center justify-between p-3 theme-card-subtle rounded-lg">
-                    <div>
-                      <span className="text-sm text-zinc-300">{t.settings?.voiceEngine || 'Voice Engine'}</span>
-                      <p className="text-xs theme-text-soft mt-0.5">
-                        {settings.voiceTier === 'premium' ? (t.settings?.voiceZonos || 'Zonos (4GB+ VRAM)') : (t.settings?.voicePiper || 'Piper TTS (CPU)')}
-                      </p>
-                    </div>
-                    <div className="flex bg-zinc-900/50 p-1 rounded-lg border border-white/10">
-                      <button
-                        onClick={() => onSettingChange('voiceTier', 'standard')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                          settings.voiceTier !== 'premium'
-                            ? 'bg-cyan-500 text-white shadow-lg'
-                            : 'text-zinc-500 hover:text-zinc-300'
-                        }`}
-                      >
-                        {t.settings?.voiceStandard || 'Standard'}
-                      </button>
-                      <button
-                        onClick={() => onSettingChange('voiceTier', 'premium')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                          settings.voiceTier === 'premium'
-                            ? 'bg-amber-500 text-white shadow-lg'
-                            : 'text-zinc-500 hover:text-zinc-300'
-                        }`}
-                      >
-                        {t.settings?.voicePremium || 'Premium'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {settings.voiceEnabled && settings.voiceTier !== 'premium' && (
-                <div className="mt-4 space-y-4 p-4 bg-zinc-900/50 rounded-lg border border-white/5">
-                  <div>
-                    <label className="block text-xs text-zinc-400 mb-1">
-                      {t.settings.piperExePath}
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={settings.piperPath || ''}
-                        onChange={(e) => {
-                          onSettingChange('piperPath', e.target.value);
-                          const updatedSettings = { ...settings, piperPath: e.target.value };
-                          window.electronAPI.saveSettings(updatedSettings);
-                        }}
-                        placeholder="e.g. C:\Piper\piper.exe"
-                        className="flex-1 bg-black border border-white/10 rounded px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                      />
-                      <button
-                        onClick={async () => {
-                          const path = await window.electronAPI.selectFile([
-                            { name: 'Executables', extensions: ['exe'] }
-                          ]);
-                          if (path) {
-                            onSettingChange('piperPath', path);
-                            const updatedSettings = { ...settings, piperPath: path };
-                            await window.electronAPI.saveSettings(updatedSettings);
-                          }
-                        }}
-                        className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-white/10 rounded transition-all"
-                        aria-label={t.settings.browseForPiper}
-                        data-tooltip={t.settings.browseForPiper}
-                      >
-                        <FolderOpen size={16} className="text-zinc-400" />
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-zinc-400 mb-1">
-                      {t.settings.voiceModelPath}
-                    </label>
-                    <CustomDropdown
-                      value={settings.modelPath || ''}
-                      onChange={(e) => {
-                        const selectedPath = e.target.value;
-                        onSettingChange('modelPath', selectedPath);
-                        const updatedSettings = { ...settings, modelPath: selectedPath };
-                        window.electronAPI.saveSettings(updatedSettings);
-                      }}
-                      options={[
-                        ...availableVoiceModels.map(model => ({
-                          value: model.path,
-                          label: model.name
-                        })),
-                        { value: '__browse__', label: 'Browse...' }
-                      ]}
-                      className="w-full"
-                    />
-                        {settings.modelPath === '__browse__' && (
-                      <button
-                        onClick={async () => {
-                          const path = await window.electronAPI.selectFile([
-                            { name: 'ONNX Model', extensions: ['onnx'] }
-                          ]);
-                          if (path) {
-                            onSettingChange('modelPath', path);
-                            const updatedSettings = { ...settings, modelPath: path };
-                            await window.electronAPI.saveSettings(updatedSettings);
-                          }
-                        }}
-                        className="mt-2 w-full px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-white/10 rounded transition-all text-sm text-zinc-300"
-                      >
-                        <FolderOpen size={16} className="inline mr-2" />
-                        {t.settings.selectModelFile}
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="text-xs text-rose-400/80">
-                    {t.settings.requiredPaths}
-                  </div>
-                  <button
-                    onClick={async () => {
-                      if (!settings.piperPath || !settings.modelPath) {
-                        alert('❌ ' + t.settings.requiredPaths);
-                        return;
-                      }
-
-                      try {
-                        const result = await window.electronAPI.generateSpeech({
-                          text: 'Piper configuration successful',
-                          piperPath: settings.piperPath,
-                          modelPath: settings.modelPath
-                        });
-
-                        if (result?.success && result?.audioData) {
-                          const audio = new Audio(result.audioData);
-                          audio.volume = settings.voiceVolume ?? 1.0;
-                          await audio.play();
-                          alert('✅ ' + t.settings.voiceTestSuccessAlert);
-                        } else {
-                          alert('❌ ' + t.settings.voiceTestFailedAlert + '\n\n' + (result?.error || t.settings.unknownError));
-                        }
-                      } catch (error) {
-                        alert('❌ ' + t.settings.voiceTestFailedAlert + '\n\n' + error.message);
-                      }
-                    }}
-                    className="w-full px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-sm text-blue-300 transition-all"
-                  >
-                    {t.settings.testPiperConfig}
-                  </button>
-                </div>
-              )}
-
-              {settings.voiceEnabled && settings.voiceTier === 'premium' && (
-                <div className="mt-4 space-y-4 p-4 bg-gradient-to-br from-amber-500/10 to-orange-500/5 rounded-lg border border-amber-500/30">
-                  <div className="flex items-center gap-2 text-amber-300 font-bold">
-                    <span>✨</span>
-                    <span>{t.tutorials?.voice?.tierPremium || 'Premium (Zonos)'}</span>
-                  </div>
-                  <div className="text-xs text-zinc-400 space-y-1">
-                    <p>{t.tutorials?.voice?.zonosStep3Desc || 'Make sure Zonos is running on localhost:7860'}</p>
-                    <p className="text-amber-400/80">{t.tutorials?.voice?.zonosNote || 'Note: First run downloads ~4GB models.'}</p>
-                  </div>
-                  <button
-                    onClick={async () => {
-                      try {
-                        const result = await window.electronAPI.generateSpeech({
-                          text: 'Zonos voice engine test successful',
-                          voiceTier: 'premium'
-                        });
-
-                        if (result?.success && result?.audioData) {
-                          const audio = new Audio(result.audioData);
-                          audio.volume = settings.voiceVolume ?? 1.0;
-                          await audio.play();
-                          alert('✅ ' + t.settings.zonosTestSuccessAlert);
-                        } else {
-                          alert('❌ ' + t.settings.zonosTestFailedAlert + '\n\n' + (result?.error || t.settings.unknownError) + '\n\n' + t.settings.makeSureZonosRunning);
-                        }
-                      } catch (error) {
-                        alert('❌ ' + t.settings.zonosTestFailedAlert + '\n\n' + error.message);
-                      }
-                    }}
-                    className="w-full px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-sm text-amber-300 transition-all"
-                  >
-                    {t.tutorials?.voice?.testVoice || 'Test Zonos Configuration'}
-                  </button>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className="glass rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
                 isGoldMode ? 'bg-amber-500/20' : 'bg-blue-500/20'
               }`}>
                 <Globe size={18} className={isGoldMode ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]' : 'text-blue-400'} />
@@ -1297,15 +1037,6 @@ export default function Settings({ settings, onSettingChange, onClose }) {
             </div>
           </div>
         </div>
-
-        {showTutorial === 'voice' && (
-          <VoiceSetup
-            onClose={() => setShowTutorial(null)}
-            onVerified={() => {
-               onSettingChange('voiceEnabled', true);
-            }}
-          />
-        )}
 
         <SamplingModal
           isOpen={samplingModalOpen}

@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
-import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, Volume2, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2, Undo2 } from 'lucide-react';
+import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2, Undo2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { autoDetectAndSetModel } from '../lib/ollama';
 import { saveSession, generateSessionId, deleteSession } from '../lib/storage/sessions';
@@ -15,16 +15,14 @@ import { impersonateUser, abortImpersonateCall } from '../lib/chat/impersonate';
 import { passionManager, getTierKey, PASSION_TIERS } from '../lib/chat/passion';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { resolveProfile } from '../lib/modelProfiles';
-import TutorialModal from './tutorials/TutorialModal';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
 import useStickyScroll from '../hooks/useStickyScroll';
 import downloadBlob from '../utils/downloadBlob';
-import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, VOICE_DEFAULT_URL } from '../lib/defaults';
+import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from '../lib/defaults';
 import { resolveSessionSceneMemory } from '../lib/chatRuntime';
-import CustomDropdown from './CustomDropdown';
 
 // ============================================================================
 // TEXT FORMATTING - BLOCK 4 FIX: Apostroph-Bug behoben
@@ -224,8 +222,6 @@ const MessageBubble = memo(function MessageBubble({
   character,
   userName,
   onCopy,
-  onSpeak,
-  voiceEnabled,
   fontSize = 'base',
   isGoldMode = false,
   t = {},
@@ -351,16 +347,6 @@ const MessageBubble = memo(function MessageBubble({
                   <PenLine size={14} strokeWidth={1.5} />
                 </button>
               )}
-              {!isUser && voiceEnabled === true && onSpeak && (
-                <button
-                  onClick={() => onSpeak(message.content || '')}
-                  className="theme-message-action theme-message-action-info rounded-lg p-1.5 transition-all duration-200"
-                  aria-label={t.chat?.playAudio || 'Play Audio'}
-                  data-tooltip={t.chat?.playAudio || 'Play Audio'}
-                >
-                  <Volume2 size={14} strokeWidth={1.5} />
-                </button>
-              )}
               <button
                 onClick={() => onCopy(message.content || '')}
                 className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
@@ -408,36 +394,18 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   
   // v0.2.5 RESTORED: Feature states from localStorage
   const [userName, setUserName] = useState('User');
-  // STEP 2 FIX: Initialize voiceEnabled as null to distinguish "not loaded" from "false"
-  const [voiceEnabled, setVoiceEnabled] = useState(null);
 
   // v0.2.5 FIX: Settings come from parent (App.jsx), merged with localStorage for backward compatibility
   const [localSettings, setLocalSettings] = useState({
-    voiceUrl: VOICE_DEFAULT_URL,
     ollamaUrl: OLLAMA_DEFAULT_URL,
-    piperPath: '',
-    modelPath: '',
-    voiceVolume: 1.0,
     themeMode: 'dark',
     oledMode: false
   });
-  
+
   // Merge parent settings with local settings (memoized to prevent useEffect churn)
   const settings = useMemo(() => ({ ...localSettings, ...parentSettings }), [localSettings, parentSettings]);
 
-  // Voice Settings Popover State
-  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
-  const [availableVoiceModels, setAvailableVoiceModels] = useState([]);
-  const [autoReadEnabled, setAutoReadEnabled] = useState(() => {
-    const saved = localStorage.getItem('autoReadEnabled');
-    try { return saved !== null ? JSON.parse(saved) : true; } catch { return true; }
-  });
 
-  // Persist autoReadEnabled
-  useEffect(() => {
-    localStorage.setItem('autoReadEnabled', JSON.stringify(autoReadEnabled));
-  }, [autoReadEnabled]);
-  
   // Text Zoom State
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('chatFontSize') || 'base');
 
@@ -486,15 +454,11 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     }
   }, [input]);
 
-  // v0.2.5: Tutorial Modal
-  const [showTutorial, setShowTutorial] = useState(null);
-
   const [confirmModal, setConfirmModal] = useState(null);
 
   const { scrollContainerRef, sentinelRef, isSticky, scrollToBottom, resetSticky } = useStickyScroll();
   const inputRef = useRef(null);
   const importFileRef = useRef(null);
-  const audioRef = useRef(null);
   const saveTimerRef = useRef(null);
   const passionTimerRef = useRef(null);
   const abortRef = useRef(null);
@@ -504,7 +468,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   const mountedRef = useRef(true);
   const messagesRef = useRef([]);
   const sceneMemoryRef = useRef(null);
-  const handleSpeakRef = useRef(null);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -601,19 +564,16 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       if (showChatOptions && !event.target.closest('.chat-options-container')) {
         setShowChatOptions(false);
       }
-      if (showVoiceSettings && !event.target.closest('.voice-settings-container')) {
-        setShowVoiceSettings(false);
-      }
     };
 
-    if (showChatOptions || showVoiceSettings) {
+    if (showChatOptions) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showChatOptions, showVoiceSettings]);
+  }, [showChatOptions]);
 
   useEffect(() => {
     if (!showPassionPopover) return;
@@ -646,20 +606,13 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
         // BLOCK 8.2: Store full settings object (including ollamaModel)
         setLocalSettings({
-          voiceUrl: loadedSettings.voiceUrl || VOICE_DEFAULT_URL,
           ollamaUrl: loadedSettings.ollamaUrl || OLLAMA_DEFAULT_URL,
           ollamaModel: loadedSettings.ollamaModel || DEFAULT_MODEL_NAME,
-          piperPath: loadedSettings.piperPath || '',
-          modelPath: loadedSettings.modelPath || '',
-          voiceVolume: loadedSettings.voiceVolume ?? 1.0,
           themeMode: loadedSettings.themeMode || (loadedSettings.oledMode ? 'oled' : 'dark'),
           oledMode: loadedSettings.oledMode || false
         });
 
         setUserName(loadedSettings.userName || 'User');
-        // STEP 2 FIX: Use voiceEnabled from IPC/backend settings (explicit boolean check)
-        const savedVoiceEnabled = loadedSettings.voiceEnabled === true;
-        setVoiceEnabled(savedVoiceEnabled);
         // Load font size preference
         const savedFontSize = localStorage.getItem('chatFontSize') || 'base';
         setFontSize(savedFontSize);
@@ -667,65 +620,21 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         // v0.2.5: AUTO-DETECT MODEL WHEN OPENING CHAT
         const autoDetectResult = await autoDetectAndSetModel();
 
-        if (autoDetectResult.success) {
-        } else {
-          console.warn('[v8.2 ChatInterface] ⚠️ No models found. User needs to install a model.');
+        if (!autoDetectResult.success) {
+          console.warn('[v8.2 ChatInterface] No models found. User needs to install a model.');
         }
 
       } catch (error) {
-        console.error('[v8.1 ChatInterface] ❌ Error loading settings:', error);
+        console.error('[v8.1 ChatInterface] Error loading settings:', error);
       }
     };
 
     loadLocalSettings();
-    
-    // FIX 3: Load voice models on mount
-    const loadVoiceModels = async () => {
-      try {
-        const result = await window.electronAPI?.getLocalVoiceModels?.();
-        if (result?.success && result?.models) {
-          setAvailableVoiceModels(result.models);
-        }
-      } catch (error) {
-        console.error('[ChatInterface] Error loading voice models:', error);
-      }
-    };
-    loadVoiceModels();
   }, []);
 
-  // ============================================================================
-  // FIX 3: IPC-BASED VOICE TOGGLE SYNCHRONISATION
-  // ============================================================================
-
-  useEffect(() => {
-    const cleanup = window.electronAPI?.onVoiceStatusChanged?.((newValue) => {
-      setVoiceEnabled(prev => {
-        if (prev !== newValue) {
-          setLocalSettings(prevSettings => {
-            const updated = { ...prevSettings, voiceEnabled: newValue };
-            localStorage.setItem('settings', JSON.stringify(updated));
-            return updated;
-          });
-          return newValue;
-        }
-        return prev;
-      });
-    });
-    return () => { if (typeof cleanup === 'function') cleanup(); };
-  }, []);
-
-  // FIX 3: Settings updated listener (sync from backend)
+  // Settings updated listener (sync from backend)
   useEffect(() => {
     const cleanup = window.electronAPI?.onSettingsUpdated?.((newSettings) => {
-      if (newSettings.voiceEnabled !== undefined) {
-        setVoiceEnabled(prev => newSettings.voiceEnabled !== prev ? newSettings.voiceEnabled : prev);
-      }
-      setLocalSettings(prev => {
-        const patch = {};
-        if (newSettings.modelPath !== undefined) patch.modelPath = newSettings.modelPath;
-        if (newSettings.piperPath !== undefined) patch.piperPath = newSettings.piperPath;
-        return Object.keys(patch).length > 0 ? { ...prev, ...patch } : prev;
-      });
       localStorage.setItem('settings', JSON.stringify(newSettings));
     });
     return () => { if (typeof cleanup === 'function') cleanup(); };
@@ -1050,9 +959,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         }, 300);
       }
 
-      if (voiceEnabled === true && autoReadEnabled && typeof handleSpeakRef.current === 'function') {
-        handleSpeakRef.current(safeResponse);
-      }
     } catch (error) {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       if (isForegroundRequestObsolete(activeAbortHandle)) return;
@@ -1086,8 +992,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     isUnchainedMode,
     settings,
     passionLevel,
-    voiceEnabled,
-    autoReadEnabled,
     t,
   ]);
 
@@ -1192,72 +1096,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       el.style.height = Math.min(el.scrollHeight, 120) + 'px';
     });
   }, [lastUserIdx, isLoading, isStreaming, isImpersonating, messages, sessionId, clearSuggestionsState]);
-
-  // ============================================================================
-  // VOICE/TTS PLAYBACK - RENDERER PROCESS (Windows Volume Mixer Support)
-  // ============================================================================
-
-  const playAudio = useCallback(async (audioData) => {
-    try {
-      // Stop current audio if playing
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-
-      // Create new audio instance
-      audioRef.current = new Audio(audioData);
-      audioRef.current.volume = settings.voiceVolume ?? 1.0;
-      await audioRef.current.play();
-    } catch (err) {
-      console.error("Audio Playback Error:", err);
-    }
-  }, [settings.voiceVolume]);
-
-  // Live volume update
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = settings.voiceVolume ?? 1.0;
-    }
-  }, [settings.voiceVolume]);
-
-  // Immediate stop when voice is disabled
-  useEffect(() => {
-    if (voiceEnabled !== true && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-  }, [voiceEnabled]);
-
-  // Cleanup audio on unmount
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    };
-  }, []);
-
-  const handleSpeak = useCallback(async (text) => {
-    if (!settings.piperPath || !settings.modelPath) return;
-
-    try {
-      const result = await window.electronAPI.generateSpeech({
-        text: text.replace(/\*/g, '').replace(/"/g, ''),
-        piperPath: settings.piperPath,
-        modelPath: settings.modelPath,
-        voiceTier: settings.voiceTier || 'standard'
-      });
-
-      if (result?.success && result?.audioData) {
-        await playAudio(result.audioData);
-      }
-    } catch (err) {
-      console.error("Audio Generation Error:", err);
-    }
-  }, [playAudio, settings.modelPath, settings.piperPath, settings.voiceTier]);
-
-  useEffect(() => {
-    handleSpeakRef.current = handleSpeak;
-  }, [handleSpeak]);
 
   // ============================================================================
   // CHAT ACTIONS WITH HARD RESET
@@ -1524,26 +1362,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   }, [t.chat]);
 
 
-  // Voice Settings Toggle Handler
-  const handleVoiceSettingsClick = () => {
-    setShowVoiceSettings(!showVoiceSettings);
-  };
-
-  // v0.2.5: Tutorial Test Handlers
-  const handleTestVoice = async (url) => {
-    try {
-      const result = await window.electronAPI?.testVoice?.(url);
-      if (result?.success) {
-        toast.success(t.chat.voiceTestSuccess);
-      } else {
-        toast.error(t.chat.voiceTestFailed);
-      }
-    } catch (error) {
-      console.error('[Chat] Voice test error:', error);
-      toast.error(t.chat.testError);
-    }
-  };
-
   // ============================================================================
   // RENDER
   // ============================================================================
@@ -1679,119 +1497,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           </div>
         </div>
         <div className="theme-chat-toolbar relative z-50 flex items-center gap-1.5 pointer-events-auto">
-          <div className="relative z-[100] pointer-events-auto voice-settings-container">
-            <button
-              onClick={handleVoiceSettingsClick}
-              className={`theme-icon-button rounded-3xl p-3 transition-all duration-200 active:scale-95 ${
-                voiceEnabled === true ? 'theme-icon-button-info' : ''
-              }`}
-              data-tooltip={t.chat?.voiceSettings?.title || 'Voice Settings'}
-              aria-label={t.chat?.voiceSettings?.title || 'Voice Settings'}
-            >
-              <Volume2 size={22} strokeWidth={1.5} />
-            </button>
-            {showVoiceSettings && (
-              <div className="theme-chat-flyout absolute top-12 right-0 z-[200] flex w-64 flex-col rounded-lg p-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <span className="theme-popover-heading text-sm font-medium">{t.chat.voiceSettings.enableVoice}</span>
-                      <p className="theme-popover-label mt-0.5 text-xs">{t.chat.voiceSettings.masterToggle}</p>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        // STEP 2 FIX: Handle null state (not loaded yet)
-                        const currentValue = voiceEnabled === null ? false : voiceEnabled;
-                        const newValue = !currentValue;
-                        // STEP 2 FIX: Save immediately via IPC (broadcasts automatically)
-                        const updatedSettings = { ...settings, voiceEnabled: newValue };
-                        localStorage.setItem('settings', JSON.stringify(updatedSettings));
-                        await window.electronAPI.saveSettings(updatedSettings);
-                        
-                        // Optimistic update
-                        setVoiceEnabled(newValue);
-                        setLocalSettings(updatedSettings);
-                      }}
-                      className={`theme-toggle-pill rounded-lg px-3 py-1 text-xs font-medium transition-all ${
-                        voiceEnabled === true ? 'is-info-active' : ''
-                      }`}
-                    >
-                      {voiceEnabled === true ? 'ON' : 'OFF'}
-                    </button>
-                  </div>
-                  {voiceEnabled === true && (
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <span className="theme-popover-heading text-sm font-medium">{t.chat.voiceSettings.autoRead}</span>
-                        <p className="theme-popover-label mt-0.5 text-xs">{t.chat.voiceSettings.autoReadDesc}</p>
-                      </div>
-                      <button
-                        onClick={() => setAutoReadEnabled(!autoReadEnabled)}
-                        className={`theme-toggle-pill rounded-lg px-3 py-1 text-xs font-medium transition-all ${
-                          autoReadEnabled ? 'is-info-active' : ''
-                        }`}
-                      >
-                        {autoReadEnabled ? 'ON' : 'OFF'}
-                      </button>
-                    </div>
-                  )}
-                  {voiceEnabled === true && (
-                    <div>
-                      <label className="theme-label mb-1 block text-xs">{t.chat.voiceSettings.voiceModel}</label>
-                      <CustomDropdown
-                        value={settings.modelPath || ''}
-                        onChange={async (e) => {
-                          const selectedPath = e.target.value;
-                          if (selectedPath === '__browse__') {
-                            const path = await window.electronAPI.selectFile([
-                              { name: 'ONNX Model', extensions: ['onnx'] }
-                            ]);
-                            if (path) {
-                              const newSettings = { ...settings, modelPath: path };
-                              setLocalSettings(newSettings);
-                              await window.electronAPI.saveSettings(newSettings);
-                            }
-                          } else {
-                            const newSettings = { ...settings, modelPath: selectedPath };
-                            setLocalSettings(newSettings);
-                            await window.electronAPI.saveSettings(newSettings);
-                          }
-                        }}
-                        options={[
-                          { value: '', label: t.chat.voiceSettings.selectModel },
-                          ...availableVoiceModels.map(model => ({ value: model.path, label: model.name })),
-                          { value: '__browse__', label: t.chat.voiceSettings.browse }
-                        ]}
-                      />
-                    </div>
-                  )}
-                  {voiceEnabled === true && (
-                    <div>
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="theme-popover-heading text-sm font-medium">{t.chat.voiceSettings.volume}</span>
-                        <span className="theme-info-badge rounded px-2 py-0.5 text-xs font-mono">{Math.round((settings.voiceVolume ?? 1.0) * 100)}%</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.05"
-                        value={settings.voiceVolume ?? 1.0}
-                        onChange={async (e) => {
-                          const newVol = parseFloat(e.target.value);
-                          const newSettings = { ...settings, voiceVolume: newVol };
-                          setLocalSettings(newSettings);
-                          await window.electronAPI.saveSettings(newSettings);
-                        }}
-                        className="theme-slider-info w-full cursor-pointer appearance-none rounded-lg bg-[color:var(--color-surface-muted)]"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
           <button
             onClick={() => {
               const msg = isUnchainedMode
@@ -1942,8 +1647,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 character={character}
                 userName={userName}
                 onCopy={copyMessageToClipboard}
-                onSpeak={handleSpeak}
-                voiceEnabled={voiceEnabled}
                 fontSize={fontSize}
                 isGoldMode={isGoldMode}
                 t={t}
@@ -2108,14 +1811,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             </button>
         </div>
       </div>
-
-      {showTutorial && (
-        <TutorialModal
-          type={showTutorial}
-          onClose={() => setShowTutorial(null)}
-          onTest={handleTestVoice}
-        />
-      )}
 
       {showBioModal && (
         <div

@@ -53,12 +53,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Open external URL
   openExternal: (url) => ipcRenderer.send('open-external', url),
   
-  // Open Tools Folder
-  openToolsFolder: () => ipcRenderer.send('open-tools-folder'),
-  
-  // Run Tool Script (True One-Click)
-  runToolScript: (scriptName) => ipcRenderer.send('run-tool-script', scriptName),
-  
   // AI Communication
   aiChat: (params) => ipcRenderer.invoke('ai-chat', params),
   abortAiChat: (tag) => ipcRenderer.invoke('abort-ai-chat', { tag }),
@@ -88,30 +82,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Settings
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   loadSettings: () => ipcRenderer.invoke('load-settings'),
-  
-  // Voice status change listener
-  onVoiceStatusChanged: createIpcListener('voice-status-changed'),
 
-  // Settings updated listener (used by ChatInterface for voice sync)
+  // Settings updated listener
   onSettingsUpdated: createIpcListener('settings-updated'),
-
-  // v0.2.5: Multimedia IPC handlers
-  testVoice: (params) => ipcRenderer.invoke('test-voice', params),
-  generateSpeech: (params) => ipcRenderer.invoke('generate-speech', params),
-
-  // File dialog
-  selectFile: (filters) => ipcRenderer.invoke('open-file-dialog', filters),
-
-  // Voice model download
-  downloadVoiceModel: (params) => ipcRenderer.invoke('download-voice-model', params),
-  
-  // Get local voice models
-  getLocalVoiceModels: () => ipcRenderer.invoke('get-local-voice-models'),
-  
-  // ZONOS AUTO INSTALLER - True One-Click
-  zonosAutoInstall: () => ipcRenderer.invoke('zonos-auto-install'),
-  zonosCheckStatus: () => ipcRenderer.invoke('zonos-check-status'),
-  zonosIsInstalled: () => ipcRenderer.invoke('zonos-is-installed'),
-  zonosCancelInstall: () => ipcRenderer.invoke('zonos-cancel-install'),
-  zonosGetProgress: () => ipcRenderer.invoke('zonos-get-progress'),
 });

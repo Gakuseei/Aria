@@ -31,7 +31,6 @@
 - 🔐 **100% Offline** — Runs on [Ollama](https://ollama.ai). Nothing leaves your device. Ever.
 - 🎭 **Custom Characters** — Build your own with passion speed control, or use the 5 built-in personas.
 - 🌍 **13 Languages** — EN, DE, ES, ZH, FR, IT, PT, RU, JA, KO, AR, HI, TR
-- 🎙️ **Voice** — Piper TTS + Zonos voice synthesis.
 
 <br/>
 
@@ -41,7 +40,7 @@
 
 ## Status
 
-Aria is in active development. First public release coming soon — everything is built in. Ollama installation, model selection, voice setup. One click, no terminal.
+Aria is in active development. First public release coming soon — everything is built in. Ollama installation and model selection. One click, no terminal.
 
 Star the repo to get notified when v1.0 drops.
 

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Folder, FolderOpen, Heart, Minus, Moon, Plus, Search, Settings as SettingsIcon, Sparkles, Star, Trash2, Upload, X } from 'lucide-react';
 import characters from '../config/characters';
 import { version as appVersion } from '../../package.json';
@@ -250,6 +250,10 @@ function getFolderIcon(iconId, isOpen = false) {
   return FOLDER_ICON_OPTIONS.find((option) => option.id === iconId)?.Icon || FolderOpen;
 }
 
+function resolvePersonaType(character) {
+  return character?.personaType === 'narrator' ? 'narrator' : 'character';
+}
+
 function areDropStatesEqual(currentState, nextState) {
   if (currentState === nextState) return true;
   if (!currentState || !nextState) return currentState === nextState;
@@ -274,6 +278,7 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
   const [customCharacters, setCustomCharacters] = useState([]);
   const [organizer, setOrganizer] = useState(() => normalizeOrganizerState([], null));
   const [filter, setFilter] = useState('all');
+  const [personaTab, setPersonaTab] = useState('character');
   const [search, setSearch] = useState('');
   const [dragState, setDragState] = useState(null);
   const [dropState, setDropState] = useState(null);
@@ -299,8 +304,14 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
     persistOrganizer(normalizedOrganizer);
   }, []);
 
-  const allCharacters = [...characters, ...customCharacters];
-  const characterMap = Object.fromEntries(allCharacters.map((character) => [character.id, character]));
+  const allCharacters = useMemo(
+    () => [...characters, ...customCharacters].filter((character) => resolvePersonaType(character) === personaTab),
+    [customCharacters, personaTab]
+  );
+  const characterMap = useMemo(
+    () => Object.fromEntries(allCharacters.map((character) => [character.id, character])),
+    [allCharacters]
+  );
   const searchTerm = search.trim().toLowerCase();
   const searchActive = searchTerm.length > 0;
   const cardScale = CARD_SCALE_OPTIONS[cardScaleIndex];
@@ -471,6 +482,10 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
         responseMode: normalizeResponseMode(importData.responseMode ?? importData.responseStyle, 'normal'),
         passionEnabled: importData.passionEnabled ?? true,
         passionSpeed: importData.passionSpeed || 'normal',
+        personaType: importData.personaType === 'narrator' ? 'narrator' : 'character',
+        styleBrief: importData.styleBrief || '',
+        language: importData.language || '',
+        tags: Array.isArray(importData.tags) ? importData.tags : [],
         isCustom: true,
       };
 
@@ -504,6 +519,10 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
         responseMode: normalizeResponseMode(character.responseMode ?? character.responseStyle, 'normal'),
         passionEnabled: character.passionEnabled ?? true,
         passionSpeed: character.passionSpeed || 'normal',
+        personaType: character.personaType === 'narrator' ? 'narrator' : 'character',
+        styleBrief: character.styleBrief || '',
+        language: character.language || '',
+        tags: Array.isArray(character.tags) ? character.tags : [],
         exportedAt: new Date().toISOString(),
         version: appVersion,
       };
@@ -1140,6 +1159,21 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
           </div>
 
           <div className="flex w-full flex-col gap-3 xl:w-auto xl:min-w-[620px]">
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: 'character', label: characterSelectText.tabCharacters },
+                { key: 'narrator', label: characterSelectText.tabStory },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setPersonaTab(key)}
+                  className={`rounded-full px-4 py-2 text-xs font-medium transition-colors border-2 border-transparent hover:border-rose-500 ${personaTab === key ? 'bg-rose-500/15 text-rose-200' : 'bg-white/5 text-zinc-400 hover:text-zinc-100'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
               <div className="relative flex-1">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />

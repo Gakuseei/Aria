@@ -147,6 +147,7 @@ const locale = {
     "passion": "الشغف",
     "gatekeeper": "التحكم النشط",
     "unchained": "الوضع المطلق",
+    "modeNarratorIndicator": "وضع السرد",
     "passionSurface": "Surface",
     "passionAware": "Aware",
     "passionVivid": "Vivid",
@@ -268,6 +269,8 @@ const locale = {
     "aiPowered": "مدعوم بالذكاء الاصطناعي",
     "filterNsfw": "NSFW",
     "filterSfw": "SFW",
+    "tabCharacters": "الشخصيات",
+    "tabStory": "الرواة",
     "importedCharacter": "شخصية مستوردة",
     "importedDescription": "شخصية مستوردة",
     "searchPlaceholder": "ابحث في كل الشخصيات...",
@@ -576,7 +579,18 @@ const locale = {
     "allCharacters": "جميع الشخصيات",
     "deleteAll": "حذف الكل",
     "deleteAllConfirm": "حذف جميع الجلسات ({count})؟",
-    "deleteAllConfirmFiltered": "حذف {count} جلسات مفلترة؟"
+    "deleteAllConfirmFiltered": "حذف {count} جلسات مفلترة؟",
+    "searchPlaceholder": "ابحث في الرسائل...",
+    "searchEmpty": "لا توجد نتائج.",
+    "searchHint": "جرّب كلمات مفتاحية مختلفة.",
+    "matchCount": "{count} نتيجة",
+    "matchCountZero": "لا نتائج",
+    "matchCountOne": "نتيجة واحدة",
+    "matchCountTwo": "نتيجتان",
+    "matchCountFew": "{count} نتائج",
+    "matchCountMany": "{count} نتيجة",
+    "clearSearch": "مسح البحث",
+    "searchSnippetEllipsis": "…"
   },
   "debugConsole": {
     "title": "مراقب Aria",
@@ -716,6 +730,18 @@ const locale = {
       "subtitle": "صاحبة المقهى",
       "description": "صاحبة مقهى هادئة وثاقبة النظر لديها طلبك المعتاد جاهزًا دائمًا — وتلاحظ أكثر مما تُظهر.",
       "greeting": "*ترفع نظرها من خلف الطاولة عندما يرن جرس الباب، يدها تمتد بالفعل نحو كوب* *المطر يطرق على النوافذ، المقهى دافئ وهادئ، موسيقى الجاز تطقطق بهدوء من السماعة في الزاوية* \"توقعت أنك ستأتي.\" *تبدأ بتحضير طلبهم المعتاد دون أن تسأل، حركاتها دقيقة ومتمرسة* \"أيام المطر تجلبك دائمًا.\" *تضع الكوب على الطاولة، البخار يتصاعد* *تدفع طبقًا صغيرًا بجانبه — معجنات، لا تزال دافئة* \"قبل أن تسأل — صنعت أكثر من اللازم. ليست خصيصًا لك.\" *تمسح يديها بالمريلة، تنظر إليهم من فوق نظاراتها* \"تبدو متعبًا.\" *هذا ليس سؤالاً* *تستدير لترتيب الأكواب على الرف* \"اجلس أينما تريد. المكان الركني متاح.\" *أضعف لمسة من الدفء في صوتها* \"طلبك المعتاد يبرد.\""
+    },
+    "narrator-chronicler": {
+      "name": "The Chronicler",
+      "subtitle": "راوٍ أدبي",
+      "tagline": "أدبي، كلي المعرفة.",
+      "description": "راوٍ أدبي محايد بضمير الغائب كلي المعرفة. نثر متأنٍ ومراقب يحوّل مدخلاتك إلى مشهد بدل أن يكون محادثة."
+    },
+    "narrator-noir": {
+      "name": "Noir Narrator",
+      "subtitle": "راوٍ بوليسي",
+      "tagline": "بوليسي، بصيغة الحاضر.",
+      "description": "راوٍ بوليسي قاسي الطابع. بصيغة الحاضر. جمل قصيرة تنزل كاللكمات. دخان ومطر وويسكي رخيص وعواقب."
     }
   },
   "ollamaModal": {

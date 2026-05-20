@@ -147,6 +147,7 @@ const locale = {
     "passion": "Passion",
     "gatekeeper": "Contrôle Actif",
     "unchained": "Mode Déchaîné",
+    "modeNarratorIndicator": "Mode narration",
     "passionSurface": "Surface",
     "passionAware": "Aware",
     "passionVivid": "Vivid",
@@ -268,6 +269,8 @@ const locale = {
     "aiPowered": "Propulsé par l'IA",
     "filterNsfw": "NSFW",
     "filterSfw": "SFW",
+    "tabCharacters": "Personnages",
+    "tabStory": "Narrateurs",
     "importedCharacter": "Personnage Importé",
     "importedDescription": "Un personnage importé",
     "searchPlaceholder": "Rechercher parmi toutes les personas...",
@@ -576,7 +579,14 @@ const locale = {
     "allCharacters": "Tous les personnages",
     "deleteAll": "Tout supprimer",
     "deleteAllConfirm": "Supprimer les {count} sessions ?",
-    "deleteAllConfirmFiltered": "Supprimer {count} sessions filtrées ?"
+    "deleteAllConfirmFiltered": "Supprimer {count} sessions filtrées ?",
+    "searchPlaceholder": "Rechercher dans les messages...",
+    "searchEmpty": "Aucun résultat.",
+    "searchHint": "Essayez d'autres mots-clés.",
+    "matchCount": "{count} résultats",
+    "matchCountOne": "1 résultat",
+    "clearSearch": "Effacer la recherche",
+    "searchSnippetEllipsis": "…"
   },
   "debugConsole": {
     "title": "Aria Monitor",
@@ -716,6 +726,18 @@ const locale = {
       "subtitle": "Propriétaire de Café",
       "description": "Une propriétaire de café discrète et perspicace qui a toujours votre commande prête — et remarque plus qu'elle ne le montre.",
       "greeting": "*lève les yeux de derrière le comptoir quand le carillon de la porte retentit, attrapant déjà une tasse* *la pluie tambourine contre les fenêtres, le café chaud et calme, du jazz grésillant doucement depuis l'enceinte dans le coin* \"Je savais que vous viendriez.\" *commence à préparer votre habituel sans demander, gestes précis et rodés* \"Les jours de pluie vous amènent toujours.\" *pose la tasse sur le comptoir, la vapeur s'enroule vers le haut* *glisse une petite assiette à côté — une viennoiserie, encore chaude* \"Avant que vous demandiez — j'en ai fait trop. Ce n'est pas spécifiquement pour vous.\" *essuie ses mains sur son tablier, vous regardant par-dessus ses lunettes de lecture* \"Vous avez l'air fatigué.\" *ce n'est pas une question* *se retourne pour ranger des tasses sur l'étagère* \"Asseyez-vous où vous voulez. Le coin est libre.\" *la plus légère touche de chaleur dans sa voix* \"Votre habituel va refroidir.\""
+    },
+    "narrator-chronicler": {
+      "name": "The Chronicler",
+      "subtitle": "Narrateur littéraire",
+      "tagline": "Littéraire, omniscient.",
+      "description": "Un narrateur littéraire, neutre, à la troisième personne omnisciente. Une prose mesurée et observatrice qui transforme votre entrée en une scène plutôt qu'en conversation."
+    },
+    "narrator-noir": {
+      "name": "Noir Narrator",
+      "subtitle": "Narrateur polar",
+      "tagline": "Polar, au présent.",
+      "description": "Un narrateur pulp, polar. Au présent. Des phrases courtes qui tombent comme des coups. Fumée, pluie, whisky bon marché et conséquences."
     }
   },
   "ollamaModal": {

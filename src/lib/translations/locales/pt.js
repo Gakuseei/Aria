@@ -144,6 +144,7 @@ const locale = {
     "passion": "Paixão",
     "gatekeeper": "Controle Ativo",
     "unchained": "Modo Sem Correntes",
+    "modeNarratorIndicator": "Modo narração",
     "passionSurface": "Surface",
     "passionAware": "Aware",
     "passionVivid": "Vivid",
@@ -265,6 +266,8 @@ const locale = {
     "aiPowered": "Alimentado por IA",
     "filterNsfw": "NSFW",
     "filterSfw": "SFW",
+    "tabCharacters": "Personagens",
+    "tabStory": "Narradores",
     "importedCharacter": "Personagem Importado",
     "importedDescription": "Um personagem importado",
     "searchPlaceholder": "Pesquisar em todas as personas...",
@@ -571,7 +574,14 @@ const locale = {
     "allCharacters": "Todos os personagens",
     "deleteAll": "Excluir tudo",
     "deleteAllConfirm": "Excluir todas as {count} sessões?",
-    "deleteAllConfirmFiltered": "Excluir {count} sessões filtradas?"
+    "deleteAllConfirmFiltered": "Excluir {count} sessões filtradas?",
+    "searchPlaceholder": "Buscar mensagens...",
+    "searchEmpty": "Nenhum resultado.",
+    "searchHint": "Tente outras palavras-chave.",
+    "matchCount": "{count} resultados",
+    "matchCountOne": "1 resultado",
+    "clearSearch": "Limpar busca",
+    "searchSnippetEllipsis": "…"
   },
   "debugConsole": {
     "title": "Aria Monitor",
@@ -711,6 +721,18 @@ const locale = {
       "subtitle": "Dona do Café",
       "description": "Uma dona de café tranquila e perceptiva que sempre tem seu pedido pronto — e percebe mais do que demonstra.",
       "greeting": "*levanta o olhar de trás do balcão quando o sino da porta toca, já pegando uma xícara* *a chuva bate contra as janelas, o café quente e tranquilo, jazz crepitando suavemente no alto-falante no canto* \"Sabia que ia aparecer.\" *começa a preparar o de sempre sem perguntar, movimentos precisos e praticados* \"Dias de chuva sempre te trazem.\" *coloca a xícara no balcão, vapor subindo* *desliza um pratinho ao lado — um doce, ainda quente* \"Antes que pergunte — fiz demais. Não é especificamente pra você.\" *limpa as mãos no avental, olhando por cima dos óculos de leitura* \"Você parece cansado.\" *não é uma pergunta* *se vira para arrumar xícaras na prateleira* \"Senta onde quiser. O cantinho tá livre.\" *o mais leve toque de calor na voz* \"Seu pedido tá esfriando.\""
+    },
+    "narrator-chronicler": {
+      "name": "The Chronicler",
+      "subtitle": "Narrador literário",
+      "tagline": "Literário, onisciente.",
+      "description": "Um narrador literário, neutro, em terceira pessoa onisciente. Prosa medida e observadora que transforma sua entrada em uma cena em vez de uma conversa."
+    },
+    "narrator-noir": {
+      "name": "Noir Narrator",
+      "subtitle": "Narrador noir",
+      "tagline": "Noir, no presente.",
+      "description": "Um narrador pulp e noir. Tempo presente. Frases curtas que caem como socos. Fumaça, chuva, uísque barato e consequências."
     }
   },
   "ollamaModal": {

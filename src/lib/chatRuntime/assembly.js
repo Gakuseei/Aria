@@ -85,6 +85,122 @@ function appendIntimacyContract(characterCore, runtimeState) {
   return base ? `${base}\n\n${block}` : block;
 }
 
+const NARRATOR_LANG_NAME = {
+  en: 'English', de: 'German', es: 'Spanish', zh: 'Chinese',
+  fr: 'French', it: 'Italian', pt: 'Portuguese', ru: 'Russian',
+  ja: 'Japanese', ko: 'Korean', ar: 'Arabic', hi: 'Hindi', tr: 'Turkish'
+};
+
+function readAppLanguage() {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem('language') || 'en';
+    }
+  } catch {
+    /* SSR / no-storage env */
+  }
+  return 'en';
+}
+
+function buildNarratorLateSteering(runtimeState) {
+  const { runtimeSteering, compiledRuntimeCard } = runtimeState;
+  const responseMode = runtimeSteering.responseMode ?? compiledRuntimeCard.runtimeDefaults.defaultResponseMode;
+  const { promptInstruction } = getResponseModeConfig(responseMode);
+  const depthInstruction = getDepthInstruction(runtimeSteering.passionLevel || 0, responseMode).trim();
+  const unchainedRule = runtimeSteering.unchainedMode
+    ? 'No safety hedging. Narrate physical escalation directly when the protagonist drives it.'
+    : '';
+  const assistMode = runtimeState.assistMode || 'sfw_only';
+  const modeLine = (() => {
+    if (assistMode === 'nsfw_only') return 'The scene is already explicit. Narrate it plainly without flinching.';
+    if (assistMode === 'mixed_transition') return 'Build tension and physical awareness moment by moment.';
+    return 'Keep the scene grounded in body, environment, and tone.';
+  })();
+  const language = runtimeSteering.language || readAppLanguage();
+  const languageLine = (language && language !== 'en' && NARRATOR_LANG_NAME[language])
+    ? `Respond in ${NARRATOR_LANG_NAME[language]}.`
+    : '';
+
+  return [
+    unchainedRule,
+    'Continue the scene in third person around the protagonist\'s latest action.',
+    promptInstruction,
+    modeLine,
+    depthInstruction,
+    languageLine
+  ].filter(Boolean).join('\n');
+}
+
+function assembleNarratorReply(runtimeState, targets, totalBudget, debug) {
+  const blocks = [];
+  const activeSceneFull = renderActiveScene(runtimeState.activeScene, { compact: false });
+  const activeSceneCompact = renderActiveScene(runtimeState.activeScene, { compact: true });
+  const lateSteering = clipToTokenTarget(buildNarratorLateSteering(runtimeState), targets.lateSteering);
+  let activeScene = clipStructuredSceneText(activeSceneFull, targets.activeScene, 145);
+
+  blocks.push(buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)));
+  debug.includedBlocks.push('Global Core');
+
+  blocks.push(buildPlainTextBlock('Narrator Style', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)));
+  debug.includedBlocks.push('Narrator Style');
+
+  const userIdentity = runtimeState.userIdentity || {};
+  const protagonistName = userIdentity.name || runtimeState.userName;
+  const protagonistDetails = [userIdentity.label, userIdentity.pronouns ? `pronouns: ${userIdentity.pronouns}` : '']
+    .filter(Boolean)
+    .join(', ');
+  const protagonistBlockText = protagonistDetails
+    ? `Protagonist: ${protagonistName} (${protagonistDetails})`
+    : `Protagonist: ${protagonistName}`;
+  blocks.push(buildPlainTextBlock('Protagonist', protagonistBlockText));
+  debug.includedBlocks.push('Protagonist');
+
+  if (activeScene) {
+    blocks.push(buildPlainTextBlock('Active Scene', activeScene));
+    debug.includedBlocks.push('Active Scene');
+  } else {
+    debug.droppedBlocks.push('Active Scene');
+  }
+
+  blocks.push(buildPlainTextBlock('Late Steering', lateSteering));
+  debug.includedBlocks.push('Late Steering');
+
+  let systemPrompt = blocks.filter(Boolean).join('\n\n');
+  let historyMessages = [...runtimeState.selectedRecentHistory.messages];
+  let totalTokens = estimateTokens(systemPrompt) + historyMessages.reduce((sum, message) => sum + estimateTokens(message.content), 0);
+
+  if (totalTokens > totalBudget) {
+    activeScene = clipStructuredSceneText(activeSceneCompact, 95, 120);
+    debug.droppedBlocks.push('Active Scene Support');
+    systemPrompt = [
+      buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)),
+      buildPlainTextBlock('Narrator Style', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)),
+      buildPlainTextBlock('Protagonist', protagonistBlockText),
+      activeScene ? buildPlainTextBlock('Active Scene', activeScene) : '',
+      buildPlainTextBlock('Late Steering', lateSteering)
+    ].filter(Boolean).join('\n\n');
+    totalTokens = estimateTokens(systemPrompt) + historyMessages.reduce((sum, message) => sum + estimateTokens(message.content), 0);
+  }
+
+  if (totalTokens > totalBudget) {
+    const remainingHistoryBudget = Math.max(0, totalBudget - estimateTokens(systemPrompt));
+    historyMessages = trimHistoryForBudget(historyMessages, remainingHistoryBudget);
+  }
+
+  debug.historyCountKept = historyMessages.length;
+  debug.voicePinInjected = false;
+  debug.voicePinSource = 'narrator_bypass';
+
+  const finalHistoryMessages = historyMessages.map((message) => ({ role: message.role, content: message.content }));
+
+  return {
+    profile: 'reply',
+    systemPrompt,
+    historyMessages: finalHistoryMessages,
+    debug
+  };
+}
+
 function buildReplyLateSteering(runtimeState) {
   const { runtimeSteering, compiledRuntimeCard, characterName, userName } = runtimeState;
   const responseMode = runtimeSteering.responseMode ?? compiledRuntimeCard.runtimeDefaults.defaultResponseMode;
@@ -180,6 +296,7 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
   const totalBudget = Math.max(320, runtimeState.runtimeSteering.availableContextTokens || 2048);
   const debug = {
     profile,
+    personaType: runtimeState.personaType || 'character',
     assistMode: runtimeState.assistMode || 'sfw_only',
     assistModeDebug: runtimeState.assistModeDebug || null,
     assistBudgetTier: runtimeState.runtimeSteering.assistBudgetTier || 'default',
@@ -193,7 +310,30 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     sceneMemoryUsed: Boolean(runtimeState.persistedSceneMemory)
   };
 
+  if (profile === 'impersonate' && runtimeState.personaType === 'narrator') {
+    debug.droppedBlocks.push('impersonate_narrator_skip');
+    return {
+      profile,
+      systemPrompt: '',
+      userPrompt: '',
+      assistantPrefix: '',
+      stopStrings: [],
+      sampler: null,
+      narratorSkip: true,
+      debug: {
+        ...debug,
+        historyCountKept: 0,
+        firstReply: false,
+        sentenceTarget: 0,
+        skipReason: 'narrator_persona'
+      }
+    };
+  }
+
   if (profile === 'reply') {
+    if (runtimeState.personaType === 'narrator') {
+      return assembleNarratorReply(runtimeState, targets, totalBudget, debug);
+    }
     const blocks = [];
     const activeSceneFull = renderActiveScene(runtimeState.activeScene, { compact: false });
     const activeSceneCompact = renderActiveScene(runtimeState.activeScene, { compact: true });

@@ -1,5 +1,5 @@
 export { assembleRuntimeContext } from './assembly.js';
-export { compileCharacterRuntimeCard } from './compiler.js';
+export { compileCharacterRuntimeCard, compileNarratorRuntimeCard } from './compiler.js';
 export {
   buildRuntimeState,
   extractBodyStateMutations,

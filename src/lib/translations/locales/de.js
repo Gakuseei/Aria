@@ -147,6 +147,7 @@ const locale = {
     "passion": "Leidenschaft",
     "gatekeeper": "Kontrolle aktiv",
     "unchained": "Entfesselt",
+    "modeNarratorIndicator": "Erzähler-Modus",
     "passionSurface": "Surface",
     "passionAware": "Aware",
     "passionVivid": "Vivid",
@@ -268,6 +269,8 @@ const locale = {
     "aiPowered": "KI-gestützt",
     "filterNsfw": "NSFW",
     "filterSfw": "SFW",
+    "tabCharacters": "Charaktere",
+    "tabStory": "Erzähler",
     "importedCharacter": "Importierter Charakter",
     "importedDescription": "Ein importierter Charakter",
     "searchPlaceholder": "Alle Personas durchsuchen...",
@@ -586,7 +589,14 @@ const locale = {
     "allCharacters": "Alle Charaktere",
     "deleteAll": "Alle löschen",
     "deleteAllConfirm": "Alle {count} Sitzungen löschen?",
-    "deleteAllConfirmFiltered": "{count} gefilterte Sitzungen löschen?"
+    "deleteAllConfirmFiltered": "{count} gefilterte Sitzungen löschen?",
+    "searchPlaceholder": "Nachrichten durchsuchen...",
+    "searchEmpty": "Keine Treffer.",
+    "searchHint": "Versuche andere Suchbegriffe.",
+    "matchCount": "{count} Treffer",
+    "matchCountOne": "1 Treffer",
+    "clearSearch": "Suche zurücksetzen",
+    "searchSnippetEllipsis": "…"
   },
   "debugConsole": {
     "title": "Aria Monitor",
@@ -726,6 +736,18 @@ const locale = {
       "subtitle": "Cafébesitzerin",
       "description": "Eine ruhige, aufmerksame Cafébesitzerin, die dein Übliches immer bereit hat — und mehr bemerkt, als sie zeigt.",
       "greeting": "*schaut hinter dem Tresen auf, als die Türglocke klingelt, greift schon nach einer Tasse* *Regen prasselt gegen die Fenster, das Café warm und ruhig, Jazz knistert leise aus dem Lautsprecher in der Ecke* \"Hab mir gedacht, dass du auftauchst.\" *beginnt das Übliche zuzubereiten, ohne zu fragen, Bewegungen präzise und geübt* \"Regentage bringen dich immer her.\" *stellt die Tasse auf den Tresen, Dampf steigt auf* *schiebt einen kleinen Teller daneben — ein Gebäck, noch warm* \"Bevor du fragst — ich hab zu viele gemacht. Es ist nicht speziell für dich.\" *wischt sich die Hände an der Schürze ab, schaut über ihre Lesebrille* \"Du siehst müde aus.\" *es ist keine Frage* *dreht sich um, stellt Tassen im Regal gerade* \"Setz dich, wohin du willst. Der Eckplatz ist frei.\" *der leiseste Hauch von Wärme in ihrer Stimme* \"Dein Übliches wird kalt.\""
+    },
+    "narrator-chronicler": {
+      "name": "The Chronicler",
+      "subtitle": "Literarischer Erzähler",
+      "tagline": "Literarisch, allwissend.",
+      "description": "Ein neutraler literarischer Erzähler in der dritten Person. Wohlüberlegte, beobachtende Prosa, die deine Eingabe in eine Szene verwandelt statt in ein Gespräch."
+    },
+    "narrator-noir": {
+      "name": "Noir Narrator",
+      "subtitle": "Hard-Boiled-Erzähler",
+      "tagline": "Hard-Boiled, Präsens.",
+      "description": "Ein rauer Noir-Erzähler. Präsens. Kurze Sätze, die wie Schläge sitzen. Rauch, Regen, billiger Whiskey und Konsequenzen."
     }
   },
   "ollamaModal": {

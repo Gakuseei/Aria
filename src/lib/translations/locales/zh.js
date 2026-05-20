@@ -147,6 +147,7 @@ const locale = {
     "passion": "激情",
     "gatekeeper": "门控激活",
     "unchained": "解放模式",
+    "modeNarratorIndicator": "旁白模式",
     "passionSurface": "Surface",
     "passionAware": "Aware",
     "passionVivid": "Vivid",
@@ -268,6 +269,8 @@ const locale = {
     "aiPowered": "AI驱动",
     "filterNsfw": "NSFW",
     "filterSfw": "SFW",
+    "tabCharacters": "角色",
+    "tabStory": "故事",
     "importedCharacter": "导入的角色",
     "importedDescription": "一个导入的角色",
     "searchPlaceholder": "搜索所有角色...",
@@ -574,7 +577,13 @@ const locale = {
     "allCharacters": "所有角色",
     "deleteAll": "全部删除",
     "deleteAllConfirm": "删除全部 {count} 个会话？",
-    "deleteAllConfirmFiltered": "删除 {count} 个已筛选的会话？"
+    "deleteAllConfirmFiltered": "删除 {count} 个已筛选的会话？",
+    "searchPlaceholder": "搜索消息...",
+    "searchEmpty": "无结果。",
+    "searchHint": "尝试不同的关键词。",
+    "matchCount": "{count} 条匹配",
+    "clearSearch": "清除搜索",
+    "searchSnippetEllipsis": "…"
   },
   "debugConsole": {
     "title": "Aria 监控器",
@@ -714,6 +723,18 @@ const locale = {
       "subtitle": "咖啡馆老板",
       "description": "一个安静、敏锐的咖啡馆老板，总是备好你的常点——看到的比她表现出来的多。",
       "greeting": "*门铃响起时从柜台后抬头看，手已经伸向杯子了* *雨滴敲打着窗户，咖啡馆温暖而安静，角落的音箱里轻轻播放着爵士乐* \"就知道你会来。\" *不问就开始准备他们的常点，动作精准而熟练* \"雨天总会把你带来。\" *把杯子放在柜台上，热气袅袅升起* *在旁边放了一个小盘子——一块糕点，还是热的* \"你别问——我做多了。不是特意给你的。\" *用围裙擦了擦手，透过老花镜看了他们一眼* \"你看起来很累。\" *这不是一个问题* *转身去整理架子上的杯子* \"随便坐。角落的位子空着。\" *她声音里最淡的一丝温暖* \"你的常点要凉了。\""
+    },
+    "narrator-chronicler": {
+      "name": "The Chronicler",
+      "subtitle": "文学旁白",
+      "tagline": "文学性、全知。",
+      "description": "中立的文学第三人称全知旁白。克制、富有观察力的散文，把你的输入变成一个场景，而不是一段对话。"
+    },
+    "narrator-noir": {
+      "name": "Noir Narrator",
+      "subtitle": "黑色旁白",
+      "tagline": "黑色硬派、现在式。",
+      "description": "硬派黑色旁白。现在式。像拳头一样落下的短句。烟雾、雨水、廉价威士忌，还有后果。"
     }
   },
   "ollamaModal": {

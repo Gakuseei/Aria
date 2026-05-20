@@ -1,4 +1,4 @@
-import { compileCharacterRuntimeCard, resolveRuntimeCardTemplates } from './compiler.js';
+import { compileCharacterRuntimeCard, compileNarratorRuntimeCard, resolveRuntimeCardTemplates } from './compiler.js';
 import {
   estimateTokens,
   normalizeWhitespace,
@@ -1273,7 +1273,11 @@ export function buildRuntimeState({ character, history, userName = 'User', userG
   const sceneMemoryForDerivation = carriedArcAnchor
     ? { ...(validatedSceneMemory || {}), nsfwArcAnchor: carriedArcAnchor }
     : validatedSceneMemory;
-  const compiledRuntimeCard = resolveRuntimeCardTemplates(compileCharacterRuntimeCard(character), charName, userName);
+  const isNarratorPersona = character?.personaType === 'narrator';
+  const baseRuntimeCard = isNarratorPersona
+    ? compileNarratorRuntimeCard(character)
+    : compileCharacterRuntimeCard(character);
+  const compiledRuntimeCard = resolveRuntimeCardTemplates(baseRuntimeCard, charName, userName);
   const historyBudget = calculateHistoryBudget(totalBudget, profile);
   const selectedRecentHistory = selectRecentHistory(normalizedHistory, historyBudget);
   const sceneHistory = selectedRecentHistory.messages.map((message) => ({
@@ -1298,15 +1302,19 @@ export function buildRuntimeState({ character, history, userName = 'User', userG
     persistedSceneMemory: validatedSceneMemory
   });
 
-  const voicePinResolution = resolveVoicePin({
-    character,
-    charName,
-    assistMode: assistMode.value
-  });
+  const voicePinResolution = isNarratorPersona
+    ? null
+    : resolveVoicePin({
+        character,
+        charName,
+        assistMode: assistMode.value
+      });
 
-  const intimateExamplePick = pickExampleDialogue(character?.exampleDialogues, assistMode.value);
-  if (intimateExamplePick) {
-    compiledRuntimeCard.exampleSeed = resolveTemplates(intimateExamplePick, charName, userName);
+  if (!isNarratorPersona) {
+    const intimateExamplePick = pickExampleDialogue(character?.exampleDialogues, assistMode.value);
+    if (intimateExamplePick) {
+      compiledRuntimeCard.exampleSeed = resolveTemplates(intimateExamplePick, charName, userName);
+    }
   }
 
   const userMessageCount = selectedRecentHistory.messages
@@ -1330,7 +1338,8 @@ export function buildRuntimeState({ character, history, userName = 'User', userG
     userName,
     userIdentity,
     characterName: charName,
-    exampleEligibility: shouldUseExampleSeed({
+    personaType: isNarratorPersona ? 'narrator' : 'character',
+    exampleEligibility: isNarratorPersona ? false : shouldUseExampleSeed({
       history: normalizedHistory,
       compiledRuntimeCard,
       profile,

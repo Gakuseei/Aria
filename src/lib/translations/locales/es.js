@@ -147,6 +147,7 @@ const locale = {
     "passion": "Pasión",
     "gatekeeper": "Control Activo",
     "unchained": "Desencadenado",
+    "modeNarratorIndicator": "Modo narrativa",
     "passionSurface": "Surface",
     "passionAware": "Aware",
     "passionVivid": "Vivid",
@@ -268,6 +269,8 @@ const locale = {
     "aiPowered": "Impulsado por IA",
     "filterNsfw": "NSFW",
     "filterSfw": "SFW",
+    "tabCharacters": "Personajes",
+    "tabStory": "Narradores",
     "importedCharacter": "Personaje Importado",
     "importedDescription": "Un personaje importado",
     "searchPlaceholder": "Buscar en todas las personas...",
@@ -574,7 +577,14 @@ const locale = {
     "allCharacters": "Todos los personajes",
     "deleteAll": "Eliminar todo",
     "deleteAllConfirm": "¿Eliminar las {count} sesiones?",
-    "deleteAllConfirmFiltered": "¿Eliminar {count} sesiones filtradas?"
+    "deleteAllConfirmFiltered": "¿Eliminar {count} sesiones filtradas?",
+    "searchPlaceholder": "Buscar mensajes...",
+    "searchEmpty": "Sin resultados.",
+    "searchHint": "Prueba con otras palabras clave.",
+    "matchCount": "{count} coincidencias",
+    "matchCountOne": "1 coincidencia",
+    "clearSearch": "Limpiar búsqueda",
+    "searchSnippetEllipsis": "…"
   },
   "debugConsole": {
     "title": "Aria Monitor",
@@ -714,6 +724,18 @@ const locale = {
       "subtitle": "Dueña de Café",
       "description": "Una dueña de café tranquila y perceptiva que siempre tiene tu pedido listo — y nota más de lo que deja ver.",
       "greeting": "*levanta la vista desde detrás del mostrador cuando suena la campana de la puerta, ya alcanzando una taza* *la lluvia golpea contra las ventanas, el café cálido y tranquilo, jazz crepitando suavemente desde el altavoz en la esquina* \"Sabía que vendrías.\" *comienza a preparar lo de siempre sin preguntar, movimientos precisos y practicados* \"Los días de lluvia siempre te traen.\" *coloca la taza en el mostrador, el vapor se eleva* *desliza un platito al lado — un pastelito, aún caliente* \"Antes de que preguntes — hice demasiados. No es específicamente para ti.\" *se limpia las manos en el delantal, mirándote sobre sus gafas de lectura* \"Te ves cansado.\" *no es una pregunta* *se da vuelta para acomodar tazas en la estantería* \"Siéntate donde quieras. El rincón está libre.\" *el más leve toque de calidez en su voz* \"Tu pedido se enfría.\""
+    },
+    "narrator-chronicler": {
+      "name": "The Chronicler",
+      "subtitle": "Narrador literario",
+      "tagline": "Literario, omnisciente.",
+      "description": "Un narrador literario, neutral, en tercera persona omnisciente. Prosa mesurada y observadora que convierte tu entrada en una escena en vez de una conversación."
+    },
+    "narrator-noir": {
+      "name": "Noir Narrator",
+      "subtitle": "Narrador negro",
+      "tagline": "Negra, en presente.",
+      "description": "Un narrador pulp y noir. Tiempo presente. Frases cortas que caen como golpes. Humo, lluvia, whisky barato y consecuencias."
     }
   },
   "ollamaModal": {

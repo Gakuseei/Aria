@@ -147,6 +147,7 @@ const locale = {
     "passion": "情熱",
     "gatekeeper": "制御中",
     "unchained": "解放モード",
+    "modeNarratorIndicator": "ストーリーモード",
     "passionSurface": "Surface",
     "passionAware": "Aware",
     "passionVivid": "Vivid",
@@ -268,6 +269,8 @@ const locale = {
     "aiPowered": "AI搭載",
     "filterNsfw": "NSFW",
     "filterSfw": "SFW",
+    "tabCharacters": "キャラ",
+    "tabStory": "ストーリー",
     "importedCharacter": "インポートされたキャラクター",
     "importedDescription": "インポートされたキャラクター",
     "searchPlaceholder": "すべてのペルソナを検索...",
@@ -574,7 +577,13 @@ const locale = {
     "allCharacters": "全キャラクター",
     "deleteAll": "すべて削除",
     "deleteAllConfirm": "{count}件のセッションを削除しますか？",
-    "deleteAllConfirmFiltered": "{count}件のフィルター済みセッションを削除しますか？"
+    "deleteAllConfirmFiltered": "{count}件のフィルター済みセッションを削除しますか？",
+    "searchPlaceholder": "メッセージを検索...",
+    "searchEmpty": "該当なし。",
+    "searchHint": "別のキーワードを試してください。",
+    "matchCount": "{count}件一致",
+    "clearSearch": "検索をクリア",
+    "searchSnippetEllipsis": "…"
   },
   "debugConsole": {
     "title": "Aria モニター",
@@ -714,6 +723,18 @@ const locale = {
       "subtitle": "カフェオーナー",
       "description": "いつもあなたのいつものを用意している静かで鋭い観察力のカフェオーナー——見た目以上に気づいている。",
       "greeting": "*ドアのチャイムが鳴ると、カウンターの向こうから顔を上げ、すでにカップに手を伸ばしている* *雨が窓を叩き、カフェは暖かく静かで、角のスピーカーからジャズが柔らかくパチパチと流れている* 「来ると思った。」*聞かずにいつものを準備し始める、動きは正確で手慣れている* 「雨の日はいつも来るもんね。」*カウンターにカップを置く、湯気が立ち上る* *その隣に小皿を滑らせる——まだ温かいペストリー* 「聞かれる前に言うけど——作りすぎたの。あなた専用じゃないから。」*エプロンで手を拭き、老眼鏡越しにちらっと見る* 「疲れてるね。」*質問ではない* *振り向いて棚のカップを整える* 「どこでも好きなとこに座って。角の席が空いてるよ。」*声にかすかな温かみ* 「いつものが冷めるよ。」"
+    },
+    "narrator-chronicler": {
+      "name": "The Chronicler",
+      "subtitle": "文学的ナレーター",
+      "tagline": "文学的、全知。",
+      "description": "中立的で文学的な、三人称全知のナレーター。あなたの入力を会話ではなくシーンに変える、抑制された観察的な散文。"
+    },
+    "narrator-noir": {
+      "name": "Noir Narrator",
+      "subtitle": "ハードボイルド・ナレーター",
+      "tagline": "ハードボイルド、現在形。",
+      "description": "ハードボイルドなノワール・ナレーター。現在形。パンチのように決まる短い文。煙、雨、安いウイスキー、そして結末。"
     }
   },
   "ollamaModal": {

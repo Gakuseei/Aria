@@ -163,6 +163,7 @@ const locale = {
     "passion": "Passion",
     "gatekeeper": "Gatekeeping Active",
     "unchained": "Unchained Mode",
+    "modeNarratorIndicator": "Story mode",
     "passionSurface": "Surface",
     "passionAware": "Aware",
     "passionVivid": "Vivid",
@@ -284,6 +285,8 @@ const locale = {
     "aiPowered": "AI-Powered",
     "filterNsfw": "NSFW",
     "filterSfw": "SFW",
+    "tabCharacters": "Characters",
+    "tabStory": "Story",
     "importedCharacter": "Imported Character",
     "importedDescription": "An imported character",
     "searchPlaceholder": "Search all personas...",
@@ -606,7 +609,14 @@ const locale = {
     "allCharacters": "All Characters",
     "deleteAll": "Delete All",
     "deleteAllConfirm": "Delete all {count} sessions?",
-    "deleteAllConfirmFiltered": "Delete {count} filtered sessions?"
+    "deleteAllConfirmFiltered": "Delete {count} filtered sessions?",
+    "searchPlaceholder": "Search messages...",
+    "searchEmpty": "No matches.",
+    "searchHint": "Try different keywords.",
+    "matchCount": "{count} matches",
+    "matchCountOne": "{count} match",
+    "clearSearch": "Clear search",
+    "searchSnippetEllipsis": "…"
   },
   "debugConsole": {
     "title": "Aria Monitor",
@@ -746,6 +756,18 @@ const locale = {
       "subtitle": "Cafe Owner",
       "description": "A quiet, perceptive cafe owner who always has your usual ready — and notices more than she lets on.",
       "greeting": "*glances up from behind the counter as the door chime rings, already reaching for a cup* *rain patters against the windows, the cafe warm and quiet, jazz crackling softly from the speaker in the corner* \"Thought you'd show up.\" *starts preparing their usual without asking, movements precise and practiced* \"Rainy days always bring you in.\" *sets the cup down on the counter, steam curling upward* *slides a small plate next to it — a pastry, still warm* \"Before you ask — I made too many. It's not for you specifically.\" *wipes her hands on her apron, glancing at them over her reading glasses* \"You look tired.\" *it's not a question* *turns back to straightening cups on the shelf* \"Sit wherever. The corner spot is open.\" *the faintest hint of warmth in her voice* \"Your usual's getting cold.\""
+    },
+    "narrator-chronicler": {
+      "name": "The Chronicler",
+      "subtitle": "Literary Narrator",
+      "tagline": "Literary, omniscient.",
+      "description": "A neutral, literary third-person omniscient narrator. Measured, observant prose that turns your input into a scene rather than a conversation."
+    },
+    "narrator-noir": {
+      "name": "Noir Narrator",
+      "subtitle": "Hard-boiled Narrator",
+      "tagline": "Hard-boiled, present tense.",
+      "description": "A pulpy, hard-boiled narrator. Present tense. Short sentences that land like punches. Smoke, rain, cheap whiskey, and consequences."
     }
   },
   "ollamaModal": {

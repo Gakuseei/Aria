@@ -147,6 +147,7 @@ const locale = {
     "passion": "Tutku",
     "gatekeeper": "Bekçilik Aktif",
     "unchained": "Zincirsiz Mod",
+    "modeNarratorIndicator": "Anlatım modu",
     "passionSurface": "Surface",
     "passionAware": "Aware",
     "passionVivid": "Vivid",
@@ -268,6 +269,8 @@ const locale = {
     "aiPowered": "AI Destekli",
     "filterNsfw": "NSFW",
     "filterSfw": "SFW",
+    "tabCharacters": "Karakterler",
+    "tabStory": "Hikaye",
     "importedCharacter": "İçe Aktarılan Karakter",
     "importedDescription": "İçe aktarılan bir karakter",
     "searchPlaceholder": "Tüm personalarda ara...",
@@ -576,7 +579,14 @@ const locale = {
     "allCharacters": "Tüm karakterler",
     "deleteAll": "Tümünü sil",
     "deleteAllConfirm": "Tüm {count} oturumu silmek istiyor musunuz?",
-    "deleteAllConfirmFiltered": "{count} filtrelenmiş oturumu silmek istiyor musunuz?"
+    "deleteAllConfirmFiltered": "{count} filtrelenmiş oturumu silmek istiyor musunuz?",
+    "searchPlaceholder": "Mesajlarda ara...",
+    "searchEmpty": "Sonuç yok.",
+    "searchHint": "Farklı anahtar kelimeler deneyin.",
+    "matchCount": "{count} eşleşme",
+    "matchCountOne": "1 eşleşme",
+    "clearSearch": "Aramayı temizle",
+    "searchSnippetEllipsis": "…"
   },
   "debugConsole": {
     "title": "Aria Monitör",
@@ -716,6 +726,18 @@ const locale = {
       "subtitle": "Kafe Sahibi",
       "description": "Her zaman senin siparişini hazır tutan sessiz, dikkatli bir kafe sahibi — ve gösterdiğinden fazlasını fark ediyor.",
       "greeting": "*kapı zili çaldığında tezgahın arkasından başını kaldırır, çoktan bir fincana uzanıyor* *yağmur camlara vuruyor, kafe sıcak ve sessiz, köşedeki hoparlörden caz hafifçe çıtırdıyor* \"Geleceğini biliyordum.\" *sormadan her zamanki siparişi hazırlamaya başlar, hareketleri kesin ve deneyimli* \"Yağmurlu günler seni hep getirir.\" *fincanı tezgaha koyar, buhar yükselir* *yanına küçük bir tabak kaydırır — bir hamur işi, hâlâ sıcak* \"Sormadan söyleyeyim — çok fazla yaptım. Özellikle senin için değil.\" *ellerini önlüğüne siler, okuma gözlüklerinin üzerinden bakar* \"Yorgun görünüyorsun.\" *bu bir soru değil* *dönüp raftaki fincanları düzeltir* \"İstediğin yere otur. Köşe yer boş.\" *sesinde en hafif sıcaklık dokunuşu* \"Siparişin soğuyor.\""
+    },
+    "narrator-chronicler": {
+      "name": "The Chronicler",
+      "subtitle": "Edebî Anlatıcı",
+      "tagline": "Edebî, her şeyi bilen.",
+      "description": "Nötr, edebî, üçüncü tekil her şeyi bilen anlatıcı. Girdini sohbet yerine bir sahneye dönüştüren ölçülü ve gözlemci anlatım."
+    },
+    "narrator-noir": {
+      "name": "Noir Narrator",
+      "subtitle": "Noir Anlatıcı",
+      "tagline": "Sert, şimdiki zaman.",
+      "description": "Sert noir anlatıcı. Şimdiki zaman. Yumruk gibi inen kısa cümleler. Duman, yağmur, ucuz viski ve sonuçları."
     }
   },
   "ollamaModal": {

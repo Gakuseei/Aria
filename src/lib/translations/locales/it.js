@@ -147,6 +147,7 @@ const locale = {
     "passion": "Passione",
     "gatekeeper": "Controllo Attivo",
     "unchained": "Modalità Scatenata",
+    "modeNarratorIndicator": "Modalità narrazione",
     "passionSurface": "Surface",
     "passionAware": "Aware",
     "passionVivid": "Vivid",
@@ -268,6 +269,8 @@ const locale = {
     "aiPowered": "Basato su IA",
     "filterNsfw": "NSFW",
     "filterSfw": "SFW",
+    "tabCharacters": "Personaggi",
+    "tabStory": "Narratori",
     "importedCharacter": "Personaggio Importato",
     "importedDescription": "Un personaggio importato",
     "searchPlaceholder": "Cerca tra tutte le personas...",
@@ -574,7 +577,14 @@ const locale = {
     "allCharacters": "Tutti i personaggi",
     "deleteAll": "Elimina tutto",
     "deleteAllConfirm": "Eliminare tutte le {count} sessioni?",
-    "deleteAllConfirmFiltered": "Eliminare {count} sessioni filtrate?"
+    "deleteAllConfirmFiltered": "Eliminare {count} sessioni filtrate?",
+    "searchPlaceholder": "Cerca nei messaggi...",
+    "searchEmpty": "Nessun risultato.",
+    "searchHint": "Prova con parole chiave diverse.",
+    "matchCount": "{count} risultati",
+    "matchCountOne": "1 risultato",
+    "clearSearch": "Cancella ricerca",
+    "searchSnippetEllipsis": "…"
   },
   "debugConsole": {
     "title": "Aria Monitor",
@@ -714,6 +724,18 @@ const locale = {
       "subtitle": "Proprietaria del Caffè",
       "description": "Una proprietaria di caffè tranquilla e percettiva che ha sempre pronto il tuo solito — e nota più di quanto lasci trasparire.",
       "greeting": "*alza lo sguardo da dietro il bancone quando suona il campanello della porta, già allungando la mano verso una tazza* *la pioggia batte contro le finestre, il caffè caldo e silenzioso, jazz che crepita piano dall'altoparlante nell'angolo* \"Sapevo che saresti venuto.\" *inizia a preparare il solito senza chiedere, movimenti precisi e rodati* \"I giorni di pioggia ti portano sempre qui.\" *posa la tazza sul bancone, il vapore si alza* *fa scivolare un piattino accanto — un dolce, ancora caldo* \"Prima che tu chieda — ne ho fatti troppi. Non è specificatamente per te.\" *si pulisce le mani sul grembiule, guardandoti sopra gli occhiali da lettura* \"Hai l'aria stanca.\" *non è una domanda* *si gira a sistemare le tazze sullo scaffale* \"Siediti dove vuoi. Il posto d'angolo è libero.\" *la più lieve traccia di calore nella sua voce* \"Il tuo solito si raffredda.\""
+    },
+    "narrator-chronicler": {
+      "name": "The Chronicler",
+      "subtitle": "Narratore letterario",
+      "tagline": "Letterario, onnisciente.",
+      "description": "Un narratore letterario neutrale in terza persona onnisciente. Prosa misurata e osservatrice che trasforma il tuo input in una scena invece che in una conversazione."
+    },
+    "narrator-noir": {
+      "name": "Noir Narrator",
+      "subtitle": "Narratore noir",
+      "tagline": "Noir, al presente.",
+      "description": "Un narratore pulp e noir. Tempo presente. Frasi brevi che colpiscono come pugni. Fumo, pioggia, whisky scadente e conseguenze."
     }
   },
   "ollamaModal": {

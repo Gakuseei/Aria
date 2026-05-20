@@ -2,7 +2,7 @@
 // ARIA v1.0 RELEASE - ChatInterface
 // ============================================================================
 
-import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2, Undo2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { autoDetectAndSetModel } from '../lib/ollama';
@@ -241,7 +241,15 @@ const MessageBubble = memo(function MessageBubble({
   );
 
   const fontSizeClass = { xs: 'text-xs', sm: 'text-sm', base: 'text-base', lg: 'text-lg', xl: 'text-xl', '2xl': 'text-2xl' }[fontSize] || 'text-base';
-  const editRows = Math.min(8, Math.max(2, (editDraft || '').split('\n').length));
+  const editTextareaRef = useRef(null);
+
+  useLayoutEffect(() => {
+    if (!isEditing) return;
+    const node = editTextareaRef.current;
+    if (!node) return;
+    node.style.height = 'auto';
+    node.style.height = `${node.scrollHeight}px`;
+  }, [isEditing, editDraft]);
 
   const handleEditKeyDown = (e) => {
     if (e.nativeEvent.isComposing || e.keyCode === 229) return;
@@ -289,14 +297,15 @@ const MessageBubble = memo(function MessageBubble({
 
         {isEditing ? (
           <textarea
+            ref={editTextareaRef}
             value={editDraft}
             onChange={(e) => onEditChange?.(e.target.value)}
             onKeyDown={handleEditKeyDown}
             spellCheck={false}
             autoCorrect="off"
             autoFocus
-            rows={editRows}
-            className={`w-full bg-transparent outline-none resize-none border-2 border-transparent focus:border-rose-500 rounded-lg px-2 py-1 whitespace-pre-wrap break-words leading-relaxed ${fontSizeClass}`}
+            rows={1}
+            className={`w-full bg-transparent outline-none resize-none border-2 border-transparent focus:border-rose-500 rounded-lg px-2 py-1 whitespace-pre-wrap break-words leading-relaxed min-h-[3.5rem] max-h-[60vh] overflow-y-auto ${fontSizeClass}`}
           />
         ) : (
           <div className={`whitespace-pre-wrap break-words leading-relaxed ${fontSizeClass}`}>

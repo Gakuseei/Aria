@@ -38,13 +38,60 @@ export default function useStickyScroll() {
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[entries.length - 1];
-        if (entry) setIsSticky(entry.isIntersecting);
+        if (entry) {
+          isStickyRef.current = entry.isIntersecting;
+          setIsSticky(entry.isIntersecting);
+        }
       },
       { root, rootMargin: '0px 0px 64px 0px', threshold: 0 }
     );
 
     observer.observe(sentinel);
-    return () => observer.disconnect();
+
+    /**
+     * Detach sticky immediately when the user expresses upward intent.
+     * Wheel/touch handlers run before observers can react, preventing
+     * the next streaming token from yanking the viewport back down.
+     */
+    const detachOnUserScrollUp = (delta) => {
+      if (delta < 0 && isStickyRef.current) {
+        isStickyRef.current = false;
+        setIsSticky(false);
+      }
+    };
+
+    const handleWheel = (event) => {
+      detachOnUserScrollUp(event.deltaY);
+    };
+
+    let touchStartY = 0;
+    const handleTouchStart = (event) => {
+      if (event.touches.length > 0) touchStartY = event.touches[0].clientY;
+    };
+    const handleTouchMove = (event) => {
+      if (event.touches.length === 0) return;
+      const dy = touchStartY - event.touches[0].clientY;
+      detachOnUserScrollUp(dy);
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'ArrowUp' || event.key === 'PageUp' || event.key === 'Home') {
+        detachOnUserScrollUp(-1);
+      }
+    };
+
+    root.addEventListener('wheel', handleWheel, { passive: true });
+    root.addEventListener('touchstart', handleTouchStart, { passive: true });
+    root.addEventListener('touchmove', handleTouchMove, { passive: true });
+    root.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      observer.disconnect();
+      root.removeEventListener('wheel', handleWheel);
+      root.removeEventListener('touchstart', handleTouchStart);
+      root.removeEventListener('touchmove', handleTouchMove);
+      root.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   useEffect(() => {

@@ -70,3 +70,4 @@ secrets.*
 *.csv
 *.xlsx
 research/
+memory/

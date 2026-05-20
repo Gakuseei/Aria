@@ -258,6 +258,8 @@ const MessageBubble = memo(function MessageBubble({
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} group mb-5 message-slide-in`}>
       <div
         className={`theme-message-column rounded-2xl px-5 py-4 relative transition-all duration-200 ${
+          isEditing ? 'w-full' : ''
+        } ${
           isUser
             ? (isGoldMode
                 ? 'border border-amber-500/30 bg-gradient-to-br from-zinc-900 to-amber-950/40 text-white'

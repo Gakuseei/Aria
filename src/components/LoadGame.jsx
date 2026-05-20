@@ -1,9 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { listSessions, deleteSession } from '../lib/storage/sessions';
 import { GAME_MODES } from '../lib/gameModes';
 import { useLanguage } from '../context/LanguageContext';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
 import CustomDropdown from './CustomDropdown';
+
+function formatMatchCount(t, language, count) {
+  try {
+    const rules = new Intl.PluralRules(language || 'en');
+    const cat = rules.select(count);
+    const lg = t.loadGame || {};
+    const template = (() => {
+      if (cat === 'zero' && lg.matchCountZero) return lg.matchCountZero;
+      if (cat === 'one' && lg.matchCountOne) return lg.matchCountOne;
+      if (cat === 'two' && lg.matchCountTwo) return lg.matchCountTwo;
+      if (cat === 'few' && lg.matchCountFew) return lg.matchCountFew;
+      if (cat === 'many' && lg.matchCountMany) return lg.matchCountMany;
+      return lg.matchCount || '{count} matches';
+    })();
+    return template.replace('{count}', count);
+  } catch {
+    return (t.loadGame?.matchCount || '{count} matches').replace('{count}', count);
+  }
+}
 
 const LOCALE_MAP = {
   en: 'en-US', de: 'de-DE', es: 'es-ES', zh: 'zh-CN', fr: 'fr-FR',
@@ -24,6 +43,80 @@ export function buildLoadGameEmptyState({ totalSessions = 0, t }) {
   };
 }
 
+/**
+ * Extract a snippet of `content` centered on the first occurrence of `term`.
+ * Returns empty string when the term is missing or not found.
+ *
+ * @param {string} content - The full message content to scan.
+ * @param {string} term - The lowercase search term (already trimmed).
+ * @param {string} ellipsis - The locale-specific ellipsis character.
+ * @param {number} [maxLen=120] - Target snippet length in characters.
+ * @returns {string} The snippet, padded with ellipses when truncated.
+ */
+export function extractSnippet(content, term, ellipsis, maxLen = 120) {
+  if (!term || typeof content !== 'string') return '';
+  const lower = content.toLowerCase();
+  const idx = lower.indexOf(term);
+  if (idx === -1) return '';
+  const half = Math.max(0, Math.floor((maxLen - term.length) / 2));
+  const start = Math.max(0, idx - half);
+  const end = Math.min(content.length, idx + term.length + half);
+  const prefix = start > 0 ? ellipsis : '';
+  const suffix = end < content.length ? ellipsis : '';
+  return prefix + content.slice(start, end) + suffix;
+}
+
+/**
+ * Find the first message in `history` whose content contains `term`.
+ *
+ * @param {Array<{content?: string}>} history - Conversation messages.
+ * @param {string} term - Lowercase search term.
+ * @returns {string} The matching message content, or empty string.
+ */
+export function findFirstMatch(history, term) {
+  if (!term || !Array.isArray(history)) return '';
+  for (const msg of history) {
+    if (typeof msg?.content === 'string' && msg.content.toLowerCase().includes(term)) {
+      return msg.content;
+    }
+  }
+  return '';
+}
+
+/**
+ * Render a snippet with all case-insensitive occurrences of `term` wrapped in <strong>.
+ *
+ * @param {string} snippet - Snippet text to render.
+ * @param {string} term - Lowercase term to highlight.
+ * @returns {Array<string|JSX.Element>} React-renderable array.
+ */
+function renderSnippetNodes(snippet, term) {
+  if (!snippet) return [];
+  if (!term) return [snippet];
+  const lowerSnippet = snippet.toLowerCase();
+  const nodes = [];
+  let cursor = 0;
+  let keyIndex = 0;
+  while (cursor < snippet.length) {
+    const matchIdx = lowerSnippet.indexOf(term, cursor);
+    if (matchIdx === -1) {
+      nodes.push(snippet.slice(cursor));
+      break;
+    }
+    if (matchIdx > cursor) {
+      nodes.push(snippet.slice(cursor, matchIdx));
+    }
+    const matchEnd = matchIdx + term.length;
+    nodes.push(
+      <strong key={`m-${keyIndex++}`} className="text-rose-300 font-semibold">
+        {snippet.slice(matchIdx, matchEnd)}
+      </strong>
+    );
+    cursor = matchEnd;
+  }
+  return nodes;
+}
+
 function LoadGame({ onLoad, onBack, onStartNewGame }) {
   const { t, language } = useLanguage();
   const [sessions, setSessions] = useState([]);
@@ -32,9 +125,17 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
   const [filter, setFilter] = useState('all');
   const [characterFilter, setCharacterFilter] = useState('all');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedTerm, setDebouncedTerm] = useState('');
   const isVisible = useEntranceAnimation(50);
 
-  // Load sessions on mount
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setDebouncedTerm(searchTerm.trim().toLowerCase());
+    }, 150);
+    return () => clearTimeout(handle);
+  }, [searchTerm]);
+
   useEffect(() => {
     loadSessions();
   }, []);
@@ -108,12 +209,28 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
     }
   };
 
-  // Filter sessions
-  const filteredSessions = sessions.filter(session => {
-    if (filter !== 'all' && session.mode !== filter) return false;
-    if (characterFilter !== 'all' && session.characterName !== characterFilter) return false;
-    return true;
-  });
+  const snippetEllipsis = t.loadGame.searchSnippetEllipsis;
+
+  const filteredSessions = useMemo(() => {
+    const result = [];
+    for (const session of sessions) {
+      if (filter !== 'all' && session.mode !== filter) continue;
+      if (characterFilter !== 'all' && session.characterName !== characterFilter) continue;
+
+      let snippet = '';
+      if (debouncedTerm) {
+        const history = session.conversationHistory || session.messages || [];
+        const matchSource = findFirstMatch(history, debouncedTerm);
+        if (!matchSource) continue;
+        snippet = extractSnippet(matchSource, debouncedTerm, snippetEllipsis);
+      }
+
+      result.push(snippet ? { ...session, _snippet: snippet } : session);
+    }
+    return result;
+  }, [sessions, filter, characterFilter, debouncedTerm, snippetEllipsis]);
+
+  const matchCountLabel = formatMatchCount(t, language, filteredSessions.length);
 
   const emptyState = buildLoadGameEmptyState({ totalSessions: sessions.length, t });
 
@@ -157,7 +274,7 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
     <div className={`theme-screen-shell flex h-full w-full flex-col p-8 transition-all duration-300 ${
       isVisible ? 'opacity-100' : 'opacity-0'
     }`}>
-      <div className="glass-header flex items-center justify-between px-6 py-5 mb-8 rounded-2xl">
+      <div className="glass-header flex items-center justify-between px-6 py-5 mb-4 rounded-2xl">
         <div className="flex items-center gap-5">
           <button
             onClick={onBack}
@@ -216,6 +333,46 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
             </svg>
             {t.loadGame.deleteAll} ({filteredSessions.length})
           </button>
+        )}
+      </div>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative flex-1">
+          <svg
+            className="w-4 h-4 absolute start-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder={t.loadGame.searchPlaceholder}
+            aria-label={t.loadGame.searchPlaceholder}
+            className="w-full ps-11 pe-10 py-2.5 rounded-xl bg-zinc-900/60 border-2 border-transparent hover:border-rose-500 focus:border-rose-500 text-sm text-white placeholder:text-zinc-500 outline-none transition-colors duration-200"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              aria-label={t.loadGame.clearSearch}
+              className="absolute end-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-zinc-500 hover:text-rose-400 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+        {debouncedTerm && (
+          <span
+            aria-live="polite"
+            className="text-xs text-zinc-500 px-3 py-1.5 rounded-lg bg-zinc-900/40 border border-zinc-800 whitespace-nowrap"
+          >
+            {matchCountLabel}
+          </span>
         )}
       </div>
       <div className="flex-1 flex gap-6 overflow-hidden">
@@ -279,6 +436,11 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
                         }
                         ...
                       </div>
+                      {debouncedTerm && session._snippet && (
+                        <div className="mt-2 text-sm text-zinc-400 leading-snug">
+                          {renderSnippetNodes(session._snippet, debouncedTerm)}
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={(e) => handleDelete(session.id, e)}
@@ -293,6 +455,18 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : debouncedTerm ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="theme-card-subtle flex max-w-md flex-col items-center rounded-3xl px-8 py-10 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-800/50 text-zinc-600">
+                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-[var(--color-text)] mb-2">{t.loadGame.searchEmpty}</h3>
+                <p className="theme-text-soft text-sm max-w-xs">{t.loadGame.searchHint}</p>
+              </div>
             </div>
           ) : (
             <div className="flex h-full items-center justify-center">

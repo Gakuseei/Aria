@@ -312,6 +312,11 @@ export async function impersonateUser(
   const ctx = assembleRuntimeContext({ profile: 'impersonate', runtimeState });
   console.log('[API] Impersonate runtime:', ctx.debug);
 
+  if (ctx.narratorSkip) {
+    onToken(null, '');
+    return '';
+  }
+
   const sentenceTarget = ctx.debug?.sentenceTarget || 1;
   const profileCap = budgetConfig.impersonateRetryTokens;
   const numPredictForRun = computeNumPredict(sentenceTarget, profileCap);

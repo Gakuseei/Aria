@@ -23,6 +23,7 @@ import useStickyScroll from '../hooks/useStickyScroll';
 import downloadBlob from '../utils/downloadBlob';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from '../lib/defaults';
 import { resolveSessionSceneMemory } from '../lib/chatRuntime';
+import { GAME_MODES } from '../lib/gameModes';
 
 // ============================================================================
 // TEXT FORMATTING - BLOCK 4 FIX: Apostroph-Bug behoben
@@ -226,6 +227,7 @@ const MessageBubble = memo(function MessageBubble({
   isGoldMode = false,
   t = {},
   isLastUserMessage = false,
+  isLastAssistantMessage = false,
   isEditing = false,
   editDraft = '',
   onEditStart,
@@ -311,8 +313,8 @@ const MessageBubble = memo(function MessageBubble({
         )}
 
         {message.timestamp && !isEditing && (
-          <div className="theme-message-meta theme-message-timestamp text-xs mt-3">
-            {formatTimestamp(message.timestamp)}
+          <div className="theme-message-meta theme-message-timestamp text-xs mt-3 flex items-center gap-1.5">
+            <span>{formatTimestamp(message.timestamp)}</span>
           </div>
         )}
         <div className={`absolute top-2 right-2 flex gap-1 transition-all duration-200 ${isEditing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
@@ -338,6 +340,16 @@ const MessageBubble = memo(function MessageBubble({
           ) : (
             <>
               {isUser && isLastUserMessage && onEditStart && (
+                <button
+                  onClick={() => onEditStart(messageIndex, message.content || '')}
+                  className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
+                  aria-label={t.chat?.editMessage || 'Edit message'}
+                  data-tooltip={t.chat?.editMessage || 'Edit message'}
+                >
+                  <PenLine size={14} strokeWidth={1.5} />
+                </button>
+              )}
+              {!isUser && isLastAssistantMessage && onEditStart && (
                 <button
                   onClick={() => onEditStart(messageIndex, message.content || '')}
                   className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
@@ -435,6 +447,20 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     }
     return -1;
   }, [messages]);
+
+  const lastAssistantIdx = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'assistant') return i;
+    }
+    return -1;
+  }, [messages]);
+
+  const gatedLastAssistantIdx = useMemo(() => {
+    if (isStreaming || isLoading) return -1;
+    if (lastAssistantIdx < 0) return -1;
+    if (lastAssistantIdx !== messages.length - 1) return -1;
+    return lastAssistantIdx;
+  }, [lastAssistantIdx, messages.length, isStreaming, isLoading]);
 
   const clearSuggestionsState = useCallback(() => {
     abortSuggestionCall();
@@ -769,19 +795,20 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [messages, passionLevel, sessionId]);
 
-  const saveCurrentSession = async () => {
+  const saveCurrentSession = async (messagesOverride) => {
     try {
-      const nextSceneMemory = buildSceneMemory(messages);
+      const messagesToSave = Array.isArray(messagesOverride) ? messagesOverride : messages;
+      const nextSceneMemory = buildSceneMemory(messagesToSave);
       const sessionData = {
         characterName: character.name,
         character: character,
-        conversationHistory: messages,
+        conversationHistory: messagesToSave,
         sceneMemory: nextSceneMemory,
         passionLevel: passionLevel,
-        mode: 'character_chat',
-        lastPrompt: messages.filter(m => m && m.role === 'user').slice(-1)[0]?.content || ''
+        mode: character?.personaType === 'narrator' ? GAME_MODES.NARRATOR_CHAT : GAME_MODES.CHARACTER_CHAT,
+        lastPrompt: messagesToSave.filter(m => m && m.role === 'user').slice(-1)[0]?.content || ''
       };
-      
+
       await saveSession(sessionId, sessionData);
 
       if (character?.id && passionLevel > 0) {
@@ -1045,6 +1072,19 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     const trimmed = (editDraft || '').trim();
     if (!trimmed) {
       handleEditCancel();
+      return;
+    }
+
+    const target = messages[editingIndex];
+    if (target?.role === 'assistant') {
+      const updated = [...messages];
+      updated[editingIndex] = { ...target, content: trimmed, edited: true };
+      setMessages(updated);
+      setEditingIndex(null);
+      setEditDraft('');
+      if (sessionId) {
+        await saveCurrentSession(updated);
+      }
       return;
     }
 
@@ -1422,6 +1462,11 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               <h2 className="theme-chat-title truncate text-xl font-bold">
                 {character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name)}
               </h2>
+              {character?.personaType === 'narrator' && (
+                <span className="text-xs uppercase tracking-wide text-zinc-400 bg-zinc-800/40 rounded px-2 py-0.5">
+                  {t.chat?.modeNarratorIndicator}
+                </span>
+              )}
               <button
                 onClick={() => setShowBioModal(true)}
                 className="theme-chat-info-button theme-icon-button rounded-lg p-2 transition-all"
@@ -1651,6 +1696,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 isGoldMode={isGoldMode}
                 t={t}
                 isLastUserMessage={index === lastUserIdx && !isStreaming && !isLoading}
+                isLastAssistantMessage={index === gatedLastAssistantIdx}
                 isEditing={editingIndex === index}
                 editDraft={editingIndex === index ? editDraft : ''}
                 onEditStart={handleEditStart}
@@ -1742,7 +1788,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
             >
               <Undo2 size={18} strokeWidth={1.5} />
             </button>
-            {settings.smartSuggestionsEnabled && (
+            {settings.smartSuggestionsEnabled && character?.personaType !== 'narrator' && (
               <button
                 type="button"
                 onClick={onSuggestClick}
@@ -1785,7 +1831,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
               disabled={isLoading}
               className="chat-input theme-composer-input flex-1 min-w-0 resize-none overflow-y-auto border-none bg-transparent px-2 text-[15px] md:text-base outline-none ring-0 focus:outline-none focus:ring-0 disabled:opacity-50"
             />
-            {settings.write4meEnabled && (
+            {settings.write4meEnabled && character?.personaType !== 'narrator' && (
               <button
                 onClick={isImpersonating ? handleCancelImpersonate : handleImpersonate}
                 disabled={isLoading || isStreaming}

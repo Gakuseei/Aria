@@ -1020,7 +1020,7 @@ function deriveTurnScope(latestUserTurn, latestAssistantTurn, lastTurnRole = '')
   return deriveScopeFromText(latestUser, 'user');
 }
 
-function deriveSceneState({ compiledRuntimeCard, history, charName, userName, sceneMemory = null, currentTurn = 0 }) {
+function deriveSceneState({ compiledRuntimeCard, history, sceneMemory = null, currentTurn = 0 }) {
   const latestUserTurn = findLatestTurn(history, 'user');
   const latestAssistantTurn = findLatestTurn(history, 'assistant');
   const latestRole = findLatestRole(history);
@@ -1287,8 +1287,6 @@ export function buildRuntimeState({ character, history, userName = 'User', userG
   const sceneState = deriveSceneState({
     compiledRuntimeCard,
     history: sceneHistory,
-    charName,
-    userName,
     sceneMemory: sceneMemoryForDerivation,
     currentTurn: countAssistantTurns(normalizedHistory)
   });
@@ -1356,9 +1354,7 @@ export function buildRuntimeState({ character, history, userName = 'User', userG
  * captured noun-phrase actually names a garment. Expanding this is acceptable; broad
  * vocabulary scraping is not.
  */
-const CLOTHING_HEAD_PATTERN = /(dress|shirt|blouse|blazer|skirt|pants|trousers|shorts|jeans|coat|jacket|gown|robe|uniform|apron|stockings|socks|shoes|boots|heels|panties|thong|bra|hat|scarf|tie|belt|gloves?|glove|veil|mask|sash|cloak|cape|sweater|hoodie|leggings|tights|underwear|lingerie|bikini|swimsuit|nightgown|chemise|corset|bodice|negligee|kimono|dressing\s+gown|nightie|top|camisole|tank)/;
 const CLOTHING_HEAD_EXACT_PATTERN = /^(?:dress|shirt|blouse|blazer|skirt|pants|trousers|shorts|jeans|coat|jacket|gown|robe|uniform|apron|stockings|socks|shoes|boots|heels|panties|thong|bra|hat|scarf|tie|belt|gloves?|glove|veil|mask|sash|cloak|cape|sweater|hoodie|leggings|tights|underwear|lingerie|bikini|swimsuit|nightgown|chemise|corset|bodice|negligee|kimono|nightie|top|camisole|tank)$/;
-const WARDROBE_TAIL_PHRASE = /(?:^|\s)(?:a|an|her|his|their|the|my|your)\s+([a-z][\w-]*(?:\s+[a-z][\w-]*){0,3})/gi;
 
 function tokenizeWords(text) {
   return String(text || '').toLowerCase().split(/[^a-z]+/).filter(Boolean);

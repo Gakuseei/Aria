@@ -2195,14 +2195,6 @@ function accumulateWardrobeAndNegative(history, previousWardrobe = [], previousN
   };
 }
 
-function accumulateWardrobe(history, previousWardrobe = []) {
-  return accumulateWardrobeAndNegative(history, previousWardrobe, []).wardrobe;
-}
-
-function accumulateNegativeWardrobe(history, previousNegative = []) {
-  return accumulateWardrobeAndNegative(history, [], previousNegative).negativeWardrobe;
-}
-
 /**
  * Builds the per-turn scene-memory snapshot. nsfwArcAnchor binds only to a continuous
  * nsfw_only arc — it is snapshotted on first nsfw_only entry, carried while the arc

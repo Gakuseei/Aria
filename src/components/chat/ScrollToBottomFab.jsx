@@ -9,7 +9,7 @@ const ScrollToBottomFab = ({ visible, onClick, label = 'Scroll to bottom' }) => 
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="absolute bottom-32 right-6 w-10 h-10 rounded-full bg-rose-500 text-white shadow-lg flex items-center justify-center border-2 border-transparent hover:border-rose-300 transition-colors z-30"
+      className="absolute bottom-32 right-6 w-10 h-10 rounded-full bg-zinc-800/90 backdrop-blur text-zinc-300 shadow-md flex items-center justify-center border-2 border-transparent hover:border-rose-500 hover:text-rose-300 transition-colors z-30"
     >
       <ChevronDown className="w-5 h-5" />
     </button>

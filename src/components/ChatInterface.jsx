@@ -366,7 +366,7 @@ const MessageBubble = memo(function MessageBubble({
               {isUser && isLastUserMessage && onEditStart && (
                 <button
                   onClick={() => onEditStart(messageIndex, message.content || '')}
-                  className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
+                  className="theme-message-action rounded-lg p-1.5 transition-all duration-200 text-zinc-300 hover:text-rose-300"
                   aria-label={t.chat?.editMessage || 'Edit message'}
                   data-tooltip={t.chat?.editMessage || 'Edit message'}
                 >
@@ -376,7 +376,7 @@ const MessageBubble = memo(function MessageBubble({
               {!isUser && isLastAssistantMessage && onEditStart && (
                 <button
                   onClick={() => onEditStart(messageIndex, message.content || '')}
-                  className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
+                  className="theme-message-action rounded-lg p-1.5 transition-all duration-200 text-zinc-300 hover:text-rose-300"
                   aria-label={t.chat?.editMessage || 'Edit message'}
                   data-tooltip={t.chat?.editMessage || 'Edit message'}
                 >
@@ -385,7 +385,7 @@ const MessageBubble = memo(function MessageBubble({
               )}
               <button
                 onClick={() => onCopy(message.content || '')}
-                className="theme-message-action rounded-lg p-1.5 transition-all duration-200"
+                className="theme-message-action rounded-lg p-1.5 transition-all duration-200 text-zinc-300 hover:text-rose-300"
                 aria-label={t.chat?.copy || 'Copy'}
                 data-tooltip={t.chat?.copy || 'Copy'}
               >
@@ -409,13 +409,18 @@ const MessageBubble = memo(function MessageBubble({
                       : (t.chat?.deleteMessage || 'Delete message')
                   }
                   aria-label={t.chat?.deleteMessage || 'Delete message'}
-                  className={`p-1.5 rounded-lg border-2 transition-colors ${
+                  className={`relative p-1.5 rounded-lg border-2 transition-all duration-150 ${
                     deleteArmed
-                      ? 'bg-rose-500 text-white border-rose-300 animate-pulse'
-                      : 'border-transparent theme-message-action hover:text-rose-400 hover:border-rose-500'
+                      ? 'bg-rose-600 text-white border-rose-300 scale-110 animate-pulse ring-2 ring-rose-400 ring-offset-2 ring-offset-zinc-900'
+                      : 'border-transparent text-zinc-300 hover:text-rose-400 hover:border-rose-500'
                   }`}
                 >
                   <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  {deleteArmed && (
+                    <span className="absolute -bottom-7 right-0 whitespace-nowrap px-2 py-0.5 bg-rose-600 text-white text-[10px] rounded shadow-md z-50">
+                      {(t.chat?.deleteFromHere || 'Delete this and {count} below?').replace('{count}', String(Math.max(0, totalMessages - messageIndex - 1)))}
+                    </span>
+                  )}
                 </button>
               )}
             </>

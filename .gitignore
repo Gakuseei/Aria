@@ -71,3 +71,4 @@ secrets.*
 *.xlsx
 research/
 memory/
+.superpowers/

@@ -1,16 +1,4 @@
-/**
- * StoryEngine.js — Creative Writing Engine v2.0
- *
- * ATTG-style prompt builder with streaming, genre presets,
- * Author's Note injection, and auto-summary for long stories.
- * 100% LOCAL via Ollama IPC. Zero filters.
- */
-
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from './defaults.js';
-
-// ============================================================================
-// GENRE PRESETS
-// ============================================================================
 
 const GENRE_PRESETS = {
   romantic: { label: 'Romantic', tags: 'romance, slow-burn, emotional, sensual' },
@@ -22,19 +10,11 @@ const GENRE_PRESETS = {
 
 export { GENRE_PRESETS };
 
-// ============================================================================
-// LANGUAGE MAP
-// ============================================================================
-
 const LANGUAGE_NAMES = {
   en: 'English', de: 'German', es: 'Spanish', zh: 'Chinese',
   fr: 'French', it: 'Italian', pt: 'Portuguese', ru: 'Russian',
   ja: 'Japanese', ko: 'Korean', ar: 'Arabic', hi: 'Hindi', tr: 'Turkish'
 };
-
-// ============================================================================
-// PROMPT BUILDER
-// ============================================================================
 
 /**
  * Build the system prompt from slots.
@@ -47,7 +27,6 @@ const LANGUAGE_NAMES = {
 export function buildStoryPrompt({ genre = null, storySummary = null, language = 'en' }) {
   const parts = [];
 
-  // ATTG Block
   if (genre && GENRE_PRESETS[genre]) {
     const preset = GENRE_PRESETS[genre];
     parts.push(`[Genre: ${preset.label}; Tags: ${preset.tags}; Rating: Explicit]`);
@@ -55,7 +34,6 @@ export function buildStoryPrompt({ genre = null, storySummary = null, language =
     parts.push('[Rating: Explicit]');
   }
 
-  // Core instructions
   parts.push(`
 Write a vivid, immersive story based on the user's prompt.
 - Third-person perspective, past tense, novel-style prose
@@ -71,12 +49,10 @@ Write a vivid, immersive story based on the user's prompt.
 - NEVER add "End", "The End", or section markers. Just write the story.
 - Output ONLY the story text. Nothing else.`);
 
-  // Story summary for continuation context
   if (storySummary) {
     parts.push(`\n[Story so far: ${storySummary}]`);
   }
 
-  // Language enforcement (non-English only)
   if (language && language !== 'en') {
     const langName = LANGUAGE_NAMES[language] || language.toUpperCase();
     parts.push(`\nWrite the ENTIRE story in ${langName}. Every word — narration, dialogue, descriptions — must be in ${langName}. Do not use English.`);
@@ -84,10 +60,6 @@ Write a vivid, immersive story based on the user's prompt.
 
   return parts.join('\n');
 }
-
-// ============================================================================
-// OUTPUT CLEANING
-// ============================================================================
 
 /**
  * Strip meta-commentary, signatures, and artifacts from model output.
@@ -124,18 +96,10 @@ export function cleanStoryOutput(text) {
   return cleaned;
 }
 
-// ============================================================================
-// TOKEN ESTIMATION
-// ============================================================================
-
 function estimateTokens(text) {
   if (!text) return 0;
   return Math.ceil(text.length / 3.5);
 }
-
-// ============================================================================
-// GENERATE STORY (streaming)
-// ============================================================================
 
 /**
  * Generate a new story with streaming.
@@ -180,7 +144,6 @@ export async function generateStory({ prompt, genre = null, authorNote = null, o
     };
 
     if (window.electronAPI?.ollamaChatStream && onToken) {
-      // STREAMING path
       const requestId = options.requestId || `story-${Date.now()}`;
       const cleanup = window.electronAPI.onOllamaStreamToken(({ requestId: rid, token }) => {
         if (rid === requestId) onToken(token);
@@ -223,10 +186,6 @@ export async function generateStory({ prompt, genre = null, authorNote = null, o
     return { success: false, error: error.message || 'Failed to generate story' };
   }
 }
-
-// ============================================================================
-// CONTINUE STORY (streaming)
-// ============================================================================
 
 /**
  * Continue an existing story.
@@ -336,10 +295,6 @@ export async function continueStory({ storyText, genre = null, authorNote = null
     return { success: false, error: error.message || 'Failed to continue story' };
   }
 }
-
-// ============================================================================
-// AUTO-SUMMARY
-// ============================================================================
 
 /**
  * Generate a brief summary of the story so far.

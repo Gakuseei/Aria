@@ -292,9 +292,7 @@ function mapElectronError(result) {
 }
 
 /**
- * Fetch available Ollama models
- * v8.1: RE-EXPORTED for Settings auto-detect dropdown
- * v1.1: STRICT FILTER - Blacklist embedding models (nomic-embed-text, BERT, etc.)
+ * Fetch available Ollama models. Filters out embedding models (nomic-embed-text, BERT, etc.)
  */
 export const fetchOllamaModels = async (ollamaUrl = OLLAMA_DEFAULT_URL) => {
   try {
@@ -337,8 +335,8 @@ export const fetchOllamaModels = async (ollamaUrl = OLLAMA_DEFAULT_URL) => {
 };
 
 /**
- * Auto-detect and set the first available Ollama model
- * This ensures the app always has a valid model configured
+ * Auto-detect and set the first available Ollama model.
+ * Falls back gracefully when the current model is no longer installed.
  */
 export const autoDetectAndSetModel = async (ollamaUrl = OLLAMA_DEFAULT_URL) => {
   try {
@@ -349,10 +347,8 @@ export const autoDetectAndSetModel = async (ollamaUrl = OLLAMA_DEFAULT_URL) => {
       return { success: false, error: 'No models installed', models: [] };
     }
 
-    // Get current settings (loadSettings returns the settings object directly)
     const settings = await loadSettings();
 
-    // Check if current model exists in available models
     const currentModel = settings.ollamaModel;
     if (currentModel) {
       const exactMatch = models.includes(currentModel);
@@ -366,10 +362,8 @@ export const autoDetectAndSetModel = async (ollamaUrl = OLLAMA_DEFAULT_URL) => {
       }
     }
 
-    // Auto-select first available model
     const selectedModel = models[0];
 
-    // Update settings properly (via Electron IPC if in Electron, otherwise localStorage)
     const updatedSettings = {
       ...settings,
       ollamaModel: selectedModel,

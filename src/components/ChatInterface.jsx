@@ -5,6 +5,7 @@ import { autoDetectAndSetModel } from '../lib/ollama';
 import { saveSession, generateSessionId, deleteSession } from '../lib/storage/sessions';
 import { unloadOllamaModel } from '../lib/ollama';
 import { resolveTemplates } from '../lib/chat/common';
+import { commitPartialReply } from '../lib/chat/commitPartialReply';
 import { sendMessage } from '../lib/chat/reply';
 import { generateSuggestions, abortSuggestionCall, normalizeSuggestionDisplayValue } from '../lib/chat/suggestions';
 import { impersonateUser, abortImpersonateCall } from '../lib/chat/impersonate';
@@ -478,6 +479,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   const mountedRef = useRef(true);
   const messagesRef = useRef([]);
   const sceneMemoryRef = useRef(null);
+  const saveCurrentSessionRef = useRef(null);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -512,6 +514,16 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      try {
+        commitPartialReply({
+          streamBufferRef,
+          messagesRef,
+          setMessages,
+          saveSession: saveCurrentSessionRef.current
+        });
+      } catch (e) {
+        console.warn('[chat] unmount partial save failed', e);
+      }
       if (abortRef.current) {
         abortRef.current.abort();
         abortRef.current = null;
@@ -547,6 +559,13 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       clearTimeout(passionTimerRef.current);
       passionTimerRef.current = null;
     }
+
+    commitPartialReply({
+      streamBufferRef,
+      messagesRef,
+      setMessages,
+      saveSession: saveCurrentSessionRef.current
+    });
 
     streamBufferRef.current = '';
     abortSuggestionCall();
@@ -774,6 +793,10 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       console.error('[v8.1 ChatInterface] Auto-save error:', error);
     }
   };
+
+  useEffect(() => {
+    saveCurrentSessionRef.current = saveCurrentSession;
+  });
 
   useEffect(() => {
     if (isSticky) scrollToBottom({ smooth: settings.animationsEnabled !== false });

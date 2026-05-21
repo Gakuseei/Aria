@@ -215,6 +215,8 @@ const locale = {
     "startNewGameConfirm": "¿Comenzar un nuevo juego con {name}?",
     "chatExported": "Chat exportado con éxito",
     "chatImported": "Chat importado con éxito",
+    "confirmImportReplace": "Esto reemplazará tu conversación actual. ¿Continuar?",
+    "confirmImportCharacterMismatch": "Este chat importado pertenece a {importedCharacter} pero actualmente estás chateando con {currentCharacter}. ¿Importar de todos modos?",
     "invalidChatFile": "Archivo de chat inválido",
     "failedToImport": "Importación fallida. Verifica que sea un export válido (.json).",
     "failedToExport": "Error al exportar chat",
@@ -234,7 +236,7 @@ const locale = {
       "invalidJson": "Este archivo no es JSON válido.",
       "notAriaExport": "Este archivo no es una exportación de Aria.",
       "wrongKind": "Este archivo no es una exportación de chat. (Encontrado: {kind})",
-      "unsupportedSchema": "Versión de esquema de exportación no compatible. Actualiza Aria.",
+      "unsupportedSchema": "Versión de esquema de exportación no compatible (v{version}). Actualiza Aria.",
       "missingPayload": "Al archivo de exportación le faltan datos."
     }
   },
@@ -334,7 +336,7 @@ const locale = {
       "invalidJson": "Este archivo no es JSON válido.",
       "notAriaExport": "Este archivo no es una exportación de Aria.",
       "wrongKind": "Este archivo no es una exportación de personaje. (Encontrado: {kind})",
-      "unsupportedSchema": "Versión de esquema de exportación no compatible. Actualiza Aria.",
+      "unsupportedSchema": "Versión de esquema de exportación no compatible (v{version}). Actualiza Aria.",
       "missingPayload": "Al archivo de exportación le faltan datos.",
       "missingRequiredFields": "Al archivo de personaje le faltan campos obligatorios (nombre, prompt del sistema, mensaje inicial)."
     }
@@ -585,7 +587,7 @@ const locale = {
       "invalidJson": "Este archivo no es JSON válido.",
       "notAriaExport": "Este archivo no es una exportación de Aria.",
       "wrongKind": "Este archivo no es una exportación de historia. (Encontrado: {kind})",
-      "unsupportedSchema": "Versión de esquema de exportación no compatible. Actualiza Aria.",
+      "unsupportedSchema": "Versión de esquema de exportación no compatible (v{version}). Actualiza Aria.",
       "missingPayload": "Al archivo de exportación le faltan datos.",
       "missingRequiredFields": "Al archivo de historia le falta contenido obligatorio."
     }

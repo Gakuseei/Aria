@@ -214,6 +214,8 @@ const locale = {
     "startNewGameConfirm": "새 게임?",
     "chatExported": "내보내기 완료",
     "chatImported": "가져오기 완료",
+    "confirmImportReplace": "현재 대화를 대체합니다. 계속하시겠습니까?",
+    "confirmImportCharacterMismatch": "가져온 채팅은 {importedCharacter}의 것이지만 현재 {currentCharacter}와 대화 중입니다. 계속 가져오시겠습니까?",
     "invalidChatFile": "유효하지 않은 파일",
     "failedToImport": "가져오기 실패. 유효한 Aria 내보내기 파일(.json)인지 확인하세요.",
     "importChatFileAria": "채팅 파일 가져오기",
@@ -221,7 +223,7 @@ const locale = {
       "invalidJson": "이 파일은 유효한 JSON이 아닙니다.",
       "notAriaExport": "이 파일은 Aria 내보내기 파일이 아닙니다.",
       "wrongKind": "이 파일은 채팅 내보내기 파일이 아닙니다. (발견: {kind})",
-      "unsupportedSchema": "지원되지 않는 내보내기 스키마 버전입니다. Aria를 업데이트하세요.",
+      "unsupportedSchema": "지원되지 않는 내보내기 스키마 버전입니다 (v{version}). Aria를 업데이트하세요.",
       "missingPayload": "내보내기 파일에 데이터가 없습니다."
     },
     "failedToExport": "실패",
@@ -300,7 +302,7 @@ const locale = {
       "invalidJson": "이 파일은 유효한 JSON이 아닙니다.",
       "notAriaExport": "이 파일은 Aria 내보내기 파일이 아닙니다.",
       "wrongKind": "이 파일은 캐릭터 내보내기 파일이 아닙니다. (발견: {kind})",
-      "unsupportedSchema": "지원되지 않는 내보내기 스키마 버전입니다. Aria를 업데이트하세요.",
+      "unsupportedSchema": "지원되지 않는 내보내기 스키마 버전입니다 (v{version}). Aria를 업데이트하세요.",
       "missingPayload": "내보내기 파일에 데이터가 없습니다.",
       "missingRequiredFields": "캐릭터 파일에 필수 항목이 없습니다(이름, 시스템 프롬프트, 시작 메시지)."
     },
@@ -572,7 +574,7 @@ const locale = {
       "invalidJson": "이 파일은 유효한 JSON이 아닙니다.",
       "notAriaExport": "이 파일은 Aria 내보내기 파일이 아닙니다.",
       "wrongKind": "이 파일은 스토리 내보내기 파일이 아닙니다. (발견: {kind})",
-      "unsupportedSchema": "지원되지 않는 내보내기 스키마 버전입니다. Aria를 업데이트하세요.",
+      "unsupportedSchema": "지원되지 않는 내보내기 스키마 버전입니다 (v{version}). Aria를 업데이트하세요.",
       "missingPayload": "내보내기 파일에 데이터가 없습니다.",
       "missingRequiredFields": "스토리 파일에 필수 내용이 없습니다."
     },

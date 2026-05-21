@@ -214,6 +214,8 @@ const locale = {
     "startNewGameConfirm": "Commencer une nouvelle partie avec {name} ?",
     "chatExported": "Chat exporté avec succès",
     "chatImported": "Chat importé avec succès",
+    "confirmImportReplace": "Cela remplacera ta conversation actuelle. Continuer ?",
+    "confirmImportCharacterMismatch": "Ce chat importé appartient à {importedCharacter} mais tu discutes actuellement avec {currentCharacter}. Importer quand même ?",
     "invalidChatFile": "Fichier invalide",
     "failedToImport": "Échec. Vérifiez que le fichier est un export Aria valide (.json).",
     "importChatFileAria": "Importer un fichier de chat",
@@ -221,7 +223,7 @@ const locale = {
       "invalidJson": "Ce fichier n'est pas un JSON valide.",
       "notAriaExport": "Ce fichier n'est pas un export Aria.",
       "wrongKind": "Ce fichier n'est pas un export de chat. (Trouvé : {kind})",
-      "unsupportedSchema": "Version du schéma d'export non prise en charge. Mets Aria à jour.",
+      "unsupportedSchema": "Version du schéma d'export non prise en charge (v{version}). Mets Aria à jour.",
       "missingPayload": "Des données sont manquantes dans le fichier d'export."
     },
     "failedToExport": "Échec de l'exportation",
@@ -300,7 +302,7 @@ const locale = {
       "invalidJson": "Ce fichier n'est pas un JSON valide.",
       "notAriaExport": "Ce fichier n'est pas un export Aria.",
       "wrongKind": "Ce fichier n'est pas un export de personnage. (Trouvé : {kind})",
-      "unsupportedSchema": "Version du schéma d'export non prise en charge. Mets Aria à jour.",
+      "unsupportedSchema": "Version du schéma d'export non prise en charge (v{version}). Mets Aria à jour.",
       "missingPayload": "Des données sont manquantes dans le fichier d'export.",
       "missingRequiredFields": "Des champs obligatoires manquent dans le fichier (nom, prompt système, message d'accueil)."
     },
@@ -572,7 +574,7 @@ const locale = {
       "invalidJson": "Ce fichier n'est pas un JSON valide.",
       "notAriaExport": "Ce fichier n'est pas un export Aria.",
       "wrongKind": "Ce fichier n'est pas un export de récit. (Trouvé : {kind})",
-      "unsupportedSchema": "Version du schéma d'export non prise en charge. Mets Aria à jour.",
+      "unsupportedSchema": "Version du schéma d'export non prise en charge (v{version}). Mets Aria à jour.",
       "missingPayload": "Des données sont manquantes dans le fichier d'export.",
       "missingRequiredFields": "Le fichier de récit ne contient pas de texte."
     },

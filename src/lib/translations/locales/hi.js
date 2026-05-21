@@ -214,6 +214,8 @@ const locale = {
     "startNewGameConfirm": "{name} के साथ नया गेम शुरू करें?",
     "chatExported": "चैट सफलतापूर्वक निर्यात की गई",
     "chatImported": "चैट सफलतापूर्वक आयात की गई",
+    "confirmImportReplace": "यह आपकी वर्तमान बातचीत को बदल देगा। जारी रखें?",
+    "confirmImportCharacterMismatch": "यह आयातित चैट {importedCharacter} की है लेकिन आप वर्तमान में {currentCharacter} से बात कर रहे हैं। फिर भी आयात करें?",
     "invalidChatFile": "अमान्य चैट फ़ाइल",
     "failedToImport": "आयात विफल। सुनिश्चित करें कि फ़ाइल एक वैध Aria निर्यात (.json) है।",
     "failedToExport": "निर्यात विफल",
@@ -234,7 +236,7 @@ const locale = {
       "invalidJson": "यह फ़ाइल वैध JSON नहीं है।",
       "notAriaExport": "यह फ़ाइल Aria एक्सपोर्ट नहीं है।",
       "wrongKind": "यह फ़ाइल चैट एक्सपोर्ट नहीं है। (मिला: {kind})",
-      "unsupportedSchema": "असमर्थित एक्सपोर्ट स्कीमा संस्करण। कृपया Aria अपडेट करें।",
+      "unsupportedSchema": "असमर्थित एक्सपोर्ट स्कीमा संस्करण (v{version})। कृपया Aria अपडेट करें।",
       "missingPayload": "एक्सपोर्ट फ़ाइल में डेटा गायब है।"
     }
   },
@@ -334,7 +336,7 @@ const locale = {
       "invalidJson": "यह फ़ाइल वैध JSON नहीं है।",
       "notAriaExport": "यह फ़ाइल Aria एक्सपोर्ट नहीं है।",
       "wrongKind": "यह फ़ाइल किरदार एक्सपोर्ट नहीं है। (मिला: {kind})",
-      "unsupportedSchema": "असमर्थित एक्सपोर्ट स्कीमा संस्करण। कृपया Aria अपडेट करें।",
+      "unsupportedSchema": "असमर्थित एक्सपोर्ट स्कीमा संस्करण (v{version})। कृपया Aria अपडेट करें।",
       "missingPayload": "एक्सपोर्ट फ़ाइल में डेटा गायब है।",
       "missingRequiredFields": "किरदार फ़ाइल में ज़रूरी फ़ील्ड गायब हैं (नाम, सिस्टम प्रॉम्प्ट, आरंभिक संदेश)।"
     }
@@ -585,7 +587,7 @@ const locale = {
       "invalidJson": "यह फ़ाइल वैध JSON नहीं है।",
       "notAriaExport": "यह फ़ाइल Aria एक्सपोर्ट नहीं है।",
       "wrongKind": "यह फ़ाइल कहानी एक्सपोर्ट नहीं है। (मिला: {kind})",
-      "unsupportedSchema": "असमर्थित एक्सपोर्ट स्कीमा संस्करण। कृपया Aria अपडेट करें।",
+      "unsupportedSchema": "असमर्थित एक्सपोर्ट स्कीमा संस्करण (v{version})। कृपया Aria अपडेट करें।",
       "missingPayload": "एक्सपोर्ट फ़ाइल में डेटा गायब है।",
       "missingRequiredFields": "कहानी फ़ाइल में ज़रूरी सामग्री गायब है।"
     },

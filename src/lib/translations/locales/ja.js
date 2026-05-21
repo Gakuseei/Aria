@@ -214,6 +214,8 @@ const locale = {
     "startNewGameConfirm": "新規ゲーム？",
     "chatExported": "エクスポート完了",
     "chatImported": "インポート完了",
+    "confirmImportReplace": "現在の会話が置き換えられます。続行しますか？",
+    "confirmImportCharacterMismatch": "このインポートされたチャットは {importedCharacter} のものですが、現在は {currentCharacter} と会話中です。それでもインポートしますか？",
     "invalidChatFile": "無効なファイル",
     "failedToImport": "インポート失敗。有効なAriaエクスポート(.json)か確認してください。",
     "importChatFileAria": "チャットファイルをインポート",
@@ -221,7 +223,7 @@ const locale = {
       "invalidJson": "このファイルは有効なJSONではありません。",
       "notAriaExport": "このファイルはAriaのエクスポートではありません。",
       "wrongKind": "このファイルはチャットのエクスポートではありません。(検出: {kind})",
-      "unsupportedSchema": "サポートされていないエクスポートスキーマです。Ariaを更新してください。",
+      "unsupportedSchema": "サポートされていないエクスポートスキーマです (v{version})。Ariaを更新してください。",
       "missingPayload": "エクスポートファイルにデータがありません。"
     },
     "failedToExport": "失敗",
@@ -300,7 +302,7 @@ const locale = {
       "invalidJson": "このファイルは有効なJSONではありません。",
       "notAriaExport": "このファイルはAriaのエクスポートではありません。",
       "wrongKind": "このファイルはキャラクターのエクスポートではありません。(検出: {kind})",
-      "unsupportedSchema": "サポートされていないエクスポートスキーマです。Ariaを更新してください。",
+      "unsupportedSchema": "サポートされていないエクスポートスキーマです (v{version})。Ariaを更新してください。",
       "missingPayload": "エクスポートファイルにデータがありません。",
       "missingRequiredFields": "キャラクターファイルに必須項目が不足しています(名前、システムプロンプト、開始メッセージ)。"
     },
@@ -570,7 +572,7 @@ const locale = {
       "invalidJson": "このファイルは有効なJSONではありません。",
       "notAriaExport": "このファイルはAriaのエクスポートではありません。",
       "wrongKind": "このファイルはストーリーのエクスポートではありません。(検出: {kind})",
-      "unsupportedSchema": "サポートされていないエクスポートスキーマです。Ariaを更新してください。",
+      "unsupportedSchema": "サポートされていないエクスポートスキーマです (v{version})。Ariaを更新してください。",
       "missingPayload": "エクスポートファイルにデータがありません。",
       "missingRequiredFields": "ストーリーファイルに必要な内容がありません。"
     },

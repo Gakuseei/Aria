@@ -214,6 +214,8 @@ const locale = {
     "startNewGameConfirm": "{name} ile yeni oyun başlatılsın mı?",
     "chatExported": "Sohbet başarıyla dışa aktarıldı",
     "chatImported": "Sohbet başarıyla içe aktarıldı",
+    "confirmImportReplace": "Bu, mevcut konuşmanızın yerini alacak. Devam edilsin mi?",
+    "confirmImportCharacterMismatch": "Bu içe aktarılan sohbet {importedCharacter} karakterine ait, ancak şu anda {currentCharacter} ile sohbet ediyorsunuz. Yine de içe aktarılsın mı?",
     "invalidChatFile": "Geçersiz sohbet dosyası",
     "failedToImport": "İçe aktarma başarısız. Dosyanın geçerli bir Aria dışa aktarımı (.json) olduğundan emin olun.",
     "failedToExport": "Dışa aktarma başarısız",
@@ -234,7 +236,7 @@ const locale = {
       "invalidJson": "Bu dosya geçerli JSON değil.",
       "notAriaExport": "Bu dosya bir Aria dışa aktarımı değil.",
       "wrongKind": "Bu dosya bir sohbet dışa aktarımı değil. (Bulundu: {kind})",
-      "unsupportedSchema": "Desteklenmeyen dışa aktarım şema sürümü. Lütfen Aria'yı güncelleyin.",
+      "unsupportedSchema": "Desteklenmeyen dışa aktarım şema sürümü (v{version}). Lütfen Aria'yı güncelleyin.",
       "missingPayload": "Dışa aktarım dosyasında veri eksik."
     }
   },
@@ -334,7 +336,7 @@ const locale = {
       "invalidJson": "Bu dosya geçerli JSON değil.",
       "notAriaExport": "Bu dosya bir Aria dışa aktarımı değil.",
       "wrongKind": "Bu dosya bir karakter dışa aktarımı değil. (Bulundu: {kind})",
-      "unsupportedSchema": "Desteklenmeyen dışa aktarım şema sürümü. Lütfen Aria'yı güncelleyin.",
+      "unsupportedSchema": "Desteklenmeyen dışa aktarım şema sürümü (v{version}). Lütfen Aria'yı güncelleyin.",
       "missingPayload": "Dışa aktarım dosyasında veri eksik.",
       "missingRequiredFields": "Karakter dosyasında gerekli alanlar eksik (ad, sistem istemi, başlangıç mesajı)."
     }
@@ -587,7 +589,7 @@ const locale = {
       "invalidJson": "Bu dosya geçerli JSON değil.",
       "notAriaExport": "Bu dosya bir Aria dışa aktarımı değil.",
       "wrongKind": "Bu dosya bir hikaye dışa aktarımı değil. (Bulundu: {kind})",
-      "unsupportedSchema": "Desteklenmeyen dışa aktarım şema sürümü. Lütfen Aria'yı güncelleyin.",
+      "unsupportedSchema": "Desteklenmeyen dışa aktarım şema sürümü (v{version}). Lütfen Aria'yı güncelleyin.",
       "missingPayload": "Dışa aktarım dosyasında veri eksik.",
       "missingRequiredFields": "Hikaye dosyasında gerekli içerik eksik."
     }

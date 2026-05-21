@@ -214,6 +214,8 @@ const locale = {
     "startNewGameConfirm": "开始新游戏？",
     "chatExported": "导出成功",
     "chatImported": "导入成功",
+    "confirmImportReplace": "这将替换您当前的对话。继续吗？",
+    "confirmImportCharacterMismatch": "此导入的聊天属于 {importedCharacter}，但您当前正在与 {currentCharacter} 聊天。仍要导入吗？",
     "invalidChatFile": "无效文件",
     "failedToImport": "导入失败。请确认文件是有效的Aria导出文件(.json)。",
     "failedToExport": "导出失败",
@@ -234,7 +236,7 @@ const locale = {
       "invalidJson": "此文件不是有效的 JSON。",
       "notAriaExport": "此文件不是 Aria 导出文件。",
       "wrongKind": "此文件不是聊天导出。（发现：{kind}）",
-      "unsupportedSchema": "不支持的导出版本。请更新 Aria。",
+      "unsupportedSchema": "不支持的导出版本 (v{version})。请更新 Aria。",
       "missingPayload": "导出文件缺少数据。"
     }
   },
@@ -334,7 +336,7 @@ const locale = {
       "invalidJson": "此文件不是有效的 JSON。",
       "notAriaExport": "此文件不是 Aria 导出文件。",
       "wrongKind": "此文件不是角色导出。（发现：{kind}）",
-      "unsupportedSchema": "不支持的导出版本。请更新 Aria。",
+      "unsupportedSchema": "不支持的导出版本 (v{version})。请更新 Aria。",
       "missingPayload": "导出文件缺少数据。",
       "missingRequiredFields": "角色文件缺少必需字段（名称、系统提示词、起始消息）。"
     }
@@ -585,7 +587,7 @@ const locale = {
       "invalidJson": "此文件不是有效的 JSON。",
       "notAriaExport": "此文件不是 Aria 导出文件。",
       "wrongKind": "此文件不是故事导出。（发现：{kind}）",
-      "unsupportedSchema": "不支持的导出版本。请更新 Aria。",
+      "unsupportedSchema": "不支持的导出版本 (v{version})。请更新 Aria。",
       "missingPayload": "导出文件缺少数据。",
       "missingRequiredFields": "故事文件缺少必需的内容。"
     }

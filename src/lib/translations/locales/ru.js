@@ -214,6 +214,8 @@ const locale = {
     "startNewGameConfirm": "Новая игра?",
     "chatExported": "Экспортировано",
     "chatImported": "Импортировано",
+    "confirmImportReplace": "Это заменит текущий разговор. Продолжить?",
+    "confirmImportCharacterMismatch": "Этот импортированный чат принадлежит {importedCharacter}, но вы сейчас общаетесь с {currentCharacter}. Импортировать всё равно?",
     "invalidChatFile": "Неверный файл",
     "failedToImport": "Ошибка импорта. Убедитесь, что файл — валидный экспорт Aria (.json).",
     "importChatFileAria": "Импорт файла чата",
@@ -221,7 +223,7 @@ const locale = {
       "invalidJson": "Этот файл не является корректным JSON.",
       "notAriaExport": "Этот файл не является экспортом Aria.",
       "wrongKind": "Этот файл не является экспортом чата. (Найдено: {kind})",
-      "unsupportedSchema": "Неподдерживаемая версия схемы экспорта. Обновите Aria.",
+      "unsupportedSchema": "Неподдерживаемая версия схемы экспорта (v{version}). Обновите Aria.",
       "missingPayload": "В файле экспорта отсутствуют данные."
     },
     "failedToExport": "Ошибка экспорта",
@@ -300,7 +302,7 @@ const locale = {
       "invalidJson": "Этот файл не является корректным JSON.",
       "notAriaExport": "Этот файл не является экспортом Aria.",
       "wrongKind": "Этот файл не является экспортом персонажа. (Найдено: {kind})",
-      "unsupportedSchema": "Неподдерживаемая версия схемы экспорта. Обновите Aria.",
+      "unsupportedSchema": "Неподдерживаемая версия схемы экспорта (v{version}). Обновите Aria.",
       "missingPayload": "В файле экспорта отсутствуют данные.",
       "missingRequiredFields": "В файле персонажа отсутствуют обязательные поля (имя, системный промпт, начальное сообщение)."
     },
@@ -570,7 +572,7 @@ const locale = {
       "invalidJson": "Этот файл не является корректным JSON.",
       "notAriaExport": "Этот файл не является экспортом Aria.",
       "wrongKind": "Этот файл не является экспортом истории. (Найдено: {kind})",
-      "unsupportedSchema": "Неподдерживаемая версия схемы экспорта. Обновите Aria.",
+      "unsupportedSchema": "Неподдерживаемая версия схемы экспорта (v{version}). Обновите Aria.",
       "missingPayload": "В файле экспорта отсутствуют данные.",
       "missingRequiredFields": "В файле истории отсутствует содержимое."
     },

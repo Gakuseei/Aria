@@ -214,6 +214,8 @@ const locale = {
     "startNewGameConfirm": "بدء لعبة جديدة مع {name}؟",
     "chatExported": "تم التصدير",
     "chatImported": "تم الاستيراد",
+    "confirmImportReplace": "سيؤدي هذا إلى استبدال محادثتك الحالية. هل تريد المتابعة؟",
+    "confirmImportCharacterMismatch": "هذه الدردشة المستوردة تخص {importedCharacter} لكنك تتحدث حاليًا مع {currentCharacter}. هل تريد الاستيراد على أي حال؟",
     "invalidChatFile": "ملف غير صالح",
     "failedToImport": "فشل الاستيراد. تأكد من أن الملف تصدير Aria صالح (.json).",
     "importChatFileAria": "استيراد ملف دردشة",
@@ -221,7 +223,7 @@ const locale = {
       "invalidJson": "هذا الملف ليس بصيغة JSON صالحة.",
       "notAriaExport": "هذا الملف ليس تصدير Aria.",
       "wrongKind": "هذا الملف ليس تصدير دردشة. (تم العثور على: {kind})",
-      "unsupportedSchema": "إصدار مخطط التصدير غير مدعوم. يُرجى تحديث Aria.",
+      "unsupportedSchema": "إصدار مخطط التصدير غير مدعوم (v{version}). يُرجى تحديث Aria.",
       "missingPayload": "ملف التصدير تنقصه بيانات."
     },
     "failedToExport": "فشل التصدير",
@@ -300,7 +302,7 @@ const locale = {
       "invalidJson": "هذا الملف ليس بصيغة JSON صالحة.",
       "notAriaExport": "هذا الملف ليس تصدير Aria.",
       "wrongKind": "هذا الملف ليس تصدير شخصية. (تم العثور على: {kind})",
-      "unsupportedSchema": "إصدار مخطط التصدير غير مدعوم. يُرجى تحديث Aria.",
+      "unsupportedSchema": "إصدار مخطط التصدير غير مدعوم (v{version}). يُرجى تحديث Aria.",
       "missingPayload": "ملف التصدير تنقصه بيانات.",
       "missingRequiredFields": "ينقص ملف الشخصية حقول مطلوبة (الاسم، موجه النظام، رسالة البدء)."
     },
@@ -572,7 +574,7 @@ const locale = {
       "invalidJson": "هذا الملف ليس بصيغة JSON صالحة.",
       "notAriaExport": "هذا الملف ليس تصدير Aria.",
       "wrongKind": "هذا الملف ليس تصدير قصة. (تم العثور على: {kind})",
-      "unsupportedSchema": "إصدار مخطط التصدير غير مدعوم. يُرجى تحديث Aria.",
+      "unsupportedSchema": "إصدار مخطط التصدير غير مدعوم (v{version}). يُرجى تحديث Aria.",
       "missingPayload": "ملف التصدير تنقصه بيانات.",
       "missingRequiredFields": "ينقص ملف القصة المحتوى المطلوب."
     },

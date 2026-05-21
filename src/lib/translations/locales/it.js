@@ -214,6 +214,8 @@ const locale = {
     "startNewGameConfirm": "Nuova partita?",
     "chatExported": "Chat esportata",
     "chatImported": "Chat importata",
+    "confirmImportReplace": "Questo sostituirà la conversazione attuale. Continuare?",
+    "confirmImportCharacterMismatch": "Questa chat importata appartiene a {importedCharacter} ma stai chattando con {currentCharacter}. Importare comunque?",
     "invalidChatFile": "File non valido",
     "failedToImport": "Importazione fallita. Verifica che sia un export valido (.json).",
     "failedToExport": "Esportazione fallita",
@@ -234,7 +236,7 @@ const locale = {
       "invalidJson": "Questo file non è un JSON valido.",
       "notAriaExport": "Questo file non è un export di Aria.",
       "wrongKind": "Questo file non è un export di chat. (Trovato: {kind})",
-      "unsupportedSchema": "Versione dello schema di export non supportata. Aggiorna Aria.",
+      "unsupportedSchema": "Versione dello schema di export non supportata (v{version}). Aggiorna Aria.",
       "missingPayload": "Il file di export è privo di dati."
     }
   },
@@ -334,7 +336,7 @@ const locale = {
       "invalidJson": "Questo file non è un JSON valido.",
       "notAriaExport": "Questo file non è un export di Aria.",
       "wrongKind": "Questo file non è un export di personaggio. (Trovato: {kind})",
-      "unsupportedSchema": "Versione dello schema di export non supportata. Aggiorna Aria.",
+      "unsupportedSchema": "Versione dello schema di export non supportata (v{version}). Aggiorna Aria.",
       "missingPayload": "Il file di export è privo di dati.",
       "missingRequiredFields": "Il file del personaggio manca dei campi obbligatori (nome, system prompt, messaggio iniziale)."
     }
@@ -583,7 +585,7 @@ const locale = {
       "invalidJson": "Questo file non è un JSON valido.",
       "notAriaExport": "Questo file non è un export di Aria.",
       "wrongKind": "Questo file non è un export di storia. (Trovato: {kind})",
-      "unsupportedSchema": "Versione dello schema di export non supportata. Aggiorna Aria.",
+      "unsupportedSchema": "Versione dello schema di export non supportata (v{version}). Aggiorna Aria.",
       "missingPayload": "Il file di export è privo di dati.",
       "missingRequiredFields": "Il file della storia manca dei contenuti necessari."
     },

@@ -215,6 +215,8 @@ const locale = {
     "startNewGameConfirm": "Neues Spiel mit {name} starten?",
     "chatExported": "Chat erfolgreich exportiert",
     "chatImported": "Chat erfolgreich importiert",
+    "confirmImportReplace": "Dadurch wird deine aktuelle Konversation ersetzt. Fortfahren?",
+    "confirmImportCharacterMismatch": "Dieser importierte Chat gehört zu {importedCharacter}, aber du chattest gerade mit {currentCharacter}. Trotzdem importieren?",
     "invalidChatFile": "Ungültige Chat-Datei: Nachrichten fehlen",
     "failedToImport": "Import fehlgeschlagen. Stelle sicher, dass es ein gültiger Aria-Export (.json) ist.",
     "failedToExport": "Chat konnte nicht exportiert werden. Prüfe den Speicherplatz und versuche es erneut.",
@@ -234,7 +236,7 @@ const locale = {
       "invalidJson": "Diese Datei ist kein gültiges JSON.",
       "notAriaExport": "Diese Datei ist kein Aria-Export.",
       "wrongKind": "Diese Datei ist kein Chat-Export. (Gefunden: {kind})",
-      "unsupportedSchema": "Nicht unterstützte Export-Schema-Version. Bitte aktualisiere Aria.",
+      "unsupportedSchema": "Nicht unterstützte Export-Schema-Version (v{version}). Bitte aktualisiere Aria.",
       "missingPayload": "Export-Datei enthält keine Daten."
     }
   },
@@ -334,7 +336,7 @@ const locale = {
       "invalidJson": "Diese Datei ist kein gültiges JSON.",
       "notAriaExport": "Diese Datei ist kein Aria-Export.",
       "wrongKind": "Diese Datei ist kein Charakter-Export. (Gefunden: {kind})",
-      "unsupportedSchema": "Nicht unterstützte Export-Schema-Version. Bitte aktualisiere Aria.",
+      "unsupportedSchema": "Nicht unterstützte Export-Schema-Version (v{version}). Bitte aktualisiere Aria.",
       "missingPayload": "Export-Datei enthält keine Daten.",
       "missingRequiredFields": "Charakter-Datei fehlen Pflichtfelder (Name, System-Prompt, Startnachricht)."
     }
@@ -589,7 +591,7 @@ const locale = {
       "invalidJson": "Diese Datei ist kein gültiges JSON.",
       "notAriaExport": "Diese Datei ist kein Aria-Export.",
       "wrongKind": "Diese Datei ist kein Story-Export. (Gefunden: {kind})",
-      "unsupportedSchema": "Nicht unterstützte Export-Schema-Version. Bitte aktualisiere Aria.",
+      "unsupportedSchema": "Nicht unterstützte Export-Schema-Version (v{version}). Bitte aktualisiere Aria.",
       "missingPayload": "Export-Datei enthält keine Daten.",
       "missingRequiredFields": "Story-Datei fehlt der erforderliche Inhalt."
     }

@@ -142,22 +142,22 @@ const locale = {
     "suggestionModelPullSuccess": "готово",
     "suggestionModelPullEta": "осталось",
     "suggestionModelPullAlmostDone": "почти готово",
-    "samplingSection": "Sampling — {model}",
-    "samplingDefault": "Default",
-    "samplingCustom": "Custom",
-    "samplingResetAll": "Reset all for this model",
+    "samplingSection": "Сэмплинг — {model}",
+    "samplingDefault": "По умолчанию",
+    "samplingCustom": "Своё",
+    "samplingResetAll": "Сбросить всё для этой модели",
     "topP": "Top-P",
     "topK": "Top-K",
     "minP": "Min-P",
-    "repeatPenalty": "Repeat Penalty",
-    "repeatLastN": "Repeat Last N",
-    "penalizeNewline": "Penalize Newline",
+    "repeatPenalty": "Штраф за повторения",
+    "repeatLastN": "Окно повторений",
+    "penalizeNewline": "Штраф за перенос строки",
     "dryEnabled": "DRY (Don't Repeat Yourself)",
-    "dryMultiplier": "DRY Multiplier",
-    "dryBase": "DRY Base",
-    "dryAllowedLength": "DRY Allowed Length",
-    "dryPenaltyLastN": "DRY Penalty Last N",
-    "samplingHelper": "Sliders override the per-model defaults. Click ⟲ to revert any field."
+    "dryMultiplier": "Множитель DRY",
+    "dryBase": "База DRY",
+    "dryAllowedLength": "Допустимая длина DRY",
+    "dryPenaltyLastN": "Окно штрафа DRY",
+    "samplingHelper": "Слайдеры переопределяют значения по умолчанию для каждой модели. Нажми ⟲, чтобы сбросить любое поле."
   },
   "chat": {
     "passion": "Страсть",
@@ -395,7 +395,7 @@ const locale = {
     "voiceAvoidHelp": "Необязательно. Шаблонные фразы через запятую, которые этот персонаж никогда не использовал бы. Помогает блокировать сползание в общий тон любовного романа.",
     "voicePinGenerate": "Предложить через ИИ",
     "voicePinGenerating": "Генерация...",
-    "generating": "Generating your character..."
+    "generating": "Создаю твоего персонажа..."
   },
   "modeSelection": {
     "selectMode": "Режим",
@@ -523,15 +523,15 @@ const locale = {
     "voiceAvoidHelp": "Необязательно. Шаблонные фразы через запятую, которые этот персонаж никогда не использовал бы. Помогает блокировать сползание в общий тон любовного романа.",
     "voicePinGenerate": "Предложить через ИИ",
     "voicePinGenerating": "Генерация...",
-    "contentRating": "Content Rating",
+    "contentRating": "Возрастной рейтинг",
     "contentRatingSfw": "SFW",
     "contentRatingNsfw": "NSFW",
-    "contentRatingHelp": "NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.",
-    "responseModeLabel": "Reply Length",
-    "responseModeHint": "Controls how long the AI usually replies. Users can still ask for more detail when needed.",
-    "responseModeShort": "Short",
-    "responseModeNormal": "Normal",
-    "responseModeLong": "Long"
+    "contentRatingHelp": "NSFW-персонажи появляются в NSFW-фильтре и автоматически разблокируют откровенный контент при эскалации сцены. SFW-персонажи тоже могут перейти в NSFW, если включён режим Unchained.",
+    "responseModeLabel": "Длина ответа",
+    "responseModeHint": "Управляет тем, насколько длинные ответы обычно даёт ИИ. Можно попросить больше деталей при необходимости.",
+    "responseModeShort": "Короткий",
+    "responseModeNormal": "Обычный",
+    "responseModeLong": "Длинный"
   },
   "creative": {
     "creativeWriting": "Творчество",
@@ -589,8 +589,8 @@ const locale = {
     "newStory": "Новая история",
     "wordsCount": "{count} слов",
     "storyExported": "История экспортирована!",
-    "generate": "Generate",
-    "generating": "Generating..."
+    "generate": "Сгенерировать",
+    "generating": "Генерация..."
   },
   "supporter": {
     "supportAria": "Поддержать Aria",

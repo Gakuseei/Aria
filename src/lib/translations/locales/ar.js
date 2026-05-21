@@ -142,22 +142,22 @@ const locale = {
     "suggestionModelPullSuccess": "اكتمل",
     "suggestionModelPullEta": "متبقٍ",
     "suggestionModelPullAlmostDone": "اقترب الانتهاء",
-    "samplingSection": "Sampling — {model}",
-    "samplingDefault": "Default",
-    "samplingCustom": "Custom",
-    "samplingResetAll": "Reset all for this model",
+    "samplingSection": "العيّنات — {model}",
+    "samplingDefault": "افتراضي",
+    "samplingCustom": "مخصص",
+    "samplingResetAll": "إعادة تعيين الكل لهذا النموذج",
     "topP": "Top-P",
     "topK": "Top-K",
     "minP": "Min-P",
-    "repeatPenalty": "Repeat Penalty",
-    "repeatLastN": "Repeat Last N",
-    "penalizeNewline": "Penalize Newline",
+    "repeatPenalty": "عقوبة التكرار",
+    "repeatLastN": "نافذة التكرار الأخيرة",
+    "penalizeNewline": "معاقبة السطر الجديد",
     "dryEnabled": "DRY (Don't Repeat Yourself)",
-    "dryMultiplier": "DRY Multiplier",
-    "dryBase": "DRY Base",
-    "dryAllowedLength": "DRY Allowed Length",
-    "dryPenaltyLastN": "DRY Penalty Last N",
-    "samplingHelper": "Sliders override the per-model defaults. Click ⟲ to revert any field."
+    "dryMultiplier": "مضاعف DRY",
+    "dryBase": "قاعدة DRY",
+    "dryAllowedLength": "طول DRY المسموح",
+    "dryPenaltyLastN": "نافذة عقوبة DRY",
+    "samplingHelper": "تتجاوز المنزلقات الإعدادات الافتراضية لكل نموذج. اضغط على ⟲ لاستعادة أي حقل."
   },
   "chat": {
     "passion": "الشغف",
@@ -395,7 +395,7 @@ const locale = {
     "voiceAvoidHelp": "اختياري. عبارات نمطية مفصولة بفواصل لن تستخدمها هذه الشخصية أبدًا. يساعد على منع الانحراف نحو الرواية الرومانسية العامة.",
     "voicePinGenerate": "اقتراح بالذكاء الاصطناعي",
     "voicePinGenerating": "جارٍ الإنشاء...",
-    "generating": "Generating your character..."
+    "generating": "جارٍ توليد شخصيتك..."
   },
   "modeSelection": {
     "selectMode": "اختر الوضع",
@@ -525,15 +525,15 @@ const locale = {
     "voiceAvoidHelp": "اختياري. عبارات نمطية مفصولة بفواصل لن تستخدمها هذه الشخصية أبدًا. يساعد على منع الانحراف نحو الرواية الرومانسية العامة.",
     "voicePinGenerate": "اقتراح بالذكاء الاصطناعي",
     "voicePinGenerating": "جارٍ الإنشاء...",
-    "contentRating": "Content Rating",
+    "contentRating": "تصنيف المحتوى",
     "contentRatingSfw": "SFW",
     "contentRatingNsfw": "NSFW",
-    "contentRatingHelp": "NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.",
-    "responseModeLabel": "Reply Length",
-    "responseModeHint": "Controls how long the AI usually replies. Users can still ask for more detail when needed.",
-    "responseModeShort": "Short",
-    "responseModeNormal": "Normal",
-    "responseModeLong": "Long"
+    "contentRatingHelp": "تظهر شخصيات NSFW في فلتر NSFW وتفتح المحتوى الصريح تلقائياً عند تصاعد المشهد. يمكن لشخصيات SFW أيضاً الانتقال إلى NSFW إذا تم تفعيل الوضع المُطلق.",
+    "responseModeLabel": "طول الرد",
+    "responseModeHint": "يتحكم في طول ردود الذكاء الاصطناعي عادةً. يمكن للمستخدمين طلب تفاصيل أكثر عند الحاجة.",
+    "responseModeShort": "قصير",
+    "responseModeNormal": "عادي",
+    "responseModeLong": "طويل"
   },
   "creative": {
     "creativeWriting": "الكتابة الإبداعية",
@@ -591,8 +591,8 @@ const locale = {
     "newStory": "قصة جديدة",
     "wordsCount": "{count} كلمة",
     "storyExported": "تم تصدير القصة!",
-    "generate": "Generate",
-    "generating": "Generating..."
+    "generate": "توليد",
+    "generating": "جارٍ التوليد..."
   },
   "supporter": {
     "supportAria": "دعم Aria",

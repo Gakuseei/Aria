@@ -142,22 +142,22 @@ const locale = {
     "suggestionModelPullSuccess": "terminé",
     "suggestionModelPullEta": "restant",
     "suggestionModelPullAlmostDone": "presque fini",
-    "samplingSection": "Sampling — {model}",
-    "samplingDefault": "Default",
-    "samplingCustom": "Custom",
-    "samplingResetAll": "Reset all for this model",
+    "samplingSection": "Échantillonnage — {model}",
+    "samplingDefault": "Par défaut",
+    "samplingCustom": "Personnalisé",
+    "samplingResetAll": "Tout réinitialiser pour ce modèle",
     "topP": "Top-P",
     "topK": "Top-K",
     "minP": "Min-P",
-    "repeatPenalty": "Repeat Penalty",
-    "repeatLastN": "Repeat Last N",
-    "penalizeNewline": "Penalize Newline",
+    "repeatPenalty": "Pénalité de répétition",
+    "repeatLastN": "Fenêtre de répétition",
+    "penalizeNewline": "Pénaliser les sauts de ligne",
     "dryEnabled": "DRY (Don't Repeat Yourself)",
-    "dryMultiplier": "DRY Multiplier",
-    "dryBase": "DRY Base",
-    "dryAllowedLength": "DRY Allowed Length",
-    "dryPenaltyLastN": "DRY Penalty Last N",
-    "samplingHelper": "Sliders override the per-model defaults. Click ⟲ to revert any field."
+    "dryMultiplier": "Multiplicateur DRY",
+    "dryBase": "Base DRY",
+    "dryAllowedLength": "Longueur autorisée DRY",
+    "dryPenaltyLastN": "Fenêtre de pénalité DRY",
+    "samplingHelper": "Les curseurs remplacent les valeurs par défaut du modèle. Clique sur ⟲ pour réinitialiser un champ."
   },
   "chat": {
     "passion": "Passion",
@@ -395,7 +395,7 @@ const locale = {
     "voiceAvoidHelp": "Optionnel. Phrases toutes faites séparées par des virgules que ce personnage n'utiliserait jamais. Aide à bloquer la dérive générique de roman à l'eau de rose.",
     "voicePinGenerate": "Suggérer avec l'IA",
     "voicePinGenerating": "Génération...",
-    "generating": "Generating your character..."
+    "generating": "Génération de ton personnage..."
   },
   "modeSelection": {
     "selectMode": "Sélection du Mode",
@@ -525,13 +525,13 @@ const locale = {
     "voiceAvoidHelp": "Optionnel. Phrases toutes faites séparées par des virgules que ce personnage n'utiliserait jamais. Aide à bloquer la dérive générique de roman à l'eau de rose.",
     "voicePinGenerate": "Suggérer avec l'IA",
     "voicePinGenerating": "Génération...",
-    "contentRating": "Content Rating",
+    "contentRating": "Classification du contenu",
     "contentRatingSfw": "SFW",
     "contentRatingNsfw": "NSFW",
-    "contentRatingHelp": "NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.",
-    "responseModeLabel": "Reply Length",
-    "responseModeHint": "Controls how long the AI usually replies. Users can still ask for more detail when needed.",
-    "responseModeShort": "Short",
+    "contentRatingHelp": "Les personnages NSFW apparaissent dans le filtre NSFW et déverrouillent le contenu explicite automatiquement quand une scène monte en intensité. Les personnages SFW peuvent quand même passer en NSFW si le Mode Déchaîné est activé.",
+    "responseModeLabel": "Longueur des réponses",
+    "responseModeHint": "Contrôle la longueur habituelle des réponses de l'IA. Tu peux toujours demander plus de détails si besoin.",
+    "responseModeShort": "Court",
     "responseModeNormal": "Normal",
     "responseModeLong": "Long"
   },
@@ -591,8 +591,8 @@ const locale = {
     "newStory": "Nouvelle histoire",
     "wordsCount": "{count} mots",
     "storyExported": "Histoire exportée !",
-    "generate": "Generate",
-    "generating": "Generating..."
+    "generate": "Générer",
+    "generating": "Génération..."
   },
   "supporter": {
     "supportAria": "Soutenir Aria",

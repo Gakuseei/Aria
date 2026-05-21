@@ -142,22 +142,22 @@ const locale = {
     "suggestionModelPullSuccess": "पूर्ण",
     "suggestionModelPullEta": "बाक़ी",
     "suggestionModelPullAlmostDone": "लगभग पूरा",
-    "samplingSection": "Sampling — {model}",
-    "samplingDefault": "Default",
-    "samplingCustom": "Custom",
-    "samplingResetAll": "Reset all for this model",
+    "samplingSection": "सैम्पलिंग — {model}",
+    "samplingDefault": "डिफ़ॉल्ट",
+    "samplingCustom": "कस्टम",
+    "samplingResetAll": "इस मॉडल के लिए सब रीसेट करें",
     "topP": "Top-P",
     "topK": "Top-K",
     "minP": "Min-P",
-    "repeatPenalty": "Repeat Penalty",
-    "repeatLastN": "Repeat Last N",
-    "penalizeNewline": "Penalize Newline",
+    "repeatPenalty": "दोहराव पेनल्टी",
+    "repeatLastN": "दोहराव विंडो",
+    "penalizeNewline": "न्यूलाइन पर पेनल्टी",
     "dryEnabled": "DRY (Don't Repeat Yourself)",
-    "dryMultiplier": "DRY Multiplier",
-    "dryBase": "DRY Base",
-    "dryAllowedLength": "DRY Allowed Length",
-    "dryPenaltyLastN": "DRY Penalty Last N",
-    "samplingHelper": "Sliders override the per-model defaults. Click ⟲ to revert any field."
+    "dryMultiplier": "DRY गुणक",
+    "dryBase": "DRY बेस",
+    "dryAllowedLength": "DRY अनुमत लंबाई",
+    "dryPenaltyLastN": "DRY पेनल्टी विंडो",
+    "samplingHelper": "स्लाइडर प्रति-मॉडल डिफ़ॉल्ट को ओवरराइड करते हैं। किसी भी फ़ील्ड को वापस लाने के लिए ⟲ पर क्लिक करें।"
   },
   "chat": {
     "passion": "जुनून",
@@ -395,7 +395,7 @@ const locale = {
     "voiceAvoidHelp": "वैकल्पिक। अल्पविराम से अलग किए गए घिसे-पिटे वाक्यांश जिनका यह किरदार कभी उपयोग नहीं करेगा। सामान्य रोमांस-उपन्यास बहाव को रोकने में मदद करता है।",
     "voicePinGenerate": "एआई से सुझाव",
     "voicePinGenerating": "जनरेट हो रहा है...",
-    "generating": "Generating your character..."
+    "generating": "तुम्हारा कैरेक्टर बनाया जा रहा है..."
   },
   "modeSelection": {
     "selectMode": "मोड चुनें",
@@ -525,15 +525,15 @@ const locale = {
     "voiceAvoidHelp": "वैकल्पिक। अल्पविराम से अलग किए गए घिसे-पिटे वाक्यांश जिनका यह किरदार कभी उपयोग नहीं करेगा। सामान्य रोमांस-उपन्यास बहाव को रोकने में मदद करता है।",
     "voicePinGenerate": "एआई से सुझाव",
     "voicePinGenerating": "जनरेट हो रहा है...",
-    "contentRating": "Content Rating",
+    "contentRating": "कंटेंट रेटिंग",
     "contentRatingSfw": "SFW",
     "contentRatingNsfw": "NSFW",
-    "contentRatingHelp": "NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.",
-    "responseModeLabel": "Reply Length",
-    "responseModeHint": "Controls how long the AI usually replies. Users can still ask for more detail when needed.",
-    "responseModeShort": "Short",
-    "responseModeNormal": "Normal",
-    "responseModeLong": "Long"
+    "contentRatingHelp": "NSFW पर्सोना NSFW फ़िल्टर में दिखते हैं और सीन एस्केलेट होने पर एक्सप्लिसिट कंटेंट अपने आप अनलॉक हो जाता है। SFW पर्सोना भी NSFW जा सकते हैं अगर Unchained Mode चालू हो।",
+    "responseModeLabel": "जवाब की लंबाई",
+    "responseModeHint": "कंट्रोल करता है कि AI आमतौर पर कितना लंबा जवाब देता है। ज़रूरत पड़ने पर और डिटेल माँगी जा सकती है।",
+    "responseModeShort": "छोटा",
+    "responseModeNormal": "सामान्य",
+    "responseModeLong": "लंबा"
   },
   "creative": {
     "creativeWriting": "रचनात्मक लेखन",
@@ -591,8 +591,8 @@ const locale = {
       "missingPayload": "एक्सपोर्ट फ़ाइल में डेटा गायब है।",
       "missingRequiredFields": "कहानी फ़ाइल में ज़रूरी सामग्री गायब है।"
     },
-    "generate": "Generate",
-    "generating": "Generating..."
+    "generate": "जेनरेट करें",
+    "generating": "जेनरेट हो रहा है..."
   },
   "supporter": {
     "supportAria": "Aria का समर्थन करें",

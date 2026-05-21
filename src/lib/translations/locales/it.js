@@ -142,22 +142,22 @@ const locale = {
     "suggestionModelPullSuccess": "completato",
     "suggestionModelPullEta": "rimanenti",
     "suggestionModelPullAlmostDone": "quasi fatto",
-    "samplingSection": "Sampling — {model}",
-    "samplingDefault": "Default",
-    "samplingCustom": "Custom",
-    "samplingResetAll": "Reset all for this model",
+    "samplingSection": "Campionamento — {model}",
+    "samplingDefault": "Predefinito",
+    "samplingCustom": "Personalizzato",
+    "samplingResetAll": "Ripristina tutto per questo modello",
     "topP": "Top-P",
     "topK": "Top-K",
     "minP": "Min-P",
-    "repeatPenalty": "Repeat Penalty",
-    "repeatLastN": "Repeat Last N",
-    "penalizeNewline": "Penalize Newline",
+    "repeatPenalty": "Penalità di ripetizione",
+    "repeatLastN": "Finestra di ripetizione",
+    "penalizeNewline": "Penalizza a capo",
     "dryEnabled": "DRY (Don't Repeat Yourself)",
-    "dryMultiplier": "DRY Multiplier",
-    "dryBase": "DRY Base",
-    "dryAllowedLength": "DRY Allowed Length",
-    "dryPenaltyLastN": "DRY Penalty Last N",
-    "samplingHelper": "Sliders override the per-model defaults. Click ⟲ to revert any field."
+    "dryMultiplier": "Moltiplicatore DRY",
+    "dryBase": "Base DRY",
+    "dryAllowedLength": "Lunghezza consentita DRY",
+    "dryPenaltyLastN": "Finestra penalità DRY",
+    "samplingHelper": "Gli slider sovrascrivono i valori predefiniti del modello. Clicca ⟲ per ripristinare un campo."
   },
   "chat": {
     "passion": "Passione",
@@ -395,7 +395,7 @@ const locale = {
     "voiceAvoidHelp": "Opzionale. Frasi fatte separate da virgola che questo personaggio non userebbe mai. Aiuta a bloccare la deriva generica da romanzo rosa.",
     "voicePinGenerate": "Suggerisci con IA",
     "voicePinGenerating": "Generazione...",
-    "generating": "Generating your character..."
+    "generating": "Generazione del tuo personaggio..."
   },
   "modeSelection": {
     "selectMode": "Seleziona Modalità",
@@ -523,15 +523,15 @@ const locale = {
     "voiceAvoidHelp": "Opzionale. Frasi fatte separate da virgola che questo personaggio non userebbe mai. Aiuta a bloccare la deriva generica da romanzo rosa.",
     "voicePinGenerate": "Suggerisci con IA",
     "voicePinGenerating": "Generazione...",
-    "contentRating": "Content Rating",
+    "contentRating": "Classificazione del contenuto",
     "contentRatingSfw": "SFW",
     "contentRatingNsfw": "NSFW",
-    "contentRatingHelp": "NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.",
-    "responseModeLabel": "Reply Length",
-    "responseModeHint": "Controls how long the AI usually replies. Users can still ask for more detail when needed.",
-    "responseModeShort": "Short",
-    "responseModeNormal": "Normal",
-    "responseModeLong": "Long"
+    "contentRatingHelp": "I personaggi NSFW appaiono nel filtro NSFW e sbloccano automaticamente il contenuto esplicito quando una scena sale d'intensità. I personaggi SFW possono comunque passare a NSFW se il Modo Liberato è attivo.",
+    "responseModeLabel": "Lunghezza risposta",
+    "responseModeHint": "Controlla quanto sono lunghe di solito le risposte dell'IA. Puoi sempre chiedere più dettagli quando serve.",
+    "responseModeShort": "Corta",
+    "responseModeNormal": "Normale",
+    "responseModeLong": "Lunga"
   },
   "creative": {
     "creativeWriting": "Scrittura Creativa",
@@ -589,8 +589,8 @@ const locale = {
       "missingPayload": "Il file di export è privo di dati.",
       "missingRequiredFields": "Il file della storia manca dei contenuti necessari."
     },
-    "generate": "Generate",
-    "generating": "Generating..."
+    "generate": "Genera",
+    "generating": "Generazione..."
   },
   "supporter": {
     "supportAria": "Supporta Aria",

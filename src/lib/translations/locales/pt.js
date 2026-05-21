@@ -142,22 +142,22 @@ const locale = {
     "themeMode": "Theme",
     "darkMode": "Dark",
     "lightMode": "Light",
-    "samplingSection": "Sampling — {model}",
-    "samplingDefault": "Default",
-    "samplingCustom": "Custom",
-    "samplingResetAll": "Reset all for this model",
+    "samplingSection": "Amostragem — {model}",
+    "samplingDefault": "Padrão",
+    "samplingCustom": "Personalizado",
+    "samplingResetAll": "Redefinir tudo para este modelo",
     "topP": "Top-P",
     "topK": "Top-K",
     "minP": "Min-P",
-    "repeatPenalty": "Repeat Penalty",
-    "repeatLastN": "Repeat Last N",
-    "penalizeNewline": "Penalize Newline",
+    "repeatPenalty": "Penalidade de repetição",
+    "repeatLastN": "Janela de repetição",
+    "penalizeNewline": "Penalizar quebra de linha",
     "dryEnabled": "DRY (Don't Repeat Yourself)",
-    "dryMultiplier": "DRY Multiplier",
-    "dryBase": "DRY Base",
-    "dryAllowedLength": "DRY Allowed Length",
-    "dryPenaltyLastN": "DRY Penalty Last N",
-    "samplingHelper": "Sliders override the per-model defaults. Click ⟲ to revert any field."
+    "dryMultiplier": "Multiplicador DRY",
+    "dryBase": "Base DRY",
+    "dryAllowedLength": "Tamanho permitido DRY",
+    "dryPenaltyLastN": "Janela de penalidade DRY",
+    "samplingHelper": "Os sliders sobrescrevem os padrões por modelo. Clique em ⟲ para restaurar qualquer campo."
   },
   "chat": {
     "passion": "Paixão",
@@ -395,7 +395,7 @@ const locale = {
     "voiceAvoidHelp": "Opcional. Frases prontas separadas por vírgula que este personagem nunca usaria. Ajuda a bloquear a deriva genérica de romance água com açúcar.",
     "voicePinGenerate": "Sugerir com IA",
     "voicePinGenerating": "Gerando...",
-    "generating": "Generating your character..."
+    "generating": "Gerando seu personagem..."
   },
   "modeSelection": {
     "selectMode": "Modo",
@@ -522,15 +522,15 @@ const locale = {
     "voiceAvoidHelp": "Opcional. Frases prontas separadas por vírgula que este personagem nunca usaria. Ajuda a bloquear a deriva genérica de romance água com açúcar.",
     "voicePinGenerate": "Sugerir com IA",
     "voicePinGenerating": "Gerando...",
-    "contentRating": "Content Rating",
+    "contentRating": "Classificação de conteúdo",
     "contentRatingSfw": "SFW",
     "contentRatingNsfw": "NSFW",
-    "contentRatingHelp": "NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.",
-    "responseModeLabel": "Reply Length",
-    "responseModeHint": "Controls how long the AI usually replies. Users can still ask for more detail when needed.",
-    "responseModeShort": "Short",
+    "contentRatingHelp": "Personagens NSFW aparecem no filtro NSFW e liberam conteúdo explícito automaticamente quando uma cena escala. Personagens SFW também podem ir para NSFW se o Modo Liberado estiver ativo.",
+    "responseModeLabel": "Tamanho da resposta",
+    "responseModeHint": "Controla quanto a IA costuma responder. Você pode pedir mais detalhes quando precisar.",
+    "responseModeShort": "Curta",
     "responseModeNormal": "Normal",
-    "responseModeLong": "Long",
+    "responseModeLong": "Longa",
     "storageFull": "Storage full — try removing some character avatars to free space"
   },
   "creative": {
@@ -589,8 +589,8 @@ const locale = {
       "missingPayload": "O arquivo de exportação está sem dados.",
       "missingRequiredFields": "O arquivo de história está sem conteúdo obrigatório."
     },
-    "generate": "Generate",
-    "generating": "Generating..."
+    "generate": "Gerar",
+    "generating": "Gerando..."
   },
   "supporter": {
     "supportAria": "Apoiar Aria",

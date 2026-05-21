@@ -142,22 +142,22 @@ const locale = {
     "suggestionModelPullSuccess": "完了",
     "suggestionModelPullEta": "残り",
     "suggestionModelPullAlmostDone": "もうすぐ完了",
-    "samplingSection": "Sampling — {model}",
-    "samplingDefault": "Default",
-    "samplingCustom": "Custom",
-    "samplingResetAll": "Reset all for this model",
+    "samplingSection": "サンプリング — {model}",
+    "samplingDefault": "デフォルト",
+    "samplingCustom": "カスタム",
+    "samplingResetAll": "このモデルの全項目をリセット",
     "topP": "Top-P",
     "topK": "Top-K",
     "minP": "Min-P",
-    "repeatPenalty": "Repeat Penalty",
-    "repeatLastN": "Repeat Last N",
-    "penalizeNewline": "Penalize Newline",
+    "repeatPenalty": "繰り返しペナルティ",
+    "repeatLastN": "繰り返しウィンドウ",
+    "penalizeNewline": "改行ペナルティ",
     "dryEnabled": "DRY (Don't Repeat Yourself)",
-    "dryMultiplier": "DRY Multiplier",
-    "dryBase": "DRY Base",
-    "dryAllowedLength": "DRY Allowed Length",
-    "dryPenaltyLastN": "DRY Penalty Last N",
-    "samplingHelper": "Sliders override the per-model defaults. Click ⟲ to revert any field."
+    "dryMultiplier": "DRY 乗数",
+    "dryBase": "DRY ベース",
+    "dryAllowedLength": "DRY 許容長",
+    "dryPenaltyLastN": "DRY ペナルティウィンドウ",
+    "samplingHelper": "スライダーはモデル毎のデフォルトを上書きします。⟲ をクリックすると項目をリセットできます。"
   },
   "chat": {
     "passion": "情熱",
@@ -395,7 +395,7 @@ const locale = {
     "voiceAvoidHelp": "任意。このキャラクターが決して使わない定型句をカンマ区切りで指定します。ありがちなロマンス小説調への流れを防ぎます。",
     "voicePinGenerate": "AIで提案",
     "voicePinGenerating": "生成中...",
-    "generating": "Generating your character..."
+    "generating": "キャラクターを生成しています..."
   },
   "modeSelection": {
     "selectMode": "モード選択",
@@ -523,15 +523,15 @@ const locale = {
     "voiceAvoidHelp": "任意。このキャラクターが決して使わない定型句をカンマ区切りで指定します。ありがちなロマンス小説調への流れを防ぎます。",
     "voicePinGenerate": "AIで提案",
     "voicePinGenerating": "生成中...",
-    "contentRating": "Content Rating",
+    "contentRating": "コンテンツレーティング",
     "contentRatingSfw": "SFW",
     "contentRatingNsfw": "NSFW",
-    "contentRatingHelp": "NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.",
-    "responseModeLabel": "Reply Length",
-    "responseModeHint": "Controls how long the AI usually replies. Users can still ask for more detail when needed.",
-    "responseModeShort": "Short",
-    "responseModeNormal": "Normal",
-    "responseModeLong": "Long"
+    "contentRatingHelp": "NSFW ペルソナは NSFW フィルタに表示され、シーンがエスカレートすると露骨な内容が自動的に解放されます。SFW ペルソナも Unchained モードが有効なら NSFW に移行できます。",
+    "responseModeLabel": "返信の長さ",
+    "responseModeHint": "AI の通常の返信の長さを制御します。必要なときはさらに詳細をリクエストできます。",
+    "responseModeShort": "短い",
+    "responseModeNormal": "普通",
+    "responseModeLong": "長い"
   },
   "creative": {
     "creativeWriting": "執筆",
@@ -589,8 +589,8 @@ const locale = {
     "newStory": "新しいストーリー",
     "wordsCount": "{count} 文字",
     "storyExported": "ストーリーをエクスポートしました！",
-    "generate": "Generate",
-    "generating": "Generating..."
+    "generate": "生成",
+    "generating": "生成中..."
   },
   "supporter": {
     "supportAria": "Ariaを支援",

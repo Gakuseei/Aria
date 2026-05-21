@@ -148,9 +148,6 @@ class PassionManager {
     }
   }
 
-  /**
-   * Persist passion data to localStorage
-   */
   savePassionData() {
     const storage = getPassionStorage();
     if (!storage) return;

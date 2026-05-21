@@ -12,8 +12,6 @@ export function cleanTranscriptArtifacts(text, charName = '') {
     cleaned = cleaned.substring(0, specialTokenIdx).trim();
   }
 
-  // Remove any occurrence of "User:", "Human:", "Assistant:" etc.
-  // If found, cut everything from that point onwards
   const stopPatterns = [
     /\n\s*User\s*:/i,
     /\n\s*Human\s*:/i,
@@ -57,7 +55,6 @@ export function cleanTranscriptArtifacts(text, charName = '') {
   cleaned = cleaned.replace(/^#{1,6}\s+\*{0,2}.*\*{0,2}\s*$/gm, '');
   cleaned = cleaned.replace(/^#{1,6}\s+.*$/gm, '');
 
-  // Trim incomplete sentences — if num_predict cuts mid-sentence, trim to last complete one
   // If response was cut off mid-sentence by num_predict, trim to last complete sentence
   const lastChar = cleaned.trim().slice(-1);
   if (lastChar && !['.', '!', '?', '"', '*', '~', ')'].includes(lastChar)) {
@@ -77,7 +74,6 @@ export function cleanTranscriptArtifacts(text, charName = '') {
   // Strip leading dots/slashes before asterisks (model outputs ".*action*" or "/*action*")
   cleaned = cleaned.replace(/^[./]+(?=\*)/gm, '');
 
-  // Clean up excessive blank lines left after removals
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
 
   return cleaned.trim();
@@ -214,7 +210,3 @@ export function resolveTemplates(text, charName, userName) {
     .replace(/\{\{char\}\}/gi, charName || 'Character')
     .replace(/\{\{user\}\}/gi, userName || 'User');
 }
-
-// ============================================================================
-// DEFAULT SETTINGS - OLLAMA ONLY
-// ============================================================================

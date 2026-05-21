@@ -49,10 +49,6 @@ function applyPassionHeuristic(userMessage, aiMessage, sessionId, character, cur
   return nextLevel;
 }
 
-// ============================================================================
-// HELPER: CHECK IF RUNNING IN ELECTRON
-// ============================================================================
-
 export function buildSystemPrompt({ character, userName = 'User', passionLevel = 0, unchainedMode = false, responseMode = 'normal' }) {
   const runtimeState = buildRuntimeState({
     character,
@@ -71,26 +67,19 @@ export function buildSystemPrompt({ character, userName = 'User', passionLevel =
   return assembleRuntimeContext({ profile: 'reply', runtimeState }).systemPrompt;
 }
 
-
-
-// CORE API - MESSAGE SENDING (OLLAMA ONLY)
-// ============================================================================
-
 export const sendMessage = async (
   userMessage,
   character,
   conversationHistory = [],
   sessionId = null,
   unchainedMode = false,
-  onApiStats = null,  // v0.2.5: NEW - Callback for API Monitor stats
-  settingsOverride = null,  // v0.2.5: FIX - Accept settings directly to avoid race conditions
+  onApiStats = null,
+  settingsOverride = null,
   onToken = null,  // Streaming callback — receives each token chunk as string
   streamAbortHandle = null,
   sceneMemory = null
 ) => {
-  const startTime = Date.now();  // v0.2.5: Track response time
-  
-  // Safety checks
+  const startTime = Date.now();
   if (!character || !character.name) {
     console.error('[v9.2 API] ❌ Invalid character data');
     return {
@@ -202,7 +191,6 @@ export const sendMessage = async (
     };
 
     if (isElectron() && onToken) {
-      // STREAMING via IPC
       const requestId = `chat-${Date.now()}`;
       let abortIssued = false;
       let streamedContent = '';
@@ -262,7 +250,6 @@ export const sendMessage = async (
         cleanup();
       }
     } else if (isElectron()) {
-      // NON-STREAMING via IPC
       const result = await window.electronAPI.aiChat({
         messages: messages.slice(1).map(m => ({ role: m.role, content: m.content })),
         systemPrompt: finalSystemPrompt,
@@ -282,7 +269,6 @@ export const sendMessage = async (
         prompt_eval_count: 0
       };
     } else {
-      // DIRECT FETCH fallback (non-Electron)
       const fetchController = new AbortController();
       const fetchTimer = setTimeout(() => fetchController.abort(), 120000);
 
@@ -400,7 +386,6 @@ export const sendMessage = async (
       };
     }
 
-    // Check for empty response
     if (data.message?.content && typeof data.message.content === 'string') {
       const stripped = data.message.content.replace(/[*\s\n_~`]/g, '');
       if (stripped.length < 3) {
@@ -525,7 +510,6 @@ export const sendMessage = async (
 
     let aiMessage = data.message.content.trim();
 
-    // Clean response — remove any transcript artifacts
     aiMessage = cleanTranscriptArtifacts(aiMessage, character.name);
 
     const recentReplies = getRecentAssistantReplies(historyToUse, 5);
@@ -586,7 +570,6 @@ export const sendMessage = async (
       }
     }
 
-    // Add assistant response to history
     const passionEnabled = character?.passionEnabled !== false && Boolean(sessionId);
     const nextPassionLevel = passionEnabled
       ? applyPassionHeuristic(userMessage, aiMessage, sessionId, character, currentPassionLevel)
@@ -595,7 +578,6 @@ export const sendMessage = async (
     const assistantMsg = { role: 'assistant', content: aiMessage };
     const finalHistory = [...historyToUse, assistantMsg];
 
-    // v0.2.5: CALCULATE API STATS FOR MONITOR
     const endTime = Date.now();
     const responseTime = endTime - startTime;
     const wordCount = aiMessage ? aiMessage.split(/\s+/).filter(Boolean).length : 0;
@@ -612,7 +594,6 @@ export const sendMessage = async (
 
     console.log(`[API] Tokens — response: ${responseTokens}, prompt: ${promptTokens_actual}, total: ${responseTokens + promptTokens_actual}`);
 
-    // v0.2.5: Send stats to callback if provided
     if (onApiStats && typeof onApiStats === 'function') {
       onApiStats({
         model: model,

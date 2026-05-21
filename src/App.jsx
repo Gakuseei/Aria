@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 import TitleBar from './components/TitleBar';
 import MainMenu from './components/MainMenu';
 import ModeSelection from './components/ModeSelection';
@@ -232,6 +233,27 @@ function App() {
       window.removeEventListener('keydown', handleKeyPress);
     };
   }, []);
+
+  useEffect(() => {
+    const resolveKey = (obj, path) => path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
+
+    const handler = (event) => {
+      const detail = event?.detail || {};
+      const tone = detail.type === 'success' ? 'success' : 'error';
+      let message = null;
+      if (detail.messageKey) {
+        const resolved = resolveKey(t, detail.messageKey);
+        if (typeof resolved === 'string') message = resolved;
+      }
+      if (!message && typeof detail.message === 'string') message = detail.message;
+      if (!message) return;
+      if (tone === 'success') toast.success(message);
+      else toast.error(message);
+    };
+
+    window.addEventListener('show-toast', handler);
+    return () => window.removeEventListener('show-toast', handler);
+  }, [t]);
 
   useEffect(() => {
     const handleApiStats = (event) => {
@@ -634,6 +656,12 @@ function App() {
         themeMode={themeModeActive}
         onToggle={handleSettingChange}
         currentView={currentView}
+      />
+
+      <Toaster
+        position={RTL_LANGUAGES.has(language) ? 'bottom-left' : 'bottom-right'}
+        toastOptions={{ duration: 4000 }}
+        containerStyle={{ zIndex: 10000 }}
       />
 
       {showDebugConsole && (

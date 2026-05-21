@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, mem
 import { Send, Square, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2, Undo2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { autoDetectAndSetModel } from '../lib/ollama';
-import { saveSession, generateSessionId, deleteSession, listSessions } from '../lib/storage/sessions';
+import { saveSession, generateSessionId, deleteSession } from '../lib/storage/sessions';
 import { unloadOllamaModel } from '../lib/ollama';
 import { resolveTemplates } from '../lib/chat/common';
 import { commitPartialReply } from '../lib/chat/commitPartialReply';
@@ -12,8 +12,8 @@ import { impersonateUser, abortImpersonateCall } from '../lib/chat/impersonate';
 import { passionManager, getTierKey, PASSION_TIERS } from '../lib/chat/passion';
 import { isCommand, executeCommand } from '../lib/commandHandler';
 import { resolveProfile } from '../lib/modelProfiles';
-import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
+import { buildEnvelope, stringifyEnvelope, parseEnvelope, buildExportFilename } from '../lib/exportEnvelope';
 import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
 import useStickyScroll from '../hooks/useStickyScroll';
@@ -1241,30 +1241,37 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
   const handleExportChat = () => {
     try {
-      const exportData = {
-        character: { name: character.name, description: character.description },
+      const currentPassionLevel = passionManager.getPassionLevel(sessionId) || passionLevel;
+      const payload = {
+        sessionId,
+        character: {
+          id: character.id,
+          name: character.name,
+          description: character.description,
+        },
         model: settings.ollamaModel || 'unknown',
-        messages: messages,
-        sceneMemory: sceneMemoryRef.current,
-        passionLevel: passionManager.getPassionLevel(sessionId) || passionLevel,
-        passionTier: getTierKey(passionManager.getPassionLevel(sessionId) || passionLevel),
-        passionSpeed: character.passionSpeed || 'normal',
-        passionEnabled: character.passionEnabled !== false,
-        unchainedMode: isUnchainedMode,
-        passionHistory: passionManager.getHistory(sessionId),
-        sessionId: sessionId,
-        exportedAt: new Date().toISOString(),
-        version: appVersion
+        settings: {
+          passionEnabled: character.passionEnabled !== false,
+          passionTier: getTierKey(currentPassionLevel),
+          passionSpeed: character.passionSpeed || 'normal',
+          unchainedMode: isUnchainedMode,
+        },
+        state: {
+          passionLevel: currentPassionLevel,
+          passionHistory: passionManager.getHistory(sessionId),
+          sceneMemory: sceneMemoryRef.current,
+        },
+        messages,
       };
 
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      downloadBlob(blob, `chat-${character.name}-${Date.now()}.json`);
+      const envelope = buildEnvelope('chat', payload);
+      const blob = new Blob([stringifyEnvelope(envelope)], { type: 'application/json' });
+      downloadBlob(blob, buildExportFilename('chat', character.name));
     } catch (error) {
       console.error('Export error:', error);
       toast.error(t.chat.failedToExport);
     }
   };
-
 
   const handleImportChat = async (e) => {
     const file = e.target.files?.[0];
@@ -1272,29 +1279,78 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
     try {
       const text = await file.text();
-      const importData = JSON.parse(text);
+      const result = parseEnvelope(text, 'chat');
 
-      if (!importData.messages || !Array.isArray(importData.messages)) {
-        toast.error(t.chat.invalidChatFile);
+      if (!result.ok) {
+        const errors = t.chat.importErrors || {};
+        const rawMessage = errors[result.reason] || t.chat.failedToImport;
+        let formatted = rawMessage;
+        if (result.reason === 'wrongKind' && result.detail) {
+          formatted = rawMessage.replace('{kind}', result.detail);
+        } else if (result.reason === 'unsupportedSchema') {
+          formatted = rawMessage.replace('{version}', result.detail ?? '?');
+        }
+        toast.error(formatted);
         return;
       }
 
-      setMessages(importData.messages);
-      setSceneMemory(buildSceneMemory(importData.messages, importData.sceneMemory || null));
-      setSmartSuggestions(getRestoredSuggestions(importData.messages));
-      if (importData.passionLevel !== undefined) {
-        previousTierRef.current = getTierKey(importData.passionLevel);
-        setPassionLevel(importData.passionLevel);
+      const payload = result.envelope.payload;
+      const messagesIn = Array.isArray(payload.messages) ? payload.messages : null;
+      if (!messagesIn) {
+        toast.error(t.chat.importErrors?.missingPayload || t.chat.invalidChatFile);
+        return;
       }
-      if (importData.sessionId) {
-        setSessionId(importData.sessionId);
-        if (importData.passionLevel !== undefined) {
-          passionManager.setPassion(importData.sessionId, importData.passionLevel);
-        }
-        if (importData.passionHistory) {
-          passionManager.restoreHistory(importData.sessionId, importData.passionHistory);
-        }
+
+      const importedCharacterName = payload.character?.name;
+      const importedCharacterId = payload.character?.id;
+      const characterMismatch = importedCharacterId && character?.id && importedCharacterId !== character.id;
+
+      const confirmMessage = characterMismatch
+        ? (t.chat.confirmImportCharacterMismatch || '')
+            .replace('{importedCharacter}', importedCharacterName || importedCharacterId || '?')
+            .replace('{currentCharacter}', character?.name || '?')
+        : t.chat.confirmImportReplace;
+
+      if (!window.confirm(confirmMessage)) return;
+
+      const importedSessionId = generateSessionId();
+
+      const passionLevelIn = payload.state?.passionLevel;
+      const passionHistoryIn = payload.state?.passionHistory;
+      const sceneMemoryIn = payload.state?.sceneMemory ?? null;
+      const settingsIn = payload.settings || {};
+
+      passionManager.resetPassion(importedSessionId);
+
+      setMessages(messagesIn);
+      setSceneMemory(buildSceneMemory(messagesIn, sceneMemoryIn));
+      setSmartSuggestions(getRestoredSuggestions(messagesIn));
+
+      if (typeof settingsIn.unchainedMode === 'boolean') {
+        setIsUnchainedMode(settingsIn.unchainedMode);
       }
+
+      if (typeof passionLevelIn === 'number') {
+        previousTierRef.current = getTierKey(passionLevelIn);
+        setPassionLevel(passionLevelIn);
+        passionManager.setPassion(importedSessionId, passionLevelIn);
+      }
+      if (passionHistoryIn) {
+        passionManager.restoreHistory(importedSessionId, passionHistoryIn);
+      }
+
+      setSessionId(importedSessionId);
+
+      await saveSession(importedSessionId, {
+        characterName: character.name,
+        character,
+        conversationHistory: messagesIn,
+        sceneMemory: sceneMemoryIn,
+        passionLevel: typeof passionLevelIn === 'number' ? passionLevelIn : 0,
+        mode: character?.personaType === 'narrator' ? GAME_MODES.NARRATOR_CHAT : GAME_MODES.CHARACTER_CHAT,
+        lastPrompt: messagesIn.filter((m) => m && m.role === 'user').slice(-1)[0]?.content || '',
+        model: payload.model || settings.ollamaModel || 'unknown',
+      });
 
       toast.success(t.chat.chatImported);
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -1498,7 +1554,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         accept=".json"
         onChange={handleImportChat}
         className="hidden"
-        aria-label="Import chat file"
+        aria-label={t.chat.importChatFileAria}
       />
 
       <div className={`theme-chat-header relative z-40 flex shrink-0 items-center justify-between px-6 py-4 transition-all duration-500 ${

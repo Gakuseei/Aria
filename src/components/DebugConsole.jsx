@@ -12,7 +12,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -26,6 +26,7 @@ import {
   summarizeDebugHealth,
 } from '../lib/debugConsole';
 import downloadBlob from '../utils/downloadBlob';
+import { buildEnvelope, stringifyEnvelope, buildExportFilename } from '../lib/exportEnvelope';
 
 const SCALE_PERCENTAGES = {
   small: '87.5%',
@@ -384,8 +385,9 @@ export default function DebugConsole({
       return;
     }
 
-    const blob = new Blob([JSON.stringify(diagnosticsPayload, null, 2)], { type: 'application/json' });
-    downloadBlob(blob, `aria-diagnostics-${Date.now()}.json`);
+    const envelope = buildEnvelope('diagnostics', diagnosticsPayload);
+    const blob = new Blob([stringifyEnvelope(envelope)], { type: 'application/json' });
+    downloadBlob(blob, buildExportFilename('diagnostics'));
     toast.success(t.debugConsole.logExported, { duration: 1500 });
   };
 
@@ -426,7 +428,6 @@ export default function DebugConsole({
 
   return (
     <>
-      <Toaster position="top-right" />
       <div className="fixed inset-0 z-[9999] flex items-center justify-center px-3 py-4 pointer-events-none">
         <div className="absolute inset-0 bg-black/90 backdrop-blur-md pointer-events-auto" onClick={onClose} />
         <div className="relative flex h-[88vh] max-h-[920px] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-rose-500/30 shadow-2xl pointer-events-auto" style={{ backgroundColor: 'color-mix(in srgb, var(--color-bg) 90%, transparent)', color: 'var(--color-text)' }}>

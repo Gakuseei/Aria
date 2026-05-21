@@ -1,13 +1,14 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Folder, FolderOpen, Heart, Minus, Moon, Plus, Search, Settings as SettingsIcon, Sparkles, Star, Trash2, Upload, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 import characters from '../config/characters';
-import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
 import useGoldMode from '../hooks/useGoldMode';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
 import downloadBlob from '../utils/downloadBlob';
 import { translations } from '../lib/translations';
 import { normalizeResponseMode } from '../lib/responseModes';
+import { buildEnvelope, stringifyEnvelope, parseEnvelope, buildExportFilename } from '../lib/exportEnvelope';
 
 const CUSTOM_CHARACTERS_KEY = 'custom_characters';
 const LEGACY_CUSTOM_CHARACTERS_KEY = 'customCharacters';
@@ -458,43 +459,57 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
 
     try {
       const text = await file.text();
-      const importData = JSON.parse(text);
+      const result = parseEnvelope(text, 'character');
 
-      if (!importData.name || !importData.systemPrompt || !importData.startingMessage) {
-        alert(characterSelectText.invalidCharacterFile);
+      if (!result.ok) {
+        const errors = characterSelectText.importErrors || {};
+        const rawMessage = errors[result.reason] || characterSelectText.failedToImport;
+        let formatted = rawMessage;
+        if (result.reason === 'wrongKind' && result.detail) {
+          formatted = rawMessage.replace('{kind}', result.detail);
+        } else if (result.reason === 'unsupportedSchema') {
+          formatted = rawMessage.replace('{version}', result.detail ?? '?');
+        }
+        toast.error(formatted);
+        return;
+      }
+
+      const data = result.envelope.payload;
+      if (!data.name || !data.systemPrompt || !data.startingMessage) {
+        toast.error(characterSelectText.importErrors?.missingRequiredFields || characterSelectText.invalidCharacterFile);
         return;
       }
 
       const newCharacter = {
         id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-        name: importData.name,
-        subtitle: importData.subtitle || characterSelectText.importedCharacter,
-        description: importData.description || characterSelectText.importedDescription,
-        systemPrompt: importData.systemPrompt,
-        instructions: importData.instructions || '',
-        scenario: importData.scenario || '',
-        exampleDialogue: importData.exampleDialogue || '',
-        themeColor: importData.themeColor || '#ef4444',
-        avatarBase64: importData.avatarBase64 || null,
-        startingMessage: importData.startingMessage,
-        greeting: importData.startingMessage,
-        type: importData.type || 'character',
-        responseMode: normalizeResponseMode(importData.responseMode ?? importData.responseStyle, 'normal'),
-        passionEnabled: importData.passionEnabled ?? true,
-        passionSpeed: importData.passionSpeed || 'normal',
-        personaType: importData.personaType === 'narrator' ? 'narrator' : 'character',
-        styleBrief: importData.styleBrief || '',
-        language: importData.language || '',
-        tags: Array.isArray(importData.tags) ? importData.tags : [],
+        name: data.name,
+        subtitle: data.subtitle || characterSelectText.importedCharacter,
+        description: data.description || characterSelectText.importedDescription,
+        systemPrompt: data.systemPrompt,
+        instructions: data.instructions || '',
+        scenario: data.scenario || '',
+        exampleDialogue: data.exampleDialogue || '',
+        themeColor: data.themeColor || '#ef4444',
+        avatarBase64: data.avatarBase64 || null,
+        startingMessage: data.startingMessage,
+        greeting: data.startingMessage,
+        type: data.type || 'character',
+        responseMode: normalizeResponseMode(data.responseMode ?? data.responseStyle, 'normal'),
+        passionEnabled: data.passionEnabled ?? true,
+        passionSpeed: data.passionSpeed || 'normal',
+        personaType: data.personaType === 'narrator' ? 'narrator' : 'character',
+        styleBrief: data.styleBrief || '',
+        language: data.language || '',
+        tags: Array.isArray(data.tags) ? data.tags : [],
         isCustom: true,
       };
 
       const nextCustomCharacters = [...customCharacters, newCharacter];
       saveCustomCharactersAndOrganizer(nextCustomCharacters);
-      alert(characterSelectText.characterImported.replace('{name}', newCharacter.name));
+      toast.success(characterSelectText.characterImported.replace('{name}', newCharacter.name));
     } catch (error) {
       console.error('Import error:', error);
-      alert(characterSelectText.failedToImport);
+      toast.error(characterSelectText.failedToImport);
     } finally {
       event.target.value = '';
     }
@@ -504,7 +519,7 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
     event.stopPropagation();
 
     try {
-      const exportData = {
+      const payload = {
         name: character.name,
         subtitle: character.subtitle,
         description: character.description,
@@ -513,7 +528,6 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
         scenario: character.scenario || '',
         exampleDialogue: character.exampleDialogue || '',
         themeColor: character.themeColor,
-        avatarBase64: character.avatarBase64 || null,
         startingMessage: character.startingMessage,
         type: character.type || 'character',
         responseMode: normalizeResponseMode(character.responseMode ?? character.responseStyle, 'normal'),
@@ -523,15 +537,15 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
         styleBrief: character.styleBrief || '',
         language: character.language || '',
         tags: Array.isArray(character.tags) ? character.tags : [],
-        exportedAt: new Date().toISOString(),
-        version: appVersion,
+        avatarBase64: character.avatarBase64 || null,
       };
 
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      downloadBlob(blob, `${character.name.replace(/\s+/g, '_')}_character.json`);
+      const envelope = buildEnvelope('character', payload);
+      const blob = new Blob([stringifyEnvelope(envelope)], { type: 'application/json' });
+      downloadBlob(blob, buildExportFilename('character', character.name));
     } catch (error) {
       console.error('Export error:', error);
-      alert(characterSelectText.failedToExport);
+      toast.error(characterSelectText.failedToExport);
     }
   };
 
@@ -1124,7 +1138,7 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
         accept=".json"
         onChange={handleImportCharacter}
         className="hidden"
-        aria-label={characterSelectText.import}
+        aria-label={characterSelectText.importCharacterFileAria}
       />
       <input
         ref={folderIconFileRef}

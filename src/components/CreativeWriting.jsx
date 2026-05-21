@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { generateStory, continueStory, cleanStoryOutput } from '../lib/StoryEngine';
 import { autoDetectAndSetModel, fetchOllamaModels, getModelCtx } from '../lib/ollama';
 import { saveSession, generateSessionId } from '../lib/storage/sessions';
 import { GAME_MODES } from '../lib/gameModes';
-import { version as appVersion } from '../../package.json';
 import { useLanguage } from '../context/LanguageContext';
 import useEntranceAnimation from '../hooks/useEntranceAnimation';
 import downloadBlob from '../utils/downloadBlob';
 import { OLLAMA_DEFAULT_URL } from '../lib/defaults';
+import { buildEnvelope, stringifyEnvelope, parseEnvelope, buildExportFilename } from '../lib/exportEnvelope';
 
 /**
  * @param {object} props
@@ -313,19 +314,21 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
 
   const handleExport = () => {
     try {
-      const exportData = {
+      const payload = {
         prompt,
         genre,
         story,
         wordCount,
+        summary,
         authorNotes: authorNote ? [authorNote] : [],
-        exportedAt: new Date().toISOString(),
-        version: appVersion
       };
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      downloadBlob(blob, `story-${Date.now()}.json`);
+      const envelope = buildEnvelope('story', payload);
+      const blob = new Blob([stringifyEnvelope(envelope)], { type: 'application/json' });
+      const promptSlug = typeof prompt === 'string' ? prompt.slice(0, 40).trim() : '';
+      const nameHint = promptSlug || genre || 'untitled';
+      downloadBlob(blob, buildExportFilename('story', nameHint));
     } catch {
-      setError(t.creative.failedToExportStory);
+      toast.error(t.creative.failedToExportStory);
     }
   };
 
@@ -336,19 +339,36 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     if (!file) return;
     try {
       const text = await file.text();
-      const data = JSON.parse(text);
-      if (!data.story && !data.content) {
-        alert(t.creative.invalidStoryFile);
+      const result = parseEnvelope(text, 'story');
+
+      if (!result.ok) {
+        const errors = t.creative.importErrors || {};
+        const rawMessage = errors[result.reason] || t.creative.failedToImportStory;
+        let formatted = rawMessage;
+        if (result.reason === 'wrongKind' && result.detail) {
+          formatted = rawMessage.replace('{kind}', result.detail);
+        } else if (result.reason === 'unsupportedSchema') {
+          formatted = rawMessage.replace('{version}', result.detail ?? '?');
+        }
+        toast.error(formatted);
         return;
       }
-      setStory(data.story || data.content || '');
+
+      const data = result.envelope.payload;
+      const content = data.story || data.content;
+      if (!content) {
+        toast.error(t.creative.importErrors?.missingRequiredFields || t.creative.invalidStoryFile);
+        return;
+      }
+
+      setStory(content);
       if (data.prompt) setPrompt(data.prompt);
       if (data.genre) setGenre(data.genre);
       if (data.authorNotes?.[0]) setAuthorNote(data.authorNotes[0]);
       if (data.summary) setSummary(data.summary);
       setPromptCollapsed(true);
     } catch {
-      alert(t.creative.failedToImportStory);
+      toast.error(t.creative.failedToImportStory);
     } finally {
       e.target.value = '';
     }
@@ -406,6 +426,7 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
         accept=".json"
         onChange={handleImport}
         className="hidden"
+        aria-label={t.creative.importStoryFileAria}
       />
 
       <div className="flex items-center justify-between px-6 py-4 flex-shrink-0 border-b border-zinc-800/50">

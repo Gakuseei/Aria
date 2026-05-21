@@ -62,7 +62,7 @@ export const saveCustomCharacter = (characterData) => {
       if (storageError.name === 'QuotaExceededError' || storageError.code === 22) {
         console.error('[CharacterSave] localStorage quota exceeded');
         window.dispatchEvent(new CustomEvent('show-toast', {
-          detail: { message: 'Storage full — try removing some character avatars to free space', type: 'error' }
+          detail: { messageKey: 'characterSelect.storageFull', type: 'error' }
         }));
         return { success: false, error: 'Storage quota exceeded' };
       }

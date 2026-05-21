@@ -1764,8 +1764,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <div className="theme-danger-banner mx-auto max-w-5xl rounded-2xl px-4 py-3 bg-rose-950 border-2 border-rose-700 text-rose-100 shadow-md">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-[var(--color-text)]">{sendFailure.title}</div>
-                <p className="mt-1 text-sm text-[color:var(--color-text)]/90">{sendFailure.message}</p>
+                <div className="text-sm font-semibold text-rose-50">{sendFailure.title}</div>
+                <p className="mt-1 text-sm text-rose-100">{sendFailure.message}</p>
                 {sendFailure.detail && (
                   <p className="theme-text-muted mt-2 break-words text-xs">{sendFailure.detail}</p>
                 )}

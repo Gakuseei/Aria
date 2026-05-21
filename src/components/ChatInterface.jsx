@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, memo } from 'react';
-import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2, Undo2 } from 'lucide-react';
+import { Send, Square, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2, Undo2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { autoDetectAndSetModel } from '../lib/ollama';
 import { saveSession, generateSessionId, deleteSession } from '../lib/storage/sessions';
@@ -1807,15 +1807,28 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 {isImpersonating ? <X size={16} /> : <PenLine size={16} />}
               </button>
             )}
-            <button
-              onClick={() => handleSend()}
-              disabled={isLoading || isStreaming || isImpersonating || !input.trim()}
-              className="theme-composer-primary flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 shadow-lg disabled:opacity-30"
-              data-tooltip={t.chat.send}
-              aria-label={t.chat.send}
-            >
-              <Send size={18} strokeWidth={1.5} />
-            </button>
+            {(isLoading || isStreaming) ? (
+              <button
+                type="button"
+                onClick={() => abortActiveChatWork('user')}
+                className="theme-composer-primary flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 shadow-lg"
+                data-tooltip={t.chat.stopGeneration}
+                aria-label={t.chat.stopGeneration}
+              >
+                <Square size={16} strokeWidth={1.5} fill="currentColor" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleSend()}
+                disabled={isImpersonating || !input.trim()}
+                className="theme-composer-primary flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-200 shadow-lg disabled:opacity-30"
+                data-tooltip={t.chat.send}
+                aria-label={t.chat.send}
+              >
+                <Send size={18} strokeWidth={1.5} />
+              </button>
+            )}
         </div>
       </div>
 

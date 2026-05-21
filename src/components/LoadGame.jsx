@@ -144,7 +144,6 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
     setIsLoading(true);
     const result = await listSessions();
     if (result.success) {
-      // Sort by date, newest first
       const sorted = result.sessions.sort((a, b) =>
         new Date(b.lastUpdated || b.savedAt) - new Date(a.lastUpdated || a.savedAt)
       );
@@ -159,7 +158,6 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
       .map(s => s.characterName)
   )].sort();
 
-  // Handle delete
   const handleDelete = async (sessionId, e) => {
     e.stopPropagation();
     if (!window.confirm(t.loadGame.deleteConfirm)) return;
@@ -198,7 +196,6 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
     setIsDeleting(false);
   };
 
-  // Handle load
   const handleLoad = () => {
     if (selectedSession) {
       onLoad({
@@ -234,7 +231,6 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
 
   const emptyState = buildLoadGameEmptyState({ totalSessions: sessions.length, t });
 
-  // Format date
   const formatDate = (dateStr) => {
     try {
       if (!dateStr) return t.loadGame.unknownDate;
@@ -254,7 +250,6 @@ function LoadGame({ onLoad, onBack, onStartNewGame }) {
     }
   };
 
-  // Get session icon
   const getSessionIcon = (mode) => {
     if (mode === GAME_MODES.CREATIVE_WRITING) {
       return (

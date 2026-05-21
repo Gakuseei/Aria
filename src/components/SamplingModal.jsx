@@ -17,23 +17,10 @@ import { DEFAULT_SUGGESTION_PROFILE } from '../lib/defaults';
  * @property {boolean} [defaultValue]
  */
 
-/**
- * Resolve a t.settings string by key with a safe fallback.
- * @param {object} t
- * @param {string} key
- * @param {string} fallback
- * @returns {string}
- */
 function tx(t, key, fallback) {
   return t?.settings?.[key] || fallback;
 }
 
-/**
- * Replace named tokens in a translation template.
- * @param {string} template
- * @param {Record<string, string|number>} vars
- * @returns {string}
- */
 function fillTemplate(template, vars) {
   let out = String(template ?? '');
   for (const k of Object.keys(vars)) {
@@ -42,10 +29,6 @@ function fillTemplate(template, vars) {
   return out;
 }
 
-/**
- * Single editable field row with label + value + reset glyph + control + helper.
- * @param {object} props
- */
 function FieldRow({
   label,
   helper,
@@ -222,10 +205,6 @@ function ModalSlider({ min, max, step, value, onChange, isOverridden }) {
   );
 }
 
-/**
- * Compact number input matching modal aesthetic.
- * @param {object} props
- */
 function ModalNumber({ min, max, step, value, onChange }) {
   const safeValue = Number.isFinite(value) ? value : min;
   return (
@@ -254,10 +233,6 @@ function ModalNumber({ min, max, step, value, onChange }) {
   );
 }
 
-/**
- * Toggle switch matching modal aesthetic.
- * @param {object} props
- */
 function ModalToggle({ value, onChange }) {
   return (
     <button

@@ -181,8 +181,16 @@ export const sendMessage = async (
     const stopSequences = ['\nUser:', '\nHuman:', `\n${userName}:`, `\n${character.name}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>', '<|start_header_id|>'];
 
     let data;
-    let streamTerminationReason = 'natural';
+    let streamTerminationReason = 'unknown';
     const wasUserAborted = () => streamAbortHandle?.aborted && streamAbortHandle.reason === 'user';
+
+    const normalizeReason = (reason) => {
+      if (reason === 'user') return 'user';
+      if (reason === 'auto-length') return 'done';
+      if (reason === 'timeout') return 'disconnect';
+      if (reason === 'stop' || reason === 'length' || reason === 'done') return 'done';
+      return reason || 'unknown';
+    };
 
     const bindStreamAbort = (abortFn) => {
       if (streamAbortHandle && typeof streamAbortHandle.setAbortImpl === 'function') {
@@ -197,7 +205,7 @@ export const sendMessage = async (
       const abortStream = (reason = 'user') => {
         if (abortIssued) return;
         abortIssued = true;
-        streamTerminationReason = reason;
+        streamTerminationReason = normalizeReason(reason);
         window.electronAPI.ollamaStreamAbort(requestId, reason).catch(() => {});
       };
       bindStreamAbort(abortStream);
@@ -222,19 +230,23 @@ export const sendMessage = async (
         });
 
         if (wasUserAborted()) {
-          return { success: false, error: 'The operation was aborted', aborted: true };
+          streamTerminationReason = 'user';
+          return { success: false, error: 'The operation was aborted', aborted: true, reason: 'user' };
         }
 
         if (!result.success) {
           if (result.aborted) {
             const abortReason = result.abortedBy || streamTerminationReason;
             if (abortReason === 'user') {
-              return { success: false, error: 'The operation was aborted', aborted: true };
+              streamTerminationReason = 'user';
+              return { success: false, error: 'The operation was aborted', aborted: true, reason: 'user' };
             }
             if (abortReason === 'timeout') {
+              streamTerminationReason = 'disconnect';
               throw new Error('The operation was aborted');
             }
           }
+          streamTerminationReason = 'disconnect';
           throw new Error(result.error || 'Stream failed');
         }
 
@@ -243,7 +255,11 @@ export const sendMessage = async (
           eval_count: result.evalCount,
           prompt_eval_count: result.promptEvalCount
         };
-        streamTerminationReason = result.abortedBy || result.doneReason || streamTerminationReason;
+        if (result.abortedBy) {
+          streamTerminationReason = normalizeReason(result.abortedBy);
+        } else {
+          streamTerminationReason = 'done';
+        }
       } finally {
         clearTimeout(abortTimer);
         bindStreamAbort(null);
@@ -268,6 +284,7 @@ export const sendMessage = async (
         eval_count: result.usage?.total_tokens || 0,
         prompt_eval_count: 0
       };
+      streamTerminationReason = 'done';
     } else {
       const fetchController = new AbortController();
       const fetchTimer = setTimeout(() => fetchController.abort(), 120000);
@@ -303,7 +320,7 @@ export const sendMessage = async (
         const abortStream = (reason = 'user') => {
           if (abortIssued) return;
           abortIssued = true;
-          streamTerminationReason = reason;
+          streamTerminationReason = normalizeReason(reason);
           fetchController.abort();
         };
         bindStreamAbort(abortStream);
@@ -314,14 +331,24 @@ export const sendMessage = async (
             try {
               readResult = await reader.read();
             } catch (readErr) {
-              if (streamTerminationReason === 'auto-length' || streamTerminationReason === 'user') {
+              if (wasUserAborted()) {
+                streamTerminationReason = 'user';
+                break;
+              }
+              if (streamTerminationReason === 'done') {
                 break;
               }
               console.warn('[API] Chat stream interrupted:', readErr.message);
+              streamTerminationReason = 'disconnect';
               break;
             }
             const { done, value } = readResult;
-            if (done) break;
+            if (done) {
+              if (!wasUserAborted() && streamTerminationReason !== 'done') {
+                streamTerminationReason = 'truncated';
+              }
+              break;
+            }
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
             buffer = lines.pop();
@@ -337,7 +364,10 @@ export const sendMessage = async (
                     abortStream('auto-length');
                   }
                 }
-                if (chunk.done) finalChunk = chunk;
+                if (chunk.done) {
+                  finalChunk = chunk;
+                  streamTerminationReason = 'done';
+                }
               } catch { /* skip malformed lines */ }
             }
           }
@@ -352,7 +382,10 @@ export const sendMessage = async (
                   onToken(chunk.message.content);
                 }
               }
-              if (chunk.done) finalChunk = chunk;
+              if (chunk.done) {
+                finalChunk = chunk;
+                streamTerminationReason = 'done';
+              }
             } catch { /* skip */ }
           }
         } finally {
@@ -360,17 +393,23 @@ export const sendMessage = async (
           reader.cancel().catch(() => {});
         }
         if (streamTerminationReason === 'user' || (streamAbortHandle?.aborted && streamAbortHandle.reason === 'user')) {
+          streamTerminationReason = 'user';
           return {
             success: false,
             error: 'The operation was aborted',
-            aborted: true
+            aborted: true,
+            reason: 'user'
           };
         }
         const fullContent = contentChunks.join('');
+        if (streamTerminationReason !== 'done' && streamTerminationReason !== 'disconnect' && streamTerminationReason !== 'truncated') {
+          streamTerminationReason = finalChunk ? 'done' : 'truncated';
+        }
         data = { message: { content: fullContent }, eval_count: finalChunk?.eval_count, prompt_eval_count: finalChunk?.prompt_eval_count };
       } else {
         try {
           data = await response.json();
+          streamTerminationReason = 'done';
         } catch (parseErr) {
           console.error('[API] Failed to parse non-streaming response:', parseErr.message);
           throw new Error('Invalid response from Ollama (JSON parse failed)');
@@ -379,10 +418,12 @@ export const sendMessage = async (
 	    }
 
     if (wasUserAborted()) {
+      streamTerminationReason = 'user';
       return {
         success: false,
         error: 'The operation was aborted',
-        aborted: true
+        aborted: true,
+        reason: 'user'
       };
     }
 
@@ -608,6 +649,38 @@ export const sendMessage = async (
       });
     }
 
+    if (wasUserAborted()) {
+      return {
+        success: false,
+        error: 'The operation was aborted',
+        aborted: true,
+        reason: 'user'
+      };
+    }
+
+    if (streamTerminationReason === 'disconnect' || streamTerminationReason === 'truncated') {
+      return {
+        success: false,
+        partial: true,
+        reason: streamTerminationReason,
+        content: aiMessage,
+        conversationHistory: finalHistory,
+        passionLevel: nextPassionLevel,
+        modelCtx,
+        stats: {
+          responseTime,
+          wordCount,
+          wordsPerSecond: parseFloat(wordsPerSecond),
+          tokens: responseTokens,
+          promptTokens: promptTokens_actual,
+          model,
+          responseMode,
+          terminatedBy: streamTerminationReason,
+          debug: debugStats
+        }
+      };
+    }
+
     return {
       success: true,
       message: aiMessage,
@@ -632,7 +705,8 @@ export const sendMessage = async (
       return {
         success: false,
         error: 'The operation was aborted',
-        aborted: true
+        aborted: true,
+        reason: 'user'
       };
     }
     console.error('[v8.1 API] ❌ Fatal error:', error);

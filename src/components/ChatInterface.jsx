@@ -921,6 +921,27 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       if (isForegroundRequestObsolete(activeAbortHandle)) return;
 
+      if (response?.aborted) {
+        return;
+      }
+
+      if (response?.partial) {
+        commitPartialReply({
+          streamBufferRef,
+          messagesRef,
+          setMessages,
+          saveSession: saveCurrentSessionRef.current
+        });
+        setSendFailure({
+          type: 'disconnect',
+          message: t.chat.disconnectBanner
+        });
+        setIsLoading(false);
+        setIsStreaming(false);
+        setStreamingContent('');
+        return;
+      }
+
       if (!response.success) {
         setIsStreaming(false);
         setStreamingContent('');
@@ -1604,14 +1625,26 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                   <p className="theme-text-muted mt-2 break-words text-xs">{sendFailure.detail}</p>
                 )}
               </div>
-              {sendFailure.action === 'settings' && typeof onOpenSettings === 'function' && (
+              <div className="flex flex-shrink-0 items-center gap-2">
                 <button
-                  onClick={onOpenSettings}
-                  className="theme-danger-button inline-flex shrink-0 items-center justify-center rounded-xl px-3 py-2 text-sm font-medium transition-colors"
+                  type="button"
+                  onClick={() => {
+                    setSendFailure(null);
+                    regenerateLastResponse();
+                  }}
+                  className="inline-flex items-center justify-center rounded-xl border-2 border-transparent bg-rose-500 px-3 py-2 text-xs font-medium text-white transition-colors hover:border-rose-300 hover:bg-rose-600"
                 >
-                  {sendFailure.actionLabel}
+                  {t.chat.retryButton}
                 </button>
-              )}
+                {sendFailure.action === 'settings' && typeof onOpenSettings === 'function' && (
+                  <button
+                    onClick={onOpenSettings}
+                    className="theme-danger-button inline-flex shrink-0 items-center justify-center rounded-xl px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    {sendFailure.actionLabel}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

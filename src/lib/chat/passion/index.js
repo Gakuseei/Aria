@@ -1,14 +1,3 @@
-/**
- * PassionManager.js - Passion Level Tracking (v3.0)
- *
- * Manages:
- * - Passion level tracking per session (0-100)
- * - 6-tier system (Surface / Aware / Vivid / Immersive / Consuming / Transcendent)
- * - applyScore() for async LLM passion scores (upward only)
- * - Depth instructions per tier
- * - localStorage persistence
- */
-
 const PASSION_STORAGE_KEY = 'aria_passion_data';
 const PASSION_MEMORY_KEY = 'aria_passion_memory';
 const HISTORY_LIMIT = 50;

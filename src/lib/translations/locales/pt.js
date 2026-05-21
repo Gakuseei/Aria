@@ -203,7 +203,13 @@ const locale = {
     "noOllamaResponse": "Modelo retornou resposta vazia (modo think). Tentado novamente automaticamente — envie novamente.",
     "copyFailed": "Falha ao copiar",
     "resetPassion": "Resetar Paixão",
-    "promptTooLarge": "O prompt do personagem é muito grande — pode causar respostas lentas"
+    "promptTooLarge": "O prompt do personagem é muito grande — pode causar respostas lentas",
+    "stopGeneration": "Parar geração",
+    "scrollToBottom": "Ir para o fim",
+    "deleteFromHere": "Apagar este e {count} abaixo?",
+    "deleteMessage": "Apagar mensagem",
+    "disconnectBanner": "Conexão perdida — resposta cortada",
+    "retryButton": "Tentar de novo"
   },
   "commands": {
     "helpTitle": "── Comandos ──",

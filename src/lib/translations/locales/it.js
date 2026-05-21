@@ -206,7 +206,13 @@ const locale = {
     "noOllamaResponse": "Il modello ha restituito risposta vuota (modalità think). Riprovato automaticamente — invia di nuovo.",
     "copyFailed": "Copia fallita",
     "resetPassion": "Reset Passione",
-    "promptTooLarge": "Il prompt del personaggio è molto grande — potrebbe causare risposte lente"
+    "promptTooLarge": "Il prompt del personaggio è molto grande — potrebbe causare risposte lente",
+    "stopGeneration": "Interrompi la generazione",
+    "scrollToBottom": "Vai in fondo",
+    "deleteFromHere": "Eliminare questo e {count} sotto?",
+    "deleteMessage": "Elimina messaggio",
+    "disconnectBanner": "Connessione persa — risposta interrotta",
+    "retryButton": "Riprova"
   },
   "commands": {
     "helpTitle": "── Comandi ──",

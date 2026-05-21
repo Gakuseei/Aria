@@ -222,7 +222,13 @@ const locale = {
     "noOllamaResponse": "Model returned empty response (think-mode). Retried automatically — please send again.",
     "copyFailed": "Copy failed",
     "resetPassion": "Reset Passion",
-    "promptTooLarge": "Character prompt is very large — this may cause slow responses"
+    "promptTooLarge": "Character prompt is very large — this may cause slow responses",
+    "stopGeneration": "Stop generation",
+    "scrollToBottom": "Scroll to bottom",
+    "deleteFromHere": "Delete this and {count} below?",
+    "deleteMessage": "Delete message",
+    "disconnectBanner": "Connection lost — response was cut off",
+    "retryButton": "Retry"
   },
   "commands": {
     "helpTitle": "── Commands ──",

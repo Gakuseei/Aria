@@ -206,7 +206,13 @@ const locale = {
     "noOllamaResponse": "मॉडल ने खाली प्रतिक्रिया दी (थिंक मोड)। स्वचालित रूप से पुनः प्रयास किया — कृपया फिर से भेजें।",
     "copyFailed": "कॉपी विफल",
     "resetPassion": "जुनून रीसेट करें",
-    "promptTooLarge": "चरित्र प्रॉम्प्ट बहुत बड़ा है — इससे धीमी प्रतिक्रिया हो सकती है"
+    "promptTooLarge": "चरित्र प्रॉम्प्ट बहुत बड़ा है — इससे धीमी प्रतिक्रिया हो सकती है",
+    "stopGeneration": "जनरेशन रोकें",
+    "scrollToBottom": "नीचे स्क्रॉल करें",
+    "deleteFromHere": "इसे और नीचे के {count} हटाएं?",
+    "deleteMessage": "संदेश हटाएं",
+    "disconnectBanner": "कनेक्शन टूट गया — उत्तर कट गया",
+    "retryButton": "पुनः प्रयास करें"
   },
   "commands": {
     "helpTitle": "── कमांड ──",

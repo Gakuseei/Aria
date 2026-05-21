@@ -206,7 +206,13 @@ const locale = {
     "noOllamaResponse": "模型返回空响应（思考模式）。已自动重试 — 请再次发送。",
     "copyFailed": "复制失败",
     "resetPassion": "重置激情",
-    "promptTooLarge": "角色提示词非常大 — 可能导致响应缓慢"
+    "promptTooLarge": "角色提示词非常大 — 可能导致响应缓慢",
+    "stopGeneration": "停止生成",
+    "scrollToBottom": "滚到底部",
+    "deleteFromHere": "删除此条和下方{count}条？",
+    "deleteMessage": "删除消息",
+    "disconnectBanner": "连接断开 — 回复被截断",
+    "retryButton": "重试"
   },
   "commands": {
     "helpTitle": "── 命令 ──",

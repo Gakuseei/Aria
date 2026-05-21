@@ -206,7 +206,13 @@ const locale = {
     "noOllamaResponse": "أعاد النموذج استجابة فارغة (وضع التفكير). تمت إعادة المحاولة تلقائياً — أرسل مرة أخرى.",
     "copyFailed": "فشل النسخ",
     "resetPassion": "إعادة تعيين الشغف",
-    "promptTooLarge": "موجه الشخصية كبير جداً — قد يتسبب في استجابات بطيئة"
+    "promptTooLarge": "موجه الشخصية كبير جداً — قد يتسبب في استجابات بطيئة",
+    "stopGeneration": "إيقاف التوليد",
+    "scrollToBottom": "التمرير للأسفل",
+    "deleteFromHere": "حذف هذه و{count} أدناه؟",
+    "deleteMessage": "حذف الرسالة",
+    "disconnectBanner": "انقطع الاتصال — تم قطع الرد",
+    "retryButton": "إعادة المحاولة"
   },
   "commands": {
     "helpTitle": "── الأوامر ──",

@@ -206,7 +206,13 @@ const locale = {
     "noOllamaResponse": "Modell hat leere Antwort erzeugt (Think-Modus). Automatisch erneut versucht — bitte erneut senden.",
     "copyFailed": "Kopieren fehlgeschlagen",
     "resetPassion": "Leidenschaft zurücksetzen",
-    "promptTooLarge": "Charakter-Prompt ist sehr groß — dies kann zu langsamen Antworten führen"
+    "promptTooLarge": "Charakter-Prompt ist sehr groß — dies kann zu langsamen Antworten führen",
+    "stopGeneration": "Generierung stoppen",
+    "scrollToBottom": "Nach unten scrollen",
+    "deleteFromHere": "Diese und {count} darunter löschen?",
+    "deleteMessage": "Nachricht löschen",
+    "disconnectBanner": "Verbindung verloren — Antwort wurde abgeschnitten",
+    "retryButton": "Erneut versuchen"
   },
   "commands": {
     "helpTitle": "── Befehle ──",

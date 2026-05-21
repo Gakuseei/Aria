@@ -206,7 +206,13 @@ const locale = {
     "noOllamaResponse": "Le modèle a renvoyé une réponse vide (mode think). Réessayé automatiquement — veuillez renvoyer.",
     "copyFailed": "Échec de la copie",
     "resetPassion": "Réinitialiser la Passion",
-    "promptTooLarge": "Le prompt du personnage est très volumineux — cela peut ralentir les réponses"
+    "promptTooLarge": "Le prompt du personnage est très volumineux — cela peut ralentir les réponses",
+    "stopGeneration": "Arrêter la génération",
+    "scrollToBottom": "Aller en bas",
+    "deleteFromHere": "Supprimer ceci et {count} en dessous ?",
+    "deleteMessage": "Supprimer le message",
+    "disconnectBanner": "Connexion perdue — réponse interrompue",
+    "retryButton": "Réessayer"
   },
   "commands": {
     "helpTitle": "── Commandes ──",

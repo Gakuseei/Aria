@@ -206,7 +206,13 @@ const locale = {
     "noOllamaResponse": "Model boş yanıt döndürdü (düşünme modu). Otomatik olarak yeniden denendi — lütfen tekrar gönderin.",
     "copyFailed": "Kopyalama başarısız",
     "resetPassion": "Tutkuyu Sıfırla",
-    "promptTooLarge": "Karakter istemi çok büyük — bu yavaş yanıtlara neden olabilir"
+    "promptTooLarge": "Karakter istemi çok büyük — bu yavaş yanıtlara neden olabilir",
+    "stopGeneration": "Üretimi durdur",
+    "scrollToBottom": "Aşağıya kaydır",
+    "deleteFromHere": "Bunu ve {count} altındakini sil?",
+    "deleteMessage": "Mesajı sil",
+    "disconnectBanner": "Bağlantı kesildi — yanıt kesildi",
+    "retryButton": "Tekrar dene"
   },
   "commands": {
     "helpTitle": "── Komutlar ──",

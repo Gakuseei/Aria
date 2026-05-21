@@ -206,7 +206,13 @@ const locale = {
     "noOllamaResponse": "모델이 빈 응답을 반환했습니다(생각 모드). 자동으로 재시도됨 — 다시 보내주세요.",
     "copyFailed": "복사 실패",
     "resetPassion": "열정 초기화",
-    "promptTooLarge": "캐릭터 프롬프트가 매우 큽니다 — 응답이 느려질 수 있습니다"
+    "promptTooLarge": "캐릭터 프롬프트가 매우 큽니다 — 응답이 느려질 수 있습니다",
+    "stopGeneration": "생성 중지",
+    "scrollToBottom": "맨 아래로",
+    "deleteFromHere": "이것과 아래 {count}개 삭제?",
+    "deleteMessage": "메시지 삭제",
+    "disconnectBanner": "연결 끊김 — 응답이 잘렸습니다",
+    "retryButton": "다시 시도"
   },
   "commands": {
     "helpTitle": "── 명령어 ──",

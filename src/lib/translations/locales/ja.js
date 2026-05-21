@@ -206,7 +206,13 @@ const locale = {
     "noOllamaResponse": "モデルが空の応答を返しました（思考モード）。自動再試行済み — 再送信してください。",
     "copyFailed": "コピー失敗",
     "resetPassion": "情熱リセット",
-    "promptTooLarge": "キャラクタープロンプトが非常に大きいです — 応答が遅くなる可能性があります"
+    "promptTooLarge": "キャラクタープロンプトが非常に大きいです — 応答が遅くなる可能性があります",
+    "stopGeneration": "生成を停止",
+    "scrollToBottom": "一番下へ",
+    "deleteFromHere": "これと下の{count}件を削除？",
+    "deleteMessage": "メッセージを削除",
+    "disconnectBanner": "接続が切断 — 応答が途切れました",
+    "retryButton": "再試行"
   },
   "commands": {
     "helpTitle": "── コマンド ──",

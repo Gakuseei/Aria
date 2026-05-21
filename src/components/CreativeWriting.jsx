@@ -354,11 +354,6 @@ function CreativeWriting({ loadedSession, onBack, settings: parentSettings }) {
     }
   };
 
-  /**
-   * Format story text with dialogue highlighting and narration styling.
-   * @param {string} text - Raw story text
-   * @param {boolean} showCursor - Whether to show streaming cursor
-   */
   function formatStoryText(text, showCursor = false) {
     if (!text || typeof text !== 'string') return null;
 

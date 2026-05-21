@@ -45,15 +45,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     useSystemTitleBar,
   },
 
-  // Window controls
   minimize: () => ipcRenderer.send('window-minimize'),
   maximize: () => ipcRenderer.send('window-maximize'),
   close: () => ipcRenderer.send('window-close'),
-  
-  // Open external URL
   openExternal: (url) => ipcRenderer.send('open-external', url),
-  
-  // AI Communication
+
   aiChat: (params) => ipcRenderer.invoke('ai-chat', params),
   abortAiChat: (tag) => ipcRenderer.invoke('abort-ai-chat', { tag }),
   aiGenerateCharacter: (params) => ipcRenderer.invoke('ai-generate-character', params),

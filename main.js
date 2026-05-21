@@ -1,7 +1,3 @@
-// Electron Main Process - v0.2.5
-// Deep Immersion with Passion Manager
-// AGGRESSIVE CSP: Only 'self', '127.0.0.1', 'localhost'
-
 const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -43,7 +39,6 @@ function loadSettingsSync() {
   return {};
 }
 
-// Load environment variables
 dotenv.config();
 
 let mainWindow;
@@ -263,7 +258,6 @@ async function resolveDevServerUrl() {
   throw new Error(`Aria dev server not detected on ${candidates.join(', ') || `http://localhost:${DEV_SERVER_PORT}`}`);
 }
 
-// v0.2.5: AGGRESSIVE Content Security Policy
 // CRITICAL: Only allow trusted loopback service ports for renderer connections
 const LOCAL_CONNECT_SRC_SERVICES = Object.freeze(['ollama']);
 const CSP_DIRECTIVES = [
@@ -318,7 +312,6 @@ function buildContentSecurityPolicy(settings = {}, { includeDevServer = false } 
 }
 
 async function createWindow() {
-  // FIX 1: Set app name before creating window (Windows Volume Mixer)
   app.setName('Aria');
   const useSystemTitleBar = platform.isWaylandSession();
   mainWindow = new BrowserWindow({
@@ -345,7 +338,6 @@ async function createWindow() {
     mainWindow.show();
   });
 
-  // v0.2.5: AGGRESSIVE CSP ENFORCEMENT
   // This runs BEFORE any content loads - blocks ALL external requests
   if (!createWindow._sessionSecurityRegistered) {
     windowSession.webRequest.onHeadersReceived((details, callback) => {
@@ -405,7 +397,6 @@ async function createWindow() {
     openExternalSafely(url);
   });
 
-  // Load the app
   if (process.env.NODE_ENV === 'development') {
     const devServerUrl = await resolveDevServerUrl();
     activeDevServerOrigin = new URL(devServerUrl).origin;
@@ -423,7 +414,6 @@ async function createWindow() {
   if (createWindow._ipcRegistered) return;
   createWindow._ipcRegistered = true;
 
-  // Window controls
   ipcMain.on('window-minimize', () => {
     if (mainWindow) mainWindow.minimize();
   });
@@ -441,7 +431,6 @@ async function createWindow() {
     if (mainWindow) mainWindow.close();
   });
 
-  // Open external links in default browser
   ipcMain.on('open-external', (event, url) => {
     if (!isTrustedIpcSender(event)) {
       blockUntrustedIpc(event, 'open-external');
@@ -472,10 +461,6 @@ app.on('activate', () => {
     createWindow();
   }
 });
-
-// ===========================================
-// v0.2.5 LOCAL: AI COMMUNICATION (OLLAMA ONLY)
-// ===========================================
 
 /** @type {Map<string, AbortController>} Tagged abort controllers for ai-chat requests */
 const aiChatAbortControllers = new Map();
@@ -813,9 +798,6 @@ Rules:
   }
 });
 
-// ===========================================
-// OLLAMA IPC HANDLERS (for api.js migration)
-// ===========================================
 
 /** Active streaming abort controllers keyed by requestId */
 const streamAbortControllers = new Map();
@@ -890,7 +872,6 @@ ipcMain.handle('ollama-chat-stream', async (event, params) => {
           const chunk = JSON.parse(line);
           if (chunk.message?.content) {
             fullContent += chunk.message.content;
-            // Push token to renderer
             if (!event.sender.isDestroyed()) {
               event.sender.send('ollama-stream-token', { requestId, token: chunk.message.content });
             }
@@ -1178,9 +1159,6 @@ ipcMain.handle('ollama-model-info', async (event, params = {}) => {
   }
 });
 
-// ===========================================
-// SESSION MANAGEMENT
-// ===========================================
 
 const getSessionsPath = () => path.join(app.getPath('userData'), 'sessions');
 
@@ -1331,9 +1309,6 @@ ipcMain.handle('delete-session', async (event, { sessionId }) => {
   }
 });
 
-// ===========================================
-// SETTINGS MANAGEMENT
-// ===========================================
 
 const getSettingsPath = () => path.join(app.getPath('userData'), 'settings.json');
 

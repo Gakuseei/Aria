@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, mem
 import { Send, Square, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2, Undo2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { autoDetectAndSetModel } from '../lib/ollama';
-import { saveSession, generateSessionId, deleteSession } from '../lib/storage/sessions';
+import { saveSession, generateSessionId, deleteSession, listSessions } from '../lib/storage/sessions';
 import { unloadOllamaModel } from '../lib/ollama';
 import { resolveTemplates } from '../lib/chat/common';
 import { commitPartialReply } from '../lib/chat/commitPartialReply';
@@ -21,6 +21,9 @@ import downloadBlob from '../utils/downloadBlob';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from '../lib/defaults';
 import { resolveSessionSceneMemory } from '../lib/chatRuntime';
 import { GAME_MODES } from '../lib/gameModes';
+import MessageAvatar from './chat/MessageAvatar';
+import ScrollToBottomFab from './chat/ScrollToBottomFab';
+import ChatEmptyState from './chat/ChatEmptyState';
 
 function findUnescapedTokenPositions(text = '', token = '') {
   if (!token) return [];
@@ -272,7 +275,8 @@ const MessageBubble = memo(function MessageBubble({
   };
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} group mb-5 message-slide-in`}>
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start gap-3 items-start'} group mb-5 message-slide-in`}>
+      {!isUser && <MessageAvatar character={character} size={36} />}
       <div
         className={`theme-message-column rounded-2xl px-5 py-4 relative transition-all duration-200 ${
           isEditing ? 'w-full' : ''
@@ -1712,7 +1716,10 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         }`}
       >
         <div className="max-w-5xl mx-auto">
-          {messages.map((message, index) => (
+          {messages.length === 0 ? (
+            <ChatEmptyState character={character} />
+          ) : (
+          messages.map((message, index) => (
             message.isTierEvent ? (
               <div key={message.timestamp} className="flex items-center justify-center gap-3 py-4 select-none">
                 <div className="theme-separator-line h-px flex-1" />
@@ -1755,7 +1762,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 totalMessages={messages.length}
               />
             )
-          ))}
+          ))
+          )}
 
           {(isLoading || isStreaming) && (
             <div className="flex justify-start mb-5">
@@ -1799,6 +1807,11 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           <div ref={sentinelRef} aria-hidden="true" />
         </div>
       </div>
+      <ScrollToBottomFab
+        visible={!isSticky}
+        onClick={scrollToBottom}
+        label={t.chat?.scrollToBottom || 'Scroll to bottom'}
+      />
       <div className="theme-composer-dock fixed bottom-8 left-1/2 z-50 w-[92%] max-w-[70rem] -translate-x-1/2 flex flex-col gap-2.5">
         {settings.smartSuggestionsEnabled && smartSuggestions.length > 0 && !isStreaming && !isImpersonating && (
           <div

@@ -1,16 +1,7 @@
-// ============================================================================
-// ARIA v3.0 - Premium Characters
-// ============================================================================
-// 12 Default Characters: 7 NSFW + 5 SFW
 // All characters use plain text format for system prompts.
 // greeting MUST equal startingMessage for every character.
-// ============================================================================
 
 const characters = [
-  // ==========================================================================
-  // NSFW CHARACTERS (7)
-  // ==========================================================================
-
   {
     id: 'alice_maid',
     name: 'Alice',
@@ -335,10 +326,6 @@ She loves them — only them — and lives for being together, taking care of th
     voiceAvoid: 'happily ever after, healthy boundaries, took some space, found peace at last',
   },
 
-  // ==========================================================================
-  // SFW CHARACTERS (5)
-  // ==========================================================================
-
   {
     id: 'lily_student',
     name: 'Lily',
@@ -564,9 +551,7 @@ She lives for quiet mornings, perfectly brewed coffee, rain against the windows,
     voiceAvoid: 'soft warm hugs, bared her heart, fell madly in love, called him her sweetheart',
   },
 
-  // ==========================================================================
-  // STORY NARRATORS (2) — third-person prose narrators (personaType: 'narrator')
-  // ==========================================================================
+  // STORY NARRATORS — third-person prose narrators (personaType: 'narrator')
 
   {
     id: 'narrator-chronicler',

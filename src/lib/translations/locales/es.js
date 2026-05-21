@@ -72,7 +72,7 @@ const locale = {
     "contextMax": "Máximo (24GB+ VRAM)",
     "contextSizeDesc": "Mayor = más memoria, más VRAM.",
     "samplingParams": "Parámetros de muestreo",
-    "samplingSection": "Sampling — {model}",
+    "samplingSection": "Muestreo — {model}",
     "samplingDefault": "Por defecto",
     "samplingCustom": "Personalizado",
     "samplingResetAll": "Restablecer todo para este modelo",
@@ -803,15 +803,15 @@ const locale = {
   },
   "ollamaModal": {
     "titleUnreachable": "Open Ollama",
-    "titleNoModel": "One last download to finish setup",
+    "titleNoModel": "Una última descarga para terminar la configuración",
     "subDefault": "Aria runs fully offline with Ollama. Open Ollama, then click Check again.",
     "subTimeout": "Ollama isn't responding. Try restarting it, then click Check again.",
     "subRefused": "Aria can't reach Ollama. If you just installed it, open it once so it starts.",
-    "subDns": "Aria can't find Ollama at the address in Settings. Check that the address is correct.",
+    "subDns": "Aria no encuentra Ollama en la dirección de Ajustes. Comprueba que la dirección sea correcta.",
     "subHttp": "Connected to Ollama, but it returned an error (code {status}). Try restarting Ollama.",
-    "subNoModel": "Aria still needs to download its AI model. Open the Aria Installer to finish setup.",
+    "subNoModel": "Aria aún necesita descargar su modelo de IA. Abre el Aria Installer para terminar la configuración.",
     "retry": "Check again",
-    "settings": "Advanced settings"
+    "settings": "Ajustes avanzados"
   }
 };
 

@@ -805,15 +805,15 @@ const locale = {
   },
   "ollamaModal": {
     "titleUnreachable": "Open Ollama",
-    "titleNoModel": "One last download to finish setup",
+    "titleNoModel": "सेटअप पूरा करने के लिए एक आख़िरी डाउनलोड",
     "subDefault": "Aria runs fully offline with Ollama. Open Ollama, then click Check again.",
     "subTimeout": "Ollama isn't responding. Try restarting it, then click Check again.",
     "subRefused": "Aria can't reach Ollama. If you just installed it, open it once so it starts.",
-    "subDns": "Aria can't find Ollama at the address in Settings. Check that the address is correct.",
+    "subDns": "Aria को सेटिंग्स में दिए गए पते पर Ollama नहीं मिल रहा। जाँच लो कि पता सही है।",
     "subHttp": "Connected to Ollama, but it returned an error (code {status}). Try restarting Ollama.",
-    "subNoModel": "Aria still needs to download its AI model. Open the Aria Installer to finish setup.",
+    "subNoModel": "Aria को अब भी अपना AI मॉडल डाउनलोड करना है। सेटअप पूरा करने के लिए Aria Installer खोलो।",
     "retry": "Check again",
-    "settings": "Advanced settings"
+    "settings": "एडवांस्ड सेटिंग्स"
   }
 };
 

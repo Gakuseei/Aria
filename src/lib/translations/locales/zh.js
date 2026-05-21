@@ -155,8 +155,8 @@ const locale = {
     "dryEnabled": "DRY (Don't Repeat Yourself)",
     "dryMultiplier": "DRY Multiplier",
     "dryBase": "DRY Base",
-    "dryAllowedLength": "DRY Allowed Length",
-    "dryPenaltyLastN": "DRY Penalty Last N",
+    "dryAllowedLength": "DRY 允许长度",
+    "dryPenaltyLastN": "DRY 惩罚最近 N 项",
     "samplingHelper": "滑块会覆盖该模型的默认值。点击 ⟲ 可恢复任意字段。"
   },
   "chat": {
@@ -802,15 +802,15 @@ const locale = {
   },
   "ollamaModal": {
     "titleUnreachable": "Open Ollama",
-    "titleNoModel": "One last download to finish setup",
+    "titleNoModel": "还差最后一次下载即可完成设置",
     "subDefault": "Aria runs fully offline with Ollama. Open Ollama, then click Check again.",
     "subTimeout": "Ollama isn't responding. Try restarting it, then click Check again.",
     "subRefused": "Aria can't reach Ollama. If you just installed it, open it once so it starts.",
-    "subDns": "Aria can't find Ollama at the address in Settings. Check that the address is correct.",
+    "subDns": "Aria 在设置中的地址找不到 Ollama。请检查地址是否正确。",
     "subHttp": "Connected to Ollama, but it returned an error (code {status}). Try restarting Ollama.",
-    "subNoModel": "Aria still needs to download its AI model. Open the Aria Installer to finish setup.",
+    "subNoModel": "Aria 还需要下载其 AI 模型。请打开 Aria Installer 完成设置。",
     "retry": "Check again",
-    "settings": "Advanced settings"
+    "settings": "高级设置"
   }
 };
 

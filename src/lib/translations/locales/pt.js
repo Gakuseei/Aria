@@ -531,7 +531,7 @@ const locale = {
     "responseModeShort": "Curta",
     "responseModeNormal": "Normal",
     "responseModeLong": "Longa",
-    "storageFull": "Storage full — try removing some character avatars to free space"
+    "storageFull": "Armazenamento cheio — tente remover alguns avatares de personagem para liberar espaço"
   },
   "creative": {
     "creativeWriting": "Escrita Criativa",
@@ -803,15 +803,15 @@ const locale = {
   },
   "ollamaModal": {
     "titleUnreachable": "Open Ollama",
-    "titleNoModel": "One last download to finish setup",
+    "titleNoModel": "Um último download para concluir a instalação",
     "subDefault": "Aria runs fully offline with Ollama. Open Ollama, then click Check again.",
     "subTimeout": "Ollama isn't responding. Try restarting it, then click Check again.",
     "subRefused": "Aria can't reach Ollama. If you just installed it, open it once so it starts.",
-    "subDns": "Aria can't find Ollama at the address in Settings. Check that the address is correct.",
+    "subDns": "O Aria não consegue encontrar o Ollama no endereço definido em Configurações. Verifique se o endereço está correto.",
     "subHttp": "Connected to Ollama, but it returned an error (code {status}). Try restarting Ollama.",
-    "subNoModel": "Aria still needs to download its AI model. Open the Aria Installer to finish setup.",
+    "subNoModel": "O Aria ainda precisa baixar o modelo de IA. Abra o Aria Installer para concluir a instalação.",
     "retry": "Check again",
-    "settings": "Advanced settings"
+    "settings": "Configurações avançadas"
   }
 };
 

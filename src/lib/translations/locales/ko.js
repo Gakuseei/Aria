@@ -74,7 +74,7 @@ const locale = {
     "samplingParams": "샘플링 매개변수",
     "readOnly": "이 모델에 자동 구성됨",
     "lowerMoreFocused": "낮음 = 정확, 높음 = 창의",
-    "samplingSection": "Sampling — {model}",
+    "samplingSection": "샘플링 — {model}",
     "samplingDefault": "기본값",
     "samplingCustom": "커스텀",
     "samplingResetAll": "이 모델 전부 초기화",
@@ -88,7 +88,7 @@ const locale = {
     "dryMultiplier": "DRY Multiplier",
     "dryBase": "DRY Base",
     "dryAllowedLength": "DRY 허용 길이",
-    "dryPenaltyLastN": "DRY Penalty Last N",
+    "dryPenaltyLastN": "DRY 페널티 마지막 N",
     "samplingHelper": "슬라이더가 모델별 기본값을 덮어씁니다. ⟲ 누르면 해당 필드만 되돌아갑니다.",
     "maxResponseTokens": "최대 응답 길이",
     "maxResponseTokensDesc": "낮을수록 빠르고, 높을수록 상세.",
@@ -802,15 +802,15 @@ const locale = {
   },
   "ollamaModal": {
     "titleUnreachable": "Open Ollama",
-    "titleNoModel": "One last download to finish setup",
+    "titleNoModel": "설정을 마치려면 마지막 다운로드가 필요합니다",
     "subDefault": "Aria runs fully offline with Ollama. Open Ollama, then click Check again.",
     "subTimeout": "Ollama isn't responding. Try restarting it, then click Check again.",
     "subRefused": "Aria can't reach Ollama. If you just installed it, open it once so it starts.",
-    "subDns": "Aria can't find Ollama at the address in Settings. Check that the address is correct.",
+    "subDns": "설정에 입력된 주소에서 Ollama를 찾을 수 없습니다. 주소가 올바른지 확인합니다.",
     "subHttp": "Connected to Ollama, but it returned an error (code {status}). Try restarting Ollama.",
-    "subNoModel": "Aria still needs to download its AI model. Open the Aria Installer to finish setup.",
+    "subNoModel": "Aria가 AI 모델을 아직 다운로드해야 합니다. 설정을 마치려면 Aria Installer를 엽니다.",
     "retry": "Check again",
-    "settings": "Advanced settings"
+    "settings": "고급 설정"
   }
 };
 

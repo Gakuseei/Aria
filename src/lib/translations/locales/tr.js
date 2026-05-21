@@ -74,7 +74,7 @@ const locale = {
     "samplingParams": "Örnekleme Parametreleri",
     "readOnly": "Bu model için otomatik yapılandırıldı",
     "lowerMoreFocused": "Düşük = Daha odaklı, Yüksek = Daha yaratıcı",
-    "samplingSection": "Sampling — {model}",
+    "samplingSection": "Örnekleme — {model}",
     "samplingDefault": "Varsayılan",
     "samplingCustom": "Özel",
     "samplingResetAll": "Bu model için tümünü sıfırla",
@@ -83,12 +83,12 @@ const locale = {
     "minP": "Min-P",
     "repeatPenalty": "Repeat Penalty",
     "repeatLastN": "Repeat Last N",
-    "penalizeNewline": "Penalize Newline",
+    "penalizeNewline": "Yeni Satırı Cezalandır",
     "dryEnabled": "DRY (Don't Repeat Yourself)",
     "dryMultiplier": "DRY Multiplier",
     "dryBase": "DRY Base",
-    "dryAllowedLength": "DRY Allowed Length",
-    "dryPenaltyLastN": "DRY Penalty Last N",
+    "dryAllowedLength": "DRY İzin Verilen Uzunluk",
+    "dryPenaltyLastN": "DRY Ceza Son N",
     "samplingHelper": "Sürgüler model varsayılanlarını geçersiz kılar. Herhangi bir alanı geri almak için ⟲ tıkla.",
     "maxResponseTokens": "Maks Yanıt Uzunluğu",
     "maxResponseTokensDesc": "Düşük = daha hızlı, yüksek = daha detaylı.",
@@ -805,15 +805,15 @@ const locale = {
   },
   "ollamaModal": {
     "titleUnreachable": "Open Ollama",
-    "titleNoModel": "One last download to finish setup",
+    "titleNoModel": "Kurulumu tamamlamak için son bir indirme",
     "subDefault": "Aria runs fully offline with Ollama. Open Ollama, then click Check again.",
     "subTimeout": "Ollama isn't responding. Try restarting it, then click Check again.",
     "subRefused": "Aria can't reach Ollama. If you just installed it, open it once so it starts.",
-    "subDns": "Aria can't find Ollama at the address in Settings. Check that the address is correct.",
+    "subDns": "Aria, Ayarlar'daki adreste Ollama'yı bulamıyor. Adresin doğru olduğunu kontrol et.",
     "subHttp": "Connected to Ollama, but it returned an error (code {status}). Try restarting Ollama.",
-    "subNoModel": "Aria still needs to download its AI model. Open the Aria Installer to finish setup.",
+    "subNoModel": "Aria'nın hâlâ AI modelini indirmesi gerekiyor. Kurulumu tamamlamak için Aria Installer'ı aç.",
     "retry": "Check again",
-    "settings": "Advanced settings"
+    "settings": "Gelişmiş ayarlar"
   }
 };
 

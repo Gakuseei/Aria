@@ -1112,6 +1112,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   }, []);
 
   const handleDeleteFrom = useCallback((index) => {
+    if (isLoading || isStreaming) return;
     if (typeof index !== 'number' || index < 0 || index >= messages.length) return;
     const truncated = messages.slice(0, index);
     setMessages(truncated);
@@ -1119,7 +1120,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       try { saveCurrentSessionRef.current(truncated); } catch (e) { console.warn('[chat] delete save failed', e); }
     }
     setSmartSuggestions([]);
-  }, [messages]);
+  }, [messages, isLoading, isStreaming]);
 
   const handleEditSave = useCallback(async () => {
     if (editingIndex == null) return;
@@ -1789,7 +1790,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           )}
 
           {(isLoading || isStreaming) && (
-            <div className="flex justify-start mb-5">
+            <div className="flex justify-start gap-3 items-start mb-5">
+              <MessageAvatar character={character} size={36} />
               <div className="theme-chat-assistant-bubble theme-message-column relative rounded-2xl px-5 py-4 transition-all duration-200">
                 {!streamingContent ? (
                   <div className="flex items-center gap-3">

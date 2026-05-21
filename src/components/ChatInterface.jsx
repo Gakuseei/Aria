@@ -1015,6 +1015,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       setSceneMemory(nextSceneMemory);
       setIsStreaming(false);
       setStreamingContent('');
+      streamBufferRef.current = '';
 
       if (isForegroundRequestObsolete(activeAbortHandle)) return;
 
@@ -1379,6 +1380,27 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       if (isForegroundRequestObsolete(activeAbortHandle)) return;
 
+      if (response?.aborted) {
+        return;
+      }
+
+      if (response?.partial) {
+        commitPartialReply({
+          streamBufferRef,
+          messagesRef,
+          setMessages,
+          saveSession: saveCurrentSessionRef.current
+        });
+        setSendFailure({
+          type: 'disconnect',
+          message: t.chat.disconnectBanner
+        });
+        setIsLoading(false);
+        setIsStreaming(false);
+        setStreamingContent('');
+        return;
+      }
+
       if (!response.success) {
         setIsStreaming(false);
         setStreamingContent('');
@@ -1401,6 +1423,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       setSceneMemory(nextSceneMemory);
       setIsStreaming(false);
       setStreamingContent('');
+      streamBufferRef.current = '';
 
       if (isForegroundRequestObsolete(activeAbortHandle)) return;
 

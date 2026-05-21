@@ -102,6 +102,9 @@ export const sendMessage = async (
     userMessage = userMessage.slice(0, MAX_INPUT_LENGTH);
   }
 
+  let streamTerminationReason = 'unknown';
+  const wasUserAborted = () => streamAbortHandle?.aborted && streamAbortHandle.reason === 'user';
+
   try {
     const settings = { ...(settingsOverride || await loadSettings()) };
 
@@ -181,8 +184,6 @@ export const sendMessage = async (
     const stopSequences = ['\nUser:', '\nHuman:', `\n${userName}:`, `\n${character.name}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>', '<|start_header_id|>'];
 
     let data;
-    let streamTerminationReason = 'unknown';
-    const wasUserAborted = () => streamAbortHandle?.aborted && streamAbortHandle.reason === 'user';
 
     const normalizeReason = (reason) => {
       if (reason === 'user') return 'user';
@@ -701,6 +702,23 @@ export const sendMessage = async (
     };
 
   } catch (error) {
+    if (wasUserAborted()) {
+      streamTerminationReason = 'user';
+      return {
+        success: false,
+        error: error?.message || 'The operation was aborted',
+        aborted: true,
+        reason: 'user'
+      };
+    }
+    if (streamTerminationReason === 'disconnect' || streamTerminationReason === 'truncated') {
+      return {
+        success: false,
+        partial: true,
+        reason: streamTerminationReason,
+        error: error?.message || 'Stream interrupted'
+      };
+    }
     if (error?.message === 'The operation was aborted') {
       return {
         success: false,

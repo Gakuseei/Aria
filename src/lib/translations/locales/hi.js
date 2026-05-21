@@ -141,7 +141,23 @@ const locale = {
     "suggestionModelPullCleanup": "साफ़ कर रहा",
     "suggestionModelPullSuccess": "पूर्ण",
     "suggestionModelPullEta": "बाक़ी",
-    "suggestionModelPullAlmostDone": "लगभग पूरा"
+    "suggestionModelPullAlmostDone": "लगभग पूरा",
+    "samplingSection": "Sampling — {model}",
+    "samplingDefault": "Default",
+    "samplingCustom": "Custom",
+    "samplingResetAll": "Reset all for this model",
+    "topP": "Top-P",
+    "topK": "Top-K",
+    "minP": "Min-P",
+    "repeatPenalty": "Repeat Penalty",
+    "repeatLastN": "Repeat Last N",
+    "penalizeNewline": "Penalize Newline",
+    "dryEnabled": "DRY (Don't Repeat Yourself)",
+    "dryMultiplier": "DRY Multiplier",
+    "dryBase": "DRY Base",
+    "dryAllowedLength": "DRY Allowed Length",
+    "dryPenaltyLastN": "DRY Penalty Last N",
+    "samplingHelper": "Sliders override the per-model defaults. Click ⟲ to revert any field."
   },
   "chat": {
     "passion": "जुनून",
@@ -212,7 +228,15 @@ const locale = {
     "deleteFromHere": "इसे और नीचे के {count} हटाएं?",
     "deleteMessage": "संदेश हटाएं",
     "disconnectBanner": "कनेक्शन टूट गया — उत्तर कट गया",
-    "retryButton": "पुनः प्रयास करें"
+    "retryButton": "पुनः प्रयास करें",
+    "importChatFileAria": "चैट फ़ाइल आयात करें",
+    "importErrors": {
+      "invalidJson": "यह फ़ाइल वैध JSON नहीं है।",
+      "notAriaExport": "यह फ़ाइल Aria एक्सपोर्ट नहीं है।",
+      "wrongKind": "यह फ़ाइल चैट एक्सपोर्ट नहीं है। (मिला: {kind})",
+      "unsupportedSchema": "असमर्थित एक्सपोर्ट स्कीमा संस्करण। कृपया Aria अपडेट करें।",
+      "missingPayload": "एक्सपोर्ट फ़ाइल में डेटा गायब है।"
+    }
   },
   "commands": {
     "helpTitle": "── कमांड ──",
@@ -303,7 +327,17 @@ const locale = {
     "personaPlural": "पर्सोना",
     "standardSettingsHint": "स्टैंडर्ड हमेशा सबसे पहले रहेगा, लेकिन आप उसका नाम, आइकन और रंग बदल सकते हैं।",
     "folderOpen": "खुला",
-    "folderClosed": "बंद"
+    "folderClosed": "बंद",
+    "importCharacterFileAria": "किरदार फ़ाइल आयात करें",
+    "storageFull": "स्टोरेज भरा हुआ है — जगह खाली करने के लिए कुछ किरदार अवतार हटाएँ",
+    "importErrors": {
+      "invalidJson": "यह फ़ाइल वैध JSON नहीं है।",
+      "notAriaExport": "यह फ़ाइल Aria एक्सपोर्ट नहीं है।",
+      "wrongKind": "यह फ़ाइल किरदार एक्सपोर्ट नहीं है। (मिला: {kind})",
+      "unsupportedSchema": "असमर्थित एक्सपोर्ट स्कीमा संस्करण। कृपया Aria अपडेट करें।",
+      "missingPayload": "एक्सपोर्ट फ़ाइल में डेटा गायब है।",
+      "missingRequiredFields": "किरदार फ़ाइल में ज़रूरी फ़ील्ड गायब हैं (नाम, सिस्टम प्रॉम्प्ट, आरंभिक संदेश)।"
+    }
   },
   "aiCharacterBuilder": {
     "title": "AI चरित्र निर्माता",
@@ -358,7 +392,8 @@ const locale = {
     "voiceAvoidLabel": "बचने योग्य वाक्यांश",
     "voiceAvoidHelp": "वैकल्पिक। अल्पविराम से अलग किए गए घिसे-पिटे वाक्यांश जिनका यह किरदार कभी उपयोग नहीं करेगा। सामान्य रोमांस-उपन्यास बहाव को रोकने में मदद करता है।",
     "voicePinGenerate": "एआई से सुझाव",
-    "voicePinGenerating": "जनरेट हो रहा है..."
+    "voicePinGenerating": "जनरेट हो रहा है...",
+    "generating": "Generating your character..."
   },
   "modeSelection": {
     "selectMode": "मोड चुनें",
@@ -487,7 +522,16 @@ const locale = {
     "voiceAvoidLabel": "बचने योग्य वाक्यांश",
     "voiceAvoidHelp": "वैकल्पिक। अल्पविराम से अलग किए गए घिसे-पिटे वाक्यांश जिनका यह किरदार कभी उपयोग नहीं करेगा। सामान्य रोमांस-उपन्यास बहाव को रोकने में मदद करता है।",
     "voicePinGenerate": "एआई से सुझाव",
-    "voicePinGenerating": "जनरेट हो रहा है..."
+    "voicePinGenerating": "जनरेट हो रहा है...",
+    "contentRating": "Content Rating",
+    "contentRatingSfw": "SFW",
+    "contentRatingNsfw": "NSFW",
+    "contentRatingHelp": "NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.",
+    "responseModeLabel": "Reply Length",
+    "responseModeHint": "Controls how long the AI usually replies. Users can still ask for more detail when needed.",
+    "responseModeShort": "Short",
+    "responseModeNormal": "Normal",
+    "responseModeLong": "Long"
   },
   "creative": {
     "creativeWriting": "रचनात्मक लेखन",
@@ -535,7 +579,18 @@ const locale = {
     "continueStory": "जारी रखें",
     "newStory": "नई कहानी",
     "wordsCount": "{count} शब्द",
-    "storyExported": "कहानी निर्यात हो गई!"
+    "storyExported": "कहानी निर्यात हो गई!",
+    "importStoryFileAria": "कहानी फ़ाइल आयात करें",
+    "importErrors": {
+      "invalidJson": "यह फ़ाइल वैध JSON नहीं है।",
+      "notAriaExport": "यह फ़ाइल Aria एक्सपोर्ट नहीं है।",
+      "wrongKind": "यह फ़ाइल कहानी एक्सपोर्ट नहीं है। (मिला: {kind})",
+      "unsupportedSchema": "असमर्थित एक्सपोर्ट स्कीमा संस्करण। कृपया Aria अपडेट करें।",
+      "missingPayload": "एक्सपोर्ट फ़ाइल में डेटा गायब है।",
+      "missingRequiredFields": "कहानी फ़ाइल में ज़रूरी सामग्री गायब है।"
+    },
+    "generate": "Generate",
+    "generating": "Generating..."
   },
   "supporter": {
     "supportAria": "Aria का समर्थन करें",

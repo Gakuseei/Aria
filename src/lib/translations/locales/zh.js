@@ -141,7 +141,23 @@ const locale = {
     "suggestionModelPullCleanup": "清理中",
     "suggestionModelPullSuccess": "完成",
     "suggestionModelPullEta": "剩余",
-    "suggestionModelPullAlmostDone": "即将完成"
+    "suggestionModelPullAlmostDone": "即将完成",
+    "samplingSection": "采样 — {model}",
+    "samplingDefault": "默认",
+    "samplingCustom": "自定义",
+    "samplingResetAll": "重置此模型的全部设置",
+    "topP": "Top-P",
+    "topK": "Top-K",
+    "minP": "Min-P",
+    "repeatPenalty": "Repeat Penalty",
+    "repeatLastN": "Repeat Last N",
+    "penalizeNewline": "惩罚换行",
+    "dryEnabled": "DRY (Don't Repeat Yourself)",
+    "dryMultiplier": "DRY Multiplier",
+    "dryBase": "DRY Base",
+    "dryAllowedLength": "DRY Allowed Length",
+    "dryPenaltyLastN": "DRY Penalty Last N",
+    "samplingHelper": "滑块会覆盖该模型的默认值。点击 ⟲ 可恢复任意字段。"
   },
   "chat": {
     "passion": "激情",
@@ -212,7 +228,15 @@ const locale = {
     "deleteFromHere": "删除此条和下方{count}条？",
     "deleteMessage": "删除消息",
     "disconnectBanner": "连接断开 — 回复被截断",
-    "retryButton": "重试"
+    "retryButton": "重试",
+    "importChatFileAria": "导入聊天文件",
+    "importErrors": {
+      "invalidJson": "此文件不是有效的 JSON。",
+      "notAriaExport": "此文件不是 Aria 导出文件。",
+      "wrongKind": "此文件不是聊天导出。（发现：{kind}）",
+      "unsupportedSchema": "不支持的导出版本。请更新 Aria。",
+      "missingPayload": "导出文件缺少数据。"
+    }
   },
   "commands": {
     "helpTitle": "── 命令 ──",
@@ -303,7 +327,17 @@ const locale = {
     "personaPlural": "角色",
     "standardSettingsHint": "标准文件夹会始终固定在最前，但你可以修改名称、图标和颜色。",
     "folderOpen": "已打开",
-    "folderClosed": "已关闭"
+    "folderClosed": "已关闭",
+    "importCharacterFileAria": "导入角色文件",
+    "storageFull": "存储空间已满 — 删除一些角色头像以释放空间",
+    "importErrors": {
+      "invalidJson": "此文件不是有效的 JSON。",
+      "notAriaExport": "此文件不是 Aria 导出文件。",
+      "wrongKind": "此文件不是角色导出。（发现：{kind}）",
+      "unsupportedSchema": "不支持的导出版本。请更新 Aria。",
+      "missingPayload": "导出文件缺少数据。",
+      "missingRequiredFields": "角色文件缺少必需字段（名称、系统提示词、起始消息）。"
+    }
   },
   "aiCharacterBuilder": {
     "title": "AI角色构建器",
@@ -318,6 +352,7 @@ const locale = {
     "languageLabel": "输出语言",
     "betaBadge": "测试版",
     "generateButton": "生成角色",
+    "generating": "正在生成你的角色...",
     "generatingSubtitle": "这可能需要一些时间，取决于你的模型",
     "cancel": "取消",
     "regenerate": "重新生成",
@@ -485,7 +520,16 @@ const locale = {
     "voiceAvoidLabel": "避免的短语",
     "voiceAvoidHelp": "可选。用逗号分隔此角色绝不会使用的套话。可帮助阻止滑向通用言情小说腔调。",
     "voicePinGenerate": "用 AI 建议",
-    "voicePinGenerating": "生成中..."
+    "voicePinGenerating": "生成中...",
+    "contentRating": "内容分级",
+    "contentRatingSfw": "SFW",
+    "contentRatingNsfw": "NSFW",
+    "contentRatingHelp": "NSFW 角色会出现在 NSFW 筛选中，并在场景升温时自动解锁露骨内容。即便是 SFW 角色，只要启用了解放模式，也可以走向 NSFW。",
+    "responseModeLabel": "回复长度",
+    "responseModeHint": "控制 AI 通常回复的长度。用户仍可在需要时要求更详细的回复。",
+    "responseModeShort": "短",
+    "responseModeNormal": "正常",
+    "responseModeLong": "长"
   },
   "creative": {
     "creativeWriting": "创意写作",
@@ -533,7 +577,18 @@ const locale = {
     "continueStory": "继续",
     "newStory": "新故事",
     "wordsCount": "{count} 字",
-    "storyExported": "故事已导出！"
+    "storyExported": "故事已导出！",
+    "generate": "生成",
+    "generating": "生成中...",
+    "importStoryFileAria": "导入故事文件",
+    "importErrors": {
+      "invalidJson": "此文件不是有效的 JSON。",
+      "notAriaExport": "此文件不是 Aria 导出文件。",
+      "wrongKind": "此文件不是故事导出。（发现：{kind}）",
+      "unsupportedSchema": "不支持的导出版本。请更新 Aria。",
+      "missingPayload": "导出文件缺少数据。",
+      "missingRequiredFields": "故事文件缺少必需的内容。"
+    }
   },
   "supporter": {
     "supportAria": "支持 Aria",

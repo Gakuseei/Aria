@@ -141,7 +141,23 @@ const locale = {
     "suggestionModelPullCleanup": "تنظيف",
     "suggestionModelPullSuccess": "اكتمل",
     "suggestionModelPullEta": "متبقٍ",
-    "suggestionModelPullAlmostDone": "اقترب الانتهاء"
+    "suggestionModelPullAlmostDone": "اقترب الانتهاء",
+    "samplingSection": "Sampling — {model}",
+    "samplingDefault": "Default",
+    "samplingCustom": "Custom",
+    "samplingResetAll": "Reset all for this model",
+    "topP": "Top-P",
+    "topK": "Top-K",
+    "minP": "Min-P",
+    "repeatPenalty": "Repeat Penalty",
+    "repeatLastN": "Repeat Last N",
+    "penalizeNewline": "Penalize Newline",
+    "dryEnabled": "DRY (Don't Repeat Yourself)",
+    "dryMultiplier": "DRY Multiplier",
+    "dryBase": "DRY Base",
+    "dryAllowedLength": "DRY Allowed Length",
+    "dryPenaltyLastN": "DRY Penalty Last N",
+    "samplingHelper": "Sliders override the per-model defaults. Click ⟲ to revert any field."
   },
   "chat": {
     "passion": "الشغف",
@@ -200,6 +216,14 @@ const locale = {
     "chatImported": "تم الاستيراد",
     "invalidChatFile": "ملف غير صالح",
     "failedToImport": "فشل الاستيراد. تأكد من أن الملف تصدير Aria صالح (.json).",
+    "importChatFileAria": "استيراد ملف دردشة",
+    "importErrors": {
+      "invalidJson": "هذا الملف ليس بصيغة JSON صالحة.",
+      "notAriaExport": "هذا الملف ليس تصدير Aria.",
+      "wrongKind": "هذا الملف ليس تصدير دردشة. (تم العثور على: {kind})",
+      "unsupportedSchema": "إصدار مخطط التصدير غير مدعوم. يُرجى تحديث Aria.",
+      "missingPayload": "ملف التصدير تنقصه بيانات."
+    },
     "failedToExport": "فشل التصدير",
     "timeout": "انتهت مهلة الطلب. قد يكون Ollama مثقلاً — حاول مرة أخرى.",
     "sendError": "فشل الحصول على رد. يرجى المحاولة مرة أخرى.",
@@ -270,6 +294,16 @@ const locale = {
     "characterImported": "تم استيراد الشخصية \"{name}\"!",
     "failedToImport": "فشل الاستيراد. تأكد من أن الملف تصدير صالح (.json).",
     "failedToExport": "فشل التصدير",
+    "importCharacterFileAria": "استيراد ملف شخصية",
+    "storageFull": "السعة ممتلئة — احذف بعض صور الشخصيات لتحرير مساحة",
+    "importErrors": {
+      "invalidJson": "هذا الملف ليس بصيغة JSON صالحة.",
+      "notAriaExport": "هذا الملف ليس تصدير Aria.",
+      "wrongKind": "هذا الملف ليس تصدير شخصية. (تم العثور على: {kind})",
+      "unsupportedSchema": "إصدار مخطط التصدير غير مدعوم. يُرجى تحديث Aria.",
+      "missingPayload": "ملف التصدير تنقصه بيانات.",
+      "missingRequiredFields": "ينقص ملف الشخصية حقول مطلوبة (الاسم، موجه النظام، رسالة البدء)."
+    },
     "custom": "مخصص",
     "createWithAI": "إنشاء بالذكاء الاصطناعي",
     "aiPowered": "مدعوم بالذكاء الاصطناعي",
@@ -358,7 +392,8 @@ const locale = {
     "voiceAvoidLabel": "عبارات يجب تجنبها",
     "voiceAvoidHelp": "اختياري. عبارات نمطية مفصولة بفواصل لن تستخدمها هذه الشخصية أبدًا. يساعد على منع الانحراف نحو الرواية الرومانسية العامة.",
     "voicePinGenerate": "اقتراح بالذكاء الاصطناعي",
-    "voicePinGenerating": "جارٍ الإنشاء..."
+    "voicePinGenerating": "جارٍ الإنشاء...",
+    "generating": "Generating your character..."
   },
   "modeSelection": {
     "selectMode": "اختر الوضع",
@@ -487,7 +522,16 @@ const locale = {
     "voiceAvoidLabel": "عبارات يجب تجنبها",
     "voiceAvoidHelp": "اختياري. عبارات نمطية مفصولة بفواصل لن تستخدمها هذه الشخصية أبدًا. يساعد على منع الانحراف نحو الرواية الرومانسية العامة.",
     "voicePinGenerate": "اقتراح بالذكاء الاصطناعي",
-    "voicePinGenerating": "جارٍ الإنشاء..."
+    "voicePinGenerating": "جارٍ الإنشاء...",
+    "contentRating": "Content Rating",
+    "contentRatingSfw": "SFW",
+    "contentRatingNsfw": "NSFW",
+    "contentRatingHelp": "NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.",
+    "responseModeLabel": "Reply Length",
+    "responseModeHint": "Controls how long the AI usually replies. Users can still ask for more detail when needed.",
+    "responseModeShort": "Short",
+    "responseModeNormal": "Normal",
+    "responseModeLong": "Long"
   },
   "creative": {
     "creativeWriting": "الكتابة الإبداعية",
@@ -523,6 +567,15 @@ const locale = {
     "storyImported": "تم استيراد القصة!",
     "failedToImportStory": "فشل الاستيراد. تأكد من أن الملف تصدير صالح (.json).",
     "failedToExportStory": "فشل تصدير القصة",
+    "importStoryFileAria": "استيراد ملف قصة",
+    "importErrors": {
+      "invalidJson": "هذا الملف ليس بصيغة JSON صالحة.",
+      "notAriaExport": "هذا الملف ليس تصدير Aria.",
+      "wrongKind": "هذا الملف ليس تصدير قصة. (تم العثور على: {kind})",
+      "unsupportedSchema": "إصدار مخطط التصدير غير مدعوم. يُرجى تحديث Aria.",
+      "missingPayload": "ملف التصدير تنقصه بيانات.",
+      "missingRequiredFields": "ينقص ملف القصة المحتوى المطلوب."
+    },
     "genre": "النوع",
     "genreRomantic": "رومانسي",
     "genreHardcore": "هاردكور",
@@ -535,7 +588,9 @@ const locale = {
     "continueStory": "متابعة",
     "newStory": "قصة جديدة",
     "wordsCount": "{count} كلمة",
-    "storyExported": "تم تصدير القصة!"
+    "storyExported": "تم تصدير القصة!",
+    "generate": "Generate",
+    "generating": "Generating..."
   },
   "supporter": {
     "supportAria": "دعم Aria",

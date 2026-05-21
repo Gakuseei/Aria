@@ -90,6 +90,22 @@ const locale = {
     "definesAnatomy": "Sagt der KI deinen Körpertyp für immersives Roleplay",
     "unknownError": "Etwas ist schiefgelaufen. Versuche Ollama neu zu starten.",
     "versionTagline": "v1.0 Release • Nur Lokal",
+    "samplingSection": "Sampling — {model}",
+    "samplingDefault": "Standard",
+    "samplingCustom": "Custom",
+    "samplingResetAll": "Alle für dieses Modell zurücksetzen",
+    "topP": "Top-P",
+    "topK": "Top-K",
+    "minP": "Min-P",
+    "repeatPenalty": "Wiederholungsstrafe",
+    "repeatLastN": "Wiederholungsfenster",
+    "penalizeNewline": "Zeilenumbruch bestrafen",
+    "dryEnabled": "DRY (Don't Repeat Yourself)",
+    "dryMultiplier": "DRY Multiplikator",
+    "dryBase": "DRY Base",
+    "dryAllowedLength": "DRY Erlaubte Länge",
+    "dryPenaltyLastN": "DRY Strafenfenster",
+    "samplingHelper": "Regler überschreiben die Modell-Standards. Klicke ⟲, um ein Feld zurückzusetzen.",
     "samplingModalEyebrow": "Pro Modell",
     "samplingModalTitle": "Sampling-Einstellungen",
     "samplingModalOverridesActive": "{count} Override aktiv",
@@ -163,6 +179,7 @@ const locale = {
     "regenerate": "Neu generieren",
     "export": "Chat exportieren",
     "import": "Chat importieren",
+    "importChatFileAria": "Chat-Datei importieren",
     "clear": "Chat löschen",
     "characterInfo": "Charakter-Info",
     "zoom": "Text-Zoom",
@@ -212,7 +229,14 @@ const locale = {
     "deleteFromHere": "Diese und {count} darunter löschen?",
     "deleteMessage": "Nachricht löschen",
     "disconnectBanner": "Verbindung verloren — Antwort wurde abgeschnitten",
-    "retryButton": "Erneut versuchen"
+    "retryButton": "Erneut versuchen",
+    "importErrors": {
+      "invalidJson": "Diese Datei ist kein gültiges JSON.",
+      "notAriaExport": "Diese Datei ist kein Aria-Export.",
+      "wrongKind": "Diese Datei ist kein Chat-Export. (Gefunden: {kind})",
+      "unsupportedSchema": "Nicht unterstützte Export-Schema-Version. Bitte aktualisiere Aria.",
+      "missingPayload": "Export-Datei enthält keine Daten."
+    }
   },
   "commands": {
     "helpTitle": "── Befehle ──",
@@ -263,6 +287,7 @@ const locale = {
     "customCharacters": "benutzerdefinierter Charakter",
     "customCharactersPlural": "benutzerdefinierte Charaktere",
     "import": "Importieren",
+    "importCharacterFileAria": "Charakter-Datei importieren",
     "exportCharacter": "Charakter exportieren",
     "deleteCustom": "Benutzerdefinierten Charakter löschen",
     "areYouSureDelete": "Diesen Charakter löschen?",
@@ -270,6 +295,7 @@ const locale = {
     "characterImported": "Charakter \"{name}\" erfolgreich importiert!",
     "failedToImport": "Import fehlgeschlagen. Stelle sicher, dass es ein gültiger Charakter-Export (.json) ist.",
     "failedToExport": "Charakter konnte nicht exportiert werden",
+    "storageFull": "Speicher voll — entferne einige Charakter-Avatare um Platz zu schaffen",
     "custom": "Benutzerdefiniert",
     "createWithAI": "Mit KI erstellen",
     "aiPowered": "KI-gestützt",
@@ -303,7 +329,15 @@ const locale = {
     "personaPlural": "Personas",
     "standardSettingsHint": "Standard bleibt immer zuerst, aber du kannst Namen, Icon und Farbe aendern.",
     "folderOpen": "Offen",
-    "folderClosed": "Zu"
+    "folderClosed": "Zu",
+    "importErrors": {
+      "invalidJson": "Diese Datei ist kein gültiges JSON.",
+      "notAriaExport": "Diese Datei ist kein Aria-Export.",
+      "wrongKind": "Diese Datei ist kein Charakter-Export. (Gefunden: {kind})",
+      "unsupportedSchema": "Nicht unterstützte Export-Schema-Version. Bitte aktualisiere Aria.",
+      "missingPayload": "Export-Datei enthält keine Daten.",
+      "missingRequiredFields": "Charakter-Datei fehlen Pflichtfelder (Name, System-Prompt, Startnachricht)."
+    }
   },
   "aiCharacterBuilder": {
     "title": "KI-Charakter-Builder",
@@ -486,6 +520,10 @@ const locale = {
     "typeBotDesc": "Utility-Bot, Szenario oder Tool — kein Rollenspiel",
     "storageFull": "Speicher voll — entferne einige Charakter-Avatare um Platz zu schaffen",
     "botInstructions": "Bot-Anweisungen",
+    "contentRating": "Inhaltskennzeichnung",
+    "contentRatingSfw": "SFW",
+    "contentRatingNsfw": "NSFW",
+    "contentRatingHelp": "NSFW-Personas erscheinen im NSFW-Filter und schalten explizite Inhalte automatisch frei, wenn eine Szene eskaliert. SFW-Personas können trotzdem NSFW werden, wenn der Entfesselte Modus aktiv ist.",
     "voicePinLabel": "Stimm-Anker",
     "voicePinHelp": "Optional. 1-3 Sätze, die beschreiben, wie dieser Charakter spricht und in der Rolle bleibt. Stärkstes Einzelsignal für Persona-Konsistenz.",
     "voicePinNsfwLabel": "Stimm-Anker (NSFW-Override)",
@@ -505,6 +543,7 @@ const locale = {
     "gens": "Gen.",
     "export": "Exportieren",
     "import": "Importieren",
+    "importStoryFileAria": "Story-Datei importieren",
     "zoomOut": "Verkleinern",
     "zoomIn": "Vergrößern",
     "uncensoredWriting": "Unzensiertes Schreiben",
@@ -545,7 +584,15 @@ const locale = {
     "continueStory": "Fortsetzen",
     "newStory": "Neue Story",
     "wordsCount": "{count} Wörter",
-    "storyExported": "Story exportiert!"
+    "storyExported": "Story exportiert!",
+    "importErrors": {
+      "invalidJson": "Diese Datei ist kein gültiges JSON.",
+      "notAriaExport": "Diese Datei ist kein Aria-Export.",
+      "wrongKind": "Diese Datei ist kein Story-Export. (Gefunden: {kind})",
+      "unsupportedSchema": "Nicht unterstützte Export-Schema-Version. Bitte aktualisiere Aria.",
+      "missingPayload": "Export-Datei enthält keine Daten.",
+      "missingRequiredFields": "Story-Datei fehlt der erforderliche Inhalt."
+    }
   },
   "supporter": {
     "supportAria": "Aria unterstützen",

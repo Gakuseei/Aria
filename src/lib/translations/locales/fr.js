@@ -141,7 +141,23 @@ const locale = {
     "suggestionModelPullCleanup": "nettoyage",
     "suggestionModelPullSuccess": "terminé",
     "suggestionModelPullEta": "restant",
-    "suggestionModelPullAlmostDone": "presque fini"
+    "suggestionModelPullAlmostDone": "presque fini",
+    "samplingSection": "Sampling — {model}",
+    "samplingDefault": "Default",
+    "samplingCustom": "Custom",
+    "samplingResetAll": "Reset all for this model",
+    "topP": "Top-P",
+    "topK": "Top-K",
+    "minP": "Min-P",
+    "repeatPenalty": "Repeat Penalty",
+    "repeatLastN": "Repeat Last N",
+    "penalizeNewline": "Penalize Newline",
+    "dryEnabled": "DRY (Don't Repeat Yourself)",
+    "dryMultiplier": "DRY Multiplier",
+    "dryBase": "DRY Base",
+    "dryAllowedLength": "DRY Allowed Length",
+    "dryPenaltyLastN": "DRY Penalty Last N",
+    "samplingHelper": "Sliders override the per-model defaults. Click ⟲ to revert any field."
   },
   "chat": {
     "passion": "Passion",
@@ -200,6 +216,14 @@ const locale = {
     "chatImported": "Chat importé avec succès",
     "invalidChatFile": "Fichier invalide",
     "failedToImport": "Échec. Vérifiez que le fichier est un export Aria valide (.json).",
+    "importChatFileAria": "Importer un fichier de chat",
+    "importErrors": {
+      "invalidJson": "Ce fichier n'est pas un JSON valide.",
+      "notAriaExport": "Ce fichier n'est pas un export Aria.",
+      "wrongKind": "Ce fichier n'est pas un export de chat. (Trouvé : {kind})",
+      "unsupportedSchema": "Version du schéma d'export non prise en charge. Mets Aria à jour.",
+      "missingPayload": "Des données sont manquantes dans le fichier d'export."
+    },
     "failedToExport": "Échec de l'exportation",
     "timeout": "Délai dépassé. Ollama est peut-être surchargé — réessayez.",
     "sendError": "Échec de la réponse. Veuillez réessayer.",
@@ -270,6 +294,16 @@ const locale = {
     "characterImported": "Personnage \"{name}\" importé !",
     "failedToImport": "Échec. Vérifiez que le fichier est un export valide (.json).",
     "failedToExport": "Échec de l'exportation",
+    "importCharacterFileAria": "Importer un fichier de personnage",
+    "storageFull": "Stockage saturé — supprime quelques avatars pour libérer de l'espace",
+    "importErrors": {
+      "invalidJson": "Ce fichier n'est pas un JSON valide.",
+      "notAriaExport": "Ce fichier n'est pas un export Aria.",
+      "wrongKind": "Ce fichier n'est pas un export de personnage. (Trouvé : {kind})",
+      "unsupportedSchema": "Version du schéma d'export non prise en charge. Mets Aria à jour.",
+      "missingPayload": "Des données sont manquantes dans le fichier d'export.",
+      "missingRequiredFields": "Des champs obligatoires manquent dans le fichier (nom, prompt système, message d'accueil)."
+    },
     "custom": "Perso.",
     "createWithAI": "Créer avec l'IA",
     "aiPowered": "Propulsé par l'IA",
@@ -358,7 +392,8 @@ const locale = {
     "voiceAvoidLabel": "Phrases à éviter",
     "voiceAvoidHelp": "Optionnel. Phrases toutes faites séparées par des virgules que ce personnage n'utiliserait jamais. Aide à bloquer la dérive générique de roman à l'eau de rose.",
     "voicePinGenerate": "Suggérer avec l'IA",
-    "voicePinGenerating": "Génération..."
+    "voicePinGenerating": "Génération...",
+    "generating": "Generating your character..."
   },
   "modeSelection": {
     "selectMode": "Sélection du Mode",
@@ -487,7 +522,16 @@ const locale = {
     "voiceAvoidLabel": "Phrases à éviter",
     "voiceAvoidHelp": "Optionnel. Phrases toutes faites séparées par des virgules que ce personnage n'utiliserait jamais. Aide à bloquer la dérive générique de roman à l'eau de rose.",
     "voicePinGenerate": "Suggérer avec l'IA",
-    "voicePinGenerating": "Génération..."
+    "voicePinGenerating": "Génération...",
+    "contentRating": "Content Rating",
+    "contentRatingSfw": "SFW",
+    "contentRatingNsfw": "NSFW",
+    "contentRatingHelp": "NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.",
+    "responseModeLabel": "Reply Length",
+    "responseModeHint": "Controls how long the AI usually replies. Users can still ask for more detail when needed.",
+    "responseModeShort": "Short",
+    "responseModeNormal": "Normal",
+    "responseModeLong": "Long"
   },
   "creative": {
     "creativeWriting": "Écriture Créative",
@@ -523,6 +567,15 @@ const locale = {
     "storyImported": "Histoire importée !",
     "failedToImportStory": "Échec. Vérifiez que le fichier est un export valide (.json).",
     "failedToExportStory": "Échec export",
+    "importStoryFileAria": "Importer un fichier de récit",
+    "importErrors": {
+      "invalidJson": "Ce fichier n'est pas un JSON valide.",
+      "notAriaExport": "Ce fichier n'est pas un export Aria.",
+      "wrongKind": "Ce fichier n'est pas un export de récit. (Trouvé : {kind})",
+      "unsupportedSchema": "Version du schéma d'export non prise en charge. Mets Aria à jour.",
+      "missingPayload": "Des données sont manquantes dans le fichier d'export.",
+      "missingRequiredFields": "Le fichier de récit ne contient pas de texte."
+    },
     "genre": "Genre",
     "genreRomantic": "Romantique",
     "genreHardcore": "Hardcore",
@@ -535,7 +588,9 @@ const locale = {
     "continueStory": "Continuer",
     "newStory": "Nouvelle histoire",
     "wordsCount": "{count} mots",
-    "storyExported": "Histoire exportée !"
+    "storyExported": "Histoire exportée !",
+    "generate": "Generate",
+    "generating": "Generating..."
   },
   "supporter": {
     "supportAria": "Soutenir Aria",

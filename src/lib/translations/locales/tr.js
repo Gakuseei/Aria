@@ -74,6 +74,22 @@ const locale = {
     "samplingParams": "Örnekleme Parametreleri",
     "readOnly": "Bu model için otomatik yapılandırıldı",
     "lowerMoreFocused": "Düşük = Daha odaklı, Yüksek = Daha yaratıcı",
+    "samplingSection": "Sampling — {model}",
+    "samplingDefault": "Varsayılan",
+    "samplingCustom": "Özel",
+    "samplingResetAll": "Bu model için tümünü sıfırla",
+    "topP": "Top-P",
+    "topK": "Top-K",
+    "minP": "Min-P",
+    "repeatPenalty": "Repeat Penalty",
+    "repeatLastN": "Repeat Last N",
+    "penalizeNewline": "Penalize Newline",
+    "dryEnabled": "DRY (Don't Repeat Yourself)",
+    "dryMultiplier": "DRY Multiplier",
+    "dryBase": "DRY Base",
+    "dryAllowedLength": "DRY Allowed Length",
+    "dryPenaltyLastN": "DRY Penalty Last N",
+    "samplingHelper": "Sürgüler model varsayılanlarını geçersiz kılar. Herhangi bir alanı geri almak için ⟲ tıkla.",
     "maxResponseTokens": "Maks Yanıt Uzunluğu",
     "maxResponseTokensDesc": "Düşük = daha hızlı, yüksek = daha detaylı.",
     "uiLanguage": "Arayüz Dili",
@@ -212,7 +228,15 @@ const locale = {
     "deleteFromHere": "Bunu ve {count} altındakini sil?",
     "deleteMessage": "Mesajı sil",
     "disconnectBanner": "Bağlantı kesildi — yanıt kesildi",
-    "retryButton": "Tekrar dene"
+    "retryButton": "Tekrar dene",
+    "importChatFileAria": "Sohbet dosyasını içe aktar",
+    "importErrors": {
+      "invalidJson": "Bu dosya geçerli JSON değil.",
+      "notAriaExport": "Bu dosya bir Aria dışa aktarımı değil.",
+      "wrongKind": "Bu dosya bir sohbet dışa aktarımı değil. (Bulundu: {kind})",
+      "unsupportedSchema": "Desteklenmeyen dışa aktarım şema sürümü. Lütfen Aria'yı güncelleyin.",
+      "missingPayload": "Dışa aktarım dosyasında veri eksik."
+    }
   },
   "commands": {
     "helpTitle": "── Komutlar ──",
@@ -303,7 +327,17 @@ const locale = {
     "personaPlural": "personalar",
     "standardSettingsHint": "Standart her zaman ilk sırada kalır, ama adını, simgesini ve rengini değiştirebilirsin.",
     "folderOpen": "Açık",
-    "folderClosed": "Kapalı"
+    "folderClosed": "Kapalı",
+    "importCharacterFileAria": "Karakter dosyasını içe aktar",
+    "storageFull": "Depolama dolu — yer açmak için bazı karakter avatarlarını kaldırın",
+    "importErrors": {
+      "invalidJson": "Bu dosya geçerli JSON değil.",
+      "notAriaExport": "Bu dosya bir Aria dışa aktarımı değil.",
+      "wrongKind": "Bu dosya bir karakter dışa aktarımı değil. (Bulundu: {kind})",
+      "unsupportedSchema": "Desteklenmeyen dışa aktarım şema sürümü. Lütfen Aria'yı güncelleyin.",
+      "missingPayload": "Dışa aktarım dosyasında veri eksik.",
+      "missingRequiredFields": "Karakter dosyasında gerekli alanlar eksik (ad, sistem istemi, başlangıç mesajı)."
+    }
   },
   "aiCharacterBuilder": {
     "title": "AI Karakter Oluşturucu",
@@ -318,6 +352,7 @@ const locale = {
     "languageLabel": "Çıktı Dili",
     "betaBadge": "Beta",
     "generateButton": "Karakter oluştur",
+    "generating": "Karakterin oluşturuluyor...",
     "generatingSubtitle": "Modelinize bağlı olarak biraz zaman alabilir",
     "cancel": "İptal",
     "regenerate": "Yeniden oluştur",
@@ -476,6 +511,15 @@ const locale = {
     "typeBot": "Bot / Senaryo",
     "typeCharacterDesc": "Kişilik ve arka plana sahip rol yapma karakteri",
     "typeBotDesc": "Yardımcı bot, senaryo veya araç — rol yapma yok",
+    "contentRating": "İçerik Sınıflandırması",
+    "contentRatingSfw": "SFW",
+    "contentRatingNsfw": "NSFW",
+    "contentRatingHelp": "NSFW personalar NSFW filtresinde görünür ve bir sahne tırmandığında açık içeriği otomatik olarak açar. SFW personalar Zincirsiz Mod etkinleştirildiğinde yine de NSFW'ye geçebilir.",
+    "responseModeLabel": "Yanıt Uzunluğu",
+    "responseModeHint": "AI'ın genellikle ne kadar uzun yanıt verdiğini kontrol eder. Kullanıcılar ihtiyaç duyduğunda daha fazla detay isteyebilir.",
+    "responseModeShort": "Kısa",
+    "responseModeNormal": "Normal",
+    "responseModeLong": "Uzun",
     "storageFull": "Depolama dolu — yer açmak için bazı karakter avatarlarını kaldırın",
     "botInstructions": "Bot Talimatları",
     "voicePinLabel": "Ses çıpası",
@@ -535,7 +579,18 @@ const locale = {
     "continueStory": "Devam et",
     "newStory": "Yeni hikaye",
     "wordsCount": "{count} kelime",
-    "storyExported": "Hikaye dışa aktarıldı!"
+    "storyExported": "Hikaye dışa aktarıldı!",
+    "generate": "Oluştur",
+    "generating": "Oluşturuluyor...",
+    "importStoryFileAria": "Hikaye dosyasını içe aktar",
+    "importErrors": {
+      "invalidJson": "Bu dosya geçerli JSON değil.",
+      "notAriaExport": "Bu dosya bir Aria dışa aktarımı değil.",
+      "wrongKind": "Bu dosya bir hikaye dışa aktarımı değil. (Bulundu: {kind})",
+      "unsupportedSchema": "Desteklenmeyen dışa aktarım şema sürümü. Lütfen Aria'yı güncelleyin.",
+      "missingPayload": "Dışa aktarım dosyasında veri eksik.",
+      "missingRequiredFields": "Hikaye dosyasında gerekli içerik eksik."
+    }
   },
   "supporter": {
     "supportAria": "Aria'yı Destekle",

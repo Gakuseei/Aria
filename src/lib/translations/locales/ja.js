@@ -141,7 +141,23 @@ const locale = {
     "suggestionModelPullCleanup": "後片付け",
     "suggestionModelPullSuccess": "完了",
     "suggestionModelPullEta": "残り",
-    "suggestionModelPullAlmostDone": "もうすぐ完了"
+    "suggestionModelPullAlmostDone": "もうすぐ完了",
+    "samplingSection": "Sampling — {model}",
+    "samplingDefault": "Default",
+    "samplingCustom": "Custom",
+    "samplingResetAll": "Reset all for this model",
+    "topP": "Top-P",
+    "topK": "Top-K",
+    "minP": "Min-P",
+    "repeatPenalty": "Repeat Penalty",
+    "repeatLastN": "Repeat Last N",
+    "penalizeNewline": "Penalize Newline",
+    "dryEnabled": "DRY (Don't Repeat Yourself)",
+    "dryMultiplier": "DRY Multiplier",
+    "dryBase": "DRY Base",
+    "dryAllowedLength": "DRY Allowed Length",
+    "dryPenaltyLastN": "DRY Penalty Last N",
+    "samplingHelper": "Sliders override the per-model defaults. Click ⟲ to revert any field."
   },
   "chat": {
     "passion": "情熱",
@@ -200,6 +216,14 @@ const locale = {
     "chatImported": "インポート完了",
     "invalidChatFile": "無効なファイル",
     "failedToImport": "インポート失敗。有効なAriaエクスポート(.json)か確認してください。",
+    "importChatFileAria": "チャットファイルをインポート",
+    "importErrors": {
+      "invalidJson": "このファイルは有効なJSONではありません。",
+      "notAriaExport": "このファイルはAriaのエクスポートではありません。",
+      "wrongKind": "このファイルはチャットのエクスポートではありません。(検出: {kind})",
+      "unsupportedSchema": "サポートされていないエクスポートスキーマです。Ariaを更新してください。",
+      "missingPayload": "エクスポートファイルにデータがありません。"
+    },
     "failedToExport": "失敗",
     "timeout": "タイムアウト。Ollamaが過負荷かもしれません — 再試行してください。",
     "sendError": "応答の取得に失敗しました。再試行してください。",
@@ -270,6 +294,16 @@ const locale = {
     "characterImported": "インポート完了！",
     "failedToImport": "インポート失敗。有効なエクスポート(.json)か確認してください。",
     "failedToExport": "失敗",
+    "importCharacterFileAria": "キャラクターファイルをインポート",
+    "storageFull": "ストレージが満杯です — キャラクターアバターを削除して空き容量を確保してください",
+    "importErrors": {
+      "invalidJson": "このファイルは有効なJSONではありません。",
+      "notAriaExport": "このファイルはAriaのエクスポートではありません。",
+      "wrongKind": "このファイルはキャラクターのエクスポートではありません。(検出: {kind})",
+      "unsupportedSchema": "サポートされていないエクスポートスキーマです。Ariaを更新してください。",
+      "missingPayload": "エクスポートファイルにデータがありません。",
+      "missingRequiredFields": "キャラクターファイルに必須項目が不足しています(名前、システムプロンプト、開始メッセージ)。"
+    },
     "custom": "カスタム",
     "createWithAI": "AIで作成",
     "aiPowered": "AI搭載",
@@ -358,7 +392,8 @@ const locale = {
     "voiceAvoidLabel": "避けるフレーズ",
     "voiceAvoidHelp": "任意。このキャラクターが決して使わない定型句をカンマ区切りで指定します。ありがちなロマンス小説調への流れを防ぎます。",
     "voicePinGenerate": "AIで提案",
-    "voicePinGenerating": "生成中..."
+    "voicePinGenerating": "生成中...",
+    "generating": "Generating your character..."
   },
   "modeSelection": {
     "selectMode": "モード選択",
@@ -485,7 +520,16 @@ const locale = {
     "voiceAvoidLabel": "避けるフレーズ",
     "voiceAvoidHelp": "任意。このキャラクターが決して使わない定型句をカンマ区切りで指定します。ありがちなロマンス小説調への流れを防ぎます。",
     "voicePinGenerate": "AIで提案",
-    "voicePinGenerating": "生成中..."
+    "voicePinGenerating": "生成中...",
+    "contentRating": "Content Rating",
+    "contentRatingSfw": "SFW",
+    "contentRatingNsfw": "NSFW",
+    "contentRatingHelp": "NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.",
+    "responseModeLabel": "Reply Length",
+    "responseModeHint": "Controls how long the AI usually replies. Users can still ask for more detail when needed.",
+    "responseModeShort": "Short",
+    "responseModeNormal": "Normal",
+    "responseModeLong": "Long"
   },
   "creative": {
     "creativeWriting": "執筆",
@@ -521,6 +565,15 @@ const locale = {
     "storyImported": "インポート完了",
     "failedToImportStory": "インポート失敗。有効なエクスポート(.json)か確認してください。",
     "failedToExportStory": "失敗",
+    "importStoryFileAria": "ストーリーファイルをインポート",
+    "importErrors": {
+      "invalidJson": "このファイルは有効なJSONではありません。",
+      "notAriaExport": "このファイルはAriaのエクスポートではありません。",
+      "wrongKind": "このファイルはストーリーのエクスポートではありません。(検出: {kind})",
+      "unsupportedSchema": "サポートされていないエクスポートスキーマです。Ariaを更新してください。",
+      "missingPayload": "エクスポートファイルにデータがありません。",
+      "missingRequiredFields": "ストーリーファイルに必要な内容がありません。"
+    },
     "genre": "ジャンル",
     "genreRomantic": "ロマンチック",
     "genreHardcore": "ハードコア",
@@ -533,7 +586,9 @@ const locale = {
     "continueStory": "続ける",
     "newStory": "新しいストーリー",
     "wordsCount": "{count} 文字",
-    "storyExported": "ストーリーをエクスポートしました！"
+    "storyExported": "ストーリーをエクスポートしました！",
+    "generate": "Generate",
+    "generating": "Generating..."
   },
   "supporter": {
     "supportAria": "Ariaを支援",
@@ -589,7 +644,8 @@ const locale = {
     "searchHint": "別のキーワードを試してください。",
     "matchCount": "{count}件一致",
     "clearSearch": "検索をクリア",
-    "searchSnippetEllipsis": "…"
+    "searchSnippetEllipsis": "…",
+    "matchCountOne": "{count} match"
   },
   "debugConsole": {
     "title": "Aria モニター",

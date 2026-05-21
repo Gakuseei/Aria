@@ -141,7 +141,23 @@ const locale = {
     "suggestionModelPullCleanup": "очистка",
     "suggestionModelPullSuccess": "готово",
     "suggestionModelPullEta": "осталось",
-    "suggestionModelPullAlmostDone": "почти готово"
+    "suggestionModelPullAlmostDone": "почти готово",
+    "samplingSection": "Sampling — {model}",
+    "samplingDefault": "Default",
+    "samplingCustom": "Custom",
+    "samplingResetAll": "Reset all for this model",
+    "topP": "Top-P",
+    "topK": "Top-K",
+    "minP": "Min-P",
+    "repeatPenalty": "Repeat Penalty",
+    "repeatLastN": "Repeat Last N",
+    "penalizeNewline": "Penalize Newline",
+    "dryEnabled": "DRY (Don't Repeat Yourself)",
+    "dryMultiplier": "DRY Multiplier",
+    "dryBase": "DRY Base",
+    "dryAllowedLength": "DRY Allowed Length",
+    "dryPenaltyLastN": "DRY Penalty Last N",
+    "samplingHelper": "Sliders override the per-model defaults. Click ⟲ to revert any field."
   },
   "chat": {
     "passion": "Страсть",
@@ -200,6 +216,14 @@ const locale = {
     "chatImported": "Импортировано",
     "invalidChatFile": "Неверный файл",
     "failedToImport": "Ошибка импорта. Убедитесь, что файл — валидный экспорт Aria (.json).",
+    "importChatFileAria": "Импорт файла чата",
+    "importErrors": {
+      "invalidJson": "Этот файл не является корректным JSON.",
+      "notAriaExport": "Этот файл не является экспортом Aria.",
+      "wrongKind": "Этот файл не является экспортом чата. (Найдено: {kind})",
+      "unsupportedSchema": "Неподдерживаемая версия схемы экспорта. Обновите Aria.",
+      "missingPayload": "В файле экспорта отсутствуют данные."
+    },
     "failedToExport": "Ошибка экспорта",
     "timeout": "Превышено время ожидания. Ollama перегружен — попробуйте снова.",
     "sendError": "Не удалось получить ответ. Попробуйте снова.",
@@ -270,6 +294,16 @@ const locale = {
     "characterImported": "Импортировано!",
     "failedToImport": "Ошибка импорта. Убедитесь, что файл — валидный экспорт (.json).",
     "failedToExport": "Ошибка",
+    "importCharacterFileAria": "Импорт файла персонажа",
+    "storageFull": "Хранилище переполнено — удалите часть аватаров персонажей, чтобы освободить место",
+    "importErrors": {
+      "invalidJson": "Этот файл не является корректным JSON.",
+      "notAriaExport": "Этот файл не является экспортом Aria.",
+      "wrongKind": "Этот файл не является экспортом персонажа. (Найдено: {kind})",
+      "unsupportedSchema": "Неподдерживаемая версия схемы экспорта. Обновите Aria.",
+      "missingPayload": "В файле экспорта отсутствуют данные.",
+      "missingRequiredFields": "В файле персонажа отсутствуют обязательные поля (имя, системный промпт, начальное сообщение)."
+    },
     "custom": "Свой",
     "createWithAI": "Создать с ИИ",
     "aiPowered": "На базе ИИ",
@@ -358,7 +392,8 @@ const locale = {
     "voiceAvoidLabel": "Избегать фраз",
     "voiceAvoidHelp": "Необязательно. Шаблонные фразы через запятую, которые этот персонаж никогда не использовал бы. Помогает блокировать сползание в общий тон любовного романа.",
     "voicePinGenerate": "Предложить через ИИ",
-    "voicePinGenerating": "Генерация..."
+    "voicePinGenerating": "Генерация...",
+    "generating": "Generating your character..."
   },
   "modeSelection": {
     "selectMode": "Режим",
@@ -485,7 +520,16 @@ const locale = {
     "voiceAvoidLabel": "Избегать фраз",
     "voiceAvoidHelp": "Необязательно. Шаблонные фразы через запятую, которые этот персонаж никогда не использовал бы. Помогает блокировать сползание в общий тон любовного романа.",
     "voicePinGenerate": "Предложить через ИИ",
-    "voicePinGenerating": "Генерация..."
+    "voicePinGenerating": "Генерация...",
+    "contentRating": "Content Rating",
+    "contentRatingSfw": "SFW",
+    "contentRatingNsfw": "NSFW",
+    "contentRatingHelp": "NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.",
+    "responseModeLabel": "Reply Length",
+    "responseModeHint": "Controls how long the AI usually replies. Users can still ask for more detail when needed.",
+    "responseModeShort": "Short",
+    "responseModeNormal": "Normal",
+    "responseModeLong": "Long"
   },
   "creative": {
     "creativeWriting": "Творчество",
@@ -521,6 +565,15 @@ const locale = {
     "storyImported": "Импортировано!",
     "failedToImportStory": "Ошибка импорта. Проверьте формат файла (.json).",
     "failedToExportStory": "Ошибка",
+    "importStoryFileAria": "Импорт файла истории",
+    "importErrors": {
+      "invalidJson": "Этот файл не является корректным JSON.",
+      "notAriaExport": "Этот файл не является экспортом Aria.",
+      "wrongKind": "Этот файл не является экспортом истории. (Найдено: {kind})",
+      "unsupportedSchema": "Неподдерживаемая версия схемы экспорта. Обновите Aria.",
+      "missingPayload": "В файле экспорта отсутствуют данные.",
+      "missingRequiredFields": "В файле истории отсутствует содержимое."
+    },
     "genre": "Жанр",
     "genreRomantic": "Романтика",
     "genreHardcore": "Хардкор",
@@ -533,7 +586,9 @@ const locale = {
     "continueStory": "Продолжить",
     "newStory": "Новая история",
     "wordsCount": "{count} слов",
-    "storyExported": "История экспортирована!"
+    "storyExported": "История экспортирована!",
+    "generate": "Generate",
+    "generating": "Generating..."
   },
   "supporter": {
     "supportAria": "Поддержать Aria",

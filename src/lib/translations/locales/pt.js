@@ -138,7 +138,26 @@ const locale = {
     "suggestionModelPullCleanup": "limpando",
     "suggestionModelPullSuccess": "completo",
     "suggestionModelPullEta": "restante",
-    "suggestionModelPullAlmostDone": "quase pronto"
+    "suggestionModelPullAlmostDone": "quase pronto",
+    "themeMode": "Theme",
+    "darkMode": "Dark",
+    "lightMode": "Light",
+    "samplingSection": "Sampling — {model}",
+    "samplingDefault": "Default",
+    "samplingCustom": "Custom",
+    "samplingResetAll": "Reset all for this model",
+    "topP": "Top-P",
+    "topK": "Top-K",
+    "minP": "Min-P",
+    "repeatPenalty": "Repeat Penalty",
+    "repeatLastN": "Repeat Last N",
+    "penalizeNewline": "Penalize Newline",
+    "dryEnabled": "DRY (Don't Repeat Yourself)",
+    "dryMultiplier": "DRY Multiplier",
+    "dryBase": "DRY Base",
+    "dryAllowedLength": "DRY Allowed Length",
+    "dryPenaltyLastN": "DRY Penalty Last N",
+    "samplingHelper": "Sliders override the per-model defaults. Click ⟲ to revert any field."
   },
   "chat": {
     "passion": "Paixão",
@@ -209,7 +228,15 @@ const locale = {
     "deleteFromHere": "Apagar este e {count} abaixo?",
     "deleteMessage": "Apagar mensagem",
     "disconnectBanner": "Conexão perdida — resposta cortada",
-    "retryButton": "Tentar de novo"
+    "retryButton": "Tentar de novo",
+    "importChatFileAria": "Importar arquivo de chat",
+    "importErrors": {
+      "invalidJson": "Este arquivo não é um JSON válido.",
+      "notAriaExport": "Este arquivo não é uma exportação do Aria.",
+      "wrongKind": "Este arquivo não é uma exportação de chat. (Encontrado: {kind})",
+      "unsupportedSchema": "Versão de esquema de exportação não suportada. Atualize o Aria.",
+      "missingPayload": "O arquivo de exportação está sem dados."
+    }
   },
   "commands": {
     "helpTitle": "── Comandos ──",
@@ -300,7 +327,17 @@ const locale = {
     "personaPlural": "personas",
     "standardSettingsHint": "Padrão sempre fica primeiro, mas você pode mudar nome, ícone e cor.",
     "folderOpen": "Aberta",
-    "folderClosed": "Fechada"
+    "folderClosed": "Fechada",
+    "importCharacterFileAria": "Importar arquivo de personagem",
+    "storageFull": "Armazenamento cheio — remova alguns avatares de personagem para liberar espaço",
+    "importErrors": {
+      "invalidJson": "Este arquivo não é um JSON válido.",
+      "notAriaExport": "Este arquivo não é uma exportação do Aria.",
+      "wrongKind": "Este arquivo não é uma exportação de personagem. (Encontrado: {kind})",
+      "unsupportedSchema": "Versão de esquema de exportação não suportada. Atualize o Aria.",
+      "missingPayload": "O arquivo de exportação está sem dados.",
+      "missingRequiredFields": "O arquivo de personagem está sem campos obrigatórios (nome, system prompt, mensagem inicial)."
+    }
   },
   "aiCharacterBuilder": {
     "title": "Construtor de Personagem IA",
@@ -355,7 +392,8 @@ const locale = {
     "voiceAvoidLabel": "Frases a evitar",
     "voiceAvoidHelp": "Opcional. Frases prontas separadas por vírgula que este personagem nunca usaria. Ajuda a bloquear a deriva genérica de romance água com açúcar.",
     "voicePinGenerate": "Sugerir com IA",
-    "voicePinGenerating": "Gerando..."
+    "voicePinGenerating": "Gerando...",
+    "generating": "Generating your character..."
   },
   "modeSelection": {
     "selectMode": "Modo",
@@ -471,7 +509,6 @@ const locale = {
     "typeBot": "Bot / Cenário",
     "typeCharacterDesc": "Personagem de roleplay com personalidade e história",
     "typeBotDesc": "Bot utilitário, cenário ou ferramenta — sem enquadramento de roleplay",
-    "storageFull": "Armazenamento cheio — remova alguns avatares de personagem para liberar espaço",
     "botInstructions": "Instruções do bot",
     "voicePinLabel": "Âncora de voz",
     "voicePinHelp": "Opcional. 1-3 frases que descrevem como este personagem fala e como permanece em personagem. O sinal único mais forte de consistência de persona.",
@@ -482,7 +519,17 @@ const locale = {
     "voiceAvoidLabel": "Frases a evitar",
     "voiceAvoidHelp": "Opcional. Frases prontas separadas por vírgula que este personagem nunca usaria. Ajuda a bloquear a deriva genérica de romance água com açúcar.",
     "voicePinGenerate": "Sugerir com IA",
-    "voicePinGenerating": "Gerando..."
+    "voicePinGenerating": "Gerando...",
+    "contentRating": "Content Rating",
+    "contentRatingSfw": "SFW",
+    "contentRatingNsfw": "NSFW",
+    "contentRatingHelp": "NSFW personas appear in the NSFW filter and unlock explicit content automatically when a scene escalates. SFW personas can still go NSFW if Unchained Mode is enabled.",
+    "responseModeLabel": "Reply Length",
+    "responseModeHint": "Controls how long the AI usually replies. Users can still ask for more detail when needed.",
+    "responseModeShort": "Short",
+    "responseModeNormal": "Normal",
+    "responseModeLong": "Long",
+    "storageFull": "Storage full — try removing some character avatars to free space"
   },
   "creative": {
     "creativeWriting": "Escrita Criativa",
@@ -530,7 +577,18 @@ const locale = {
     "continueStory": "Continuar",
     "newStory": "Nova história",
     "wordsCount": "{count} palavras",
-    "storyExported": "História exportada!"
+    "storyExported": "História exportada!",
+    "importStoryFileAria": "Importar arquivo de história",
+    "importErrors": {
+      "invalidJson": "Este arquivo não é um JSON válido.",
+      "notAriaExport": "Este arquivo não é uma exportação do Aria.",
+      "wrongKind": "Este arquivo não é uma exportação de história. (Encontrado: {kind})",
+      "unsupportedSchema": "Versão de esquema de exportação não suportada. Atualize o Aria.",
+      "missingPayload": "O arquivo de exportação está sem dados.",
+      "missingRequiredFields": "O arquivo de história está sem conteúdo obrigatório."
+    },
+    "generate": "Generate",
+    "generating": "Generating..."
   },
   "supporter": {
     "supportAria": "Apoiar Aria",

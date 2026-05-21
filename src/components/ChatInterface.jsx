@@ -222,7 +222,28 @@ const MessageBubble = memo(function MessageBubble({
   onEditChange,
   onEditCancel,
   onEditSave,
+  onDeleteFrom,
+  totalMessages = 0,
 }) {
+  const [deleteArmed, setDeleteArmed] = useState(false);
+  const armTimerRef = useRef(null);
+
+  const handleDeleteClick = () => {
+    if (!deleteArmed) {
+      setDeleteArmed(true);
+      if (armTimerRef.current) clearTimeout(armTimerRef.current);
+      armTimerRef.current = setTimeout(() => setDeleteArmed(false), 5000);
+      return;
+    }
+    if (armTimerRef.current) clearTimeout(armTimerRef.current);
+    setDeleteArmed(false);
+    onDeleteFrom?.();
+  };
+
+  useEffect(() => () => {
+    if (armTimerRef.current) clearTimeout(armTimerRef.current);
+  }, []);
+
   const formattedParts = useMemo(
     () => formatMessageText(getDisplayMessageText(message.content || '', isUser, isGoldMode && !isUser), isGoldMode && !isUser),
     [message.content, isGoldMode, isUser]
@@ -368,6 +389,31 @@ const MessageBubble = memo(function MessageBubble({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
                 </svg>
               </button>
+              {onDeleteFrom && (
+                <button
+                  type="button"
+                  onClick={handleDeleteClick}
+                  onMouseLeave={() => {
+                    if (deleteArmed) {
+                      setDeleteArmed(false);
+                      if (armTimerRef.current) clearTimeout(armTimerRef.current);
+                    }
+                  }}
+                  title={
+                    deleteArmed
+                      ? (t.chat?.deleteFromHere || 'Delete this and {count} below?').replace('{count}', String(totalMessages - messageIndex - 1))
+                      : (t.chat?.deleteMessage || 'Delete message')
+                  }
+                  aria-label={t.chat?.deleteMessage || 'Delete message'}
+                  className={`p-1.5 rounded-lg border-2 transition-colors ${
+                    deleteArmed
+                      ? 'bg-rose-500 text-white border-rose-300 animate-pulse'
+                      : 'border-transparent theme-message-action hover:text-rose-400 hover:border-rose-500'
+                  }`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                </button>
+              )}
             </>
           )}
         </div>
@@ -1060,6 +1106,16 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     setEditDraft('');
   }, []);
 
+  const handleDeleteFrom = useCallback((index) => {
+    if (typeof index !== 'number' || index < 0 || index >= messages.length) return;
+    const truncated = messages.slice(0, index);
+    setMessages(truncated);
+    if (saveCurrentSessionRef.current) {
+      try { saveCurrentSessionRef.current(truncated); } catch (e) { console.warn('[chat] delete save failed', e); }
+    }
+    setSmartSuggestions([]);
+  }, [messages]);
+
   const handleEditSave = useCallback(async () => {
     if (editingIndex == null) return;
     if (isLoading || isStreaming || isImpersonating) return;
@@ -1695,6 +1751,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 onEditChange={setEditDraft}
                 onEditCancel={handleEditCancel}
                 onEditSave={handleEditSave}
+                onDeleteFrom={() => handleDeleteFrom(index)}
+                totalMessages={messages.length}
               />
             )
           ))}

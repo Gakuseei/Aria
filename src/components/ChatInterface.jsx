@@ -1,7 +1,3 @@
-// ============================================================================
-// ARIA v1.0 RELEASE - ChatInterface
-// ============================================================================
-
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Send, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2, Undo2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -24,10 +20,6 @@ import downloadBlob from '../utils/downloadBlob';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from '../lib/defaults';
 import { resolveSessionSceneMemory } from '../lib/chatRuntime';
 import { GAME_MODES } from '../lib/gameModes';
-
-// ============================================================================
-// TEXT FORMATTING - BLOCK 4 FIX: Apostroph-Bug behoben
-// ============================================================================
 
 function findUnescapedTokenPositions(text = '', token = '') {
   if (!token) return [];
@@ -93,7 +85,6 @@ export function formatMessageText(text, isGoldMode = false) {
   const parts = [];
   let currentIndex = 0;
 
-  // BLOCK 4 FIX: Strict parsing - asterisks MUST be gray, quotes MUST be white
   // Match either *action* or "dialogue" or **bold** (for Gold Mode)
   const regex = isGoldMode
     ? /(\*[^*]+\*)|("([^"]+)")|(\*\*([^*]+)\*\*)/g
@@ -131,10 +122,6 @@ export function formatMessageText(text, isGoldMode = false) {
 
   return parts;
 }
-
-// ============================================================================
-// MESSAGE BUBBLE COMPONENT
-// ============================================================================
 
 function formatTimestamp(timestamp) {
   if (!timestamp) return '';
@@ -389,10 +376,6 @@ const MessageBubble = memo(function MessageBubble({
   );
 });
 
-// ============================================================================
-// MAIN CHAT INTERFACE - v8.1 RESTORED
-// ============================================================================
-
 export default function ChatInterface({ character, loadedSession, onBack, onOpenSettings, settings: parentSettings }) {
   const { t, language } = useLanguage();
   const [messages, setMessages] = useState([]);
@@ -409,16 +392,11 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   const [showChatOptions, setShowChatOptions] = useState(false);
   const [sceneMemory, setSceneMemory] = useState(null);
 
-  // BLOCK 6.9: Entrance Animation
   const isVisible = useEntranceAnimation(100);
-
-  // v0.2.5: Gold Mode State
   const isGoldMode = useGoldMode();
-  
-  // v0.2.5 RESTORED: Feature states from localStorage
   const [userName, setUserName] = useState('User');
 
-  // v0.2.5 FIX: Settings come from parent (App.jsx), merged with localStorage for backward compatibility
+  // Settings come from parent (App.jsx), merged with localStorage for backward compatibility
   const [localSettings, setLocalSettings] = useState({
     ollamaUrl: OLLAMA_DEFAULT_URL,
     themeMode: 'dark',
@@ -429,19 +407,15 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   const settings = useMemo(() => ({ ...localSettings, ...parentSettings }), [localSettings, parentSettings]);
 
 
-  // Text Zoom State
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('chatFontSize') || 'base');
-
-  // v0.2.5: Character Bio Modal
   const [showBioModal, setShowBioModal] = useState(false);
 
-  // v0.2.5: Passion System Toggle (OFF = Unchained Mode, ON = Gatekeeping)
+  // Unchained Mode = passion gatekeeping OFF
   const [isUnchainedMode, setIsUnchainedMode] = useState(() => {
     const saved = localStorage.getItem('passionGatekeepingEnabled');
     try { return saved !== null ? !JSON.parse(saved) : false; } catch { return false; }
   });
 
-  // v0.2.5: Smart Suggestions
   const [smartSuggestions, setSmartSuggestions] = useState([]);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
   const [previousPills, setPreviousPills] = useState([]);
@@ -481,7 +455,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   }, []);
 
 
-  // v0.2.6: Impersonate (Write for me)
   const [isImpersonating, setIsImpersonating] = useState(false);
 
   useEffect(() => {
@@ -595,7 +568,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     onBack();
   }, [abortActiveChatWork, onBack]);
 
-  // BLOCK 6.9.2: Close Chat Options when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showChatOptions && !event.target.closest('.chat-options-container')) {
@@ -623,14 +595,9 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     return () => document.removeEventListener('click', handler);
   }, [showPassionPopover]);
 
-  // ============================================================================
-  // v0.2.5 RESTORED: LOAD SETTINGS FROM LOCALSTORAGE + IPC
-  // ============================================================================
-
   useEffect(() => {
     const loadLocalSettings = async () => {
       try {
-        // FIX 3: Load settings from IPC (source of truth)
         const ipcSettings = await window.electronAPI?.loadSettings?.();
         const backendSettings = ipcSettings?.success ? ipcSettings.settings : {};
         
@@ -641,7 +608,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           ? backendSettings
           : fallbackSettings;
 
-        // BLOCK 8.2: Store full settings object (including ollamaModel)
         setLocalSettings({
           ollamaUrl: loadedSettings.ollamaUrl || OLLAMA_DEFAULT_URL,
           ollamaModel: loadedSettings.ollamaModel || DEFAULT_MODEL_NAME,
@@ -650,11 +616,9 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         });
 
         setUserName(loadedSettings.userName || 'User');
-        // Load font size preference
         const savedFontSize = localStorage.getItem('chatFontSize') || 'base';
         setFontSize(savedFontSize);
 
-        // v0.2.5: AUTO-DETECT MODEL WHEN OPENING CHAT
         const autoDetectResult = await autoDetectAndSetModel();
 
         if (!autoDetectResult.success) {
@@ -669,7 +633,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     loadLocalSettings();
   }, []);
 
-  // Settings updated listener (sync from backend)
   useEffect(() => {
     const cleanup = window.electronAPI?.onSettingsUpdated?.((newSettings) => {
       localStorage.setItem('settings', JSON.stringify(newSettings));
@@ -677,17 +640,9 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     return () => { if (typeof cleanup === 'function') cleanup(); };
   }, []);
 
-  // ============================================================================
-  // PERSIST FONT SIZE CHANGES
-  // ============================================================================
-
   useEffect(() => {
     localStorage.setItem('chatFontSize', fontSize);
   }, [fontSize]);
-
-  // ============================================================================
-  // v0.2.5: PERSIST PASSION GATEKEEPING TOGGLE & APPLY LOGIC
-  // ============================================================================
 
   useEffect(() => {
     localStorage.setItem('passionGatekeepingEnabled', JSON.stringify(!isUnchainedMode));
@@ -726,10 +681,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     return () => { if (timer) clearTimeout(timer); if (toastTimer) clearTimeout(toastTimer); };
   }, [passionLevel, t]);
 
-  // ============================================================================
-  // INITIALIZATION
-  // ============================================================================
-
   useEffect(() => {
     let cancelled = false;
 
@@ -755,13 +706,11 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
       if (cancelled) return;
 
-      // Warn if custom character has excessively large systemPrompt
       if (character.isCustom && character.systemPrompt && character.systemPrompt.length > 8192) {
         console.warn(`[ChatInterface] Custom character "${character.name}" systemPrompt is ${character.systemPrompt.length} chars (>8KB) — may cause slow responses`);
         toast.error(t.chat?.promptTooLarge || `Character prompt is very large (${Math.round(character.systemPrompt.length / 1024)}KB) — this may cause slow responses`);
       }
 
-      // New chat = fresh passion level. Always 0.
       const newSessionId = generateSessionId();
       setSessionId(newSessionId);
       setPassionLevel(0);
@@ -790,10 +739,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     const greetingSceneMemory = buildSceneMemory([greetingMsg], null);
     setSceneMemory(greetingSceneMemory);
   };
-
-  // ============================================================================
-  // AUTO-SAVE & ENVIRONMENT TRACKING
-  // ============================================================================
 
   useEffect(() => {
     const hasUserMessage = messages.some(m => m.role === 'user');
@@ -897,10 +842,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     setIsImpersonating(false);
   };
 
-  // ============================================================================
-  // MESSAGE SENDING
-  // ============================================================================
-
   const runGeneration = useCallback(async (messagesForGeneration) => {
     const userMessage = messagesForGeneration[messagesForGeneration.length - 1];
     const safeMessageText = (userMessage?.content || '').trim();
@@ -982,8 +923,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       setStreamingContent('');
 
       if (isForegroundRequestObsolete(activeAbortHandle)) return;
-
-      const newPassion = response.passionLevel ?? passionLevel;
 
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
@@ -1148,11 +1087,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     });
   }, [lastUserIdx, isLoading, isStreaming, isImpersonating, messages, sessionId, clearSuggestionsState]);
 
-  // ============================================================================
-  // CHAT ACTIONS WITH HARD RESET
-  // ============================================================================
-
-
   const handleClearChat = async (skipConfirmation = false) => {
     const doReset = async () => {
       try {
@@ -1229,13 +1163,11 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       const text = await file.text();
       const importData = JSON.parse(text);
 
-      // Validate required fields
       if (!importData.messages || !Array.isArray(importData.messages)) {
         toast.error(t.chat.invalidChatFile);
         return;
       }
 
-      // Import the chat
       setMessages(importData.messages);
       setSceneMemory(buildSceneMemory(importData.messages, importData.sceneMemory || null));
       setSmartSuggestions(getRestoredSuggestions(importData.messages));
@@ -1254,7 +1186,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       }
 
       toast.success(t.chat.chatImported);
-      // Restore focus to input after import
       setTimeout(() => inputRef.current?.focus(), 100);
     } catch (error) {
       console.error('Import error:', error);
@@ -1369,8 +1300,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
 
       if (isForegroundRequestObsolete(activeAbortHandle)) return;
 
-      const newPassion = response.passionLevel ?? passionLevel;
-
       if (response.passionLevel !== undefined) {
         setPassionLevel(response.passionLevel);
       }
@@ -1412,10 +1341,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       });
   }, [t.chat]);
 
-
-  // ============================================================================
-  // RENDER
-  // ============================================================================
 
   return (
     <div className="theme-screen-shell app-theme-shell relative flex h-screen flex-col overflow-hidden text-[var(--color-text)]">

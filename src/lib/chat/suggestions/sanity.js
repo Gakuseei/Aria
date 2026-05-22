@@ -61,8 +61,9 @@ export function hasPovBleed(pill, { characterName, locale }) {
   const lower = text.toLowerCase();
 
   if (characterName) {
-    const charPattern = new RegExp(`\\b${escapeRegex(characterName)}\\b`, 'i');
-    if (charPattern.test(text)) return true;
+    const stripped = text.replace(/^\s*\*[^*]+\*\s*/, '').trimStart();
+    const charPattern = new RegExp(`^${escapeRegex(characterName)}\\b`, 'i');
+    if (charPattern.test(stripped)) return true;
   }
 
   const pronouns = CHAR_PRONOUNS_BY_LOCALE[locale] || [];

@@ -61,6 +61,7 @@ export function buildSuggestionPrompt({ history, characterName, userName, appLan
     `You write three pills for ${userName} replying to ${characterName} in an ongoing scene.`,
     '',
     `${userName}'s speech and movement are ONLY defined by ${userName} input.`,
+    `Each pill is written by ${userName} in first person, addressing ${characterName} directly. Use "I", "me", "my". Pills may include one short ${userName} action in *asterisks* before or after the dialogue (e.g. *leans in* "I want to hear it"). Never write ${characterName}'s name, dialogue, actions, or thoughts inside a pill.`,
     '',
     closingBlock,
     '',
@@ -69,7 +70,7 @@ export function buildSuggestionPrompt({ history, characterName, userName, appLan
     'Steps:',
     `1. Classify beat: refusal | invitation | uncertain`,
     `2. Generate three pills mapped to beat tones (hold, move, press)`,
-    `3. Each pill is at most 8 words, in ${lang}, and distinct from each other`,
+    `3. Each pill is at most 18 words, in ${lang}, and distinct from each other`,
     '',
     'Output JSON matching the schema.'
   ].join('\n');

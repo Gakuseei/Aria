@@ -92,7 +92,7 @@ async function attemptOnce({ currentRequestId, history, character, userName, set
   const model = pickModel(settings, isGoldMode);
   const profile = pickProfile(model, settings, isGoldMode);
   const ollamaUrl = settings?.ollamaUrl || OLLAMA_DEFAULT_URL;
-  const schema = buildSuggestionSchema(appLanguageName);
+  const schema = buildSuggestionSchema(appLanguageName, userName, characterName);
   const prompts = buildSuggestionPrompt({ history, characterName, userName, appLanguageName });
   if (retryHint) prompts.systemPrompt += `\n\n${retryHint}`;
 

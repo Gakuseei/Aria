@@ -5,10 +5,14 @@
 
 /**
  * @param {string} appLanguageName - Display name like "German", "English".
+ * @param {string} userName - The user's display name.
+ * @param {string} characterName - The character's display name.
  * @returns {object}
  */
-export function buildSuggestionSchema(appLanguageName) {
+export function buildSuggestionSchema(appLanguageName, userName, characterName) {
   const lang = String(appLanguageName || '').trim() || 'English';
+  const user = String(userName || '').trim() || 'User';
+  const character = String(characterName || '').trim() || 'Character';
   return {
     type: 'object',
     additionalProperties: false,
@@ -35,7 +39,7 @@ export function buildSuggestionSchema(appLanguageName) {
             text: {
               type: 'string',
               maxLength: 200,
-              description: `MUST be in ${lang}. Reply text from {{user}}'s perspective. Max 8 words. No leading char-name.`
+              description: `MUST be in ${lang}. Reply spoken by ${user} in first person, addressing ${character}. May include one short ${user} action in asterisks. Max 18 words. Must not contain ${character}'s name.`
             }
           }
         }

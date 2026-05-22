@@ -3,8 +3,8 @@ import { resolveProfile } from '../../modelProfiles.js';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from '../../defaults.js';
 import { getEffectiveResponseMode, getResponseModeTokenLimit } from '../../responseModes.js';
 import { assembleRuntimeContext, buildRuntimeState, estimateTokens as estimateRuntimeTokens } from '../../chatRuntime/index.js';
-import { cleanTranscriptArtifacts, isUnderfilledShortReply, shouldAutoStopStreamingResponse } from '../common.js';
-import { checkPhraseRepetition, checkGestureRepetition, getRecentAssistantReplies, REPETITION_RETRY_HINT } from '../repetitionGuard.js';
+import { cleanTranscriptArtifacts, shouldAutoStopStreamingResponse } from '../common.js';
+import { checkPhraseRepetition, checkGestureRepetition, getRecentAssistantReplies } from '../repetitionGuard.js';
 import { deriveAssistBudgetTier, getModelCtx, getModelCapabilities } from '../../ollama/index.js';
 import { loadSettings } from '../../storage/settings.js';
 import { isElectron } from '../platform.js';
@@ -77,7 +77,8 @@ export const sendMessage = async (
   settingsOverride = null,
   onToken = null,  // Streaming callback — receives each token chunk as string
   streamAbortHandle = null,
-  sceneMemory = null
+  sceneMemory = null,
+  lastTurnBannedPhrases = []
 ) => {
   const startTime = Date.now();
   if (!character || !character.name) {
@@ -145,7 +146,8 @@ export const sendMessage = async (
         passionLevel: currentPassionLevel,
         unchainedMode,
         assistBudgetTier,
-        persistedSceneMemory: sceneMemory
+        persistedSceneMemory: sceneMemory,
+        lastTurnBannedPhrases: Array.isArray(lastTurnBannedPhrases) ? lastTurnBannedPhrases : []
       }
     });
     const runtimeContext = assembleRuntimeContext({ profile: 'reply', runtimeState });
@@ -153,7 +155,6 @@ export const sendMessage = async (
     const trimmedHistory = runtimeContext.historyMessages;
     const promptTokens = estimateRuntimeTokens(finalSystemPrompt) + trimmedHistory.reduce((sum, message) => sum + estimateRuntimeTokens(message.content), 0);
     let retryTriggered = false;
-    let repairApplied = false;
 
     console.log(`[API] Unchained: ${unchainedMode}, Passion: ${currentPassionLevel}, ResponseMode: ${responseMode}`);
     console.log('[API] Reply runtime:', runtimeContext.debug);
@@ -499,71 +500,15 @@ export const sendMessage = async (
       }
     }
 
-    const requestRevision = async (revisionPrompt, revisionTemperature, revisionMaxTokens) => {
-      if (isElectron()) {
-        const revisionResult = await window.electronAPI.aiChat({
-          messages: messages.slice(1).map((msg) => ({ role: msg.role, content: msg.content })),
-          systemPrompt: revisionPrompt,
-          model,
-          isOllama: true,
-          ollamaUrl,
-          temperature: revisionTemperature,
-          maxTokens: revisionMaxTokens,
-          num_ctx: modelCtx
-        });
-
-        if (revisionResult.success && revisionResult.content) {
-          return {
-            message: { content: revisionResult.content },
-            eval_count: revisionResult.usage?.total_tokens || 0,
-            prompt_eval_count: 0
-          };
-        }
-
-        return null;
-      }
-
-      const revisionResponse = await fetch(`${ollamaUrl}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: revisionPrompt },
-            ...messages.slice(1)
-          ],
-          stream: false,
-          options: {
-            ...chatOptions,
-            temperature: revisionTemperature,
-            num_predict: revisionMaxTokens,
-            num_ctx: modelCtx
-          },
-          stop: stopSequences
-        })
-      });
-
-      if (!revisionResponse.ok) {
-        return null;
-      }
-
-      return revisionResponse.json();
-    };
-
     let aiMessage = data.message.content.trim();
 
     aiMessage = cleanTranscriptArtifacts(aiMessage, character.name);
 
     const recentReplies = getRecentAssistantReplies(historyToUse, 5);
-    const voicePinSources = {
-      voicePin: character?.voicePin || '',
-      voicePinNsfw: character?.voicePinNsfw || ''
-    };
     const evaluateRepetition = (candidate) => {
       const phrase = checkPhraseRepetition(candidate, recentReplies, {
         charName: character.name,
-        userName,
-        ...voicePinSources
+        userName
       });
       if (phrase.banned) return phrase;
       const gesture = checkGestureRepetition(candidate, recentReplies);
@@ -571,45 +516,14 @@ export const sendMessage = async (
     };
     const initialRepetition = evaluateRepetition(aiMessage);
     console.info(`[API] Repetition guard: history=${recentReplies.length}, banned=${initialRepetition.banned}${initialRepetition.banned ? `, source=${initialRepetition.source}` : ''}`);
-    if (initialRepetition.banned) {
-      console.warn(`[API] Repetition guard — ${initialRepetition.source}: "${initialRepetition.phrase}", retrying`);
-      const retryPrompt = `${finalSystemPrompt}\n\n${REPETITION_RETRY_HINT}`;
-      const retryTemperature = Math.min(0.95, (profile.temperature ?? 0.8) + 0.15);
-      try {
-        const retryData = await requestRevision(retryPrompt, retryTemperature, numPredict);
-        if (retryData?.message?.content) {
-          const retryMessage = cleanTranscriptArtifacts(retryData.message.content.trim(), character.name);
-          const retryRepetition = evaluateRepetition(retryMessage);
-          if (!retryRepetition.banned) {
-            aiMessage = retryMessage;
-            data.eval_count = retryData.eval_count || data.eval_count;
-            data.prompt_eval_count = retryData.prompt_eval_count || data.prompt_eval_count;
-          } else {
-            console.warn('[API] Repetition retry still banned, accepting original');
-          }
-        }
-      } catch (retryError) {
-        console.warn('[API] Repetition retry failed:', retryError?.message);
-      }
-    }
-
-    if (isUnderfilledShortReply(aiMessage, userMessage, responseMode)) {
-      const repairPrompt = `${finalSystemPrompt}\n\nRESPONSE REPAIR:\n- Your last reply was too minimal and mirrored the user's brevity.\n- Reply again as ${character.name} with a complete, natural response.\n- Give 2-4 sentences in one short paragraph.\n- Include at least one concrete reaction, observation, or action.\n- Do not mention these instructions.`;
-
-      try {
-        const repairedData = await requestRevision(repairPrompt, 0.45, Math.min(numPredict, 192));
-        if (repairedData?.message?.content) {
-          const repairedMessage = cleanTranscriptArtifacts(repairedData.message.content.trim(), character.name);
-          if (!isUnderfilledShortReply(repairedMessage, userMessage, responseMode)) {
-            aiMessage = repairedMessage;
-            data.eval_count = repairedData.eval_count || data.eval_count;
-            data.prompt_eval_count = repairedData.prompt_eval_count || data.prompt_eval_count;
-            repairApplied = true;
-          }
-        }
-      } catch (repairError) {
-        console.warn('[API] Short-reply repair failed:', repairError?.message);
-      }
+    const bannedPhrase = (
+      initialRepetition.banned
+      && streamTerminationReason === 'done'
+      && typeof initialRepetition.phrase === 'string'
+      && initialRepetition.phrase.trim()
+    ) ? initialRepetition.phrase.trim() : null;
+    if (bannedPhrase) {
+      console.warn(`[API] Repetition guard — ${initialRepetition.source}: "${bannedPhrase}", will hint next turn`);
     }
 
     const passionEnabled = character?.passionEnabled !== false && Boolean(sessionId);
@@ -630,8 +544,7 @@ export const sendMessage = async (
     const promptTokens_actual = data.prompt_eval_count || promptTokens;
     const debugStats = {
       ...runtimeContext.debug,
-      retryTriggered,
-      repairApplied
+      retryTriggered
     };
 
     console.log(`[API] Tokens — response: ${responseTokens}, prompt: ${promptTokens_actual}, total: ${responseTokens + promptTokens_actual}`);
@@ -665,6 +578,7 @@ export const sendMessage = async (
         partial: true,
         reason: streamTerminationReason,
         content: aiMessage,
+        bannedPhrase: null,
         conversationHistory: finalHistory,
         passionLevel: nextPassionLevel,
         modelCtx,
@@ -685,6 +599,7 @@ export const sendMessage = async (
     return {
       success: true,
       message: aiMessage,
+      bannedPhrase,
       conversationHistory: finalHistory,
       passionLevel: nextPassionLevel,
       modelCtx,

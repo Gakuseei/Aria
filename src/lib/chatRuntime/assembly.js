@@ -3,6 +3,7 @@ import { getResponseModeConfig } from '../responseModes.js';
 import { buildVoiceCard } from '../chat/impersonate/voiceAdapter.js';
 import { computeSentenceTarget } from '../chat/impersonate/index.js';
 import { buildPlainTextBlock, buildVoicePinBlock, clipToTokenTarget, estimateTokens, trimPromptSnippet } from './text.js';
+import { formatRecentBanHint } from '../chat/repetitionGuard.js';
 import { renderActiveScene } from './runtimeState.js';
 
 // Reply targets sum to ~1010 tokens; PROFILE_NON_HISTORY_RESERVE.reply is 820. The ~190-token
@@ -429,6 +430,16 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       debug.voicePinSource = runtimeState.voicePinResolution?.source || 'unknown';
     } else {
       debug.voicePinInjected = false;
+    }
+
+    const banHintPhrases = runtimeState.runtimeSteering?.lastTurnBannedPhrases || [];
+    const banHint = formatRecentBanHint(banHintPhrases);
+    if (banHint) {
+      finalHistoryMessages.push({ role: 'system', content: banHint });
+      debug.banHintInjected = true;
+      debug.banHintPhrases = banHintPhrases.slice();
+    } else {
+      debug.banHintInjected = false;
     }
 
     return {

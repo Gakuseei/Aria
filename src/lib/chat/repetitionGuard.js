@@ -1,7 +1,7 @@
 /**
  * Application-level repetition prevention.
  *
- * Catches 4-gram phrase reuse and identical-gesture spam across recent replies,
+ * Catches 5-gram phrase reuse and identical-gesture spam across recent replies,
  * complementing Ollama sampler-level penalties (DRY, repeat_penalty) which lose
  * effectiveness once the offending phrase falls outside the token-window
  * lookback.
@@ -161,7 +161,7 @@ export function getRecentAssistantReplies(history, lookback = DEFAULT_LOOKBACK) 
  * model should avoid in the upcoming reply. Empty input returns empty string
  * so the caller can no-op without a conditional.
  *
- * @param {Array<string>} phrases - Phrases (4–5 word fragments) to avoid.
+ * @param {Array<string>} phrases - Phrases (5-word fragments) to avoid.
  * @returns {string} Hint string, or '' if no phrases.
  */
 export function formatRecentBanHint(phrases) {

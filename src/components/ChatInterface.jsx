@@ -535,6 +535,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   const messagesRef = useRef([]);
   const sceneMemoryRef = useRef(null);
   const saveCurrentSessionRef = useRef(null);
+  const lastTurnBannedPhrasesRef = useRef([]);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -626,6 +627,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     abortSuggestionCall();
     abortImpersonateCall();
     suggestionsHistoryRef.current = [];
+    lastTurnBannedPhrasesRef.current = [];
 
     if (!mountedRef.current) return;
 
@@ -761,6 +763,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     const initializeChat = async () => {
       setPreviousPills([]);
       resetSticky();
+      lastTurnBannedPhrasesRef.current = [];
       if (loadedSession && loadedSession.messages && loadedSession.messages.length > 0) {
         if (cancelled) return;
         const restoredSessionId = loadedSession.sessionId || generateSessionId();
@@ -970,7 +973,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         settings,
         handleToken,
         activeAbortHandle,
-        runtimeSceneMemory
+        runtimeSceneMemory,
+        lastTurnBannedPhrasesRef.current
       );
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -1018,6 +1022,9 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       // Set final message BEFORE clearing streaming → no flash
       setMessages(updatedMessages);
       setSceneMemory(nextSceneMemory);
+      lastTurnBannedPhrasesRef.current = (response.success && response.bannedPhrase)
+        ? [response.bannedPhrase]
+        : [];
       setIsStreaming(false);
       setStreamingContent('');
       streamBufferRef.current = '';
@@ -1175,6 +1182,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     if (lastUserIdx < 0) return;
     if (isLoading || isStreaming || isImpersonating) return;
 
+    lastTurnBannedPhrasesRef.current = [];
     const userMsg = messages[lastUserIdx];
     setInput(userMsg.content || '');
 
@@ -1436,7 +1444,8 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         settings,
         handleToken,
         activeAbortHandle,
-        buildSceneMemory(regenHistoryForApi)
+        buildSceneMemory(regenHistoryForApi),
+        lastTurnBannedPhrasesRef.current
       );
 
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -1483,6 +1492,9 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       // Set final message BEFORE clearing streaming → no flash
       setMessages(updatedMessages);
       setSceneMemory(nextSceneMemory);
+      lastTurnBannedPhrasesRef.current = (response.success && response.bannedPhrase)
+        ? [response.bannedPhrase]
+        : [];
       setIsStreaming(false);
       setStreamingContent('');
       streamBufferRef.current = '';

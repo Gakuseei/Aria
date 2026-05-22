@@ -103,7 +103,14 @@ async function attemptOnce({ currentRequestId, history, character, userName, set
     console.warn('[suggestions] parse failed for raw:', String(raw).slice(0, 240));
     return null;
   }
-  const accepted = applySanityFilters(parsed, { characterName, locale, previousPills: previousPills || [] });
+  const lastAssistantMessage = [...(history || [])].reverse()
+    .find((m) => m?.role === 'assistant' && String(m.content || '').trim());
+  const accepted = applySanityFilters(parsed, {
+    characterName,
+    locale,
+    previousPills: previousPills || [],
+    lastAssistantMessage: lastAssistantMessage ? String(lastAssistantMessage.content).trim() : ''
+  });
   if (!accepted) {
     console.warn('[suggestions] sanity rejected pills:', parsed);
     return null;

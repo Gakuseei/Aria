@@ -1,14 +1,18 @@
 /**
  * Post-LLM validation pipeline for Smart Suggestions:
  * - 3-gram Jaccard repetition (cross-pill + against previous-pill memory)
- * - POV-bleed regex (leading char-name or char-pronoun + verb)
+ * - POV-bleed regex (char-name anywhere, anchored char-pronoun + verb)
+ * - First-person anchor (en-only)
+ * - Echo defense vs. character's last message
  * - Wrong-language heuristic (delegates to language.js)
  */
 
 import { CHAR_PRONOUNS_BY_LOCALE, looksLikeWrongLanguage } from './language.js';
 
 const JACCARD_THRESHOLD = 0.4;
+const ECHO_JACCARD_THRESHOLD = 0.4;
 const PREVIOUS_PILLS_WINDOW = 6;
+const FIRST_PERSON_EN_PATTERNS = [/\bI\b/, /\bI'm\b/, /\bI've\b/, /\bI'd\b/, /\bmy\b/, /\bme\b/];
 
 function normalize(s) {
   return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
@@ -57,7 +61,7 @@ export function hasPovBleed(pill, { characterName, locale }) {
   const lower = text.toLowerCase();
 
   if (characterName) {
-    const charPattern = new RegExp(`^${escapeRegex(characterName)}\\b`, 'i');
+    const charPattern = new RegExp(`\\b${escapeRegex(characterName)}\\b`, 'i');
     if (charPattern.test(text)) return true;
   }
 
@@ -65,6 +69,21 @@ export function hasPovBleed(pill, { characterName, locale }) {
   for (const p of pronouns) {
     const re = new RegExp(`^${escapeRegex(p)}\\s+\\S`, 'i');
     if (re.test(lower)) return true;
+  }
+  return false;
+}
+
+/**
+ * @param {string} pill
+ * @param {string} locale
+ * @returns {boolean}
+ */
+export function hasFirstPersonAnchor(pill, locale) {
+  if (String(locale || '').toLowerCase() !== 'en') return true;
+  const text = String(pill || '');
+  if (!text) return false;
+  for (const re of FIRST_PERSON_EN_PATTERNS) {
+    if (re.test(text)) return true;
   }
   return false;
 }
@@ -88,16 +107,24 @@ export function isRepetitive(pill, previousPills) {
  * Applies all sanity filters. Returns the parsed payload on success, null on any reject.
  *
  * @param {{beat:string, pills:Array<{tone:string, text:string}>}|null} parsed
- * @param {{characterName:string, locale:string, previousPills:string[]}} ctx
+ * @param {{characterName:string, locale:string, previousPills:string[], lastAssistantMessage?:string}} ctx
  * @returns {{beat:string, pills:Array<{tone:string, text:string}>}|null}
  */
 export function applySanityFilters(parsed, ctx) {
   if (!parsed || !Array.isArray(parsed.pills)) return null;
-  const { characterName, locale, previousPills } = ctx;
+  const { characterName, locale, previousPills, lastAssistantMessage } = ctx;
   const texts = parsed.pills.map((p) => p.text);
 
   for (const pill of parsed.pills) {
     if (hasPovBleed(pill.text, { characterName, locale })) return null;
+    if (!hasFirstPersonAnchor(pill.text, locale)) return null;
+  }
+
+  const echoTrigrams = lastAssistantMessage ? trigrams(lastAssistantMessage) : null;
+  if (echoTrigrams && echoTrigrams.size > 0) {
+    for (const text of texts) {
+      if (jaccard(trigrams(text), echoTrigrams) >= ECHO_JACCARD_THRESHOLD) return null;
+    }
   }
 
   for (let i = 0; i < texts.length; i += 1) {

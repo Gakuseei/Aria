@@ -61,7 +61,7 @@ export function buildSuggestionPrompt({ history, characterName, userName, appLan
     `You write three pills for ${userName} replying to ${characterName} in an ongoing scene.`,
     '',
     `${userName}'s speech and movement are ONLY defined by ${userName} input.`,
-    `Each pill is written by ${userName} in first person, addressing ${characterName} directly. Use "I", "me", "my". Pills may include one short ${userName} action in *asterisks* before or after the dialogue (e.g. *leans in* "I want to hear it"). Never write ${characterName}'s name, dialogue, actions, or thoughts inside a pill.`,
+    `Each pill is written by ${userName} in first person, addressing ${characterName} directly. Use "I", "me", "my". Pills may include one short ${userName} action in *asterisks* before or after the dialogue (e.g. *leans in* "I want to hear it"). Pills stay within ${userName}'s voice: ${userName}'s actions, ${userName}'s words. ${characterName}'s name, dialogue, actions, and thoughts belong outside the pill.`,
     '',
     closingBlock,
     '',

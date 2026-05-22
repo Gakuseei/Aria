@@ -10,9 +10,8 @@
  */
 
 const DEFAULT_LOOKBACK = 5;
-const NGRAM_SIZE = 4;
+const NGRAM_SIZE = 5;
 const GESTURE_REPEAT_THRESHOLD = 3;
-const PIN_ECHO_MIN_WORDS = 4;
 
 const PET_NAMES = new Set([
   'love', 'dear', 'sweetheart', 'baby', 'honey', 'darling',
@@ -72,24 +71,20 @@ function buildHistoricalNGramSet(recentReplies, charName, userName) {
 }
 
 /**
- * Check whether `newReply` re-uses a 4-word phrase that already appeared in
- * recent replies, or copies >= 4 words verbatim from a voice pin.
+ * Check whether `newReply` re-uses a 5-word phrase that already appeared in
+ * recent replies.
  *
  * @param {string} newReply - Candidate reply text.
  * @param {Array<string>} recentReplies - Last N assistant replies (oldest first).
  * @param {object} [options]
  * @param {string} [options.charName] - Character name (whitelist anchor).
  * @param {string} [options.userName] - User name (whitelist anchor).
- * @param {string} [options.voicePin] - SFW voice pin string.
- * @param {string} [options.voicePinNsfw] - NSFW voice pin string.
- * @returns {{banned: boolean, source?: 'history'|'pin-echo', phrase?: string}}
+ * @returns {{banned: boolean, source?: 'history', phrase?: string}}
  */
 export function checkPhraseRepetition(newReply, recentReplies, options = {}) {
   const {
     charName = '',
-    userName = '',
-    voicePin = '',
-    voicePinNsfw = ''
+    userName = ''
   } = options;
 
   if (!newReply) return { banned: false };
@@ -104,19 +99,6 @@ export function checkPhraseRepetition(newReply, recentReplies, options = {}) {
     if (isWhitelistedNGram(gram, charName, userName)) continue;
     if (historicalGrams.has(gram)) {
       return { banned: true, source: 'history', phrase: gram };
-    }
-  }
-
-  for (const pinSource of [voicePin, voicePinNsfw]) {
-    if (!pinSource) continue;
-    const pinWords = extractWords(pinSource);
-    if (pinWords.length < PIN_ECHO_MIN_WORDS) continue;
-    const pinGrams = new Set(extractNGrams(pinWords, PIN_ECHO_MIN_WORDS));
-    const replyPinGrams = extractNGrams(newWords, PIN_ECHO_MIN_WORDS);
-    for (const gram of replyPinGrams) {
-      if (pinGrams.has(gram)) {
-        return { banned: true, source: 'pin-echo', phrase: gram };
-      }
     }
   }
 
@@ -172,4 +154,21 @@ export function getRecentAssistantReplies(history, lookback = DEFAULT_LOOKBACK) 
   if (!Array.isArray(history)) return [];
   const assistantOnly = history.filter((message) => message && message.role === 'assistant' && typeof message.content === 'string');
   return assistantOnly.slice(-lookback).map((message) => message.content);
+}
+
+/**
+ * Format a transient system-prompt suffix listing recently-used phrases the
+ * model should avoid in the upcoming reply. Empty input returns empty string
+ * so the caller can no-op without a conditional.
+ *
+ * @param {Array<string>} phrases - Phrases (4–5 word fragments) to avoid.
+ * @returns {string} Hint string, or '' if no phrases.
+ */
+export function formatRecentBanHint(phrases) {
+  if (!Array.isArray(phrases) || phrases.length === 0) return '';
+  const cleaned = phrases
+    .filter((p) => typeof p === 'string' && p.trim())
+    .map((p) => `"${p.trim()}"`);
+  if (cleaned.length === 0) return '';
+  return `Avoid these recently-used phrases: ${cleaned.join(', ')}.`;
 }

@@ -1227,6 +1227,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       setSceneMemory(null);
       clearSuggestionsState();
       previousTierRef.current = 'surface';
+      lastTurnBannedPhrasesRef.current = [];
       initializeGreeting();
     };
 
@@ -1492,9 +1493,6 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       // Set final message BEFORE clearing streaming → no flash
       setMessages(updatedMessages);
       setSceneMemory(nextSceneMemory);
-      lastTurnBannedPhrasesRef.current = (response.success && response.bannedPhrase)
-        ? [response.bannedPhrase]
-        : [];
       setIsStreaming(false);
       setStreamingContent('');
       streamBufferRef.current = '';

@@ -207,6 +207,20 @@ function createStreamAbortHandle() {
   };
 }
 
+function pushBanHint(ref, phrase) {
+  const TTL = 4;
+  const MAX = 6;
+  const decayed = (ref.current || [])
+    .map(e => ({ ...e, turnsLeft: e.turnsLeft - 1 }))
+    .filter(e => e.turnsLeft > 0);
+  if (phrase) {
+    const hit = decayed.find(e => e.phrase === phrase);
+    if (hit) hit.turnsLeft = TTL;
+    else decayed.push({ phrase, turnsLeft: TTL });
+  }
+  ref.current = decayed.slice(-MAX);
+}
+
 const MessageBubble = memo(function MessageBubble({
   message,
   messageIndex,
@@ -1021,17 +1035,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       // Set final message BEFORE clearing streaming → no flash
       setMessages(updatedMessages);
       setSceneMemory(nextSceneMemory);
-      const TTL = 4;
-      const MAX = 6;
-      const decayed = (lastTurnBannedPhrasesRef.current || [])
-        .map(e => ({ ...e, turnsLeft: e.turnsLeft - 1 }))
-        .filter(e => e.turnsLeft > 0);
-      if (response.success && response.bannedPhrase) {
-        const exists = decayed.find(e => e.phrase === response.bannedPhrase);
-        if (exists) exists.turnsLeft = TTL;
-        else decayed.push({ phrase: response.bannedPhrase, turnsLeft: TTL });
-      }
-      lastTurnBannedPhrasesRef.current = decayed.slice(-MAX);
+      pushBanHint(lastTurnBannedPhrasesRef, response.success ? response.bannedPhrase : null);
       setIsStreaming(false);
       setStreamingContent('');
       streamBufferRef.current = '';
@@ -1506,17 +1510,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
       // Set final message BEFORE clearing streaming → no flash
       setMessages(updatedMessages);
       setSceneMemory(nextSceneMemory);
-      const TTL = 4;
-      const MAX = 6;
-      const decayed = (lastTurnBannedPhrasesRef.current || [])
-        .map(e => ({ ...e, turnsLeft: e.turnsLeft - 1 }))
-        .filter(e => e.turnsLeft > 0);
-      if (response.success && response.bannedPhrase) {
-        const exists = decayed.find(e => e.phrase === response.bannedPhrase);
-        if (exists) exists.turnsLeft = TTL;
-        else decayed.push({ phrase: response.bannedPhrase, turnsLeft: TTL });
-      }
-      lastTurnBannedPhrasesRef.current = decayed.slice(-MAX);
+      pushBanHint(lastTurnBannedPhrasesRef, response.success ? response.bannedPhrase : null);
       setIsStreaming(false);
       setStreamingContent('');
       streamBufferRef.current = '';

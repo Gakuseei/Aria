@@ -1223,24 +1223,35 @@ function calculateHistoryBudget(totalBudget, profile) {
 
 const VOICE_PIN_FALLBACK = "Stay in {{char}}'s established voice and mannerisms across all scene types, including intimate moments. Reuse the speech patterns and physical reactions visible in earlier turns rather than shifting into generic intimate-scene prose.";
 
-function resolveVoicePin({ character, charName, assistMode }) {
+const NAME_INSTRUCTION = /\b(uses?|says?|repeats?|calls?|addresses?)\s+(the\s+)?user'?s?\s+name\b[^.]*\./gi;
+const NO_NAME_DIRECTIVE = "Do not address the user by any proper name; use 'you', endearments, or no address.";
+
+function applyUserNameUnsetScrub(pin) {
+  const scrubbed = String(pin || '').replace(NAME_INSTRUCTION, '').replace(/\s{2,}/g, ' ').trim();
+  if (!scrubbed) return NO_NAME_DIRECTIVE;
+  return `${scrubbed} ${NO_NAME_DIRECTIVE}`.trim();
+}
+
+function resolveVoicePin({ character, charName, userName, isUnset, assistMode }) {
   const defaultPin = String(character?.voicePin || '').trim();
   const nsfwPin = String(character?.voicePinNsfw || '').trim();
   const avoid = String(character?.voiceAvoid || '').trim();
 
+  const finalize = (rawPin, source, includeAvoid) => {
+    let pin = resolveTemplates(rawPin, charName, userName);
+    if (isUnset) pin = applyUserNameUnsetScrub(pin);
+    return { pin, avoid: includeAvoid ? avoid : '', source };
+  };
+
   if (assistMode === 'nsfw_only' && nsfwPin) {
-    return { pin: nsfwPin, avoid, source: 'voicePinNsfw' };
+    return finalize(nsfwPin, 'voicePinNsfw', true);
   }
 
   if (defaultPin) {
-    return { pin: defaultPin, avoid, source: 'voicePin' };
+    return finalize(defaultPin, 'voicePin', true);
   }
 
-  return {
-    pin: VOICE_PIN_FALLBACK.replace(/\{\{char\}\}/g, charName || 'the character'),
-    avoid: '',
-    source: 'fallback'
-  };
+  return finalize(VOICE_PIN_FALLBACK, 'fallback', false);
 }
 
 const GENDER_LABEL_MAP = {
@@ -1251,7 +1262,9 @@ const GENDER_LABEL_MAP = {
 };
 
 export function resolveUserIdentity({ userName, userGender, userPronouns } = {}) {
-  const name = String(userName || 'User').trim() || 'User';
+  const rawName = String(userName || '').trim();
+  const isUnset = !rawName || rawName.toLowerCase() === 'user';
+  const name = rawName || 'User';
   const genderKey = GENDER_LABEL_MAP[userGender] ? userGender : 'male';
   const label = GENDER_LABEL_MAP[genderKey];
   const pronouns = String(userPronouns || '').trim() || (
@@ -1259,7 +1272,7 @@ export function resolveUserIdentity({ userName, userGender, userPronouns } = {})
     genderKey === 'nonbinary' ? 'they/them' :
     genderKey === 'futa' ? 'she/her' : 'he/him'
   );
-  return { name, gender: genderKey, label, pronouns };
+  return { name, gender: genderKey, label, pronouns, isUnset };
 }
 
 export function buildRuntimeState({ character, history, userName = 'User', userGender = 'male', userPronouns = 'he/him', runtimeSteering = {} }) {
@@ -1305,6 +1318,8 @@ export function buildRuntimeState({ character, history, userName = 'User', userG
     : resolveVoicePin({
         character,
         charName,
+        userName,
+        isUnset: userIdentity.isUnset,
         assistMode: assistMode.value
       });
 

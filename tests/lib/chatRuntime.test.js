@@ -2300,22 +2300,22 @@ describe('scene memory layer (Phase D)', () => {
 describe('resolveUserIdentity', () => {
   it('returns expected label and pronouns for male', () => {
     const result = resolveUserIdentity({ userName: 'Erik', userGender: 'male' });
-    expect(result).toEqual({ name: 'Erik', gender: 'male', label: 'male', pronouns: 'he/him' });
+    expect(result).toEqual({ name: 'Erik', gender: 'male', label: 'male', pronouns: 'he/him', isUnset: false });
   });
 
   it('returns expected label and pronouns for female', () => {
     const result = resolveUserIdentity({ userName: 'Mia', userGender: 'female' });
-    expect(result).toEqual({ name: 'Mia', gender: 'female', label: 'female', pronouns: 'she/her' });
+    expect(result).toEqual({ name: 'Mia', gender: 'female', label: 'female', pronouns: 'she/her', isUnset: false });
   });
 
   it('returns expected label and pronouns for nonbinary', () => {
     const result = resolveUserIdentity({ userName: 'Sam', userGender: 'nonbinary' });
-    expect(result).toEqual({ name: 'Sam', gender: 'nonbinary', label: 'non-binary', pronouns: 'they/them' });
+    expect(result).toEqual({ name: 'Sam', gender: 'nonbinary', label: 'non-binary', pronouns: 'they/them', isUnset: false });
   });
 
   it('returns expected label and pronouns for futa', () => {
     const result = resolveUserIdentity({ userName: 'Lyra', userGender: 'futa' });
-    expect(result).toEqual({ name: 'Lyra', gender: 'futa', label: 'futa', pronouns: 'she/her' });
+    expect(result).toEqual({ name: 'Lyra', gender: 'futa', label: 'futa', pronouns: 'she/her', isUnset: false });
   });
 
   it('honors a custom userPronouns value over the gender default', () => {
@@ -2354,7 +2354,8 @@ describe('buildRuntimeState user identity', () => {
       name: 'Erik',
       gender: 'female',
       label: 'female',
-      pronouns: 'she/her'
+      pronouns: 'she/her',
+      isUnset: false
     });
   });
 

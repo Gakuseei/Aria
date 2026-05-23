@@ -150,9 +150,13 @@ function assembleNarratorReply(runtimeState, targets, totalBudget, debug) {
   const protagonistDetails = [userIdentity.label, userIdentity.pronouns ? `pronouns: ${userIdentity.pronouns}` : '']
     .filter(Boolean)
     .join(', ');
-  const protagonistBlockText = protagonistDetails
-    ? `Protagonist: ${protagonistName} (${protagonistDetails})`
-    : `Protagonist: ${protagonistName}`;
+  const protagonistBlockText = userIdentity.isUnset
+    ? (protagonistDetails
+        ? `Protagonist: (the addressed person, ${protagonistDetails})`
+        : `Protagonist: (the addressed person)`)
+    : (protagonistDetails
+        ? `Protagonist: ${protagonistName} (${protagonistDetails})`
+        : `Protagonist: ${protagonistName}`);
   blocks.push(buildPlainTextBlock('Protagonist', protagonistBlockText));
   debug.includedBlocks.push('Protagonist');
 
@@ -203,16 +207,17 @@ function assembleNarratorReply(runtimeState, targets, totalBudget, debug) {
 }
 
 function buildReplyLateSteering(runtimeState) {
-  const { runtimeSteering, compiledRuntimeCard, characterName, userName } = runtimeState;
+  const { runtimeSteering, compiledRuntimeCard, characterName, userName, userIdentity } = runtimeState;
   const responseMode = runtimeSteering.responseMode ?? compiledRuntimeCard.runtimeDefaults.defaultResponseMode;
   const { promptInstruction } = getResponseModeConfig(responseMode);
   const depthInstruction = getDepthInstruction(runtimeSteering.passionLevel || 0, responseMode).trim();
   const isBot = compiledRuntimeCard.runtimeDefaults.type === 'bot';
+  const userPossessive = userIdentity?.isUnset ? "the user's" : `${userName}'s`;
 
   if (isBot) {
     return [
       promptInstruction,
-      `Respond directly to ${userName}'s latest request.`
+      `Respond directly to ${userPossessive} latest request.`
     ].filter(Boolean).join('\n');
   }
 
@@ -245,11 +250,13 @@ function buildReplyLateSteering(runtimeState) {
 function buildImpersonateConstraints(runtimeState, sentenceTarget, isFirstReply) {
   const charName = runtimeState.characterName || 'Character';
   const userName = runtimeState.userName || 'User';
+  const isUnset = Boolean(runtimeState.userIdentity?.isUnset);
+  const userPossessive = isUnset ? "the user's" : `${userName}'s`;
   const sentenceWord = sentenceTarget === 1 ? 'sentence' : 'sentences';
   if (isFirstReply) {
     return [
       'Constraints:',
-      `1. Write only ${userName}'s reply, in first person.`,
+      `1. Write only ${userPossessive} reply, in first person.`,
       `2. One ${sentenceWord}, short and natural. Stop cleanly.`,
       `3. Do not write ${charName}'s next message.`,
       `4. Same language as ${charName}'s greeting.`
@@ -258,7 +265,7 @@ function buildImpersonateConstraints(runtimeState, sentenceTarget, isFirstReply)
   const passion = Number(runtimeState.runtimeSteering?.passionLevel) || 0;
   const lines = [
     'Constraints:',
-    `1. Write only ${userName}'s reply, in first person.`,
+    `1. Write only ${userPossessive} reply, in first person.`,
     `2. ${sentenceTarget} ${sentenceWord} only. Stop cleanly.`,
     `3. Do not write ${charName}'s dialogue, actions, or thoughts.`,
     '4. Same language as the conversation.',
@@ -269,21 +276,24 @@ function buildImpersonateConstraints(runtimeState, sentenceTarget, isFirstReply)
 }
 
 function buildImpersonateUserPrompt(runtimeState, recentTail, { isFirstReply = false } = {}) {
+  const isUnset = Boolean(runtimeState.userIdentity?.isUnset);
+  const userLabel = isUnset ? 'Me' : runtimeState.userName;
+  const userPossessive = isUnset ? "the user's" : `${runtimeState.userName}'s`;
   const currentBeat = [
     runtimeState.activeScene.latest_character_action_or_reaction
       ? `${runtimeState.characterName}: ${runtimeState.activeScene.latest_character_action_or_reaction}`
       : '',
     runtimeState.activeScene.latest_user_action_or_request
-      ? `${runtimeState.userName}: ${runtimeState.activeScene.latest_user_action_or_request}`
+      ? `${userLabel}: ${runtimeState.activeScene.latest_user_action_or_request}`
       : ''
   ].filter(Boolean).join('\n');
-  const recentConversation = formatHistory(recentTail, runtimeState.characterName, runtimeState.userName)
+  const recentConversation = formatHistory(recentTail, runtimeState.characterName, userLabel)
     || currentBeat
     || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 220);
 
   const closingCue = isFirstReply
-    ? `Write ${runtimeState.userName}'s very first reply to ${runtimeState.characterName}.`
-    : `Continue ${runtimeState.userName}'s next reply.`;
+    ? `Write ${userPossessive} very first reply to ${runtimeState.characterName}.`
+    : `Continue ${userPossessive} next reply.`;
 
   return [
     `Current beat:\n${currentBeat || trimPromptSnippet(renderActiveScene(runtimeState.activeScene, { compact: true }), 160)}`,
@@ -349,7 +359,9 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     debug.includedBlocks.push('Character Core');
 
     const userIdentity = runtimeState.userIdentity || {};
-    const userBlockText = `${userIdentity.name || runtimeState.userName} (${userIdentity.label || 'male'}, pronouns: ${userIdentity.pronouns || 'he/him'})`;
+    const userBlockText = userIdentity.isUnset
+      ? `(the addressed person, ${userIdentity.label || 'male'}, pronouns: ${userIdentity.pronouns || 'he/him'})`
+      : `${userIdentity.name || runtimeState.userName} (${userIdentity.label || 'male'}, pronouns: ${userIdentity.pronouns || 'he/him'})`;
     blocks.push(buildPlainTextBlock('User', userBlockText));
     debug.includedBlocks.push('User');
 

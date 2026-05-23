@@ -1986,10 +1986,12 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !isStreaming) {
-                  e.preventDefault();
-                  handleSend();
-                }
+                if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+                if (e.key !== 'Enter' || e.shiftKey) return;
+                e.preventDefault();
+                if (isLoading || isStreaming) return;
+                if (!input.trim()) return;
+                handleSend();
               }}
               placeholder={t.chat.messageCharacter.replace('{name}', character.isCustom ? character.name : (t.characters?.[character.id]?.name || character.name))}
               disabled={isLoading}

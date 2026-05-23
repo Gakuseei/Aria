@@ -2,7 +2,7 @@ import { passionManager, getSpeedMultiplier } from '../passion/index.js';
 import { resolveProfile } from '../../modelProfiles.js';
 import { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME } from '../../defaults.js';
 import { getEffectiveResponseMode, getResponseModeTokenLimit } from '../../responseModes.js';
-import { assembleRuntimeContext, buildRuntimeState, estimateTokens as estimateRuntimeTokens, NSFW_VOCAB_STOPS } from '../../chatRuntime/index.js';
+import { assembleRuntimeContext, buildRuntimeState, estimateTokens as estimateRuntimeTokens } from '../../chatRuntime/index.js';
 import { cleanTranscriptArtifacts, shouldAutoStopStreamingResponse } from '../common.js';
 import { checkPhraseRepetition, checkGestureRepetition, getRecentAssistantReplies } from '../repetitionGuard.js';
 import { deriveAssistBudgetTier, getModelCtx, getModelCapabilities } from '../../ollama/index.js';
@@ -183,9 +183,6 @@ export const sendMessage = async (
       chatOptions.dry_penalty_last_n = profile.flags.dryPenaltyLastN ?? 512;
     }
     const stopSequences = ['\nUser:', '\nHuman:', `\n${userName}:`, `\n${character.name}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>', '<|start_header_id|>'];
-    if (runtimeContext.debug?.voicePinSource === 'voicePinNsfw') {
-      stopSequences.push(...NSFW_VOCAB_STOPS);
-    }
 
     let data;
 

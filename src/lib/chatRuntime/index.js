@@ -1,4 +1,4 @@
-export { assembleRuntimeContext, NSFW_VOCAB_STOPS } from './assembly.js';
+export { assembleRuntimeContext } from './assembly.js';
 export { compileCharacterRuntimeCard, compileNarratorRuntimeCard } from './compiler.js';
 export {
   buildRuntimeState,

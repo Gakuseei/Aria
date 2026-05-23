@@ -241,4 +241,78 @@ describe('applySanityFilters', () => {
     expect(result.kept).toEqual([]);
     expect(result.rejected).toEqual([]);
   });
+
+  it('keeps inclusive "we/our" pill without first-person singular anchor', () => {
+    const parsed = {
+      beat: 'invitation',
+      pills: [
+        { tone: 'hold', text: "Why don't we find a nice spot to enjoy our food?" },
+        { tone: 'move', text: 'I step closer.' },
+        { tone: 'press', text: 'I take her hand.' }
+      ]
+    };
+    const result = applySanityFilters(parsed, args);
+    expect(result.kept).toHaveLength(3);
+    expect(result.rejected).toEqual([]);
+  });
+
+  it('keeps "let\'s ... us" pill without first-person singular anchor', () => {
+    const parsed = {
+      beat: 'invitation',
+      pills: [
+        { tone: 'hold', text: "Let's make this a special moment, just the two of us." },
+        { tone: 'move', text: 'I step closer.' },
+        { tone: 'press', text: 'I take her hand.' }
+      ]
+    };
+    const result = applySanityFilters(parsed, args);
+    expect(result.kept).toHaveLength(3);
+    expect(result.rejected).toEqual([]);
+  });
+
+  it('keeps capitalized "We\'re" pill without first-person singular anchor', () => {
+    const parsed = {
+      beat: 'invitation',
+      pills: [
+        { tone: 'hold', text: "We're bound together, now and forever." },
+        { tone: 'move', text: 'I step closer.' },
+        { tone: 'press', text: 'I take her hand.' }
+      ]
+    };
+    const result = applySanityFilters(parsed, args);
+    expect(result.kept).toHaveLength(3);
+    expect(result.rejected).toEqual([]);
+  });
+
+  it('keeps bare imperative addressing the character by name', () => {
+    const parsed = {
+      beat: 'invitation',
+      pills: [
+        { tone: 'hold', text: 'Come closer, Yuki.' },
+        { tone: 'move', text: 'I step closer.' },
+        { tone: 'press', text: 'I take her hand.' }
+      ]
+    };
+    const result = applySanityFilters(parsed, { ...args, characterName: 'Yuki' });
+    expect(result.kept).toHaveLength(3);
+    expect(result.rejected).toEqual([]);
+  });
+
+  it('still rejects char-pronoun bleed via hasPovBleed', () => {
+    const parsed = {
+      beat: 'invitation',
+      pills: [
+        { tone: 'hold', text: 'She leans closer and whispers.' },
+        { tone: 'move', text: 'I step closer.' },
+        { tone: 'press', text: 'I take her hand.' }
+      ]
+    };
+    const result = applySanityFilters(parsed, args);
+    expect(result.rejected).toHaveLength(1);
+    expect(result.rejected[0]).toMatchObject({
+      index: 0,
+      text: 'She leans closer and whispers.',
+      reason: 'pov_bleed'
+    });
+  });
 });

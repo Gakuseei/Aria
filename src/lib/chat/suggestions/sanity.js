@@ -3,7 +3,6 @@
  * Returns { kept, rejected } so the orchestrator can build reason-specific retry hints.
  * - 3-gram Jaccard repetition (cross-pill + against previous-pill memory)
  * - POV-bleed regex (char-name at start, anchored char-pronoun + verb)
- * - First-person anchor (en-only)
  * - Echo defense vs. character's last message
  * - Wrong-language heuristic (delegates to language.js)
  */
@@ -13,7 +12,6 @@ import { CHAR_PRONOUNS_BY_LOCALE, looksLikeWrongLanguage } from './language.js';
 const JACCARD_THRESHOLD = 0.4;
 const ECHO_JACCARD_THRESHOLD = 0.4;
 const PREVIOUS_PILLS_WINDOW = 6;
-const FIRST_PERSON_EN_PATTERNS = [/\bI\b/, /\bI'm\b/, /\bI've\b/, /\bI'd\b/, /\bmy\b/, /\bme\b/];
 
 function normalize(s) {
   return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
@@ -77,21 +75,6 @@ export function hasPovBleed(pill, { characterName, locale }) {
 
 /**
  * @param {string} pill
- * @param {string} locale
- * @returns {boolean}
- */
-export function hasFirstPersonAnchor(pill, locale) {
-  if (String(locale || '').toLowerCase() !== 'en') return true;
-  const text = String(pill || '');
-  if (!text) return false;
-  for (const re of FIRST_PERSON_EN_PATTERNS) {
-    if (re.test(text)) return true;
-  }
-  return false;
-}
-
-/**
- * @param {string} pill
  * @param {string[]} previousPills
  * @returns {boolean}
  */
@@ -138,7 +121,6 @@ export function applySanityFilters(parsed, ctx) {
     if (reasons[i]) continue;
     if (wrongLang) { reasons[i] = 'wrong_lang'; continue; }
     if (hasPovBleed(text, { characterName, locale })) { reasons[i] = 'pov_bleed'; continue; }
-    if (!hasFirstPersonAnchor(text, locale)) { reasons[i] = 'pov_bleed'; continue; }
     if (countWords(text) > PILL_WORD_LIMIT) { reasons[i] = 'too_long'; continue; }
     if (echoTrigrams && echoTrigrams.size > 0 && jaccard(allTrigrams[i], echoTrigrams) >= ECHO_JACCARD_THRESHOLD) {
       reasons[i] = 'echo';

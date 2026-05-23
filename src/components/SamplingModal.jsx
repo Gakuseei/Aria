@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { DEFAULT_SUGGESTION_PROFILE } from '../lib/defaults';
 
 /**
  * @typedef {Object} SamplingFieldDef
@@ -292,94 +291,23 @@ function ModalToggle({ value, onChange }) {
  * @param {(field: string) => boolean} props.isFieldOverridden
  * @param {(flag: string) => boolean} props.isFlagOverridden
  * @param {boolean} [props.isGoldMode]
- * @param {'chat'|'suggestion'} [props.feature]
- * @param {(key: string, value: unknown) => void} [props.onSettingChange]
  * @returns {JSX.Element|null}
  */
 export default function SamplingModal({
   isOpen,
   onClose,
   settings,
-  baseProfile: baseProfileProp,
-  modelProfile: modelProfileProp,
-  currentCustom: currentCustomProp,
-  currentCustomFlags: currentCustomFlagsProp,
-  setProfileField: setProfileFieldProp,
-  setFlagField: setFlagFieldProp,
-  clearAllProfileForModel: clearAllProfileForModelProp,
-  isFieldOverridden: isFieldOverriddenProp,
-  isFlagOverridden: isFlagOverriddenProp,
-  isGoldMode,
-  feature = 'chat',
-  onSettingChange
+  baseProfile,
+  modelProfile,
+  currentCustom,
+  currentCustomFlags,
+  setProfileField,
+  setFlagField,
+  clearAllProfileForModel,
+  isFieldOverridden,
+  isFlagOverridden,
+  isGoldMode
 }) {
-  const isSuggestion = feature === 'suggestion';
-  const suggestionModelTag = settings?.suggestionModel || '';
-  const suggestionStored = isSuggestion
-    ? (settings?.customProfiles?.[suggestionModelTag] || {})
-    : {};
-  const suggestionStoredFlags = suggestionStored.flags || {};
-
-  let baseProfile = baseProfileProp;
-  let modelProfile = modelProfileProp;
-  let currentCustom = currentCustomProp;
-  let currentCustomFlags = currentCustomFlagsProp;
-  let setProfileField = setProfileFieldProp;
-  let setFlagField = setFlagFieldProp;
-  let clearAllProfileForModel = clearAllProfileForModelProp;
-  let isFieldOverridden = isFieldOverriddenProp;
-  let isFlagOverridden = isFlagOverriddenProp;
-
-  if (isSuggestion) {
-    baseProfile = { ...DEFAULT_SUGGESTION_PROFILE, label: suggestionModelTag, flags: {} };
-    currentCustom = suggestionStored;
-    currentCustomFlags = suggestionStoredFlags;
-    const merged = { ...DEFAULT_SUGGESTION_PROFILE, ...suggestionStored };
-    delete merged.flags;
-    modelProfile = { ...merged, flags: { ...suggestionStoredFlags } };
-
-    const writeEntry = (entry) => {
-      const next = { ...(settings?.customProfiles || {}) };
-      if (!entry || (typeof entry === 'object' && Object.keys(entry).length === 0)) {
-        delete next[suggestionModelTag];
-      } else {
-        next[suggestionModelTag] = entry;
-      }
-      onSettingChange?.('customProfiles', next);
-    };
-
-    setProfileField = (field, value) => {
-      const entry = { ...suggestionStored };
-      const baseValue = DEFAULT_SUGGESTION_PROFILE[field];
-      if (value === undefined || value === null || value === baseValue) {
-        delete entry[field];
-      } else {
-        entry[field] = value;
-      }
-      writeEntry(entry);
-    };
-
-    setFlagField = (flagName, value) => {
-      const entry = { ...suggestionStored };
-      const flags = { ...suggestionStoredFlags };
-      if (value === undefined || value === null) {
-        delete flags[flagName];
-      } else {
-        flags[flagName] = value;
-      }
-      if (Object.keys(flags).length === 0) {
-        delete entry.flags;
-      } else {
-        entry.flags = flags;
-      }
-      writeEntry(entry);
-    };
-
-    clearAllProfileForModel = () => writeEntry(null);
-    isFieldOverridden = (field) => Object.prototype.hasOwnProperty.call(suggestionStored, field);
-    isFlagOverridden = (flagName) => Object.prototype.hasOwnProperty.call(suggestionStoredFlags, flagName);
-  }
-
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('sampling');
   const dialogRef = useRef(null);
@@ -448,9 +376,7 @@ export default function SamplingModal({
 
   if (!isOpen) return null;
 
-  const modelIdentifier = isSuggestion
-    ? (suggestionModelTag || baseProfile?.label || 'Model')
-    : (settings?.ollamaModel || baseProfile?.label || 'Model');
+  const modelIdentifier = settings?.ollamaModel || baseProfile?.label || 'Model';
   const overrideText =
     overrideCount === 0
       ? tx(t, 'samplingModalNoOverrides', 'No overrides')
@@ -755,9 +681,7 @@ export default function SamplingModal({
               margin: 0
             }}
           >
-            {isSuggestion
-              ? tx(t, 'suggestionModelEditProfile', 'Edit sampling profile')
-              : tx(t, 'samplingModalTitle', 'Sampling Settings')}
+            {tx(t, 'samplingModalTitle', 'Sampling Settings')}
           </h2>
           <p
             style={{

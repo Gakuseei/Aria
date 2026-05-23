@@ -33,20 +33,6 @@ export function normalizeSuggestionDisplayValue(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
 }
 
-function pickModel(settings, isGoldMode) {
-  if (isGoldMode) {
-    const explicit = String(settings?.suggestionModel || '').trim();
-    if (explicit) return explicit;
-  }
-  return String(settings?.ollamaModel || DEFAULT_MODEL_NAME).trim();
-}
-
-function pickProfile(model, settings, isGoldMode) {
-  if (!isGoldMode) return { ...DEFAULT_SUGGESTION_PROFILE };
-  const customProfiles = settings?.customProfiles || {};
-  const override = (model && customProfiles[model]) || {};
-  return { ...DEFAULT_SUGGESTION_PROFILE, ...override };
-}
 
 async function callOllama({ currentRequestId, model, profile, prompts, schema, maxTokens, ollamaUrl }) {
   const params = {
@@ -86,11 +72,11 @@ async function callOllama({ currentRequestId, model, profile, prompts, schema, m
   }
 }
 
-async function attemptOnce({ currentRequestId, history, character, userName, settings, isGoldMode, locale, previousPills, maxTokens, retryHint }) {
+async function attemptOnce({ currentRequestId, history, character, userName, settings, locale, previousPills, maxTokens, retryHint }) {
   const characterName = String(character?.name || 'Character').trim();
   const appLanguageName = APP_LANG_NAME_BY_LOCALE[locale] || 'English';
-  const model = pickModel(settings, isGoldMode);
-  const profile = pickProfile(model, settings, isGoldMode);
+  const model = String(settings?.ollamaModel || DEFAULT_MODEL_NAME).trim();
+  const profile = { ...DEFAULT_SUGGESTION_PROFILE };
   const ollamaUrl = settings?.ollamaUrl || OLLAMA_DEFAULT_URL;
   const schema = buildSuggestionSchema(appLanguageName, userName, characterName);
   const prompts = buildSuggestionPrompt({ history, characterName, userName, appLanguageName });
@@ -127,7 +113,6 @@ async function attemptOnce({ currentRequestId, history, character, userName, set
  * @param {object} [options]
  * @param {string[]} [options.previousPills]
  * @param {string} [options.locale='en']
- * @param {boolean} [options.isGoldMode=false]
  * @returns {Promise<string[]>}
  */
 export async function generateSuggestions(history, character, userName, settings, options = {}) {
@@ -135,17 +120,16 @@ export async function generateSuggestions(history, character, userName, settings
   const currentRequestId = suggestionRequestId;
   const previousPills = Array.isArray(options.previousPills) ? options.previousPills : [];
   const locale = String(options.locale || 'en').toLowerCase();
-  const isGoldMode = Boolean(options.isGoldMode);
 
   try {
     let result = await attemptOnce({
-      currentRequestId, history, character, userName, settings, isGoldMode, locale, previousPills,
+      currentRequestId, history, character, userName, settings, locale, previousPills,
       maxTokens: PILL_MAX_TOKENS
     });
     if (currentRequestId !== suggestionRequestId) return [];
     if (!result) {
       result = await attemptOnce({
-        currentRequestId, history, character, userName, settings, isGoldMode, locale, previousPills,
+        currentRequestId, history, character, userName, settings, locale, previousPills,
         maxTokens: PILL_MAX_TOKENS_RETRY,
         retryHint: `Previous attempt was rejected. Pills MUST be in target language, from ${userName}'s perspective, distinct from each other.`
       });

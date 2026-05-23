@@ -23,8 +23,6 @@ const DEFAULT_SETTINGS = {
   userGender: 'male',
   userPronouns: 'he/him',
   maxResponseTokens: 256,
-  suggestionModel: null,
-  suggestionFallbackToChat: true,
   write4meEnabled: false,
   smartSuggestionsEnabled: false
 };

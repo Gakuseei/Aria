@@ -879,14 +879,13 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     try {
       const result = await generateSuggestions(chatMessages, character, userName, settings, {
         previousPills,
-        locale: language,
-        isGoldMode
+        locale: language
       });
       setSmartSuggestions(Array.isArray(result) ? result : []);
     } finally {
       setIsGeneratingSuggestions(false);
     }
-  }, [settings, isGeneratingSuggestions, chatMessages, character, userName, previousPills, language, isGoldMode]);
+  }, [settings, isGeneratingSuggestions, chatMessages, character, userName, previousPills, language]);
 
   const handleImpersonate = async () => {
     if (isLoading || isStreaming || isImpersonating) return;

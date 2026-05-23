@@ -426,6 +426,61 @@ describe('buildRuntimeState', () => {
     expect(typeof state.voiceFeatures.avgWords).toBe('number');
     expect(state.voiceFeatures.exampleCount).toBe(3);
   });
+
+  it('honors deescalation cooldown — stays sfw_only on a pure-SFW follow-up after a deescalation turn', () => {
+    const character = {
+      name: 'Lia',
+      category: 'nsfw',
+      systemPrompt: 'Lia is warm and easy-going.',
+      scenario: 'Apartment kitchen.'
+    };
+    const history = [
+      { role: 'assistant', content: '*She grins, fingers brushing your waist.* "Closer."' },
+      { role: 'user', content: 'Closer. Kiss me.' },
+      { role: 'assistant', content: '*She tilts her chin up and brushes her lips against yours.* "Like this?"' },
+      { role: 'user', content: 'Yes. Don\'t stop.' },
+      { role: 'assistant', content: '*She presses closer, breath warming your throat.* "Mine."' },
+      { role: 'user', content: 'Let\'s slow down for a sec.' },
+      { role: 'assistant', content: '*She softens and steps back, smiling.* "Sure. Take a breath."' },
+      { role: 'user', content: 'I got a B+ on my chem exam today.' }
+    ];
+    const persistedSceneMemory = {
+      setting_anchor: 'in the apartment kitchen',
+      relationship_anchor: '',
+      continuity_facts: [],
+      open_thread: '',
+      nsfwArcAnchor: '',
+      wardrobe: [],
+      negativeWardrobe: [],
+      bodyState: [],
+      establishedFacts: [],
+      mentionedItems: [],
+      deescalationCooldown: 2,
+      source_assistant_timestamp: 1700000007000,
+      updated_at: new Date().toISOString(),
+      version: 2
+    };
+    const historyWithStamps = history.map((message, index) => ({
+      ...message,
+      timestamp: 1700000001000 + index * 1000
+    }));
+    const runtimeState = buildRuntimeState({
+      character,
+      history: historyWithStamps,
+      userName: 'Erik',
+      runtimeSteering: {
+        profile: 'reply',
+        availableContextTokens: 1200,
+        responseMode: 'normal',
+        unchainedMode: false,
+        passionLevel: 60,
+        persistedSceneMemory
+      }
+    });
+    expect(runtimeState.assistMode).toBe('sfw_only');
+    expect(runtimeState.assistModeDebug.reason).toBe('deescalation_cooldown');
+    expect(runtimeState.assistModeDebug.cooldownRemaining).toBe(2);
+  });
 });
 
 describe('sceneMemory', () => {

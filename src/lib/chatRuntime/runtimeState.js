@@ -26,6 +26,8 @@ const SCENE_MEMORY_MAX_LIST_ENTRIES = 8;
 const SCENE_MEMORY_VERSION = 2;
 const MENTIONED_ITEMS_RECENCY_TURNS = 10;
 const ESTABLISHED_FACTS_CAP = 8;
+const DEESCALATION_COOLDOWN_TURNS = 2;
+const DEESCALATION_COOLDOWN_MAX = 8;
 
 function countAssistantTurns(history) {
   if (!Array.isArray(history)) return 0;
@@ -163,6 +165,7 @@ function collectAssistSignals({ history = [], activeScene, sceneState, persisted
   const recentText = recentMessages.map((message) => message.content).join('\n');
   const latestUserTurn = [...history].reverse().find((message) => message.role === 'user')?.content || '';
   const latestAssistantTurn = [...history].reverse().find((message) => message.role === 'assistant')?.content || '';
+  const latestBeat = `${latestUserTurn || ''}\n${latestAssistantTurn || ''}`;
   const beatText = [
     activeScene?.latest_character_action_or_reaction,
     activeScene?.latest_user_action_or_request,
@@ -174,9 +177,14 @@ function collectAssistSignals({ history = [], activeScene, sceneState, persisted
   const explicitHits = [recentText, beatText].filter(Boolean).reduce((count, text) => count + (EXPLICIT_INTIMACY_PATTERN.test(text) ? 1 : 0), 0);
   const flirtyHits = [recentText, beatText].filter(Boolean).reduce((count, text) => count + (FLIRTY_TENSION_PATTERN.test(text) ? 1 : 0), 0);
   const escalationOpening = ESCALATION_OPENING_PATTERN.test(beatText) || ESCALATION_OPENING_PATTERN.test(latestUserTurn);
+  const latestUserEscalationOpening = ESCALATION_OPENING_PATTERN.test(latestUserTurn);
+  const latestTurnExplicit = EXPLICIT_INTIMACY_PATTERN.test(latestBeat);
+  const latestTurnFlirty = FLIRTY_TENSION_PATTERN.test(latestBeat);
   const deescalationText = `${latestUserTurn}\n${activeScene?.open_thread || ''}`;
   const explicitContinuation = /\bdon'?t stop\b/i.test(deescalationText);
   const deescalating = !explicitContinuation && DEESCALATION_PATTERN.test(deescalationText);
+  const cooldownRemaining = Math.max(0, Number(persistedSceneMemory?.deescalationCooldown) || 0);
+  const cooldownActive = cooldownRemaining > 0;
 
   return {
     recentText,
@@ -185,7 +193,12 @@ function collectAssistSignals({ history = [], activeScene, sceneState, persisted
     explicitHits,
     flirtyHits,
     escalationOpening,
-    deescalating
+    latestUserEscalationOpening,
+    latestTurnExplicit,
+    latestTurnFlirty,
+    deescalating,
+    cooldownActive,
+    cooldownRemaining
   };
 }
 
@@ -218,26 +231,53 @@ function deriveAssistMode({ character, runtimeSteering, activeScene, sceneState,
   const strongPassion = Number(runtimeSteering?.passionLevel || 0) >= 35;
   const explicitScene = signals.explicitHits > 0;
   const flirtScene = signals.flirtyHits > 0;
+  const suppressed = signals.deescalating || signals.cooldownActive;
   const chargedEscalation = !explicitScene
-    && !signals.deescalating
+    && !suppressed
     && signals.escalationOpening
     && signals.flirtyHits >= 1
     && strongPassion;
   const sustainedNsfwMomentum = !explicitScene
-    && !signals.deescalating
+    && !suppressed
     && categoryAllowsNsfw
     && signals.flirtyHits >= 2
     && strongPassion;
 
-  if (nsfwAllowed && !signals.deescalating && (explicitScene || chargedEscalation || sustainedNsfwMomentum)) {
+  const baseDebug = {
+    nsfwAllowed,
+    explicitHits: signals.explicitHits,
+    flirtyHits: signals.flirtyHits,
+    escalationOpening: signals.escalationOpening,
+    latestTurnExplicit: signals.latestTurnExplicit,
+    latestTurnFlirty: signals.latestTurnFlirty,
+    deescalating: signals.deescalating,
+    cooldownActive: signals.cooldownActive,
+    cooldownRemaining: signals.cooldownRemaining
+  };
+
+  if (signals.cooldownActive && !signals.latestTurnExplicit && !signals.latestUserEscalationOpening) {
+    return {
+      value: 'sfw_only',
+      debug: { ...baseDebug, reason: 'deescalation_cooldown' }
+    };
+  }
+
+  if (signals.deescalating) {
+    return {
+      value: 'sfw_only',
+      debug: { ...baseDebug, reason: 'user_deescalating' }
+    };
+  }
+
+  const freshNsfwSignal = signals.latestTurnExplicit
+    || signals.latestTurnFlirty
+    || signals.latestUserEscalationOpening;
+
+  if (nsfwAllowed && freshNsfwSignal && (explicitScene || chargedEscalation || sustainedNsfwMomentum)) {
     return {
       value: 'nsfw_only',
       debug: {
-        nsfwAllowed,
-        explicitHits: signals.explicitHits,
-        flirtyHits: signals.flirtyHits,
-        escalationOpening: signals.escalationOpening,
-        deescalating: signals.deescalating,
+        ...baseDebug,
         reason: explicitScene
           ? 'explicit_scene'
           : (chargedEscalation ? 'charged_escalation' : 'sustained_nsfw_momentum')
@@ -248,33 +288,20 @@ function deriveAssistMode({ character, runtimeSteering, activeScene, sceneState,
   if (
     nsfwAllowed
     && !explicitScene
-    && !signals.deescalating
+    && !suppressed
     && (signals.escalationOpening || flirtScene)
+    && freshNsfwSignal
     && (unchainedMode || elevatedPassion || signals.escalationOpening || signals.flirtyHits >= 2 || strongPassion)
   ) {
     return {
       value: 'mixed_transition',
-      debug: {
-        nsfwAllowed,
-        explicitHits: signals.explicitHits,
-        flirtyHits: signals.flirtyHits,
-        escalationOpening: signals.escalationOpening,
-        deescalating: signals.deescalating,
-        reason: 'flirty_scene_with_escalation'
-      }
+      debug: { ...baseDebug, reason: 'flirty_scene_with_escalation' }
     };
   }
 
   return {
     value: 'sfw_only',
-    debug: {
-      nsfwAllowed,
-      explicitHits: signals.explicitHits,
-      flirtyHits: signals.flirtyHits,
-      escalationOpening: signals.escalationOpening,
-      deescalating: signals.deescalating,
-      reason: nsfwAllowed ? 'insufficient_escalation' : 'category_gate'
-    }
+    debug: { ...baseDebug, reason: nsfwAllowed ? 'insufficient_escalation' : 'category_gate' }
   };
 }
 
@@ -605,6 +632,7 @@ function trimSceneMemoryToBudget(memory) {
     bodyState: sanitizeMemoryListEntries(memory.bodyState, { maxLength: 60 }),
     establishedFacts: sanitizeTurnTaggedEntries(memory.establishedFacts, { maxLength: 72, maxEntries: ESTABLISHED_FACTS_CAP }),
     mentionedItems: sanitizeTurnTaggedEntries(memory.mentionedItems, { maxLength: 40, maxEntries: 16 }),
+    deescalationCooldown: Math.max(0, Math.min(DEESCALATION_COOLDOWN_MAX, Number(memory.deescalationCooldown) || 0)),
     source_assistant_timestamp: normalizeTimestampValue(memory.source_assistant_timestamp),
     updated_at: memory.updated_at || new Date().toISOString(),
     version: SCENE_MEMORY_VERSION
@@ -671,7 +699,8 @@ function trimSceneMemoryToBudget(memory) {
     && trimmed.negativeWardrobe.length === 0
     && trimmed.bodyState.length === 0
     && trimmed.establishedFacts.length === 0
-    && trimmed.mentionedItems.length === 0;
+    && trimmed.mentionedItems.length === 0
+    && (trimmed.deescalationCooldown || 0) === 0;
 
   if (isEmpty) {
     return null;
@@ -2237,8 +2266,12 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
     return null;
   }
 
-  const carriedSceneMemory = carryArcAnchor
-    ? { ...(validatedPrevious || {}), nsfwArcAnchor: carryArcAnchor }
+  const carriedCooldownForBuild = Math.max(
+    0,
+    Number(validatedPrevious?.deescalationCooldown) || Number(previousSceneMemory?.deescalationCooldown) || 0
+  );
+  const carriedSceneMemory = (carryArcAnchor || carriedCooldownForBuild > 0)
+    ? { ...(validatedPrevious || {}), nsfwArcAnchor: carryArcAnchor || validatedPrevious?.nsfwArcAnchor, deescalationCooldown: carriedCooldownForBuild }
     : validatedPrevious;
 
   const runtimeState = buildRuntimeState({
@@ -2285,6 +2318,22 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
   const sceneChanged = isSceneBoundaryShift(previousSettingAnchor, nextSettingAnchor);
   const carriedMentionedItems = sceneChanged ? [] : validatedPrevious?.mentionedItems;
 
+  const assistDebug = runtimeState.assistModeDebug || {};
+  const prevCooldown = Math.max(
+    0,
+    Number(validatedPrevious?.deescalationCooldown) || Number(previousSceneMemory?.deescalationCooldown) || 0
+  );
+  const userResumedExplicitly = Boolean(assistDebug.latestTurnExplicit)
+    || ESCALATION_OPENING_PATTERN.test(latestUserTurn || '');
+  let nextDeescalationCooldown;
+  if (assistDebug.deescalating) {
+    nextDeescalationCooldown = DEESCALATION_COOLDOWN_TURNS;
+  } else if (userResumedExplicitly) {
+    nextDeescalationCooldown = 0;
+  } else {
+    nextDeescalationCooldown = Math.max(0, prevCooldown - 1);
+  }
+
   const sceneMemory = trimSceneMemoryToBudget({
     setting_anchor: runtimeState.sceneState.setting_anchor,
     relationship_anchor: runtimeState.sceneState.relationship_anchor,
@@ -2298,6 +2347,7 @@ export function resolveSessionSceneMemory({ character, history, userName = 'User
     mentionedItems: sceneChanged
       ? accumulateMentionedItemsSinceLastTurn(normalizedHistory)
       : accumulateMentionedItems(normalizedHistory, carriedMentionedItems),
+    deescalationCooldown: nextDeescalationCooldown,
     source_assistant_timestamp: latestAssistantTimestamp,
     updated_at: new Date().toISOString(),
     version: SCENE_MEMORY_VERSION

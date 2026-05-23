@@ -5,7 +5,8 @@ import { ASSIST_BUDGET_CONFIG, deriveAssistBudgetTier, getModelCtx, getModelCapa
 import { isElectron } from '../platform.js';
 import {
   finalizeImpersonateDraft,
-  isStructurallyValid
+  isStructurallyValid,
+  containsMidSentencePovBleed
 } from './draftValidator.js';
 import { checkPhraseRepetition, checkGestureRepetition, REPETITION_RETRY_HINT } from '../repetitionGuard.js';
 
@@ -364,6 +365,24 @@ export async function impersonateUser(
   if (!isStructurallyValid(finalized.text, userName, charName)) {
     onToken(null, '');
     throw new Error('Failed to generate a usable draft');
+  }
+
+  if (containsMidSentencePovBleed(finalized.text, userPronouns)) {
+    console.info('[API] Impersonate retry: mid-sentence POV bleed');
+    onToken(null, '');
+    const povHint = 'STRICT: Inside *action* segments, use "my/me/I" only. Never "his/her/he/she" for yourself.';
+    let retryFinalized = await runOnce(povHint);
+    if (retryFinalized.text) {
+      retryFinalized = { ...retryFinalized, text: trimToCompleteSentences(retryFinalized.text, sentenceTarget) };
+    }
+    if (
+      isStructurallyValid(retryFinalized.text, userName, charName)
+      && !containsMidSentencePovBleed(retryFinalized.text, userPronouns)
+    ) {
+      finalized = retryFinalized;
+    } else {
+      console.warn('[API] Impersonate POV-bleed retry failed, accepting original');
+    }
   }
 
   const recentUserReplies = (history || [])

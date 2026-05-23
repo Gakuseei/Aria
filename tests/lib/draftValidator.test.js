@@ -4,7 +4,8 @@ import {
   isStructurallyValid,
   containsGenericPhrasing,
   containsMetaLead,
-  hasInvalidImpersonateLead
+  hasInvalidImpersonateLead,
+  containsMidSentencePovBleed
 } from '../../src/lib/chat/impersonate/draftValidator.js';
 
 describe('finalizeImpersonateDraft', () => {
@@ -82,5 +83,43 @@ describe('containsMetaLead', () => {
   it('passes natural in-character replies', () => {
     expect(containsMetaLead('I lean back and watch her quietly.')).toBe(false);
     expect(containsMetaLead('"You should rest." I take her hand.')).toBe(false);
+  });
+});
+
+describe('containsMidSentencePovBleed', () => {
+  it('flags "his + body part" inside *action* for he/him user', () => {
+    expect(containsMidSentencePovBleed('*I sit down, patting his stomach* "I\'m starving!"', 'he/him')).toBe(true);
+  });
+
+  it('passes when pronoun does not match user pronoun set', () => {
+    expect(containsMidSentencePovBleed('*I sit down, patting her stomach*', 'he/him')).toBe(false);
+  });
+
+  it('passes when other-gender pronoun targets the character', () => {
+    expect(containsMidSentencePovBleed('*reaches for her hand*', 'he/him')).toBe(false);
+  });
+
+  it('passes dialogue-only text with no action block', () => {
+    expect(containsMidSentencePovBleed('"What time is it?"', 'he/him')).toBe(false);
+  });
+
+  it('flags "his shoulder" mid-action', () => {
+    expect(containsMidSentencePovBleed('*pats his shoulder while smiling*', 'he/him')).toBe(true);
+  });
+
+  it('returns false for empty input', () => {
+    expect(containsMidSentencePovBleed('', 'he/him')).toBe(false);
+  });
+
+  it('returns false for empty userPronouns (defense if unset)', () => {
+    expect(containsMidSentencePovBleed('*pats his shoulder*', '')).toBe(false);
+  });
+
+  it('flags "their + body part" for they/them user', () => {
+    expect(containsMidSentencePovBleed('*I rub their back*', 'they/them')).toBe(true);
+  });
+
+  it('flags "her + body part" for she/her user', () => {
+    expect(containsMidSentencePovBleed('*runs a hand through her hair* "Hmm."', 'she/her')).toBe(true);
   });
 });

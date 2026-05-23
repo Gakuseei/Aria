@@ -136,3 +136,36 @@ export function isStructurallyValid(text, userName, charName) {
   if (hasInvalidImpersonateLead(trimmed, userName, charName)) return false;
   return true;
 }
+
+const BODY_PARTS = '(?:head|hand|hands|stomach|belly|face|eyes|lips|chest|arm|arms|shoulder|shoulders|back|leg|legs|chin|neck|hair|lap|wrist|knee|knees|mouth|jaw|finger|fingers)';
+
+function userPossessivePronouns(userPronouns) {
+  const p = String(userPronouns || '').toLowerCase();
+  const out = [];
+  if (/\bhe\b|\bhim\b|\bhis\b/.test(p)) out.push('his');
+  if (/\bshe\b|\bher\b|\bhers\b/.test(p)) out.push('her');
+  if (/\bthey\b|\bthem\b|\btheir\b/.test(p)) out.push('their');
+  return out;
+}
+
+/**
+ * Detects 3rd-person POV bleed inside *action* segments (user narrated as he/she/they).
+ * Scoped to asterisk blocks where the implicit subject is the user.
+ * Same-pronoun scenes (e.g. she-user + she-char) may produce false positives —
+ * acceptable trade-off until a char.gender field exists.
+ *
+ * @param {string} text
+ * @param {string} userPronouns - e.g. "he/him"
+ * @returns {boolean}
+ */
+export function containsMidSentencePovBleed(text, userPronouns) {
+  const pron = userPossessivePronouns(userPronouns);
+  if (!pron.length) return false;
+  const actionRe = /\*([^*]+)\*/g;
+  const pronRe = new RegExp(`\\b(?:${pron.join('|')})\\s+${BODY_PARTS}\\b`, 'i');
+  let m;
+  while ((m = actionRe.exec(String(text || ''))) !== null) {
+    if (pronRe.test(m[1])) return true;
+  }
+  return false;
+}

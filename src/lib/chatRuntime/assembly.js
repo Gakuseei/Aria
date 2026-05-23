@@ -269,9 +269,10 @@ function buildImpersonateConstraints(runtimeState, sentenceTarget, isFirstReply)
     `2. ${sentenceTarget} ${sentenceWord} only. Stop cleanly.`,
     `3. Do not write ${charName}'s dialogue, actions, or thoughts.`,
     '4. Same language as the conversation.',
-    `5. If ${charName}'s last message asks for a physical action, take it.`
+    `5. If ${charName}'s last message asks for a physical action, take it.`,
+    '6. Inside *action* segments, use "my/me/I". Never "his/her/he/she" for yourself.'
   ];
-  if (passion > 15) lines.push(`6. Match scene intensity ${passion}/100.`);
+  if (passion > 15) lines.push(`7. Match scene intensity ${passion}/100.`);
   return lines.join('\n');
 }
 

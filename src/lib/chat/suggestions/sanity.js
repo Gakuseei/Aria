@@ -1,7 +1,8 @@
 /**
- * Post-LLM validation pipeline for Smart Suggestions:
+ * Thin post-LLM safety-net for Smart Suggestions. Primary POV defense lives in the prompt + schema.
+ * Returns { kept, rejected } so the orchestrator can build reason-specific retry hints.
  * - 3-gram Jaccard repetition (cross-pill + against previous-pill memory)
- * - POV-bleed regex (char-name anywhere, anchored char-pronoun + verb)
+ * - POV-bleed regex (char-name at start, anchored char-pronoun + verb)
  * - First-person anchor (en-only)
  * - Echo defense vs. character's last message
  * - Wrong-language heuristic (delegates to language.js)
@@ -58,18 +59,18 @@ export function jaccard(a, b) {
 export function hasPovBleed(pill, { characterName, locale }) {
   const text = String(pill || '').trim();
   if (!text) return false;
-  const lower = text.toLowerCase();
+  const stripped = text.replace(/^\s*\*[^*]+\*\s*/, '').trimStart();
+  const strippedLower = stripped.toLowerCase();
 
   if (characterName) {
-    const stripped = text.replace(/^\s*\*[^*]+\*\s*/, '').trimStart();
-    const charPattern = new RegExp(`^${escapeRegex(characterName)}\\b`, 'i');
+    const charPattern = new RegExp(`^${escapeRegex(characterName)}(\\s|$)`, 'i');
     if (charPattern.test(stripped)) return true;
   }
 
   const pronouns = CHAR_PRONOUNS_BY_LOCALE[locale] || [];
   for (const p of pronouns) {
     const re = new RegExp(`^${escapeRegex(p)}\\s+\\S`, 'i');
-    if (re.test(lower)) return true;
+    if (re.test(strippedLower)) return true;
   }
   return false;
 }
@@ -104,40 +105,60 @@ export function isRepetitive(pill, previousPills) {
   return false;
 }
 
+const PILL_WORD_LIMIT = 18;
+
+function countWords(s) {
+  const stripped = String(s || '').replace(/\*[^*]*\*/g, ' ').trim();
+  if (!stripped) return 0;
+  return stripped.split(/\s+/).filter(Boolean).length;
+}
+
 /**
- * Applies all sanity filters. Returns the parsed payload on success, null on any reject.
+ * Applies sanity filters per pill and returns kept + rejected partitions.
+ * Rejection reasons: 'pov_bleed' | 'echo' | 'repetition' | 'wrong_lang' | 'too_long'.
  *
  * @param {{beat:string, pills:Array<{tone:string, text:string}>}|null} parsed
  * @param {{characterName:string, locale:string, previousPills:string[], lastAssistantMessage?:string}} ctx
- * @returns {{beat:string, pills:Array<{tone:string, text:string}>}|null}
+ * @returns {{kept:Array<{tone:string, text:string}>, rejected:Array<{index:number, text:string, reason:string}>}}
  */
 export function applySanityFilters(parsed, ctx) {
-  if (!parsed || !Array.isArray(parsed.pills)) return null;
+  if (!parsed || !Array.isArray(parsed.pills)) return { kept: [], rejected: [] };
   const { characterName, locale, previousPills, lastAssistantMessage } = ctx;
-  const texts = parsed.pills.map((p) => p.text);
+  const pills = parsed.pills;
+  const texts = pills.map((p) => p.text);
 
-  for (const pill of parsed.pills) {
-    if (hasPovBleed(pill.text, { characterName, locale })) return null;
-    if (!hasFirstPersonAnchor(pill.text, locale)) return null;
-  }
-
+  const wrongLang = looksLikeWrongLanguage(texts, locale);
   const echoTrigrams = lastAssistantMessage ? trigrams(lastAssistantMessage) : null;
-  if (echoTrigrams && echoTrigrams.size > 0) {
-    for (const text of texts) {
-      if (jaccard(trigrams(text), echoTrigrams) >= ECHO_JACCARD_THRESHOLD) return null;
+  const allTrigrams = texts.map((t) => trigrams(t));
+
+  const reasons = new Array(pills.length).fill(null);
+
+  for (let i = 0; i < pills.length; i += 1) {
+    const text = pills[i].text;
+    if (reasons[i]) continue;
+    if (wrongLang) { reasons[i] = 'wrong_lang'; continue; }
+    if (hasPovBleed(text, { characterName, locale })) { reasons[i] = 'pov_bleed'; continue; }
+    if (!hasFirstPersonAnchor(text, locale)) { reasons[i] = 'pov_bleed'; continue; }
+    if (countWords(text) > PILL_WORD_LIMIT) { reasons[i] = 'too_long'; continue; }
+    if (echoTrigrams && echoTrigrams.size > 0 && jaccard(allTrigrams[i], echoTrigrams) >= ECHO_JACCARD_THRESHOLD) {
+      reasons[i] = 'echo';
+      continue;
+    }
+    if (isRepetitive(text, previousPills)) { reasons[i] = 'repetition'; continue; }
+    for (let j = 0; j < pills.length; j += 1) {
+      if (j === i) continue;
+      if (jaccard(allTrigrams[i], allTrigrams[j]) >= JACCARD_THRESHOLD) {
+        reasons[i] = 'repetition';
+        break;
+      }
     }
   }
 
-  for (let i = 0; i < texts.length; i += 1) {
-    const others = texts.filter((_, idx) => idx !== i);
-    const target = trigrams(texts[i]);
-    for (const sib of others) {
-      if (jaccard(target, trigrams(sib)) >= JACCARD_THRESHOLD) return null;
-    }
-    if (isRepetitive(texts[i], previousPills)) return null;
+  const kept = [];
+  const rejected = [];
+  for (let i = 0; i < pills.length; i += 1) {
+    if (reasons[i]) rejected.push({ index: i, text: pills[i].text, reason: reasons[i] });
+    else kept.push(pills[i]);
   }
-
-  if (looksLikeWrongLanguage(texts, locale)) return null;
-
-  return parsed;
+  return { kept, rejected };
 }

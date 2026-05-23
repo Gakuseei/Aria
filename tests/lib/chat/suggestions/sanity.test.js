@@ -48,6 +48,26 @@ describe('hasPovBleed', () => {
   it('accepts when locale has no pronoun list (e.g. Turkish)', () => {
     expect(hasPovBleed('Sen yaklaş.', { characterName: 'Kira', locale: 'tr' })).toBe(false);
   });
+
+  it('rejects char-pronoun bleed after an action-asterisk prefix', () => {
+    expect(hasPovBleed('*leans in* She turns away.', { characterName: 'Sarah', locale: 'en' })).toBe(true);
+  });
+
+  it('rejects char-name bleed after an action-asterisk prefix', () => {
+    expect(hasPovBleed('*leans in* Sarah turns away.', { characterName: 'Sarah', locale: 'en' })).toBe(true);
+  });
+
+  it('accepts first-person continuation after an action-asterisk prefix', () => {
+    expect(hasPovBleed('*leans in* I turn away.', { characterName: 'Sarah', locale: 'en' })).toBe(false);
+  });
+
+  it('allows vocative use of character name (followed by comma)', () => {
+    expect(hasPovBleed('Sarah, please come here.', { characterName: 'Sarah', locale: 'en' })).toBe(false);
+  });
+
+  it('allows vocative use of character name (followed by exclamation)', () => {
+    expect(hasPovBleed('Sarah! Look at me.', { characterName: 'Sarah', locale: 'en' })).toBe(false);
+  });
 });
 
 describe('isRepetitive', () => {
@@ -76,7 +96,7 @@ describe('applySanityFilters', () => {
     previousPills: []
   };
 
-  it('returns parsed payload when all pills clean', () => {
+  it('returns all pills kept and empty rejected when clean', () => {
     const parsed = {
       beat: 'invitation',
       pills: [
@@ -85,10 +105,12 @@ describe('applySanityFilters', () => {
         { tone: 'press', text: 'I take her hand.' }
       ]
     };
-    expect(applySanityFilters(parsed, args)).toEqual(parsed);
+    const result = applySanityFilters(parsed, args);
+    expect(result.kept).toEqual(parsed.pills);
+    expect(result.rejected).toEqual([]);
   });
 
-  it('returns null when any pill has POV bleed', () => {
+  it('rejects only the bleeding pill with reason pov_bleed', () => {
     const parsed = {
       beat: 'invitation',
       pills: [
@@ -97,10 +119,55 @@ describe('applySanityFilters', () => {
         { tone: 'press', text: 'I take her hand.' }
       ]
     };
-    expect(applySanityFilters(parsed, args)).toBeNull();
+    const result = applySanityFilters(parsed, args);
+    expect(result.kept).toHaveLength(2);
+    expect(result.rejected).toHaveLength(1);
+    expect(result.rejected[0]).toMatchObject({ index: 0, text: 'Sarah leans in.', reason: 'pov_bleed' });
   });
 
-  it('returns null when two pills are too similar', () => {
+  it('flags asterisk-prefixed char-pronoun bleed with reason pov_bleed', () => {
+    const parsed = {
+      beat: 'invitation',
+      pills: [
+        { tone: 'hold', text: '*leans in* She turns away.' },
+        { tone: 'move', text: 'I step closer.' },
+        { tone: 'press', text: 'I take her hand.' }
+      ]
+    };
+    const result = applySanityFilters(parsed, args);
+    expect(result.rejected).toHaveLength(1);
+    expect(result.rejected[0].reason).toBe('pov_bleed');
+  });
+
+  it('keeps asterisk-prefixed first-person pills', () => {
+    const parsed = {
+      beat: 'invitation',
+      pills: [
+        { tone: 'hold', text: '*leans in* I turn away.' },
+        { tone: 'move', text: 'I step closer.' },
+        { tone: 'press', text: 'I take her hand.' }
+      ]
+    };
+    const result = applySanityFilters(parsed, args);
+    expect(result.kept).toHaveLength(3);
+    expect(result.rejected).toEqual([]);
+  });
+
+  it('keeps vocative use of character name (followed by first-person clause)', () => {
+    const parsed = {
+      beat: 'invitation',
+      pills: [
+        { tone: 'hold', text: 'Sarah, I need you to stay.' },
+        { tone: 'move', text: 'I step closer.' },
+        { tone: 'press', text: 'I take your hand.' }
+      ]
+    };
+    const result = applySanityFilters(parsed, args);
+    expect(result.kept).toHaveLength(3);
+    expect(result.rejected).toEqual([]);
+  });
+
+  it('marks similar sibling pills with reason repetition', () => {
     const parsed = {
       beat: 'uncertain',
       pills: [
@@ -109,10 +176,13 @@ describe('applySanityFilters', () => {
         { tone: 'press', text: 'I leave the room.' }
       ]
     };
-    expect(applySanityFilters(parsed, args)).toBeNull();
+    const result = applySanityFilters(parsed, args);
+    const reasons = result.rejected.map((r) => r.reason);
+    expect(reasons).toContain('repetition');
+    expect(result.rejected.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('returns null when pill repeats a previous pill', () => {
+  it('marks pills repeating prior history with reason repetition', () => {
     const parsed = {
       beat: 'invitation',
       pills: [
@@ -121,10 +191,11 @@ describe('applySanityFilters', () => {
         { tone: 'press', text: 'I take her hand.' }
       ]
     };
-    expect(applySanityFilters(parsed, { ...args, previousPills: ['I take her hand.'] })).toBeNull();
+    const result = applySanityFilters(parsed, { ...args, previousPills: ['I take her hand.'] });
+    expect(result.rejected.some((r) => r.reason === 'repetition' && r.text === 'I take her hand.')).toBe(true);
   });
 
-  it('returns null when pills are wrong language for non-English locale', () => {
+  it('marks pills with reason wrong_lang when locale mismatches', () => {
     const parsed = {
       beat: 'invitation',
       pills: [
@@ -133,6 +204,41 @@ describe('applySanityFilters', () => {
         { tone: 'press', text: 'I take her hand.' }
       ]
     };
-    expect(applySanityFilters(parsed, { ...args, locale: 'de' })).toBeNull();
+    const result = applySanityFilters(parsed, { ...args, locale: 'de' });
+    expect(result.kept).toEqual([]);
+    expect(result.rejected.every((r) => r.reason === 'wrong_lang')).toBe(true);
+  });
+
+  it('marks over-long pills with reason too_long', () => {
+    const longText = 'I ' + 'really '.repeat(20) + 'want to know what you meant by that earlier.';
+    const parsed = {
+      beat: 'invitation',
+      pills: [
+        { tone: 'hold', text: longText },
+        { tone: 'move', text: 'I step closer.' },
+        { tone: 'press', text: 'I take her hand.' }
+      ]
+    };
+    const result = applySanityFilters(parsed, args);
+    expect(result.rejected.some((r) => r.reason === 'too_long')).toBe(true);
+  });
+
+  it('preserves order of kept pills', () => {
+    const parsed = {
+      beat: 'invitation',
+      pills: [
+        { tone: 'hold', text: 'I smile back.' },
+        { tone: 'move', text: 'Sarah leans in.' },
+        { tone: 'press', text: 'I take her hand.' }
+      ]
+    };
+    const result = applySanityFilters(parsed, args);
+    expect(result.kept.map((p) => p.text)).toEqual(['I smile back.', 'I take her hand.']);
+  });
+
+  it('returns empty kept and empty rejected when payload is null', () => {
+    const result = applySanityFilters(null, args);
+    expect(result.kept).toEqual([]);
+    expect(result.rejected).toEqual([]);
   });
 });

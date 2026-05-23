@@ -39,7 +39,12 @@ export function buildSuggestionSchema(appLanguageName, userName, characterName) 
             text: {
               type: 'string',
               maxLength: 200,
-              description: `MUST be in ${lang}. Reply spoken by ${user} in first person, addressing ${character}. May include one short ${user} action in asterisks. Max 18 words. Must not contain ${character}'s name.`
+              description:
+                `MUST be in ${lang}. Spoken by ${user} in first person ("I", "me", "my"), addressing ${character}.\n` +
+                `NEVER start with "She", "He", "They", or "${character}".\n` +
+                `NEVER describe ${character}'s actions or thoughts.\n` +
+                `May include one short ${user} action in *asterisks* before or after the dialogue.\n` +
+                `Max 18 words.`
             }
           }
         }

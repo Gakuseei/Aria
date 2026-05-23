@@ -1,6 +1,6 @@
 /**
  * Pure prompt builder for Smart Suggestions v2 (beat-adaptive).
- * Single positive POV constraint, closing-line block, few-shot mirror.
+ * Positive POV constraint, closing-line block, recent-user mirror, BAD/GOOD few-shot examples.
  */
 
 const CLOSING_LINE_MAX_CHARS = 600;
@@ -66,6 +66,16 @@ export function buildSuggestionPrompt({ history, characterName, userName, appLan
     closingBlock,
     '',
     mirrorBlock,
+    '',
+    'Examples of pills that MUST be rejected (POV bleed):',
+    `- BAD: "She leans closer and whispers." — starts with character pronoun`,
+    `- BAD: "${characterName} smiles at you." — describes character, not ${userName}`,
+    `- BAD: "He pulls back, conflicted." — narrates character's action`,
+    '',
+    `Examples of correct pills (${userName}'s voice only):`,
+    `- GOOD: *steps in* "I need to know what you meant."`,
+    `- GOOD: "I take your hand—stay with me."`,
+    `- GOOD: *holds her gaze* "Don't stop."`,
     '',
     'Steps:',
     `1. Classify beat: refusal | invitation | uncertain`,

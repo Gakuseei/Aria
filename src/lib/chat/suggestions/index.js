@@ -83,25 +83,43 @@ async function attemptOnce({ currentRequestId, history, character, userName, set
   if (retryHint) prompts.systemPrompt += `\n\n${retryHint}`;
 
   const raw = await callOllama({ currentRequestId, model, profile, prompts, schema, maxTokens, ollamaUrl });
-  if (raw === null) return null;
+  if (raw === null) return { texts: null, rejected: [] };
   const parsed = parseSuggestionJson(raw);
   if (!parsed) {
     console.warn('[suggestions] parse failed for raw:', String(raw).slice(0, 240));
-    return null;
+    return { texts: null, rejected: [] };
   }
   const lastAssistantMessage = [...(history || [])].reverse()
     .find((m) => m?.role === 'assistant' && String(m.content || '').trim());
-  const accepted = applySanityFilters(parsed, {
+  const { kept, rejected } = applySanityFilters(parsed, {
     characterName,
     locale,
     previousPills: previousPills || [],
     lastAssistantMessage: lastAssistantMessage ? String(lastAssistantMessage.content).trim() : ''
   });
-  if (!accepted) {
-    console.warn('[suggestions] sanity rejected pills:', parsed);
-    return null;
+  if (kept.length < 3) {
+    console.warn('[suggestions] sanity rejected pills:', rejected);
+    return { texts: null, rejected };
   }
-  return accepted.pills.map((p) => p.text);
+  return { texts: kept.map((p) => p.text), rejected: [] };
+}
+
+function reasonLabel(reason, userName) {
+  return {
+    pov_bleed: `started with character pronoun or name (must speak as ${userName})`,
+    echo: `echoed character's last message`,
+    repetition: `repeated a previous pill`,
+    wrong_lang: `wrong language`,
+    too_long: `over 18 words`
+  }[reason] || 'failed sanity';
+}
+
+function buildRetryHint(rejections, userName) {
+  if (!rejections?.length) return null;
+  const reasonsByText = rejections
+    .map((r) => `- "${String(r.text || '').slice(0, 80)}" rejected: ${reasonLabel(r.reason, userName)}`)
+    .join('\n');
+  return `Previous pills failed:\n${reasonsByText}\nRewrite ALL three pills from ${userName}'s perspective only. Use "I"/"me"/"my". NEVER start with "She"/"He"/"They" or the character's name.`;
 }
 
 /**
@@ -122,20 +140,22 @@ export async function generateSuggestions(history, character, userName, settings
   const locale = String(options.locale || 'en').toLowerCase();
 
   try {
-    let result = await attemptOnce({
+    let attempt = await attemptOnce({
       currentRequestId, history, character, userName, settings, locale, previousPills,
       maxTokens: PILL_MAX_TOKENS
     });
     if (currentRequestId !== suggestionRequestId) return [];
-    if (!result) {
-      result = await attemptOnce({
+    if (!attempt.texts) {
+      const retryHint = buildRetryHint(attempt.rejected, userName)
+        || `Previous attempt was rejected. Pills MUST be in target language, from ${userName}'s perspective, distinct from each other.`;
+      attempt = await attemptOnce({
         currentRequestId, history, character, userName, settings, locale, previousPills,
         maxTokens: PILL_MAX_TOKENS_RETRY,
-        retryHint: `Previous attempt was rejected. Pills MUST be in target language, from ${userName}'s perspective, distinct from each other.`
+        retryHint
       });
       if (currentRequestId !== suggestionRequestId) return [];
     }
-    return result || [];
+    return attempt.texts || [];
   } catch (err) {
     console.warn('[suggestions] generateSuggestions error:', err);
     return [];

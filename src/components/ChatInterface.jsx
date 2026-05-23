@@ -1402,6 +1402,12 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     abortImpersonateCall();
     setIsImpersonating(false);
 
+    const hadAssistantTurn = messages.slice(lastUserMessageIndex + 1).some(m => m.role === 'assistant');
+    if (sessionId && hadAssistantTurn) {
+      passionManager.revertLastScore(sessionId);
+      setPassionLevel(passionManager.getPassionLevel(sessionId));
+    }
+
     setMessages(messagesUpToLastUser);
     setSceneMemory(buildSceneMemory(messagesUpToLastUser));
     setIsLoading(true);

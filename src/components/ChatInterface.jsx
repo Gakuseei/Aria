@@ -208,7 +208,7 @@ function createStreamAbortHandle() {
 }
 
 function pushBanHint(ref, phrase) {
-  const TTL = 4;
+  const TTL = 2;
   const MAX = 6;
   const decayed = (ref.current || [])
     .map(e => ({ ...e, turnsLeft: e.turnsLeft - 1 }))

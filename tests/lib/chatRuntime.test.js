@@ -1185,6 +1185,57 @@ describe('buildRuntimeState voice pin resolution', () => {
     expect(runtimeState.voicePinResolution.pin).toContain('Lily');
     expect(runtimeState.voicePinResolution.pin).toContain('established voice');
   });
+
+  it('scrubs name-usage instruction and appends no-name directive when userName is unset', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Test char',
+        category: 'sfw',
+        systemPrompt: 'Test char is curious.',
+        voicePin: "Test char speaks softly, uses {{user}}'s name constantly. Dark mode: silent."
+      },
+      history: [{ role: 'user', content: 'hi' }],
+      userName: 'User',
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1200 }
+    });
+
+    expect(runtimeState.voicePinResolution.pin).toContain('Do not address the user by any proper name');
+    expect(runtimeState.voicePinResolution.pin).not.toContain("uses User's name");
+  });
+
+  it('keeps the name-usage instruction and omits no-name directive when userName is set', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Test char',
+        category: 'sfw',
+        systemPrompt: 'Test char is curious.',
+        voicePin: "Test char speaks softly, uses {{user}}'s name constantly. Dark mode: silent."
+      },
+      history: [{ role: 'user', content: 'hi' }],
+      userName: 'Erik',
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1200 }
+    });
+
+    expect(runtimeState.voicePinResolution.pin).toContain("Erik's name");
+    expect(runtimeState.voicePinResolution.pin).not.toContain('Do not address');
+  });
+
+  it('appends no-name directive even when pin has no name instruction', () => {
+    const runtimeState = buildRuntimeState({
+      character: {
+        name: 'Test char',
+        category: 'sfw',
+        systemPrompt: 'Test char is curious.',
+        voicePin: 'Just a generic pin.'
+      },
+      history: [{ role: 'user', content: 'hi' }],
+      userName: 'User',
+      runtimeSteering: { profile: 'reply', availableContextTokens: 1200 }
+    });
+
+    expect(runtimeState.voicePinResolution.pin).toContain('Do not address the user');
+    expect(runtimeState.voicePinResolution.pin).toContain('Just a generic pin.');
+  });
 });
 
 describe('assembleRuntimeContext voice pin injection (reply profile)', () => {

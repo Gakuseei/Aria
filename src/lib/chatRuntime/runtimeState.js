@@ -1223,11 +1223,17 @@ function calculateHistoryBudget(totalBudget, profile) {
 
 const VOICE_PIN_FALLBACK = "Stay in {{char}}'s established voice and mannerisms across all scene types, including intimate moments. Reuse the speech patterns and physical reactions visible in earlier turns rather than shifting into generic intimate-scene prose.";
 
-const NAME_INSTRUCTION = /\b(uses?|says?|repeats?|calls?|addresses?)\s+(the\s+)?user'?s?\s+name\b[^.]*\./gi;
+const NAME_INSTRUCTION = /\b(uses?|says?|repeats?|calls?|addresses?)\s+(?:the\s+)?user'?s?\s+(?:\w+\s+)?name\b[^.]*\.|\b(?:uses?|says?|repeats?|calls?|addresses?)\s+(?:the\s+)?user\s+by\s+(?:their\s+|the\s+)?name\b[^.]*\./gi;
 const NO_NAME_DIRECTIVE = "Do not address the user by any proper name; use 'you', endearments, or no address.";
 
 function applyUserNameUnsetScrub(pin) {
-  const scrubbed = String(pin || '').replace(NAME_INSTRUCTION, '').replace(/\s{2,}/g, ' ').trim();
+  const scrubbed = String(pin || '')
+    .replace(NAME_INSTRUCTION, '')
+    .replace(/\s+([.,;:])/g, '$1')
+    .replace(/([,;:])\s+([.,;:])/g, '$2')
+    .replace(/[,;]\s*(?=[A-Z])/g, '. ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
   if (!scrubbed) return NO_NAME_DIRECTIVE;
   return `${scrubbed} ${NO_NAME_DIRECTIVE}`.trim();
 }
@@ -1239,6 +1245,7 @@ function resolveVoicePin({ character, charName, userName, isUnset, assistMode })
 
   const finalize = (rawPin, source, includeAvoid) => {
     let pin = resolveTemplates(rawPin, charName, userName);
+    // Substitute {{user}} first so NAME_INSTRUCTION can match the literal "user" token before scrub.
     if (isUnset) pin = applyUserNameUnsetScrub(pin);
     return { pin, avoid: includeAvoid ? avoid : '', source };
   };

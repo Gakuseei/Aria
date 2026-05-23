@@ -102,7 +102,7 @@ export function buildVoicePinBlock({ pin = '', avoid: _avoid = '', fallback = ''
   if (!usePin && !useFallback) return '';
 
   const lines = [];
-  lines.push('Voice anchor:');
+  lines.push('Voice contract (overrides intensity guidance below for vocabulary, not for depth):');
   lines.push(usePin || useFallback);
   return lines.join('\n');
 }

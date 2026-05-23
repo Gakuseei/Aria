@@ -1,4 +1,4 @@
-export { assembleRuntimeContext } from './assembly.js';
+export { assembleRuntimeContext, NSFW_VOCAB_STOPS } from './assembly.js';
 export { compileCharacterRuntimeCard, compileNarratorRuntimeCard } from './compiler.js';
 export {
   buildRuntimeState,
@@ -11,6 +11,7 @@ export {
   renderActiveScene,
   resolveSessionSceneMemory,
   resolveUserIdentity,
+  resolveVoicePin,
   validateSceneMemory
 } from './runtimeState.js';
 export { estimateTokens, resolveTemplates, trimPromptSnippet } from './text.js';

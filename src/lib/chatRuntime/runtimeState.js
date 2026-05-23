@@ -1267,7 +1267,7 @@ function applyUserNameUnsetScrub(pin) {
   return `${scrubbed} ${NO_NAME_DIRECTIVE}`.trim();
 }
 
-function resolveVoicePin({ character, charName, userName, isUnset, assistMode }) {
+export function resolveVoicePin({ character, charName, userName, isUnset, assistMode, passionLevel = 0 }) {
   const defaultPin = String(character?.voicePin || '').trim();
   const nsfwPin = String(character?.voicePinNsfw || '').trim();
   const avoid = String(character?.voiceAvoid || '').trim();
@@ -1279,7 +1279,12 @@ function resolveVoicePin({ character, charName, userName, isUnset, assistMode })
     return { pin, avoid: includeAvoid ? avoid : '', source };
   };
 
-  if (assistMode === 'nsfw_only' && nsfwPin) {
+  const numericPassion = Number(passionLevel) || 0;
+  const intimateMode = assistMode === 'nsfw_only'
+    || (assistMode === 'mixed_transition' && numericPassion >= 56)
+    || numericPassion >= 76;
+
+  if (intimateMode && nsfwPin) {
     return finalize(nsfwPin, 'voicePinNsfw', true);
   }
 
@@ -1356,7 +1361,8 @@ export function buildRuntimeState({ character, history, userName = 'User', userG
         charName,
         userName,
         isUnset: userIdentity.isUnset,
-        assistMode: assistMode.value
+        assistMode: assistMode.value,
+        passionLevel: Number(runtimeSteering?.passionLevel) || 0
       });
 
   if (!isNarratorPersona) {

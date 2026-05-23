@@ -12,6 +12,7 @@ import {
   renderActiveScene,
   resolveSessionSceneMemory,
   resolveUserIdentity,
+  resolveVoicePin,
   validateSceneMemory
 } from '../../src/lib/chatRuntime/index.js';
 
@@ -1157,7 +1158,7 @@ describe('buildVoicePinBlock', () => {
       pin: 'Stays in her stuttering naive voice in every situation, including intimate ones.',
       avoid: 'heaving bosom, porcelain skin, body and soul'
     });
-    expect(block).toContain('Voice anchor:');
+    expect(block).toContain('Voice contract');
     expect(block).toContain('stuttering naive voice');
     expect(block).not.toContain('Avoid:');
     expect(block).not.toContain('heaving bosom');
@@ -1293,6 +1294,46 @@ describe('buildRuntimeState voice pin resolution', () => {
   });
 });
 
+describe('resolveVoicePin intimateMode thresholds', () => {
+  const character = {
+    name: 'Yuki',
+    voicePin: 'Default voice anchor.',
+    voicePinNsfw: 'NSFW voice anchor.',
+    voiceAvoid: 'porcelain'
+  };
+  const baseArgs = { character, charName: 'Yuki', userName: 'Erik', isUnset: false };
+
+  it('uses voicePinNsfw at mixed_transition passion=56 boundary', () => {
+    const resolution = resolveVoicePin({ ...baseArgs, assistMode: 'mixed_transition', passionLevel: 56 });
+    expect(resolution.source).toBe('voicePinNsfw');
+    expect(resolution.pin).toContain('NSFW voice anchor');
+  });
+
+  it('keeps default voicePin at mixed_transition passion=55 (just below)', () => {
+    const resolution = resolveVoicePin({ ...baseArgs, assistMode: 'mixed_transition', passionLevel: 55 });
+    expect(resolution.source).toBe('voicePin');
+    expect(resolution.pin).toContain('Default voice anchor');
+  });
+
+  it('uses voicePinNsfw at sfw_only passion=76 (passion alone overrides mode)', () => {
+    const resolution = resolveVoicePin({ ...baseArgs, assistMode: 'sfw_only', passionLevel: 76 });
+    expect(resolution.source).toBe('voicePinNsfw');
+    expect(resolution.pin).toContain('NSFW voice anchor');
+  });
+
+  it('keeps default voicePin at sfw_only passion=75 (just below passion-alone threshold)', () => {
+    const resolution = resolveVoicePin({ ...baseArgs, assistMode: 'sfw_only', passionLevel: 75 });
+    expect(resolution.source).toBe('voicePin');
+    expect(resolution.pin).toContain('Default voice anchor');
+  });
+
+  it('uses voicePinNsfw when assistMode is nsfw_only regardless of passion', () => {
+    const resolution = resolveVoicePin({ ...baseArgs, assistMode: 'nsfw_only', passionLevel: 0 });
+    expect(resolution.source).toBe('voicePinNsfw');
+    expect(resolution.pin).toContain('NSFW voice anchor');
+  });
+});
+
 describe('assembleRuntimeContext voice pin injection (reply profile)', () => {
   it('appends a synthetic system message at the end of historyMessages', () => {
     const runtimeState = buildRuntimeState({
@@ -1315,7 +1356,7 @@ describe('assembleRuntimeContext voice pin injection (reply profile)', () => {
     const lastMessage = messages[messages.length - 1];
 
     expect(lastMessage.role).toBe('system');
-    expect(lastMessage.content).toContain('Voice anchor:');
+    expect(lastMessage.content).toContain('Voice contract');
     expect(lastMessage.content).toContain('Stutters when nervous');
     expect(lastMessage.content).not.toContain('Avoid:');
   });

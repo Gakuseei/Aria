@@ -10,6 +10,20 @@ import { renderActiveScene } from './runtimeState.js';
 // overshoot is absorbed by the overflow handler and trades headroom for full Global Core
 // (embodiment line), full Late Steering at NSFW, plus the Phase D structural memory layer
 // (wardrobe, body state, established facts, mentioned items) inside Active Scene.
+/**
+ * Generic erotic-fic phrases that bleed across characters at high passion tiers,
+ * overriding the per-character voicePinNsfw anchor. Used as Ollama stop sequences
+ * only when the active voicePin resolution sources from voicePinNsfw, so legitimate
+ * SFW conversations are unaffected.
+ */
+export const NSFW_VOCAB_STOPS = [
+  'good girl',
+  'use me',
+  'your good little',
+  'completely yours',
+  "i'm yours to"
+];
+
 const PROFILE_BUDGET_TARGETS = {
   reply: {
     globalCore: 120,

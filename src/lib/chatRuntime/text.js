@@ -95,14 +95,16 @@ export function pickSentenceByKeywords(text, keywords = [], maxLength = 180) {
   return trimPromptSnippet(match || sentences[0] || '', maxLength);
 }
 
-export function buildVoicePinBlock({ pin = '', avoid: _avoid = '', fallback = '' } = {}) {
+export function buildVoicePinBlock({ pin = '', avoid = '', fallback = '' } = {}) {
   const usePin = String(pin || '').trim();
   const useFallback = String(fallback || '').trim();
+  const useAvoid = String(avoid || '').trim();
 
   if (!usePin && !useFallback) return '';
 
   const lines = [];
   lines.push('Voice contract (overrides intensity guidance below for vocabulary, not for depth):');
   lines.push(usePin || useFallback);
+  if (useAvoid) lines.push(`Avoid these phrases: ${useAvoid}`);
   return lines.join('\n');
 }

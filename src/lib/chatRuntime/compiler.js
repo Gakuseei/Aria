@@ -271,6 +271,8 @@ export function compileNarratorRuntimeCard(character = {}) {
 export function compileCharacterRuntimeCard(character = {}) {
   const type = inferCharacterType(character);
   const name = String(character.name || 'Character').trim() || 'Character';
+  const description = String(character.description || '').trim();
+  const personality = String(character.personality || '').trim();
   const systemPrompt = String(character.systemPrompt || '').trim();
   const instructions = String(character.instructions || '').trim();
   const scenario = String(character.scenario || '').trim();
@@ -280,6 +282,8 @@ export function compileCharacterRuntimeCard(character = {}) {
   const personaAnchor = buildPersonaAnchor(systemPrompt, instructions, exampleSeed);
 
   const characterParagraphs = [
+    ...createParagraphEntries(description, 'description'),
+    ...createParagraphEntries(personality, 'personality'),
     ...createParagraphEntries(systemPrompt, 'systemPrompt')
   ];
   const instructionParagraphs = createParagraphEntries(instructions, 'instructions').filter((entry) => isTacticalInstructionParagraph(entry.text));
@@ -287,7 +291,8 @@ export function compileCharacterRuntimeCard(character = {}) {
   const firstSystemParagraph = createParagraphEntries(systemPrompt, 'systemPrompt')[0] || null;
   const firstInstructionParagraph = instructionParagraphs[0] || null;
 
-  const frequencyMap = buildFrequencyMap(`${systemPrompt}\n${instructions}\n${scenario}`);
+  // Verify via live chat: if personality content is suppressed, scope frequencyMap back to systemPrompt+instructions+scenario
+  const frequencyMap = buildFrequencyMap(`${description}\n${personality}\n${systemPrompt}\n${instructions}\n${scenario}`);
 
   const systemCharacterCore = clipToTokenTarget(
     selectParagraphs(

@@ -13,6 +13,7 @@ import { GAME_MODES } from './lib/gameModes';
 import { testOllamaConnection, autoDetectAndSetModel, normalizeContextSize } from './lib/ollama';
 import { applyPerformanceProfile, getPerformanceProfile } from './lib/performance';
 import { normalizeResponseMode } from './lib/responseModes';
+import { saveCustomCharacter } from './lib/chat/characters';
 import { loadSettings } from './lib/storage/settings';
 import { applyThemeMode, bootstrapThemeMode, normalizeThemeMode, withResolvedThemeSettings } from './lib/theme';
 
@@ -436,30 +437,14 @@ function App() {
   };
 
   const handleSaveCharacter = (character) => {
-    try {
-      const normalizedCharacter = {
-        ...character,
-        responseMode: normalizeResponseMode(character?.responseMode ?? character?.responseStyle, character?.isCustom ? 'normal' : 'short')
-      };
-      const canonical = localStorage.getItem('custom_characters');
-      const legacy = localStorage.getItem('customCharacters');
-      const existing = [...(canonical ? JSON.parse(canonical) : []), ...(legacy ? JSON.parse(legacy) : [])];
-      const uniqueExisting = existing.filter((item, index, array) => item?.id && array.findIndex((candidate) => candidate?.id === item.id) === index);
-      const existingIndex = uniqueExisting.findIndex((item) => item.id === normalizedCharacter.id);
-      const updated = [...uniqueExisting];
-
-      if (existingIndex >= 0) {
-        updated[existingIndex] = normalizedCharacter;
-      } else {
-        updated.push(normalizedCharacter);
-      }
-
-      localStorage.setItem('custom_characters', JSON.stringify(updated));
-      localStorage.removeItem('customCharacters');
-      
+    const result = saveCustomCharacter({
+      ...character,
+      responseMode: normalizeResponseMode(character?.responseMode ?? character?.responseStyle, character?.isCustom ? 'normal' : 'short')
+    });
+    if (result?.success) {
       navigate(VIEWS.CHARACTER_SELECT);
-    } catch (error) {
-      console.error('Error saving character:', error);
+    } else {
+      console.error('Error saving character:', result?.error);
     }
   };
 

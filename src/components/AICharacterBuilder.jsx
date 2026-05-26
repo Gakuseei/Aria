@@ -8,6 +8,49 @@ import CustomDropdown from './CustomDropdown';
 import ResponseModeField from './ResponseModeField';
 import { fetchOllamaModels } from '../lib/ollama';
 import { normalizeResponseMode } from '../lib/responseModes';
+import { generateId } from '../lib/persona/schema';
+
+const INITIAL_FIELD_ORDER_CHARACTER = [
+  'name',
+  'subtitle',
+  'description',
+  'personality',
+  'scenario',
+  'systemPrompt',
+  'voicePin',
+  'voicePinNsfw',
+  'voiceAvoid',
+  'intimacyContract',
+  'instructions',
+  'exampleDialogues',
+  'startingMessage',
+];
+
+const INITIAL_FIELD_ORDER_BOT = ['name', 'subtitle', 'description', 'systemPrompt', 'instructions', 'startingMessage'];
+
+function serializeExampleDialogues(value) {
+  if (typeof value === 'string') return value;
+  if (!Array.isArray(value)) return '';
+  return value
+    .map((row) => {
+      const userLine = row?.user ? `{{user}}: ${row.user}` : '';
+      const charLine = row?.character ? `{{char}}: ${row.character}` : '';
+      return [userLine, charLine].filter(Boolean).join('\n');
+    })
+    .filter(Boolean)
+    .join('\n<START>\n');
+}
+
+function parseExampleDialoguesText(text) {
+  const trimmed = String(text || '').trim();
+  if (!trimmed) return [];
+  const blocks = trimmed.split(/<START>/i).map((b) => b.trim()).filter(Boolean);
+  return blocks.map((block) => {
+    const match = block.match(/\{\{user\}\}:\s*([\s\S]+?)\n+\{\{char\}\}:\s*([\s\S]+?)$/i);
+    if (match) return { user: match[1].trim(), character: match[2].trim() };
+    return { user: '', character: block };
+  });
+}
 
 function RegenerateButton({ field, regeneratingField, onRegenerate, t }) {
   return (
@@ -65,6 +108,7 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
   const [error, setError] = useState(null);
   const [generatedCharacter, setGeneratedCharacter] = useState(null);
   const [regeneratingField, setRegeneratingField] = useState(null);
+  const [generatingField, setGeneratingField] = useState(null);
   const [avatarBase64, setAvatarBase64] = useState('');
   const [passionEnabled, setPassionEnabled] = useState(true);
   const [selectedType, setSelectedType] = useState('character');
@@ -131,58 +175,65 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
     setCurrentStep(2);
     dispatchBuilderEvent('generate', `Starting with ${selectedModel}, lang=${selectedLanguage}`);
 
-    const startTime = Date.now();
-    const result = await electronApi.aiGenerateCharacter({
-      description: description.trim(),
-      model: selectedModel,
-      language: selectedLanguage,
-      type: selectedType,
+    const seedDescription = description.trim();
+    const isBotMode = selectedType === 'bot';
+    const fieldOrder = isBotMode ? INITIAL_FIELD_ORDER_BOT : INITIAL_FIELD_ORDER_CHARACTER;
+
+    const character = {
+      description: seedDescription,
       category,
-      ollamaUrl: settings.ollamaUrl,
-    });
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    };
 
-    setLoading(false);
+    const startTime = Date.now();
+    let aborted = false;
+    const failedFields = [];
 
-    if (result.success) {
-      let character = result.character;
-      const requiredFields = ['name', 'systemPrompt', 'startingMessage'];
-      const missingFields = requiredFields.filter(f => !character[f]?.trim());
+    for (const fieldName of fieldOrder) {
+      if (fieldName === 'description' && seedDescription) continue;
+      if (!isBotMode && category === 'sfw' && (fieldName === 'voicePinNsfw' || fieldName === 'intimacyContract')) continue;
 
-      if (missingFields.length > 0) {
-        dispatchBuilderEvent('auto-heal', `Fixing missing fields: ${missingFields.join(', ')}`);
-        for (const fieldName of missingFields) {
-          const healResult = await electronApi.aiGenerateCharacter({
-            description: description.trim(),
-            model: selectedModel,
-            language: selectedLanguage,
-            type: selectedType,
-            category,
-            field: fieldName,
-            existingCharacter: character,
-            ollamaUrl: settings.ollamaUrl,
-          });
-          if (healResult.success) {
-            character = { ...character, [fieldName]: healResult.content.trim() };
-          }
+      setGeneratingField(fieldName);
+      dispatchBuilderEvent('field', `Generating ${fieldName}`);
+
+      const result = await electronApi.aiGenerateCharacter({
+        model: selectedModel,
+        language: selectedLanguage,
+        type: selectedType,
+        field: fieldName,
+        existingCharacter: character,
+        ollamaUrl: settings.ollamaUrl,
+      });
+
+      if (!result.success) {
+        if (result.error === 'aborted') {
+          aborted = true;
+          break;
         }
+        failedFields.push(fieldName);
+        dispatchBuilderEvent('field-fail', `${fieldName}: ${result.error}`);
+        continue;
       }
 
-      setGeneratedCharacter({
-        ...character,
-        category: character.category || category,
-        responseMode: normalizeResponseMode(character.responseMode ?? character.responseStyle, 'normal')
-      });
-      setCurrentStep(3);
-      dispatchBuilderEvent('success', `Generated "${character?.name}" in ${elapsed}s${missingFields.length > 0 ? ` (healed: ${missingFields.join(', ')})` : ''}`);
-    } else {
-      const errorMsg = result.raw
-        ? `${result.error}\n\nRaw output:\n${result.raw.substring(0, 500)}`
-        : (result.error || 'Generation failed');
-      setError(errorMsg);
-      setCurrentStep(1);
-      dispatchBuilderEvent('error', `Failed after ${elapsed}s: ${result.error}`);
+      character[fieldName] = result.value;
     }
+
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    setGeneratingField(null);
+    setLoading(false);
+
+    if (aborted) {
+      setCurrentStep(1);
+      dispatchBuilderEvent('aborted', `Aborted after ${elapsed}s`);
+      return;
+    }
+
+    setGeneratedCharacter({
+      ...character,
+      category: character.category || category,
+      responseMode: normalizeResponseMode(character.responseMode ?? character.responseStyle, 'normal'),
+    });
+    setCurrentStep(3);
+    dispatchBuilderEvent('success', `Generated "${character?.name || 'character'}" in ${elapsed}s${failedFields.length ? ` (empty: ${failedFields.join(', ')})` : ''}`);
   };
 
   const handleCancel = () => {
@@ -203,18 +254,16 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
     dispatchBuilderEvent('regenerate', `Regenerating "${fieldName}"`);
 
     const result = await electronApi.aiGenerateCharacter({
-      description: description.trim(),
       model: selectedModel,
       language: selectedLanguage,
       type: selectedType,
-      category: generatedCharacter?.category || category,
       field: fieldName,
-      existingCharacter: generatedCharacter,
+      existingCharacter: generatedCharacter || {},
       ollamaUrl: settings.ollamaUrl,
     });
 
     if (result.success) {
-      setGeneratedCharacter(prev => ({ ...prev, [fieldName]: result.content.trim() }));
+      setGeneratedCharacter(prev => ({ ...prev, [fieldName]: result.value }));
       dispatchBuilderEvent('regenerate-ok', `"${fieldName}" regenerated`);
     } else {
       window.dispatchEvent(new CustomEvent('show-toast', {
@@ -260,20 +309,23 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
     if (!generatedCharacter) return;
 
     const trimmedStartingMessage = generatedCharacter.startingMessage?.trim() || '';
+    const exampleDialogues = Array.isArray(generatedCharacter.exampleDialogues)
+      ? generatedCharacter.exampleDialogues
+      : [];
+
     const character = {
-      id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: generateId(),
       name: generatedCharacter.name?.trim() || 'Unnamed',
       subtitle: generatedCharacter.subtitle?.trim() || '',
       description: generatedCharacter.description?.trim() || '',
+      personality: generatedCharacter.personality?.trim() || '',
       systemPrompt: generatedCharacter.systemPrompt?.trim() || '',
       instructions: generatedCharacter.instructions?.trim() || '',
       scenario: generatedCharacter.scenario?.trim() || '',
-      exampleDialogue: generatedCharacter.exampleDialogue?.trim() || '',
-      exampleDialogues: [],
+      exampleDialogues,
       themeColor: generatedCharacter.themeColor || '#ef4444',
       avatarBase64: avatarBase64 || null,
       startingMessage: trimmedStartingMessage,
-      greeting: trimmedStartingMessage,
       type: selectedType,
       category: generatedCharacter.category || 'sfw',
       responseMode: normalizeResponseMode(generatedCharacter.responseMode, 'normal'),
@@ -290,17 +342,19 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
   };
 
   const textareaFields = useMemo(() => {
-    const fields = [
-      { key: 'systemPrompt', label: selectedType === 'bot' ? (t.characterCreator?.botInstructions || 'Bot Instructions') : (t.aiCharacterBuilder?.fieldSystemPrompt || 'System Prompt'), rows: 10, mono: true },
-      { key: 'instructions', label: t.aiCharacterBuilder?.fieldInstructions || 'Instructions', rows: 4, mono: false },
-      { key: 'scenario', label: t.aiCharacterBuilder?.fieldScenario || 'Scenario', rows: 4, mono: false },
-    ];
+    const fields = [];
     if (selectedType !== 'bot') {
-      fields.push({ key: 'exampleDialogue', label: t.aiCharacterBuilder?.fieldExampleDialogue || 'Example Dialogue', rows: 4, mono: true });
+      fields.push({ key: 'personality', label: t.aiCharacterBuilder?.fieldPersonality || 'Personality', rows: 4, mono: false });
+    }
+    fields.push({ key: 'systemPrompt', label: selectedType === 'bot' ? (t.characterCreator?.botInstructions || 'Bot Instructions') : (t.aiCharacterBuilder?.fieldSystemPrompt || 'System Prompt'), rows: 10, mono: true });
+    fields.push({ key: 'instructions', label: t.aiCharacterBuilder?.fieldInstructions || 'Instructions', rows: 4, mono: false });
+    if (selectedType !== 'bot') {
+      fields.push({ key: 'scenario', label: t.aiCharacterBuilder?.fieldScenario || 'Scenario', rows: 4, mono: false });
+      fields.push({ key: 'exampleDialogues', label: t.aiCharacterBuilder?.fieldExampleDialogue || 'Example Dialogues', rows: 6, mono: true, isExampleDialogues: true });
     }
     fields.push({ key: 'startingMessage', label: t.aiCharacterBuilder?.fieldStartingMessage || 'Starting Message', rows: 4, mono: false });
-    fields.push({ key: 'voicePin', label: t.aiCharacterBuilder?.voicePinLabel || t.characterCreator?.voicePinLabel || 'Voice Anchor', rows: 3, mono: false });
     if (selectedType !== 'bot') {
+      fields.push({ key: 'voicePin', label: t.aiCharacterBuilder?.voicePinLabel || t.characterCreator?.voicePinLabel || 'Voice Anchor', rows: 3, mono: false });
       fields.push({ key: 'voicePinNsfw', label: t.aiCharacterBuilder?.voicePinNsfwLabel || t.characterCreator?.voicePinNsfwLabel || 'Voice Anchor (NSFW Override)', rows: 3, mono: false });
       fields.push({ key: 'intimacyContract', label: t.aiCharacterBuilder?.intimacyContractLabel || t.characterCreator?.intimacyContractLabel || 'Intimacy Contract', rows: 4, mono: false });
     }
@@ -546,6 +600,11 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
               <p className="text-zinc-500 text-sm">
                 {t.aiCharacterBuilder?.generatingSubtitle || 'This may take a moment depending on your model'}
               </p>
+              {generatingField && (
+                <p className="text-violet-400 text-xs mt-2 font-mono">
+                  {(t.aiCharacterBuilder?.generatingFieldPrefix || 'Field')}: {generatingField}
+                </p>
+              )}
               <p className="text-zinc-600 text-xs mt-2">{selectedModel}</p>
             </div>
             <button
@@ -623,20 +682,30 @@ function AICharacterBuilder({ onSave, onBack, settings }) {
                 idPrefix="ai-character-builder-response-mode"
               />
 
-              {textareaFields.map(({ key, label, rows, mono }) => (
-                <div key={key}>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-zinc-300">{label}</label>
-                    <RegenerateButton regeneratingField={regeneratingField} onRegenerate={handleRegenerateField} t={t} field={key} />
+              {textareaFields.map(({ key, label, rows, mono, isExampleDialogues }) => {
+                const displayValue = isExampleDialogues
+                  ? serializeExampleDialogues(generatedCharacter[key])
+                  : (generatedCharacter[key] || '');
+                return (
+                  <div key={key}>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium text-zinc-300">{label}</label>
+                      <RegenerateButton regeneratingField={regeneratingField} onRegenerate={handleRegenerateField} t={t} field={key} />
+                    </div>
+                    <textarea
+                      value={displayValue}
+                      onChange={(e) => handleCharacterFieldChange(key, e.target.value)}
+                      onBlur={(e) => {
+                        if (isExampleDialogues) {
+                          handleCharacterFieldChange(key, parseExampleDialoguesText(e.target.value));
+                        }
+                      }}
+                      rows={rows}
+                      className={`w-full bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-4 py-3 text-white resize-none focus:outline-none focus:border-violet-500/50 ${mono ? 'font-mono text-sm' : ''}`}
+                    />
                   </div>
-                  <textarea
-                    value={generatedCharacter[key] || ''}
-                    onChange={(e) => handleCharacterFieldChange(key, e.target.value)}
-                    rows={rows}
-                    className={`w-full bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-4 py-3 text-white resize-none focus:outline-none focus:border-violet-500/50 ${mono ? 'font-mono text-sm' : ''}`}
-                  />
-                </div>
-              ))}
+                );
+              })}
 
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">

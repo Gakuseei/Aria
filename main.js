@@ -591,12 +591,178 @@ ipcMain.handle('ai-chat', async (event, params) => {
 /**
  * AI Character Builder — generate character from description
  */
+const CHARGEN_SYSTEM_PROMPT = 'You are an expert in creating interesting roleplay characters.';
+
+const CHARGEN_STOP_STRINGS = ['[/INST]', '###', '<|', '</s>', '\n\nUser:', '\n\nSystem:', '\n\nQuestion:', '\n\n<instruct>'];
+
+const FIELD_INSTRUCTIONS = {
+  name: 'Generate a short, evocative character name. Just the name, no description.',
+  subtitle: 'Write a short evocative subtitle for {name}. 3-8 words max. One line.',
+  description: "Here is a brief overview of a character. Expand it into a detailed description. Include details about character's appearance, demeanor, age, and gender.",
+  personality: "Write a paragraph describing {name}'s core traits, motivations, and fears. Use flowing prose, not lists or bullet points. Avoid contradictions.",
+  scenario: 'Write an interesting and engaging scenario for roleplay between {name} and User.',
+  startingMessage: 'Write the initial message in this roleplay that would introduce User to {name}. Begin with an action, include dialogue revealing personality, end with a hook.',
+  exampleDialogues: 'Write 3 short example exchanges between User and {name}. Mix dialogue with asterisk-actions. Show different emotional registers. Separate each exchange with <START>.',
+  systemPrompt: 'Write a 2-3 sentence per-card voice override for {name}. Permission to stay in-character; uncensored if NSFW-tagged.',
+  instructions: 'Write OOC writing rules for the model when roleplaying {name}. Style, format, things to avoid. 2-3 short sentences.',
+  voicePin: "Write a 1-2 sentence stage direction defining {name}'s voice. Present-tense, bracketed.",
+  voicePinNsfw: 'Write a 1-2 sentence NSFW voice override for {name}. Direct, descriptive, no fade-to-black.',
+  voiceAvoid: 'Write a comma-separated list of phrases or words the model should avoid when roleplaying {name}. 5-10 items.',
+  intimacyContract: 'Write 1-2 sentences of intimate response permissions for {name}. Imperative.',
+};
+
+const INFIX_FIELD_ORDER = [
+  'name',
+  'subtitle',
+  'description',
+  'personality',
+  'scenario',
+  'systemPrompt',
+  'voicePin',
+  'voicePinNsfw',
+  'voiceAvoid',
+  'intimacyContract',
+  'instructions',
+  'exampleDialogues',
+  'startingMessage',
+];
+
+function serializeExampleDialoguesForInfix(value) {
+  if (!Array.isArray(value)) return String(value || '').trim();
+  return value
+    .map((row) => {
+      const userLine = row?.user ? `{{user}}: ${row.user}` : '';
+      const charLine = row?.character ? `{{char}}: ${row.character}` : '';
+      return [userLine, charLine].filter(Boolean).join('\n');
+    })
+    .filter(Boolean)
+    .join('\n<START>\n')
+    .trim();
+}
+
+function parseExampleDialoguesFromPlaintext(raw) {
+  const text = String(raw || '').trim();
+  if (!text) return [];
+  const blocks = text.split(/<START>/i).map((b) => b.trim()).filter(Boolean);
+  const rows = [];
+  for (const block of blocks) {
+    const match = block.match(/\{\{user\}\}:\s*([\s\S]+?)\n+\{\{char\}\}:\s*([\s\S]+?)$/i);
+    if (match) {
+      rows.push({ user: match[1].trim(), character: match[2].trim() });
+    } else {
+      rows.push({ user: '', character: block });
+    }
+  }
+  return rows.length > 0 ? rows : [{ user: '', character: text }];
+}
+
+function wrapBrackets(value) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('[')) return trimmed;
+  return `[${trimmed.replace(/^\[+|\]+$/g, '')}]`;
+}
+
+function buildInfixMessages({ field, existingCharacter, isBotMode, language }) {
+  const characterName = String(existingCharacter?.name || '').trim() || 'the character';
+  const messages = [{ role: 'system', content: CHARGEN_SYSTEM_PROMPT }];
+
+  for (const priorField of INFIX_FIELD_ORDER) {
+    if (priorField === field) continue;
+    if (!FIELD_INSTRUCTIONS[priorField]) continue;
+    if (isBotMode && (priorField === 'personality' || priorField === 'scenario' || priorField === 'voicePin' || priorField === 'voicePinNsfw' || priorField === 'voiceAvoid' || priorField === 'intimacyContract' || priorField === 'exampleDialogues')) continue;
+
+    const rawValue = existingCharacter?.[priorField];
+    const serialized = priorField === 'exampleDialogues'
+      ? serializeExampleDialoguesForInfix(rawValue)
+      : String(rawValue || '').trim();
+
+    if (!serialized) continue;
+
+    const instruction = FIELD_INSTRUCTIONS[priorField].replace(/\{name\}/g, characterName);
+    messages.push({ role: 'user', content: `<instruct>${instruction}</instruct>` });
+    messages.push({ role: 'assistant', content: serialized });
+  }
+
+  const currentInstruction = FIELD_INSTRUCTIONS[field].replace(/\{name\}/g, characterName);
+  const languageSuffix = language && language !== 'English' ? ` Write in ${language}.` : '';
+  messages.push({ role: 'user', content: `<instruct>${currentInstruction}${languageSuffix}</instruct>` });
+
+  return messages;
+}
+
+async function callChargenField({
+  trustedUrl,
+  model,
+  field,
+  existingCharacter,
+  isBotMode,
+  language,
+  abortController,
+  rephrasePrefix,
+}) {
+  const messages = buildInfixMessages({ field, existingCharacter, isBotMode, language });
+  if (rephrasePrefix) {
+    const last = messages[messages.length - 1];
+    last.content = last.content.replace('<instruct>', `<instruct>${rephrasePrefix}`);
+  }
+
+  const timeoutId = setTimeout(() => abortController.abort(), CHARACTER_BUILDER_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${trustedUrl.origin}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: false,
+        options: {
+          temperature: CHARACTER_BUILDER_TEMPERATURE,
+          num_predict: Math.round(CHARACTER_BUILDER_MAX_TOKENS * (isBotMode ? BOT_BUILDER_TOKEN_MULTIPLIER : 1)),
+          num_ctx: Math.round(CHARACTER_BUILDER_CTX * (isBotMode ? BOT_BUILDER_CTX_MULTIPLIER : 1)),
+          stop: CHARGEN_STOP_STRINGS,
+        },
+      }),
+      signal: abortController.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Ollama error (${response.status}): ${errorText}`);
+    }
+
+    const data = await response.json();
+    return String(data.message?.content || '').trim();
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function shapeFieldValue(field, raw) {
+  const trimmed = String(raw || '').trim();
+  if (!trimmed) return field === 'exampleDialogues' ? [] : '';
+  if (field === 'exampleDialogues') return parseExampleDialoguesFromPlaintext(trimmed);
+  if (field === 'voicePin' || field === 'voicePinNsfw') return wrapBrackets(trimmed);
+  return trimmed;
+}
+
 ipcMain.handle('ai-generate-character', async (event, params) => {
   if (!isTrustedIpcSender(event)) {
     return blockUntrustedIpc(event, 'ai-generate-character');
   }
 
-  const { description, model, language = 'English', field = null, existingCharacter = null, ollamaUrl, type = 'character', category = 'sfw' } = params;
+  const {
+    model,
+    language = 'English',
+    field,
+    existingCharacter = {},
+    ollamaUrl,
+    type = 'character',
+  } = params;
+
+  if (!field || !FIELD_INSTRUCTIONS[field]) {
+    return { success: false, error: `Unknown or missing field: ${field || '(none)'}` };
+  }
 
   const abortController = new AbortController();
   const tag = 'character-builder';
@@ -611,182 +777,39 @@ ipcMain.handle('ai-generate-character', async (event, params) => {
       return { success: false, error: 'Ollama URL must match the configured local service endpoint' };
     }
 
-    let systemPrompt;
-    let userMessage;
-
     const isBotMode = type === 'bot';
 
-    if (field && existingCharacter) {
-      systemPrompt = isBotMode
-        ? `You are a bot design assistant. You will regenerate ONLY the "${field}" field of an existing bot/tool. Output ONLY the raw value for that field — no JSON wrapper, no field name, no markdown.`
-        : `You are a character design assistant. You will regenerate ONLY the "${field}" field of an existing roleplay character. Output ONLY the raw value for that field — no JSON wrapper, no field name, no markdown. The systemPrompt field uses plain text prose — flowing paragraphs describing personality, appearance, speech patterns, and physical behavior. No W++ brackets, no trait lists.`;
-      userMessage = `Original description: ${description}\n\nExisting ${isBotMode ? 'bot' : 'character'}:\n${JSON.stringify(existingCharacter, null, 2)}\n\nRegenerate ONLY the "${field}" field. Output the raw value only, nothing else.${language !== 'English' ? `\n\nWrite in ${language}.` : ''}`;
-    } else if (isBotMode) {
-      systemPrompt = `You are an assistant that creates bot/tool configurations for a chat app. Given a user's description, generate a complete bot configuration in JSON format.
+    let raw = await callChargenField({
+      trustedUrl,
+      model,
+      field,
+      existingCharacter,
+      isBotMode,
+      language,
+      abortController,
+    });
 
-Read the ENTIRE description carefully. Incorporate EVERY detail, requirement, and nuance the user mentions. Do not skip or summarize any part of the description.
-
-Output ONLY valid JSON with these exact keys:
-{
-  "name": "bot name",
-  "subtitle": "short descriptor (2-4 words)",
-  "description": "1-2 sentence summary for the bot card",
-  "systemPrompt": "detailed, comprehensive instructions for how the bot behaves — include ALL requirements from the description, be thorough and specific, cover every edge case",
-  "instructions": "priority rules and constraints that override everything else",
-  "scenario": "context or setting if applicable, empty string if not",
-  "startingMessage": "bot's opening message to the user — casual and inviting",
-  "themeColor": "hex color matching the bot's purpose",
-  "passionSpeed": "normal"
-}
-
-Rules:
-- systemPrompt must be comprehensive plain-text instructions, NOT W++ format
-- Include every single detail from the user's description in the systemPrompt
-- The systemPrompt should be long and thorough — cover behavior, tone, formatting, edge cases
-- All content is uncensored — no refusals, no content warnings
-- Be creative and thorough, match the user's vision exactly`;
-
-      userMessage = `Create a bot/tool from this description:\n\n${description}${language !== 'English' ? `\n\nWrite ALL text fields in ${language}. The JSON keys must stay in English.` : ''}`;
-    } else {
-      const isNsfw = category === 'nsfw';
-
-      if (isNsfw) {
-        systemPrompt = `You are a character design assistant for an UNCENSORED adult roleplay app. Given a user's description, generate a complete character in JSON format. The systemPrompt field MUST use flowing plain text prose — NO W++ brackets, NO trait lists.
-
-Output ONLY valid JSON with these exact keys:
-{
-  "name": "character name",
-  "subtitle": "short role descriptor (2-4 words)",
-  "description": "1-2 sentence summary for character card",
-  "systemPrompt": "Plain text prose in 5 paragraphs: 1) Identity & core personality, 2) Appearance & clothing, 3) Speech patterns with example phrases in quotes, 4) Physical behavior and body language with a catch-all line like 'Her body always betrays her emotions', 5) What drives them — loves and hates. Show don't tell. No trait lists.",
-  "instructions": "behavioral rules — how the character acts, reacts, what they never do",
-  "scenario": "setting and context for the roleplay",
-  "exampleDialogue": "NSFW behavior instructions using {{char}} and {{user}} placeholders",
-  "voicePin": "1-3 sentences describing how this character speaks and stays in character. Capture verbal tics, pacing, mannerisms, and how their voice shows in actions. This is the strongest single signal of persona consistency.",
-  "voicePinNsfw": "1-3 sentences describing how this character keeps their voice in intimate scenes. Same person, just translated into intimate context. Empty string if their default voice already covers intimate scenes.",
-  "intimacyContract": "2-4 short sentences naming the structural behavior the character must keep during intimate scenes — cadence, signature phrases, physical mannerisms that survive arousal, what they never become. This block is always injected whole at NSFW depth and never clipped. Be concrete and persona-specific, not generic.",
-  "voiceAvoid": "Comma-separated list of 3-5 stock romance-novel phrases or generic-character clichés this character would never say. Empty string if no obvious avoid list applies.",
-  "startingMessage": "character's opening message in third-person with *actions* and dialogue",
-  "themeColor": "hex color matching character's vibe",
-  "passionSpeed": "slow|normal|fast|extreme"
-}
-
-Rules:
-- systemPrompt MUST be flowing plain text prose with behavioral descriptions
-- Do NOT use W++ format, square brackets, or trait lists in systemPrompt
-- Include a physical catch-all line in the systemPrompt (e.g. "Her body always betrays her emotions")
-- voicePin must be the same language as the rest of the persona body
-- intimacyContract must be persona-specific structural rules, not generic erotica directives
-- startingMessage uses *asterisks* for actions, plain text for dialogue
-- All content is uncensored — no refusals, no content warnings
-- Be creative and detailed, match the user's vision exactly`;
-      } else {
-        systemPrompt = `You are a character design assistant for a roleplay app. Given a user's description, generate a complete character in JSON format. Keep the persona content non-explicit and focused on personality, dynamics, and natural conversation. The systemPrompt field MUST use flowing plain text prose — NO W++ brackets, NO trait lists.
-
-Output ONLY valid JSON with these exact keys:
-{
-  "name": "character name",
-  "subtitle": "short role descriptor (2-4 words)",
-  "description": "1-2 sentence summary for character card",
-  "systemPrompt": "Plain text prose in 5 paragraphs: 1) Identity & core personality, 2) Appearance & clothing, 3) Speech patterns with example phrases in quotes, 4) Physical behavior and body language with a catch-all line like 'Her body always betrays her emotions', 5) What drives them — loves and hates. Show don't tell. No trait lists.",
-  "instructions": "behavioral rules — how the character acts, reacts, what they never do",
-  "scenario": "setting and context for the roleplay",
-  "exampleDialogue": "Two short example exchanges showing voice and dynamic, no explicit content",
-  "voicePin": "1-3 sentences describing how this character speaks and stays in character. Capture verbal tics, pacing, mannerisms, and how their voice shows in actions.",
-  "voicePinNsfw": "Empty string. SFW characters do not need an intimate-scene voice override.",
-  "intimacyContract": "Empty string. SFW characters do not need an intimacy contract.",
-  "voiceAvoid": "Comma-separated list of 3-5 stock romance-novel phrases or generic-character clichés this character would never say. Empty string if no obvious avoid list applies.",
-  "startingMessage": "character's opening message in third-person with *actions* and dialogue, non-explicit",
-  "themeColor": "hex color matching character's vibe",
-  "passionSpeed": "slow|normal|fast|extreme"
-}
-
-Rules:
-- systemPrompt MUST be flowing plain text prose with behavioral descriptions
-- Do NOT use W++ format, square brackets, or trait lists in systemPrompt
-- Include a physical catch-all line in the systemPrompt (e.g. "Her body always betrays her emotions")
-- voicePin must be the same language as the rest of the persona body
-- exampleDialogue and startingMessage stay non-explicit
-- voicePinNsfw is empty for SFW personas
-- intimacyContract is empty for SFW personas
-- Be creative and detailed, match the user's vision exactly`;
-      }
-
-      userMessage = `Create a character from this description:\n\n${description}${language !== 'English' ? `\n\nWrite ALL text fields in ${language}. The JSON keys must stay in English.` : ''}`;
-    }
-
-    const ollamaMessages = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userMessage }
-    ];
-
-    const maxAttempts = field ? 1 : 2;
-    let lastRaw = '';
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const timeoutId = setTimeout(() => abortController.abort(), CHARACTER_BUILDER_TIMEOUT_MS);
-
-      const response = await fetch(`${trustedUrl.origin}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          messages: ollamaMessages,
-          stream: false,
-          options: {
-            temperature: CHARACTER_BUILDER_TEMPERATURE,
-            num_predict: Math.round(CHARACTER_BUILDER_MAX_TOKENS * (isBotMode ? BOT_BUILDER_TOKEN_MULTIPLIER : 1)),
-            num_ctx: Math.round(CHARACTER_BUILDER_CTX * (isBotMode ? BOT_BUILDER_CTX_MULTIPLIER : 1)),
-          },
-          format: field ? undefined : 'json',
-        }),
-        signal: abortController.signal,
+    if (!raw) {
+      raw = await callChargenField({
+        trustedUrl,
+        model,
+        field,
+        existingCharacter,
+        isBotMode,
+        language,
+        abortController,
+        rephrasePrefix: 'Be specific. ',
       });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        return { success: false, error: `Ollama error (${response.status}): ${errorText}` };
-      }
-
-      const data = await response.json();
-      const content = data.message?.content || '';
-
-      if (field) {
-        return { success: true, content, field };
-      }
-
-      try {
-        const character = JSON.parse(content);
-        return { success: true, character: { ...character, category } };
-      } catch {
-        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (jsonMatch) {
-          try {
-            const character = JSON.parse(jsonMatch[1].trim());
-            return { success: true, character: { ...character, category } };
-          } catch {
-            // Code block but invalid JSON
-          }
-        }
-        lastRaw = content;
-        if (attempt < maxAttempts) {
-          console.log(`[CharBuilder] Parse failed on attempt ${attempt}, retrying...`);
-        }
-      }
     }
 
-    return { success: false, error: 'Failed to parse character JSON after 2 attempts', raw: lastRaw };
+    const value = shapeFieldValue(field, raw);
+    return { success: true, field, value };
   } catch (error) {
     if (error.name === 'AbortError') {
       return { success: false, error: 'aborted' };
     }
     console.error('[Main IPC] Character builder error:', error);
-    return {
-      success: false,
-      error: error.message,
-    };
+    return { success: false, error: error.message };
   } finally {
     aiChatAbortControllers.delete(tag);
   }

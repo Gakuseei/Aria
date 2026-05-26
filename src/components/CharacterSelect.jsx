@@ -9,6 +9,9 @@ import downloadBlob from '../utils/downloadBlob';
 import { translations } from '../lib/translations';
 import { normalizeResponseMode } from '../lib/responseModes';
 import { buildEnvelope, stringifyEnvelope, parseEnvelope, buildExportFilename } from '../lib/exportEnvelope';
+import { PERSONA_SCHEMA, buildEmptyPersona } from '../lib/persona/schema';
+
+const LEGACY_PASSTHROUGH_KEYS = ['personaType', 'styleBrief', 'language', 'tags', 'exampleDialogue'];
 
 const CUSTOM_CHARACTERS_KEY = 'custom_characters';
 const LEGACY_CUSTOM_CHARACTERS_KEY = 'customCharacters';
@@ -480,29 +483,22 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
         return;
       }
 
-      const newCharacter = {
-        id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-        name: data.name,
-        subtitle: data.subtitle || characterSelectText.importedCharacter,
-        description: data.description || characterSelectText.importedDescription,
-        systemPrompt: data.systemPrompt,
-        instructions: data.instructions || '',
-        scenario: data.scenario || '',
-        exampleDialogue: data.exampleDialogue || '',
-        themeColor: data.themeColor || '#ef4444',
-        avatarBase64: data.avatarBase64 || null,
-        startingMessage: data.startingMessage,
-        greeting: data.startingMessage,
-        type: data.type || 'character',
-        responseMode: normalizeResponseMode(data.responseMode ?? data.responseStyle, 'normal'),
-        passionEnabled: data.passionEnabled ?? true,
-        passionSpeed: data.passionSpeed || 'normal',
-        personaType: data.personaType === 'narrator' ? 'narrator' : 'character',
-        styleBrief: data.styleBrief || '',
-        language: data.language || '',
-        tags: Array.isArray(data.tags) ? data.tags : [],
-        isCustom: true,
-      };
+      const newCharacter = buildEmptyPersona();
+      for (const key of Object.keys(PERSONA_SCHEMA)) {
+        if (PERSONA_SCHEMA[key].auto) continue;
+        if (Object.prototype.hasOwnProperty.call(data, key) && data[key] !== undefined && data[key] !== null) {
+          newCharacter[key] = data[key];
+        }
+      }
+      newCharacter.subtitle = newCharacter.subtitle || characterSelectText.importedCharacter;
+      newCharacter.description = newCharacter.description || characterSelectText.importedDescription;
+      newCharacter.responseMode = normalizeResponseMode(data.responseMode ?? data.responseStyle, 'normal');
+      newCharacter.isCustom = true;
+      for (const key of LEGACY_PASSTHROUGH_KEYS) {
+        if (Object.prototype.hasOwnProperty.call(data, key) && data[key] !== undefined && data[key] !== null) {
+          newCharacter[key] = data[key];
+        }
+      }
 
       const nextCustomCharacters = [...customCharacters, newCharacter];
       saveCustomCharactersAndOrganizer(nextCustomCharacters);
@@ -519,26 +515,23 @@ function CharacterSelect({ onSelect, onBack, onCreateCharacter, onAIBuilder }) {
     event.stopPropagation();
 
     try {
-      const payload = {
-        name: character.name,
-        subtitle: character.subtitle,
-        description: character.description,
-        systemPrompt: character.systemPrompt,
-        instructions: character.instructions || '',
-        scenario: character.scenario || '',
-        exampleDialogue: character.exampleDialogue || '',
-        themeColor: character.themeColor,
-        startingMessage: character.startingMessage,
-        type: character.type || 'character',
-        responseMode: normalizeResponseMode(character.responseMode ?? character.responseStyle, 'normal'),
-        passionEnabled: character.passionEnabled ?? true,
-        passionSpeed: character.passionSpeed || 'normal',
-        personaType: character.personaType === 'narrator' ? 'narrator' : 'character',
-        styleBrief: character.styleBrief || '',
-        language: character.language || '',
-        tags: Array.isArray(character.tags) ? character.tags : [],
-        avatarBase64: character.avatarBase64 || null,
-      };
+      const payload = {};
+      for (const [key, field] of Object.entries(PERSONA_SCHEMA)) {
+        if (field.auto) continue;
+        const value = character[key];
+        if (value === undefined) {
+          if (Array.isArray(field.default)) payload[key] = [...field.default];
+          else payload[key] = field.default;
+        } else {
+          payload[key] = value;
+        }
+      }
+      payload.responseMode = normalizeResponseMode(character.responseMode ?? character.responseStyle, 'normal');
+      for (const key of LEGACY_PASSTHROUGH_KEYS) {
+        if (Object.prototype.hasOwnProperty.call(character, key) && character[key] !== undefined && character[key] !== null) {
+          payload[key] = character[key];
+        }
+      }
 
       const envelope = buildEnvelope('character', payload);
       const blob = new Blob([stringifyEnvelope(envelope)], { type: 'application/json' });

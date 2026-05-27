@@ -299,7 +299,8 @@ export const sendMessage = async (
           signal: fetchController.signal,
           body: JSON.stringify({
             model, messages, stream: !!onToken,
-            options: chatOptions,
+            keep_alive: '30m',
+            options: { ...chatOptions, cache_prompt: true },
             stop: stopSequences
           })
         });

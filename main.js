@@ -549,7 +549,8 @@ ipcMain.handle('ai-chat', async (event, params) => {
         model: model || loadSettingsSync().ollamaModel || DEFAULT_MODEL_NAME,
         messages: ollamaMessages,
         stream: false,
-        options: { ...options, stop: [...(options.stop || []), ...(Array.isArray(stop) ? stop : [])] },
+        keep_alive: '30m',
+        options: { ...options, cache_prompt: true, stop: [...(options.stop || []), ...(Array.isArray(stop) ? stop : [])] },
         ...(format ? { format } : {})
       }),
       signal: abortController.signal,
@@ -862,7 +863,8 @@ ipcMain.handle('ollama-chat-stream', async (event, params) => {
         model,
         messages,
         stream: true,
-        options: { ...options, stop: [...(options.stop || []), ...(Array.isArray(stop) ? stop : [])] }
+        keep_alive: '30m',
+        options: { ...options, cache_prompt: true, stop: [...(options.stop || []), ...(Array.isArray(stop) ? stop : [])] }
       })
     });
 

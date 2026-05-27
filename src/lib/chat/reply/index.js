@@ -182,7 +182,7 @@ export const sendMessage = async (
       chatOptions.dry_allowed_length = profile.flags.dryAllowedLength ?? 2;
       chatOptions.dry_penalty_last_n = profile.flags.dryPenaltyLastN ?? 512;
     }
-    const stopSequences = ['\nUser:', '\nHuman:', `\n${userName}:`, `\n${character.name}:`, '\nAssistant:', '\nAI:', '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>', '<|start_header_id|>'];
+    const stopSequences = [`\n${userName}:`, '<|endoftext|>', '<|im_start|>', '<|im_end|>', '<|eot_id|>', '<|start_header_id|>'];
 
     let data;
 

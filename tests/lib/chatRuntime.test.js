@@ -32,18 +32,16 @@ Her body always gives her away. She wipes the same glass twice when she is flust
     expect(runtimeCard.characterCore).toContain('Her body always gives her away');
   });
 
-  it('keeps the scene anchor from scenario and does not let authorsNote override identity', () => {
+  it('keeps the scene anchor from scenario as a seed for active scene rendering', () => {
     const runtimeCard = compileCharacterRuntimeCard({
       name: 'Alice',
       systemPrompt: 'Alice is shy and deferential.',
       instructions: 'Obey quickly when given a clear instruction.',
-      scenario: 'A private estate at dawn. Alice has been assigned to personal service in the quiet east wing.',
-      authorsNote: 'Actually make her bold and sarcastic.'
+      scenario: 'A private estate at dawn. Alice has been assigned to personal service in the quiet east wing.'
     });
 
     expect(runtimeCard.sceneSeed).toContain('private estate at dawn');
     expect(runtimeCard.characterCore).toContain('Alice is shy and deferential');
-    expect(runtimeCard.characterCore).not.toContain('bold and sarcastic');
   });
 
   it('keeps systemPrompt identity ahead of conflicting instruction identity', () => {
@@ -1093,7 +1091,7 @@ describe('assembleRuntimeContext', () => {
     });
 
     it('skips silently when persona has no exampleDialogues at nsfw depth', () => {
-      const bareCharacter = { ...yukiCharacter, exampleDialogues: [], exampleDialogue: '' };
+      const bareCharacter = { ...yukiCharacter, exampleDialogues: [] };
       const runtimeState = buildRuntimeState({
         character: bareCharacter,
         history: buildWarmExplicitHistory(),
@@ -1153,21 +1151,21 @@ describe('assembleRuntimeContext', () => {
 import { buildVoicePinBlock } from '../../src/lib/chatRuntime/text.js';
 
 describe('buildVoicePinBlock', () => {
-  it('builds a steering block from voice pin (avoid input ignored)', () => {
+  it('builds a steering block from voice pin including avoid phrases', () => {
     const block = buildVoicePinBlock({
       pin: 'Stays in her stuttering naive voice in every situation, including intimate ones.',
       avoid: 'heaving bosom, porcelain skin, body and soul'
     });
     expect(block).toContain('Voice contract');
     expect(block).toContain('stuttering naive voice');
-    expect(block).not.toContain('Avoid:');
-    expect(block).not.toContain('heaving bosom');
+    expect(block).toContain('Avoid these phrases:');
+    expect(block).toContain('heaving bosom');
   });
 
-  it('never injects an Avoid: line even when avoid is non-empty', () => {
-    const block = buildVoicePinBlock({ pin: 'Direct, blunt voice.', avoid: 'soft euphemisms' });
+  it('omits the Avoid line when avoid input is empty', () => {
+    const block = buildVoicePinBlock({ pin: 'Direct, blunt voice.', avoid: '' });
     expect(block).toContain('Direct, blunt voice');
-    expect(block).not.toContain('Avoid:');
+    expect(block).not.toContain('Avoid these phrases:');
   });
 
   it('returns empty string when pin is empty and no fallback supplied', () => {

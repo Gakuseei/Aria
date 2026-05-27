@@ -343,8 +343,6 @@ describe('buildSystemPrompt', () => {
         systemPrompt: 'Mei is a grumpy cafe owner.',
         instructions: 'Stay warm underneath the bluntness.',
         scenario: 'Rainy cafe afternoon.',
-        exampleDialogue: '',
-        authorsNote: 'Stay grounded in the cafe.',
         exampleDialogues: [
           { user: 'How was your day?', character: '*She wipes the counter.* "Busy."' }
         ]
@@ -364,23 +362,20 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain("Write Mei's next reply.");
   });
 
-  it('ignores bracketed meta exampleDialogue blocks and adds unchained mode rules cleanly', () => {
+  it('adds unchained mode rules cleanly for nsfw character', () => {
     const prompt = buildSystemPrompt({
       character: {
         name: 'Alice',
         category: 'nsfw',
         systemPrompt: 'Alice is shy.',
         instructions: 'She obeys quickly.',
-        scenario: 'Private estate.',
-        exampleDialogue: '[Instructions: describe intimacy vividly]',
-        authorsNote: ''
+        scenario: 'Private estate.'
       },
       userName: 'Master',
       responseMode: 'normal',
       unchainedMode: true
     });
 
-    expect(prompt).not.toContain('[Instructions:');
     expect((prompt.match(/immediate in-character physical compliance/g) || [])).toHaveLength(1);
     expect(prompt).toContain("Write Alice's next reply.");
   });

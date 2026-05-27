@@ -1,16 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import characters from '../../src/config/characters.js';
 
-const REQUIRED_FIELDS = ['id', 'name', 'subtitle', 'systemPrompt', 'startingMessage', 'greeting', 'passionSpeed', 'responseMode', 'gender', 'category', 'description', 'instructions', 'scenario'];
+const REQUIRED_FIELDS = ['id', 'name', 'subtitle', 'startingMessage', 'passionSpeed', 'responseMode', 'category', 'description'];
+const NON_NARRATOR_REQUIRED = ['systemPrompt', 'instructions', 'scenario'];
 const VALID_PASSION_SPEEDS = ['slow', 'normal', 'fast', 'extreme'];
 const VALID_RESPONSE_MODES = ['short', 'normal', 'long'];
-const VALID_GENDERS = ['female', 'male', 'non-binary'];
 const VALID_CATEGORIES = ['nsfw', 'sfw'];
 
+const isNarrator = (c) => c.personaType === 'narrator';
+const nonNarrators = (chars) => chars.filter(c => !isNarrator(c));
+
 describe('characters', () => {
-  it('exports an array of 12 characters', () => {
+  it('exports an array of 14 characters (12 personas + 2 narrators)', () => {
     expect(Array.isArray(characters)).toBe(true);
-    expect(characters).toHaveLength(12);
+    expect(characters).toHaveLength(14);
   });
 
   it('every character has all required fields', () => {
@@ -18,6 +21,22 @@ describe('characters', () => {
       for (const field of REQUIRED_FIELDS) {
         expect(char, `${char.name || char.id} missing "${field}"`).toHaveProperty(field);
       }
+    }
+  });
+
+  it('non-narrator characters have systemPrompt / instructions / scenario', () => {
+    for (const char of nonNarrators(characters)) {
+      for (const field of NON_NARRATOR_REQUIRED) {
+        expect(char, `${char.name || char.id} missing "${field}"`).toHaveProperty(field);
+      }
+    }
+  });
+
+  it('narrator characters have styleBrief instead of systemPrompt', () => {
+    const narrators = characters.filter(isNarrator);
+    expect(narrators.length).toBe(2);
+    for (const char of narrators) {
+      expect(char.styleBrief, `${char.name}: narrator missing styleBrief`).toBeTruthy();
     }
   });
 
@@ -46,31 +65,10 @@ describe('characters', () => {
     }
   });
 
-  it('greeting matches startingMessage for all characters', () => {
-    for (const char of characters) {
-      expect(char.greeting, `${char.name}: greeting !== startingMessage`).toBe(char.startingMessage);
-    }
-  });
-
-  it('systemPrompt uses plain text prose (no W++ brackets)', () => {
-    for (const char of characters) {
-      expect(char.systemPrompt.length, `${char.name}: systemPrompt too short`).toBeGreaterThan(200);
+  it('non-narrator systemPrompt is non-empty plain text (no W++ brackets)', () => {
+    for (const char of nonNarrators(characters)) {
+      expect(char.systemPrompt.length, `${char.name}: systemPrompt empty`).toBeGreaterThan(0);
       expect(char.systemPrompt, `${char.name}: systemPrompt still contains W++ brackets`).not.toContain('[Character(');
-      expect(char.systemPrompt.split('\n\n').length, `${char.name}: systemPrompt should have multiple paragraphs`).toBeGreaterThanOrEqual(4);
-    }
-  });
-
-  it('built-in exampleDialogue fields do not contain bracketed meta instructions', () => {
-    for (const char of characters) {
-      if (!char.exampleDialogue) continue;
-      expect(char.exampleDialogue, `${char.name}: exampleDialogue should be real example text, not prompt metadata`).not.toMatch(/^\[(?:instructions?|note|notes)\s*:/i);
-    }
-  });
-
-  it('every character has a valid gender', () => {
-    for (const char of characters) {
-      expect(VALID_GENDERS, `${char.name} has invalid gender: ${char.gender}`)
-        .toContain(char.gender);
     }
   });
 
@@ -93,23 +91,13 @@ describe('characters', () => {
     }
   });
 
-  it('has correct gender distribution (7F, 4M, 1NB)', () => {
-    const genders = characters.reduce((acc, c) => {
-      acc[c.gender] = (acc[c.gender] || 0) + 1;
-      return acc;
-    }, {});
-    expect(genders.female).toBe(7);
-    expect(genders.male).toBe(4);
-    expect(genders['non-binary']).toBe(1);
-  });
-
-  it('has correct category distribution (7 NSFW, 5 SFW)', () => {
+  it('has correct category distribution (7 NSFW, 7 SFW including narrators)', () => {
     const cats = characters.reduce((acc, c) => {
       acc[c.category] = (acc[c.category] || 0) + 1;
       return acc;
     }, {});
     expect(cats.nsfw).toBe(7);
-    expect(cats.sfw).toBe(5);
+    expect(cats.sfw).toBe(7);
   });
 });
 

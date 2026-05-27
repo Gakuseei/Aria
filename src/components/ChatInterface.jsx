@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, memo } from 'react';
-import { Send, Square, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2, Undo2 } from 'lucide-react';
+import { Send, Square, RotateCcw, Trash2, Download, Upload, Settings as SettingsIcon, ZoomIn, ZoomOut, Info, Sparkles, ArrowLeft, PenLine, X, Check, Loader2, Undo2, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { autoDetectAndSetModel } from '../lib/ollama';
 import { saveSession, generateSessionId, deleteSession } from '../lib/storage/sessions';
@@ -241,6 +241,10 @@ const MessageBubble = memo(function MessageBubble({
   onEditSave,
   onDeleteFrom,
   totalMessages = 0,
+  showGreetingSwipe = false,
+  greetingIndex = 0,
+  greetingTotal = 1,
+  onSwipeGreeting,
 }) {
   const [deleteArmed, setDeleteArmed] = useState(false);
   const armTimerRef = useRef(null);
@@ -347,6 +351,30 @@ const MessageBubble = memo(function MessageBubble({
                 return <span key={i} className="theme-message-body">{part.text}</span>;
               }
             })}
+          </div>
+        )}
+
+        {showGreetingSwipe && !isEditing && (
+          <div className="mt-3 flex items-center gap-2 select-none">
+            <button
+              type="button"
+              onClick={() => onSwipeGreeting?.(-1)}
+              aria-label={t.chat?.alternateGreetingPrev || 'Previous greeting'}
+              className="rounded-md border-2 border-transparent hover:border-rose-500 p-1 text-zinc-400 hover:text-rose-300 transition-colors"
+            >
+              <ChevronLeft size={14} strokeWidth={1.75} />
+            </button>
+            <span className="theme-message-meta text-[11px] font-medium tabular-nums tracking-wider">
+              {greetingIndex + 1}/{greetingTotal}
+            </span>
+            <button
+              type="button"
+              onClick={() => onSwipeGreeting?.(1)}
+              aria-label={t.chat?.alternateGreetingNext || 'Next greeting'}
+              className="rounded-md border-2 border-transparent hover:border-rose-500 p-1 text-zinc-400 hover:text-rose-300 transition-colors"
+            >
+              <ChevronRight size={14} strokeWidth={1.75} />
+            </button>
           </div>
         )}
 
@@ -461,6 +489,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   const [showPassionPopover, setShowPassionPopover] = useState(false);
   const [showChatOptions, setShowChatOptions] = useState(false);
   const [sceneMemory, setSceneMemory] = useState(null);
+  const [greetingIndex, setGreetingIndex] = useState(0);
 
   const isVisible = useEntranceAnimation(100);
   const isGoldMode = useGoldMode();
@@ -516,6 +545,20 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     if (lastAssistantIdx !== messages.length - 1) return -1;
     return lastAssistantIdx;
   }, [lastAssistantIdx, messages.length, isStreaming, isLoading]);
+
+  const greetingPoolSize = useMemo(() => {
+    const alts = Array.isArray(character?.alternateGreetings)
+      ? character.alternateGreetings.filter((g) => typeof g === 'string' && g.trim().length > 0)
+      : [];
+    return 1 + alts.length;
+  }, [character]);
+
+  const canSwipeGreeting = useMemo(() => {
+    if (greetingPoolSize <= 1) return false;
+    if (messages.length !== 1) return false;
+    const only = messages[0];
+    return only && only.role === 'assistant' && !only.isTierEvent;
+  }, [greetingPoolSize, messages]);
 
   const clearSuggestionsState = useCallback(() => {
     abortSuggestionCall();
@@ -791,6 +834,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
           passionManager.setPassion(restoredSessionId, restoredLevel, true);
         }
         setSmartSuggestions(getRestoredSuggestions(loadedSession.messages));
+        setGreetingIndex(typeof loadedSession.greetingIndex === 'number' ? loadedSession.greetingIndex : 0);
 
         return;
       }
@@ -815,20 +859,40 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     return () => { cancelled = true; };
   }, [buildSceneMemory, character, loadedSession, resetSticky]);
 
+  const getGreetingPool = useCallback(() => {
+    const localized = character.id && t.characters && t.characters[character.id] && t.characters[character.id].greeting
+      ? t.characters[character.id].greeting
+      : null;
+    const main = localized || character.greeting || character.startingMessage || `*smiles warmly* Hey! I'm ${character.name}.`;
+    const alts = Array.isArray(character.alternateGreetings) ? character.alternateGreetings.filter((g) => typeof g === 'string' && g.trim().length > 0) : [];
+    return [main, ...alts];
+  }, [character, t]);
+
   const initializeGreeting = () => {
-    let greeting;
-
-    if (character.id && t.characters && t.characters[character.id] && t.characters[character.id].greeting) {
-      greeting = t.characters[character.id].greeting;
-    } else {
-      greeting = character.greeting || character.startingMessage || `*smiles warmly* Hey! I'm ${character.name}.`;
-    }
-
-    greeting = resolveTemplates(greeting, character.name, userName);
+    const pool = getGreetingPool();
+    const startIndex = pool.length > 1 ? Math.floor(Math.random() * pool.length) : 0;
+    const greeting = resolveTemplates(pool[startIndex], character.name, userName);
     const greetingMsg = { role: 'assistant', content: greeting.trim(), timestamp: Date.now() };
     setMessages([greetingMsg]);
+    setGreetingIndex(startIndex);
     const greetingSceneMemory = buildSceneMemory([greetingMsg], null);
     setSceneMemory(greetingSceneMemory);
+  };
+
+  const swipeGreeting = (direction) => {
+    const pool = getGreetingPool();
+    if (pool.length <= 1) return;
+    setGreetingIndex((prevIndex) => {
+      const nextIndex = ((prevIndex + direction) % pool.length + pool.length) % pool.length;
+      const nextContent = resolveTemplates(pool[nextIndex], character.name, userName).trim();
+      setMessages((prev) => {
+        if (!prev.length) return prev;
+        const updated = [...prev];
+        updated[0] = { ...updated[0], content: nextContent };
+        return updated;
+      });
+      return nextIndex;
+    });
   };
 
   useEffect(() => {
@@ -852,6 +916,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
         conversationHistory: messagesToSave,
         sceneMemory: nextSceneMemory,
         passionLevel: passionLevel,
+        greetingIndex,
         mode: character?.personaType === 'narrator' ? GAME_MODES.NARRATOR_CHAT : GAME_MODES.CHARACTER_CHAT,
         lastPrompt: messagesToSave.filter(m => m && m.role === 'user').slice(-1)[0]?.content || ''
       };
@@ -1873,6 +1938,10 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
                 onEditSave={handleEditSave}
                 onDeleteFrom={() => handleDeleteFrom(index)}
                 totalMessages={messages.length}
+                showGreetingSwipe={index === 0 && canSwipeGreeting}
+                greetingIndex={greetingIndex}
+                greetingTotal={greetingPoolSize}
+                onSwipeGreeting={swipeGreeting}
               />
             )
           ))

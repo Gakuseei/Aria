@@ -371,15 +371,15 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     blocks.push(buildPlainTextBlock('User', userBlockText));
     debug.includedBlocks.push('User');
 
-    blocks.push(buildPlainTextBlock('Active Scene', activeScene));
-    debug.includedBlocks.push('Active Scene');
-
     if (exampleSeed) {
       blocks.push(buildPlainTextBlock('Example Seed', exampleSeed));
       debug.includedBlocks.push('Example Seed');
     } else {
       debug.droppedBlocks.push('Example Seed');
     }
+
+    blocks.push(buildPlainTextBlock('Active Scene', activeScene));
+    debug.includedBlocks.push('Active Scene');
 
     blocks.push(buildPlainTextBlock('Late Steering', lateSteering));
     debug.includedBlocks.push('Late Steering');
@@ -394,8 +394,8 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
         clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore),
         appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState),
         buildPlainTextBlock('User', userBlockText),
-        buildPlainTextBlock('Active Scene', activeScene),
         buildPlainTextBlock('Example Seed', exampleSeed),
+        buildPlainTextBlock('Active Scene', activeScene),
         buildPlainTextBlock('Late Steering', lateSteering)
       ].filter(Boolean).join('\n\n');
       totalTokens = estimateTokens(systemPrompt) + historyMessages.reduce((sum, message) => sum + estimateTokens(message.content), 0);
@@ -422,8 +422,8 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
         clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore),
         appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState),
         buildPlainTextBlock('User', userBlockText),
-        buildPlainTextBlock('Active Scene', activeScene),
         exampleSeed ? buildPlainTextBlock('Example Seed', exampleSeed) : '',
+        buildPlainTextBlock('Active Scene', activeScene),
         buildPlainTextBlock('Late Steering', lateSteering)
       ].filter(Boolean).join('\n\n');
       totalTokens = estimateTokens(systemPrompt) + historyMessages.reduce((sum, message) => sum + estimateTokens(message.content), 0);

@@ -119,3 +119,43 @@ describe('built-in characters voice pins', () => {
     expect(sarah.voicePinNsfw).toBeTruthy();
   });
 });
+
+describe('alternate greetings', () => {
+  it('every character has an alternateGreetings array field', () => {
+    for (const char of characters) {
+      expect(char, `${char.name || char.id}: alternateGreetings missing`).toHaveProperty('alternateGreetings');
+      expect(Array.isArray(char.alternateGreetings), `${char.name}: alternateGreetings must be array`).toBe(true);
+    }
+  });
+
+  it('every character has at most 5 alternate greetings', () => {
+    for (const char of characters) {
+      expect(char.alternateGreetings.length, `${char.name}: alternateGreetings exceeds cap of 5`).toBeLessThanOrEqual(5);
+    }
+  });
+
+  it('non-empty alternate greetings are non-empty strings', () => {
+    for (const char of characters) {
+      for (const [i, entry] of char.alternateGreetings.entries()) {
+        expect(typeof entry, `${char.name}.alternateGreetings[${i}] must be string`).toBe('string');
+        expect(entry.trim().length, `${char.name}.alternateGreetings[${i}] is empty`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('Alice ships exactly 2 alternate greetings (lunch + evening)', () => {
+    const alice = characters.find(c => c.id === 'alice_maid');
+    expect(alice).toBeDefined();
+    expect(alice.alternateGreetings.length).toBe(2);
+    for (const entry of alice.alternateGreetings) {
+      expect(entry.length, 'Alice alt greeting too short').toBeGreaterThan(400);
+    }
+  });
+
+  it('non-Alice characters ship empty alternateGreetings (parity only)', () => {
+    for (const char of characters) {
+      if (char.id === 'alice_maid') continue;
+      expect(char.alternateGreetings.length, `${char.name} should ship empty alternateGreetings`).toBe(0);
+    }
+  });
+});

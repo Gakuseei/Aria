@@ -591,6 +591,7 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   const mountedRef = useRef(true);
   const messagesRef = useRef([]);
   const sceneMemoryRef = useRef(null);
+  const lastSceneMemoryMessagesRef = useRef(null);
   const saveCurrentSessionRef = useRef(null);
   const lastTurnBannedPhrasesRef = useRef([]);
 
@@ -612,7 +613,9 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
   ), [character, userName]);
 
   useEffect(() => {
+    if (lastSceneMemoryMessagesRef.current === messages) return;
     const nextSceneMemory = buildSceneMemory(messages);
+    lastSceneMemoryMessagesRef.current = messages;
     if (!sameSceneMemory(sceneMemoryRef.current, nextSceneMemory)) {
       sceneMemoryRef.current = nextSceneMemory;
       setSceneMemory(nextSceneMemory);
@@ -1005,6 +1008,11 @@ export default function ChatInterface({ character, loadedSession, onBack, onOpen
     const userMessage = messagesForGeneration[messagesForGeneration.length - 1];
     const safeMessageText = (userMessage?.content || '').trim();
     const runtimeSceneMemory = buildSceneMemory(messagesForGeneration);
+    lastSceneMemoryMessagesRef.current = messagesForGeneration;
+    if (!sameSceneMemory(sceneMemoryRef.current, runtimeSceneMemory)) {
+      sceneMemoryRef.current = runtimeSceneMemory;
+      setSceneMemory(runtimeSceneMemory);
+    }
 
     if (abortRef.current) abortRef.current.abort();
     const activeAbortHandle = createStreamAbortHandle();

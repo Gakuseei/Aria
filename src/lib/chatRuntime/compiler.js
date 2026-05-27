@@ -211,7 +211,43 @@ export function compileNarratorRuntimeCard(character = {}) {
   };
 }
 
+const RUNTIME_CARD_CACHE = new Map();
+const RUNTIME_CARD_CACHE_MAX = 16;
+
+function buildRuntimeCardCacheKey(character) {
+  if (character.id && character.updatedAt) {
+    return `${character.id}::${character.updatedAt}`;
+  }
+  const sig = [
+    character.name || '',
+    character.category || '',
+    character.personaType || '',
+    String(character.description || '').length,
+    String(character.personality || '').length,
+    String(character.systemPrompt || '').length,
+    String(character.instructions || '').length,
+    String(character.scenario || '').length,
+    String(character.intimacyContract || '').length,
+    Array.isArray(character.exampleDialogues) ? character.exampleDialogues.length : 0,
+    character.responseMode || character.responseStyle || ''
+  ].join('|');
+  return `static::${sig}`;
+}
+
 export function compileCharacterRuntimeCard(character = {}) {
+  const cacheKey = buildRuntimeCardCacheKey(character);
+  const cached = RUNTIME_CARD_CACHE.get(cacheKey);
+  if (cached) return cached;
+  const result = compileCharacterRuntimeCardImpl(character);
+  RUNTIME_CARD_CACHE.set(cacheKey, result);
+  if (RUNTIME_CARD_CACHE.size > RUNTIME_CARD_CACHE_MAX) {
+    const firstKey = RUNTIME_CARD_CACHE.keys().next().value;
+    RUNTIME_CARD_CACHE.delete(firstKey);
+  }
+  return result;
+}
+
+function compileCharacterRuntimeCardImpl(character = {}) {
   const type = inferCharacterType(character);
   const name = String(character.name || 'Character').trim() || 'Character';
   const description = String(character.description || '').trim();

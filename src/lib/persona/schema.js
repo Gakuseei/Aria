@@ -14,6 +14,7 @@ export const PERSONA_SCHEMA = {
   instructions:     { type: 'string',  default: '' },
   exampleDialogues: { type: 'array',   default: [] },
   startingMessage:  { type: 'string',  default: '', required: true },
+  alternateGreetings: { type: 'array', default: [] },
 
   voicePin:         { type: 'string',  default: '' },
   voicePinNsfw:     { type: 'string',  default: '' },

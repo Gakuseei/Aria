@@ -12,11 +12,11 @@ const RESPONSE_MODE_CONFIG = {
   },
   normal: {
     labelKey: 'responseModeNormal',
-    tokenCap: 384,
+    tokenCap: 200,
     sentenceMax: 7,
     paragraphMax: 2,
     charMax: 620,
-    promptInstruction: 'Keep replies focused and natural. Usually stay within 1-2 short paragraphs, carry only one strong beat forward, and avoid sprawling narration unless the user explicitly asks for more detail.',
+    promptInstruction: 'Usually one short paragraph (~120-150 tokens). One strong beat. Avoid sprawling narration.',
     rewriteInstruction: 'Tighten the reply to a focused length. Avoid sprawling narration and keep only the strongest details.'
   },
   long: {

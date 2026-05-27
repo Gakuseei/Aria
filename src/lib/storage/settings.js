@@ -22,7 +22,7 @@ const DEFAULT_SETTINGS = {
   userName: 'User',
   userGender: 'male',
   userPronouns: 'he/him',
-  maxResponseTokens: 256,
+  maxResponseTokens: 200,
   write4meEnabled: false,
   smartSuggestionsEnabled: false
 };

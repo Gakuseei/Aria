@@ -482,7 +482,8 @@ export const sendMessage = async (
             signal: retryCtrl.signal,
             body: JSON.stringify({
               model, messages: retryMessages, stream: false,
-              options: { ...chatOptions, temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx },
+              keep_alive: '30m',
+              options: { ...chatOptions, temperature: 0.5, num_predict: numPredict, num_ctx: modelCtx, cache_prompt: true },
               stop: stopSequences
             })
           });

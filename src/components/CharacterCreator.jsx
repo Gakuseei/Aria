@@ -46,6 +46,28 @@ function CharacterCreator({ onSave, onBack }) {
     }));
   };
 
+  const addAlternateGreeting = () => {
+    if ((formData.alternateGreetings || []).length >= 5) return;
+    setFormData(prev => ({
+      ...prev,
+      alternateGreetings: [...(prev.alternateGreetings || []), '']
+    }));
+  };
+
+  const updateAlternateGreeting = (index, value) => {
+    setFormData(prev => ({
+      ...prev,
+      alternateGreetings: (prev.alternateGreetings || []).map((g, i) => (i === index ? value : g))
+    }));
+  };
+
+  const removeAlternateGreeting = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      alternateGreetings: (prev.alternateGreetings || []).filter((_, i) => i !== index)
+    }));
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -95,6 +117,9 @@ function CharacterCreator({ onSave, onBack }) {
     if (!validate()) return;
 
     const trimmedStartingMessage = formData.startingMessage.trim();
+    const trimmedAlternateGreetings = Array.isArray(formData.alternateGreetings)
+      ? formData.alternateGreetings.map((g) => (typeof g === 'string' ? g.trim() : '')).filter((g) => g.length > 0).slice(0, 5)
+      : [];
     const character = {
       id: formData.id,
       name: formData.name.trim(),
@@ -108,6 +133,7 @@ function CharacterCreator({ onSave, onBack }) {
       themeColor: formData.themeColor,
       avatarBase64: formData.avatarBase64 || null,
       startingMessage: trimmedStartingMessage,
+      alternateGreetings: trimmedAlternateGreetings,
       type: formData.type,
       category: formData.category || 'sfw',
       responseMode: normalizeResponseMode(formData.responseMode, 'normal'),
@@ -140,6 +166,7 @@ function CharacterCreator({ onSave, onBack }) {
         themeColor: '#ef4444',
         avatarBase64: '',
         startingMessage: t.characterCreator.blankTemplateStartingMessage || '*smiles warmly* "Hello! How can I help you today?"',
+        alternateGreetings: [],
         responseMode: 'normal',
         passionEnabled: true,
         passionSpeed: 'normal',
@@ -161,6 +188,7 @@ function CharacterCreator({ onSave, onBack }) {
         themeColor: '#dc2626',
         avatarBase64: '',
         startingMessage: t.characterCreator.nsfwTemplateStartingMessage || '*leans closer with a sly grin* "Hey there... what brings you here?"',
+        alternateGreetings: [],
         responseMode: 'normal',
         passionEnabled: true,
         passionSpeed: 'fast',
@@ -573,6 +601,58 @@ function CharacterCreator({ onSave, onBack }) {
                 <p className="text-xs text-zinc-600 mt-1">
                   {t.characterCreator.startingMessageTipV2 || t.characterCreator.startingMessageTip}
                 </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  {t.characterCreator?.alternateGreetings || 'Alternate Greetings'}
+                  <span className="text-zinc-500 text-xs ml-2">({(formData.alternateGreetings || []).length}/5)</span>
+                </label>
+                <p className="text-xs text-zinc-600 mb-3">
+                  {t.characterCreator?.alternateGreetingsHelp || 'Optional. Up to 5 alternative openings. Users can swipe through them at chat start.'}
+                </p>
+
+                <div className="space-y-3">
+                  {(formData.alternateGreetings || []).map((value, index) => (
+                    <div key={index} className="bg-zinc-900/50 border border-zinc-700/50 rounded-lg p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-zinc-500 font-medium">#{index + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeAlternateGreeting(index)}
+                          className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          {t.characterCreator?.removeAlternateGreeting || t.characterCreator.removeExample}
+                        </button>
+                      </div>
+                      <textarea
+                        value={value}
+                        onChange={(e) => updateAlternateGreeting(index, e.target.value)}
+                        placeholder={t.characterCreator?.alternateGreetingPlaceholder || t.characterCreator.startingMessagePlaceholderV2 || t.characterCreator.startingMessagePlaceholder}
+                        rows={4}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm resize-none focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+                      />
+                      <div className="text-[11px] text-zinc-500 tabular-nums">
+                        {value.length} {t.characterCreator?.characters || 'characters'} · ~{Math.round(value.length / 4)} tok
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {(formData.alternateGreetings || []).length < 5 ? (
+                  <button
+                    type="button"
+                    onClick={addAlternateGreeting}
+                    className="mt-3 px-4 py-2 rounded-lg bg-zinc-700/30 border-2 border-transparent text-zinc-300 hover:bg-zinc-700/50 hover:border-rose-500 hover:text-white transition-all text-sm flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    {t.characterCreator?.addAlternateGreeting || t.characterCreator.addExample}
+                  </button>
+                ) : (
+                  <p className="mt-2 text-xs text-zinc-500">{t.characterCreator?.maxAlternateGreetingsReached || 'Maximum 5 alternate greetings'}</p>
+                )}
               </div>
 
               <div>

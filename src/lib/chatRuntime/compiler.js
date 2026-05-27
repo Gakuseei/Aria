@@ -15,11 +15,6 @@ function normalizeResponseMode(responseMode) {
   return responseMode === 'short' || responseMode === 'long' ? responseMode : 'normal';
 }
 
-function isMetaInstructionBlock(text) {
-  const cleaned = String(text || '').trim();
-  return /^\[(?:instructions?|note|notes)\s*:/i.test(cleaned) && cleaned.endsWith(']');
-}
-
 function createParagraphEntries(text, source) {
   return splitParagraphs(text).map((paragraph, index) => ({ text: paragraph, source, index }));
 }
@@ -159,13 +154,7 @@ function buildExampleSeed(character) {
     })
     .filter(Boolean);
 
-  if (structuredExamples.length > 0) {
-    return structuredExamples.join('\n\n');
-  }
-
-  const exampleDialogue = String(character.exampleDialogue || '').trim();
-  if (!exampleDialogue || isMetaInstructionBlock(exampleDialogue)) return '';
-  return exampleDialogue;
+  return structuredExamples.join('\n\n');
 }
 
 function detectExampleDependency(systemPrompt, instructions, exampleSeed) {
@@ -173,48 +162,6 @@ function detectExampleDependency(systemPrompt, instructions, exampleSeed) {
   const voiceSignals = [systemPrompt, instructions].filter(Boolean).join('\n');
   const voiceHintCount = (voiceSignals.match(/\b(voice|speaks?|speech|tone|calls?|laughs?|whispers?|murmurs?|says?)\b/gi) || []).length;
   return voiceHintCount < 2;
-}
-
-function scoreAnchorSentence(sentence) {
-  let score = 0;
-  if (VOICE_PATTERN.test(sentence)) score += 8;
-  if (POSTURE_PATTERN.test(sentence)) score += 6;
-  if (BEHAVIOR_PATTERN.test(sentence)) score += 7;
-  if (sentence.includes('"') || sentence.includes("'")) score += 5;
-  if (/\b(always|never|literal(?:ly)?|naive|gentle|dominant|shy|teasing|cold|warm|possessive|dutiful|careful|blunt)\b/i.test(sentence)) score += 5;
-  if (sentence.length > 180) score -= 2;
-  return score;
-}
-
-function buildPersonaAnchor(systemPrompt, instructions, exampleSeed) {
-  const candidateSentences = [
-    ...splitSentences(systemPrompt),
-    ...splitSentences(instructions)
-  ]
-    .map((sentence) => trimPromptSnippet(sentence, 180))
-    .filter(Boolean);
-
-  const seen = new Set();
-  const selected = [];
-  for (const sentence of candidateSentences
-    .sort((left, right) => scoreAnchorSentence(right) - scoreAnchorSentence(left))) {
-    const key = sentence.toLowerCase();
-    if (seen.has(key)) continue;
-    if (selected.length >= 3) break;
-    if (scoreAnchorSentence(sentence) < 7) continue;
-    seen.add(key);
-    selected.push(sentence);
-  }
-
-  const exampleAssistantLine = String(exampleSeed || '')
-    .split('\n')
-    .find((line) => line.trim().startsWith('{{char}}:'));
-  if (exampleAssistantLine && selected.length < 4) {
-    const trimmedExample = trimPromptSnippet(exampleAssistantLine.replace(/^\{\{char\}\}:\s*/, ''), 150);
-    if (trimmedExample) selected.push(`Signature example: ${trimmedExample}`);
-  }
-
-  return clipToTokenTarget(selected.join('\n'), 90);
 }
 
 /**
@@ -251,10 +198,7 @@ export function compileNarratorRuntimeCard(character = {}) {
     defaultResponseMode: normalizeResponseMode(character.responseMode ?? character.responseStyle),
     exampleCount: 0,
     voiceDependsOnExamples: false,
-    hasAuthorsNote: false,
-    authorsNote: '',
-    hasSceneSeed: false,
-    hasPersonaAnchor: false
+    hasSceneSeed: false
   };
 
   return {
@@ -263,7 +207,6 @@ export function compileNarratorRuntimeCard(character = {}) {
     sceneSeed: '',
     exampleSeed: '',
     intimacyContract: '',
-    personaAnchor: '',
     runtimeDefaults
   };
 }
@@ -276,10 +219,8 @@ export function compileCharacterRuntimeCard(character = {}) {
   const systemPrompt = String(character.systemPrompt || '').trim();
   const instructions = String(character.instructions || '').trim();
   const scenario = String(character.scenario || '').trim();
-  const authorsNote = String(character.authorsNote || '').trim();
   const intimacyContract = clipToTokenTarget(String(character.intimacyContract || '').trim(), 200);
   const exampleSeed = buildExampleSeed(character);
-  const personaAnchor = buildPersonaAnchor(systemPrompt, instructions, exampleSeed);
 
   const characterParagraphs = [
     ...createParagraphEntries(description, 'description'),
@@ -353,10 +294,7 @@ export function compileCharacterRuntimeCard(character = {}) {
     defaultResponseMode: normalizeResponseMode(character.responseMode ?? character.responseStyle),
     exampleCount: exampleSeed ? exampleSeed.split(/\n\n+/).filter(Boolean).length : 0,
     voiceDependsOnExamples: detectExampleDependency(systemPrompt, instructions, exampleSeed),
-    hasAuthorsNote: Boolean(authorsNote),
-    authorsNote: authorsNote ? clipToTokenTarget(authorsNote, 90) : '',
-    hasSceneSeed: Boolean(sceneSeed),
-    hasPersonaAnchor: Boolean(personaAnchor)
+    hasSceneSeed: Boolean(sceneSeed)
   };
 
   return {
@@ -365,7 +303,6 @@ export function compileCharacterRuntimeCard(character = {}) {
     sceneSeed,
     exampleSeed,
     intimacyContract,
-    personaAnchor: '',
     runtimeDefaults
   };
 }
@@ -377,7 +314,6 @@ export function resolveRuntimeCardTemplates(runtimeCard, charName, userName) {
     characterCore: resolveTemplates(runtimeCard.characterCore || '', charName, userName),
     sceneSeed: resolveTemplates(runtimeCard.sceneSeed || '', charName, userName),
     exampleSeed: resolveTemplates(runtimeCard.exampleSeed || '', charName, userName),
-    intimacyContract: resolveTemplates(runtimeCard.intimacyContract || '', charName, userName),
-    personaAnchor: resolveTemplates(runtimeCard.personaAnchor || '', charName, userName)
+    intimacyContract: resolveTemplates(runtimeCard.intimacyContract || '', charName, userName)
   };
 }

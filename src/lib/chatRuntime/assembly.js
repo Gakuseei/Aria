@@ -22,8 +22,7 @@ const PROFILE_BUDGET_TARGETS = {
     characterCore: 90,
     activeScene: 110,
     lateSteering: 110,
-    globalCore: 60,
-    personaAnchor: 75
+    globalCore: 60
   }
 };
 

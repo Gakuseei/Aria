@@ -11,7 +11,7 @@ import { normalizeResponseMode } from '../lib/responseModes';
 import { buildEnvelope, stringifyEnvelope, parseEnvelope, buildExportFilename } from '../lib/exportEnvelope';
 import { PERSONA_SCHEMA, buildEmptyPersona } from '../lib/persona/schema';
 
-const LEGACY_PASSTHROUGH_KEYS = ['personaType', 'styleBrief', 'language', 'tags', 'exampleDialogue'];
+const LEGACY_PASSTHROUGH_KEYS = ['personaType', 'styleBrief', 'language', 'tags'];
 
 const CUSTOM_CHARACTERS_KEY = 'custom_characters';
 const LEGACY_CUSTOM_CHARACTERS_KEY = 'customCharacters';

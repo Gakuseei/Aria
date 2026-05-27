@@ -78,20 +78,20 @@ describe('getDepthInstruction', () => {
     expect(result).toContain('Transcendent');
   });
 
-  it('instructions increase in intensity across tiers', () => {
+  it('instructions carry intensity-tier labels across tiers', () => {
     const aware = getDepthInstruction(25);
     const vivid = getDepthInstruction(45);
     const immersive = getDepthInstruction(65);
     const consuming = getDepthInstruction(85);
     const transcendent = getDepthInstruction(95);
-    expect(vivid.length).toBeGreaterThan(aware.length);
-    expect(consuming).toContain('intensity');
-    expect(consuming).toContain('sensory detail');
-    expect(transcendent.length).toBeGreaterThan(0);
-    expect(immersive.length).toBeGreaterThan(0);
+    expect(aware).toContain('Aware');
+    expect(vivid).toContain('Vivid');
+    expect(immersive).toContain('Immersive');
+    expect(consuming).toContain('Consuming');
+    expect(transcendent).toContain('Transcendent');
   });
 
-  it('keeps short mode vivid without forcing multi-paragraph replies', () => {
+  it('keeps short mode vivid without length-amplifier wording', () => {
     const vivid = getDepthInstruction(45, 'short');
     const immersive = getDepthInstruction(65, 'short');
     const transcendent = getDepthInstruction(95, 'short');
@@ -99,7 +99,7 @@ describe('getDepthInstruction', () => {
     expect(vivid).not.toContain('2-3 paragraphs minimum');
     expect(immersive).not.toContain('Rich multi-paragraph responses');
     expect(transcendent).not.toContain('Deep, layered responses');
-    expect(vivid).toContain('stay compact');
+    expect(vivid).toContain('Stay compact');
   });
 
   it('keeps normal mode detailed without forcing longform minimums', () => {
@@ -107,9 +107,10 @@ describe('getDepthInstruction', () => {
     expect(getDepthInstruction(65, 'normal')).not.toContain('Rich multi-paragraph responses');
   });
 
-  it('preserves longform instructions when long mode is requested', () => {
-    expect(getDepthInstruction(45, 'long')).toContain('2-3 paragraphs minimum');
-    expect(getDepthInstruction(65, 'long')).toContain('Rich multi-paragraph responses');
+  it('keeps long mode free of length-amplifier wording too', () => {
+    expect(getDepthInstruction(45, 'long')).not.toContain('2-3 paragraphs minimum');
+    expect(getDepthInstruction(65, 'long')).not.toContain('Rich multi-paragraph responses');
+    expect(getDepthInstruction(95, 'long')).not.toContain('Deep, layered responses');
   });
 });
 

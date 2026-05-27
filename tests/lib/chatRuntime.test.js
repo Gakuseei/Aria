@@ -1403,7 +1403,7 @@ describe('compileCharacterRuntimeCard globalCore embodiment grounding', () => {
       category: 'nsfw'
     });
     expect(runtimeCard.globalCore).toContain('Ground replies in body and world');
-    expect(runtimeCard.globalCore).toContain('Suggest practical actions');
+    expect(runtimeCard.globalCore).toContain('concrete physical detail');
   });
 
   it('includes the embodiment grounding line for SFW personas too', () => {
@@ -1422,7 +1422,7 @@ describe('compileCharacterRuntimeCard globalCore embodiment grounding', () => {
       type: 'bot'
     });
     expect(runtimeCard.globalCore).not.toContain('Ground replies in body and world');
-    expect(runtimeCard.globalCore).not.toContain('Suggest practical actions');
+    expect(runtimeCard.globalCore).not.toContain('concrete physical detail');
   });
 
   it('keeps the {{char}} template token unresolved at compile time', () => {
@@ -1431,7 +1431,7 @@ describe('compileCharacterRuntimeCard globalCore embodiment grounding', () => {
       systemPrompt: 'Adrian is a vampire host.',
       category: 'nsfw'
     });
-    expect(runtimeCard.globalCore).toContain('{{char}} feels physically');
+    expect(runtimeCard.globalCore).toContain('{{char}}');
   });
 });
 

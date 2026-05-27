@@ -351,8 +351,7 @@ describe('buildSystemPrompt', () => {
       responseMode: 'normal'
     });
 
-    expect(prompt).toContain('Global Core:');
-    expect(prompt).toContain('Character Core:');
+    expect(prompt).toContain('Mei is a grumpy cafe owner');
     expect(prompt).toContain('Active Scene:');
     expect(prompt).toContain('Example Seed:');
     expect(prompt).toContain('Late Steering:');

@@ -138,7 +138,7 @@ function assembleNarratorReply(runtimeState, targets, totalBudget, debug) {
   const lateSteering = clipToTokenTarget(buildNarratorLateSteering(runtimeState), targets.lateSteering);
   let activeScene = clipStructuredSceneText(activeSceneFull, targets.activeScene, 145);
 
-  blocks.push(buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)));
+  blocks.push(clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore));
   debug.includedBlocks.push('Global Core');
 
   blocks.push(buildPlainTextBlock('Narrator Style', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)));
@@ -177,7 +177,7 @@ function assembleNarratorReply(runtimeState, targets, totalBudget, debug) {
     activeScene = clipStructuredSceneText(activeSceneCompact, 95, 120);
     debug.droppedBlocks.push('Active Scene Support');
     systemPrompt = [
-      buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)),
+      clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore),
       buildPlainTextBlock('Narrator Style', clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore)),
       buildPlainTextBlock('Protagonist', protagonistBlockText),
       activeScene ? buildPlainTextBlock('Active Scene', activeScene) : '',
@@ -351,10 +351,10 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     let activeScene = clipStructuredSceneText(activeSceneFull, targets.activeScene, 145);
     let exampleSeed = runtimeState.exampleEligibility ? clipToTokenTarget(runtimeState.compiledRuntimeCard.exampleSeed, targets.exampleSeed) : '';
 
-    blocks.push(buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)));
+    blocks.push(clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore));
     debug.includedBlocks.push('Global Core');
 
-    blocks.push(buildPlainTextBlock('Character Core', appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState)));
+    blocks.push(appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState));
     debug.includedBlocks.push('Character Core');
 
     const userIdentity = runtimeState.userIdentity || {};
@@ -384,8 +384,8 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
     if (totalTokens > totalBudget && exampleSeed) {
       exampleSeed = clipToTokenTarget(exampleSeed, Math.max(80, Math.floor(targets.exampleSeed * 0.5)));
       systemPrompt = [
-        buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)),
-        buildPlainTextBlock('Character Core', appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState)),
+        clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore),
+        appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState),
         buildPlainTextBlock('User', userBlockText),
         buildPlainTextBlock('Active Scene', activeScene),
         buildPlainTextBlock('Example Seed', exampleSeed),
@@ -399,8 +399,8 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       debug.includedBlocks = debug.includedBlocks.filter((block) => block !== 'Example Seed');
       if (!debug.droppedBlocks.includes('Example Seed')) debug.droppedBlocks.push('Example Seed');
       systemPrompt = [
-        buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)),
-        buildPlainTextBlock('Character Core', appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState)),
+        clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore),
+        appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState),
         buildPlainTextBlock('User', userBlockText),
         buildPlainTextBlock('Active Scene', activeScene),
         buildPlainTextBlock('Late Steering', lateSteering)
@@ -412,8 +412,8 @@ export function assembleRuntimeContext({ profile, runtimeState }) {
       activeScene = clipStructuredSceneText(activeSceneCompact, 95, 120);
       debug.droppedBlocks.push('Active Scene Support');
       systemPrompt = [
-        buildPlainTextBlock('Global Core', clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore)),
-        buildPlainTextBlock('Character Core', appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState)),
+        clipToTokenTarget(runtimeState.compiledRuntimeCard.globalCore, targets.globalCore),
+        appendIntimacyContract(clipToTokenTarget(runtimeState.compiledRuntimeCard.characterCore, targets.characterCore), runtimeState),
         buildPlainTextBlock('User', userBlockText),
         buildPlainTextBlock('Active Scene', activeScene),
         exampleSeed ? buildPlainTextBlock('Example Seed', exampleSeed) : '',

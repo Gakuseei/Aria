@@ -6,17 +6,17 @@ import { buildPlainTextBlock, buildVoicePinBlock, clipToTokenTarget, estimateTok
 import { formatRecentBanHint } from '../chat/repetitionGuard.js';
 import { renderActiveScene } from './runtimeState.js';
 
-// Reply targets sum to ~1010 tokens; PROFILE_NON_HISTORY_RESERVE.reply is 820. The ~190-token
-// overshoot is absorbed by the overflow handler and trades headroom for full Global Core
-// (embodiment line), full Late Steering at NSFW, plus the Phase D structural memory layer
-// (wardrobe, body state, established facts, mentioned items) inside Active Scene.
+// Reply targets sum to ~910 tokens vs PROFILE_NON_HISTORY_RESERVE.reply of 820 — a small
+// overshoot the overflow handler absorbs while keeping Global Core (embodiment line), Late
+// Steering at NSFW (including voice-anchor re-anchor lines), and the structural memory
+// layer (wardrobe, body state, established facts, mentioned items) inside Active Scene.
 const PROFILE_BUDGET_TARGETS = {
   reply: {
     globalCore: 120,
-    characterCore: 290,
-    activeScene: 240,
+    characterCore: 240,
+    activeScene: 200,
     exampleSeed: 180,
-    lateSteering: 180
+    lateSteering: 170
   },
   impersonate: {
     characterCore: 90,

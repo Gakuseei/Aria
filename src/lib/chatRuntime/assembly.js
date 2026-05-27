@@ -236,10 +236,17 @@ function buildReplyLateSteering(runtimeState) {
       ]
     : [];
 
+  const lengthBudgetLine = (() => {
+    if (responseMode === 'short') return '';
+    if (responseMode === 'long') return 'Aim for 2-3 paragraphs with a clean beat. Avoid run-on enumeration.';
+    return 'Aim for 1-2 short paragraphs. Stop at a clean beat. Avoid sprawling enumeration.';
+  })();
+
   return [
     unchainedRule,
     `Write ${characterName}'s next reply.`,
     promptInstruction,
+    lengthBudgetLine,
     modeLine,
     ...voiceAnchorLines,
     depthInstruction

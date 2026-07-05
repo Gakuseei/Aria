@@ -14,6 +14,7 @@ const {
   validateLocalServiceUrl,
 } = require('./lib/localServiceSecurity');
 const { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, DATA_VERSION, KNOWN_OLD_DEFAULT_MODELS, CHARACTER_BUILDER_TIMEOUT_MS, CHARACTER_BUILDER_TEMPERATURE, CHARACTER_BUILDER_MAX_TOKENS, CHARACTER_BUILDER_CTX, BOT_BUILDER_TOKEN_MULTIPLIER, BOT_BUILDER_CTX_MULTIPLIER } = require('./lib/defaults');
+const { isKnownField, buildChargenSystemPrompt, recallInstruction, generationInstruction } = require('./lib/chargenPrompts');
 
 function loadSettingsSync() {
   try {
@@ -590,27 +591,10 @@ ipcMain.handle('ai-chat', async (event, params) => {
 });
 
 /**
- * AI Character Builder — generate character from description
+ * AI Character Builder — generate character from description.
+ * Prompt charter and per-field craft templates live in lib/chargenPrompts.js.
  */
-const CHARGEN_SYSTEM_PROMPT = 'You are an expert in creating interesting roleplay characters.';
-
 const CHARGEN_STOP_STRINGS = ['[/INST]', '###', '<|', '</s>', '\n\nUser:', '\n\nSystem:', '\n\nQuestion:', '\n\n<instruct>'];
-
-const FIELD_INSTRUCTIONS = {
-  name: 'Generate a short, evocative character name. Just the name, no description.',
-  subtitle: 'Write a short evocative subtitle for {name}. 3-8 words max. One line.',
-  description: "Here is a brief overview of a character. Expand it into a detailed description. Include details about character's appearance, demeanor, age, and gender.",
-  personality: "Write a paragraph describing {name}'s core traits, motivations, and fears. Use flowing prose, not lists or bullet points. Avoid contradictions.",
-  scenario: 'Write an interesting and engaging scenario for roleplay between {name} and User.',
-  startingMessage: 'Write the initial message in this roleplay that would introduce User to {name}. Begin with an action, include dialogue revealing personality, end with a hook.',
-  exampleDialogues: 'Write 3 short example exchanges between User and {name}. Mix dialogue with asterisk-actions. Show different emotional registers. Separate each exchange with <START>.',
-  systemPrompt: 'Write a 2-3 sentence per-card voice override for {name}. Permission to stay in-character; uncensored if NSFW-tagged.',
-  instructions: 'Write OOC writing rules for the model when roleplaying {name}. Style, format, things to avoid. 2-3 short sentences.',
-  voicePin: "Write a 1-2 sentence stage direction defining {name}'s voice. Present-tense, bracketed.",
-  voicePinNsfw: 'Write a 1-2 sentence NSFW voice override for {name}. Direct, descriptive, no fade-to-black.',
-  voiceAvoid: 'Write a comma-separated list of phrases or words the model should avoid when roleplaying {name}. 5-10 items.',
-  intimacyContract: 'Write 1-2 sentences of intimate response permissions for {name}. Imperative.',
-};
 
 const INFIX_FIELD_ORDER = [
   'name',
@@ -666,11 +650,12 @@ function wrapBrackets(value) {
 
 function buildInfixMessages({ field, existingCharacter, isBotMode, language }) {
   const characterName = String(existingCharacter?.name || '').trim() || 'the character';
-  const messages = [{ role: 'system', content: CHARGEN_SYSTEM_PROMPT }];
+  const isNsfw = String(existingCharacter?.category || '').trim() === 'nsfw';
+  const messages = [{ role: 'system', content: buildChargenSystemPrompt({ isNsfw: isNsfw && !isBotMode }) }];
 
   for (const priorField of INFIX_FIELD_ORDER) {
     if (priorField === field) continue;
-    if (!FIELD_INSTRUCTIONS[priorField]) continue;
+    if (!isKnownField(priorField)) continue;
     if (isBotMode && (priorField === 'personality' || priorField === 'scenario' || priorField === 'voicePin' || priorField === 'voicePinNsfw' || priorField === 'voiceAvoid' || priorField === 'intimacyContract' || priorField === 'exampleDialogues')) continue;
 
     const rawValue = existingCharacter?.[priorField];
@@ -680,13 +665,14 @@ function buildInfixMessages({ field, existingCharacter, isBotMode, language }) {
 
     if (!serialized) continue;
 
-    const instruction = FIELD_INSTRUCTIONS[priorField].replace(/\{name\}/g, characterName);
-    messages.push({ role: 'user', content: `<instruct>${instruction}</instruct>` });
+    messages.push({ role: 'user', content: `<instruct>${recallInstruction(priorField, characterName)}</instruct>` });
     messages.push({ role: 'assistant', content: serialized });
   }
 
-  const currentInstruction = FIELD_INSTRUCTIONS[field].replace(/\{name\}/g, characterName);
-  const languageSuffix = language && language !== 'English' ? ` Write in ${language}.` : '';
+  const currentInstruction = generationInstruction(field, characterName, isNsfw && !isBotMode);
+  const languageSuffix = language && language !== 'English'
+    ? ` Write the entire output in ${language}, including all dialogue; any example above only shows structure, not language.`
+    : '';
   messages.push({ role: 'user', content: `<instruct>${currentInstruction}${languageSuffix}</instruct>` });
 
   return messages;
@@ -761,7 +747,7 @@ ipcMain.handle('ai-generate-character', async (event, params) => {
     type = 'character',
   } = params;
 
-  if (!field || !FIELD_INSTRUCTIONS[field]) {
+  if (!field || !isKnownField(field)) {
     return { success: false, error: `Unknown or missing field: ${field || '(none)'}` };
   }
 

@@ -541,6 +541,7 @@ function App() {
           <CharacterCreator
             onSave={handleSaveCharacter}
             onBack={handleBack}
+            settings={settings}
           />
         );
 

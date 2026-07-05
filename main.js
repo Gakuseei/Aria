@@ -14,7 +14,7 @@ const {
   validateLocalServiceUrl,
 } = require('./lib/localServiceSecurity');
 const { OLLAMA_DEFAULT_URL, DEFAULT_MODEL_NAME, DATA_VERSION, KNOWN_OLD_DEFAULT_MODELS, CHARACTER_BUILDER_TIMEOUT_MS, CHARACTER_BUILDER_TEMPERATURE, CHARACTER_BUILDER_MAX_TOKENS, CHARACTER_BUILDER_CTX, BOT_BUILDER_TOKEN_MULTIPLIER, BOT_BUILDER_CTX_MULTIPLIER } = require('./lib/defaults');
-const { isKnownField, buildChargenSystemPrompt, recallInstruction, generationInstruction } = require('./lib/chargenPrompts');
+const { isKnownField, buildChargenSystemPrompt, recallInstruction, generationInstruction, improveInstruction } = require('./lib/chargenPrompts');
 
 function loadSettingsSync() {
   try {
@@ -648,7 +648,7 @@ function wrapBrackets(value) {
   return `[${trimmed.replace(/^\[+|\]+$/g, '')}]`;
 }
 
-function buildInfixMessages({ field, existingCharacter, isBotMode, language }) {
+function buildInfixMessages({ field, existingCharacter, isBotMode, language, mode = 'generate' }) {
   const characterName = String(existingCharacter?.name || '').trim() || 'the character';
   const isNsfw = String(existingCharacter?.category || '').trim() === 'nsfw';
   const messages = [{ role: 'system', content: buildChargenSystemPrompt({ isNsfw: isNsfw && !isBotMode }) }];
@@ -669,7 +669,13 @@ function buildInfixMessages({ field, existingCharacter, isBotMode, language }) {
     messages.push({ role: 'assistant', content: serialized });
   }
 
-  const currentInstruction = generationInstruction(field, characterName, isNsfw && !isBotMode);
+  const rawCurrent = existingCharacter?.[field];
+  const currentSerialized = field === 'exampleDialogues'
+    ? serializeExampleDialoguesForInfix(rawCurrent)
+    : String(rawCurrent || '').trim();
+  const currentInstruction = mode === 'improve' && currentSerialized
+    ? improveInstruction(field, characterName, currentSerialized, isNsfw && !isBotMode)
+    : generationInstruction(field, characterName, isNsfw && !isBotMode);
   const languageSuffix = language && language !== 'English'
     ? ` Write the entire output in ${language}, including all dialogue; any example above only shows structure, not language.`
     : '';
@@ -685,10 +691,11 @@ async function callChargenField({
   existingCharacter,
   isBotMode,
   language,
+  mode,
   abortController,
   rephrasePrefix,
 }) {
-  const messages = buildInfixMessages({ field, existingCharacter, isBotMode, language });
+  const messages = buildInfixMessages({ field, existingCharacter, isBotMode, language, mode });
   if (rephrasePrefix) {
     const last = messages[messages.length - 1];
     last.content = last.content.replace('<instruct>', `<instruct>${rephrasePrefix}`);
@@ -745,6 +752,7 @@ ipcMain.handle('ai-generate-character', async (event, params) => {
     existingCharacter = {},
     ollamaUrl,
     type = 'character',
+    mode = 'generate',
   } = params;
 
   if (!field || !isKnownField(field)) {
@@ -773,6 +781,7 @@ ipcMain.handle('ai-generate-character', async (event, params) => {
       existingCharacter,
       isBotMode,
       language,
+      mode,
       abortController,
     });
 
@@ -784,6 +793,7 @@ ipcMain.handle('ai-generate-character', async (event, params) => {
         existingCharacter,
         isBotMode,
         language,
+        mode,
         abortController,
         rephrasePrefix: 'Be specific. ',
       });

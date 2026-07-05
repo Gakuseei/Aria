@@ -6,14 +6,152 @@ import { normalizeResponseMode } from '../lib/responseModes';
 import { buildEmptyPersona } from '../lib/persona/schema';
 import ResponseModeField from './ResponseModeField';
 
-function CharacterCreator({ onSave, onBack }) {
-  const { t } = useLanguage();
+/**
+ * Maps the app's 2-letter locale code to the generation language name the
+ * chargen backend interpolates into its prompts. Unknown codes fall back to
+ * English so generation never breaks on an untranslated locale.
+ */
+const GENERATION_LANGUAGE_NAMES = {
+  en: 'English', de: 'German', es: 'Spanish', fr: 'French', hi: 'Hindi',
+  it: 'Italian', ja: 'Japanese', ko: 'Korean', pt: 'Portuguese',
+  ru: 'Russian', tr: 'Turkish', zh: 'Chinese', ar: 'Arabic',
+};
+
+/** Small per-field Generate/Improve button. Hidden by the caller in browser builds. */
+function AssistButton({ hasValue, busy, disabled, onClick, t }) {
+  const label = hasValue ? (t.characterCreator?.aiImprove || 'Improve') : (t.characterCreator?.aiGenerate || 'Generate');
+  const busyLabel = hasValue ? (t.characterCreator?.aiImproving || 'Improving...') : (t.characterCreator?.aiGenerating || 'Generating...');
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex items-center gap-1.5 rounded-lg border-2 border-transparent px-2.5 py-1 text-xs text-zinc-400 transition-all hover:border-rose-500 hover:text-rose-300 disabled:opacity-50"
+    >
+      {busy ? (
+        <div className="w-3 h-3 border-2 border-rose-400 border-t-transparent rounded-full animate-spin" />
+      ) : (
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+        </svg>
+      )}
+      <span>{busy ? busyLabel : label}</span>
+    </button>
+  );
+}
+
+/**
+ * Label row for a content field: the label, a "?" toggle that reveals a compact
+ * craft hint, and (Electron only) the Generate/Improve assist button.
+ */
+function CraftFieldHeader({ field, label, extra, hint, hintOpen, onToggleHint, canAssist, hasValue, busy, anyBusy, onAssist, t }) {
+  return (
+    <>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-zinc-300">
+            {label}
+            {extra}
+          </label>
+          <button
+            type="button"
+            onClick={() => onToggleHint(field)}
+            aria-label={t.characterCreator?.craftHintLabel || 'Writing tips'}
+            className={`transition-colors ${hintOpen ? 'text-rose-400' : 'text-zinc-500 hover:text-rose-400'}`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+            </svg>
+          </button>
+        </div>
+        {canAssist && (
+          <AssistButton hasValue={hasValue} busy={busy} disabled={anyBusy} onClick={() => onAssist(field)} t={t} />
+        )}
+      </div>
+      {hintOpen && hint && (
+        <p className="text-xs text-zinc-400 leading-relaxed bg-zinc-800/40 border border-zinc-700/40 rounded-lg px-3 py-2 mb-2">
+          {hint}
+        </p>
+      )}
+    </>
+  );
+}
+
+function CharacterCreator({ onSave, onBack, settings }) {
+  const { t, language } = useLanguage();
   const [formData, setFormData] = useState(() => buildEmptyPersona());
 
   const [errors, setErrors] = useState({});
   const [showPreview, setShowPreview] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [assistField, setAssistField] = useState(null);
+  const [openHints, setOpenHints] = useState(() => new Set());
   const fileInputRef = useRef(null);
+
+  const electronApi = typeof window !== 'undefined' ? window.electronAPI : null;
+  const canUseNativeAiBuilder = Boolean(electronApi?.aiGenerateCharacter);
+
+  const toggleHint = (field) => {
+    setOpenHints(prev => {
+      const next = new Set(prev);
+      if (next.has(field)) next.delete(field);
+      else next.add(field);
+      return next;
+    });
+  };
+
+  const fieldHasValue = (field) => {
+    if (field === 'exampleDialogues') {
+      return Array.isArray(formData.exampleDialogues) && formData.exampleDialogues.some(d => d.user || d.character);
+    }
+    return Boolean(String(formData[field] || '').trim());
+  };
+
+  const runAssist = async (field, { append = false } = {}) => {
+    if (!canUseNativeAiBuilder || assistField) return;
+    const model = settings?.ollamaModel;
+    if (!model) {
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: t.characterCreator?.aiNoModel || 'No Ollama model configured', type: 'error' } }));
+      return;
+    }
+
+    const mode = !append && fieldHasValue(field) ? 'improve' : 'generate';
+    setAssistField(field);
+    try {
+      const result = await electronApi.aiGenerateCharacter({
+        model,
+        language: GENERATION_LANGUAGE_NAMES[language] || 'English',
+        type: formData.type,
+        field,
+        mode,
+        existingCharacter: formData,
+        ollamaUrl: settings?.ollamaUrl,
+      });
+
+      if (result?.success) {
+        if (append) {
+          const value = String(result.value || '').trim();
+          if (value) {
+            setFormData(prev => ({
+              ...prev,
+              alternateGreetings: [...(prev.alternateGreetings || []), value].slice(0, 5),
+            }));
+          }
+        } else if (field === 'exampleDialogues') {
+          const rows = Array.isArray(result.value) ? result.value : [];
+          handleChange('exampleDialogues', rows.slice(0, 5));
+        } else {
+          handleChange(field, result.value);
+        }
+      } else if (result?.error !== 'aborted') {
+        window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: `${t.characterCreator?.aiFailed || 'AI generation failed'}: ${result?.error || ''}`, type: 'error' } }));
+      }
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: `${t.characterCreator?.aiFailed || 'AI generation failed'}: ${error.message}`, type: 'error' } }));
+    } finally {
+      setAssistField(null);
+    }
+  };
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -199,6 +337,21 @@ function CharacterCreator({ onSave, onBack }) {
   const applyTemplate = (template) => {
     setFormData(prev => ({ ...prev, ...template.data }));
   };
+
+  const craftHeaderProps = (field, { label, extra, append = false, assistDisabled = false } = {}) => ({
+    field,
+    label,
+    extra,
+    hint: t.characterCreator?.[`craft${field.charAt(0).toUpperCase()}${field.slice(1)}`],
+    hintOpen: openHints.has(field),
+    onToggleHint: toggleHint,
+    canAssist: canUseNativeAiBuilder,
+    hasValue: append ? false : fieldHasValue(field),
+    busy: assistField === field,
+    anyBusy: assistField !== null || assistDisabled,
+    onAssist: (f) => runAssist(f, { append }),
+    t,
+  });
 
   return (
     <div className="theme-screen-shell h-full w-full flex flex-col p-8">
@@ -418,9 +571,7 @@ function CharacterCreator({ onSave, onBack }) {
               <h3 className="text-lg font-semibold text-white mb-4">{t.characterCreator.contentCore || 'Content Core'}</h3>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t.characterCreator.description}
-                </label>
+                <CraftFieldHeader {...craftHeaderProps('description', { label: t.characterCreator.description })} />
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleChange('description', e.target.value)}
@@ -432,9 +583,7 @@ function CharacterCreator({ onSave, onBack }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t.characterCreator.personalityLabel || 'Personality'}
-                </label>
+                <CraftFieldHeader {...craftHeaderProps('personality', { label: t.characterCreator.personalityLabel || 'Personality' })} />
                 <textarea
                   value={formData.personality || ''}
                   onChange={(e) => handleChange('personality', e.target.value)}
@@ -446,10 +595,10 @@ function CharacterCreator({ onSave, onBack }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t.characterCreator.scenario}
-                  <span className="text-zinc-500 text-xs ml-2">({t.characterCreator?.recommended || 'recommended'})</span>
-                </label>
+                <CraftFieldHeader {...craftHeaderProps('scenario', {
+                  label: t.characterCreator.scenario,
+                  extra: <span className="text-zinc-500 text-xs ml-2">({t.characterCreator?.recommended || 'recommended'})</span>,
+                })} />
                 <textarea
                   value={formData.scenario}
                   onChange={(e) => handleChange('scenario', e.target.value)}
@@ -476,11 +625,11 @@ function CharacterCreator({ onSave, onBack }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {formData.type === 'bot'
+                <CraftFieldHeader {...craftHeaderProps('systemPrompt', {
+                  label: formData.type === 'bot'
                     ? (t.characterCreator?.botInstructions || 'Bot Instructions')
-                    : t.characterCreator.systemPrompt}
-                </label>
+                    : t.characterCreator.systemPrompt,
+                })} />
                 <div className="mb-2 p-3 bg-red-900/20 border border-red-700/30 rounded-lg">
                   <div className="flex items-start gap-2 text-xs text-red-400">
                     <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -506,10 +655,10 @@ function CharacterCreator({ onSave, onBack }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t.characterCreator?.instructionsLabel || 'Priority Instructions'}
-                  <span className="text-zinc-500 text-xs ml-2">({t.characterCreator?.recommended || 'recommended'})</span>
-                </label>
+                <CraftFieldHeader {...craftHeaderProps('instructions', {
+                  label: t.characterCreator?.instructionsLabel || 'Priority Instructions',
+                  extra: <span className="text-zinc-500 text-xs ml-2">({t.characterCreator?.recommended || 'recommended'})</span>,
+                })} />
                 <textarea
                   value={formData.instructions}
                   onChange={(e) => handleChange('instructions', e.target.value)}
@@ -524,10 +673,10 @@ function CharacterCreator({ onSave, onBack }) {
 
               {formData.type !== 'bot' && (
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t.characterCreator.exampleDialogues}
-                  <span className="text-zinc-500 text-xs ml-2">({t.characterCreator?.recommended || 'recommended'})</span>
-                </label>
+                <CraftFieldHeader {...craftHeaderProps('exampleDialogues', {
+                  label: t.characterCreator.exampleDialogues,
+                  extra: <span className="text-zinc-500 text-xs ml-2">({t.characterCreator?.recommended || 'recommended'})</span>,
+                })} />
                 <p className="text-xs text-zinc-600 mb-3">
                   {t.characterCreator.exampleDialoguesRowHint || t.characterCreator.exampleDialoguesTip}
                 </p>
@@ -587,9 +736,7 @@ function CharacterCreator({ onSave, onBack }) {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t.characterCreator.startingMessage}
-                </label>
+                <CraftFieldHeader {...craftHeaderProps('startingMessage', { label: t.characterCreator.startingMessage })} />
                 <textarea
                   value={formData.startingMessage}
                   onChange={(e) => handleChange('startingMessage', e.target.value)}
@@ -604,10 +751,12 @@ function CharacterCreator({ onSave, onBack }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t.characterCreator?.alternateGreetings || 'Alternate Greetings'}
-                  <span className="text-zinc-500 text-xs ml-2">({(formData.alternateGreetings || []).length}/5)</span>
-                </label>
+                <CraftFieldHeader {...craftHeaderProps('alternateGreetings', {
+                  label: t.characterCreator?.alternateGreetings || 'Alternate Greetings',
+                  extra: <span className="text-zinc-500 text-xs ml-2">({(formData.alternateGreetings || []).length}/5)</span>,
+                  append: true,
+                  assistDisabled: (formData.alternateGreetings || []).length >= 5,
+                })} />
                 <p className="text-xs text-zinc-600 mb-3">
                   {t.characterCreator?.alternateGreetingsHelp || 'Optional. Up to 5 alternative openings. Users can swipe through them at chat start.'}
                 </p>
@@ -656,9 +805,7 @@ function CharacterCreator({ onSave, onBack }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t.characterCreator?.voicePinLabel || 'Voice Anchor'}
-                </label>
+                <CraftFieldHeader {...craftHeaderProps('voicePin', { label: t.characterCreator?.voicePinLabel || 'Voice Anchor' })} />
                 <p className="text-xs text-zinc-500 mb-2">{t.characterCreator?.voicePinHelp || ''}</p>
                 <textarea
                   value={formData.voicePin}
@@ -670,9 +817,7 @@ function CharacterCreator({ onSave, onBack }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t.characterCreator?.voicePinNsfwLabel || 'Voice Anchor (NSFW Override)'}
-                </label>
+                <CraftFieldHeader {...craftHeaderProps('voicePinNsfw', { label: t.characterCreator?.voicePinNsfwLabel || 'Voice Anchor (NSFW Override)' })} />
                 <p className="text-xs text-zinc-500 mb-2">{t.characterCreator?.voicePinNsfwHelp || ''}</p>
                 <textarea
                   value={formData.voicePinNsfw}
@@ -684,9 +829,7 @@ function CharacterCreator({ onSave, onBack }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t.characterCreator?.voiceAvoidLabel || 'Avoid Phrases'}
-                </label>
+                <CraftFieldHeader {...craftHeaderProps('voiceAvoid', { label: t.characterCreator?.voiceAvoidLabel || 'Avoid Phrases' })} />
                 <p className="text-xs text-zinc-500 mb-2">{t.characterCreator?.voiceAvoidHelp || ''}</p>
                 <textarea
                   value={formData.voiceAvoid}
@@ -699,9 +842,7 @@ function CharacterCreator({ onSave, onBack }) {
 
               {formData.category === 'nsfw' && (
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  {t.characterCreator?.intimacyContractLabel || 'Intimacy Contract'}
-                </label>
+                <CraftFieldHeader {...craftHeaderProps('intimacyContract', { label: t.characterCreator?.intimacyContractLabel || 'Intimacy Contract' })} />
                 <p className="text-xs text-zinc-500 mb-2">{t.characterCreator?.intimacyContractHelp || ''}</p>
                 <textarea
                   value={formData.intimacyContract}
